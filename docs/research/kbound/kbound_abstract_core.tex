@@ -1,16 +1,26 @@
 % Shared abstract text for both maintained drivers.
-Test-time adaptation updates a model without new target labels, but an update can help or harm.
-We ask when the available evidence supports replacing a frozen predictor with a fixed adapted
-candidate. K-Bound answers this question for a binary population model with a declared bound
-$\beta$ on the target calibration residual. We construct target label laws that preserve all
-label-free observations and derive the exact feasible interval for paired benefit. A strict
-decision is supported precisely when $|M|>\beta$; inside the closed band, no strict direction is
-uniformly justified. We also show why the same observations cannot audit away the unresolved
-residual bound. Knowability-Guided Adaptation (\KGA) is an empirical companion, not an implementation
-of this frontier. It learns to predict observed evaluation-cell benefit from labeled historical
-outcomes, then uses a residual-based interval to choose \adapt, \freeze, or \abstain without new
-evaluation labels. On an exploratory, cross-fitted CIFAR-10-C panel, Tent and EATA have lower point
-regret than either fixed policy, while SAR favors always-adapt. On CCT-20, KGA retains frozen
-predictions and avoids observed degradation from always-adapt, but makes no ADAPT decisions.
-These results support candidate-specific commitment control; they do not establish interval
-coverage or population-risk protection on unseen natural shifts.
+Test-time adaptation can help without target labels, but updates can harm. We ask when label-free
+evidence supports a directionally correct action: ADAPT for a helpful fixed candidate, FREEZE for a
+harmful one, or explicit ABSTAIN. We report false-action denominators and utility preservation before
+regret consequences. For
+binary $0/1$ loss, K-Bound uses
+$\operatorname{sign}(\Delta)=\operatorname{sign}(M+\gamma)$ and a declared bound $\beta$ on hidden
+residual $\gamma$. The resulting compatible-benefit set supports a strict direction exactly when
+$|M|>\beta$; an evidence-fibre theorem shows why the same observations cannot reduce this range.
+Knowability-Guided Adaptation (\KGA) is an empirical companion, not an implementation of the
+frontier. Using labeled development and residual-calibration cells, it fits and calibrates a
+predictor of observed evaluation-cell benefit $\Delta^{\mathrm{cell}}$. The scored cell contributes
+label-free evidence only; $\widehat\Delta\pm\varepsilon$ selects ADAPT, FREEZE, or ABSTAIN. On the opened,
+dependent, constructed six-family CIFAR-10-C diagnostic, Tent has 2/1,091 false ADAPT (2/2,160
+overall) and 1/337 false
+FREEZE; EATA has 0/1,207 false ADAPT and 0/105 false FREEZE; SAR exposes 1,414 ADAPT decisions and no
+FREEZE exposure. As secondary consequences, Tent and EATA have lower point regret than both fixed
+policies, whereas SAR favors always-adapt. On CCT-20, KGA made
+\CCTAdaptCount{}/\CCTFreezeCount{}/\CCTAbstainCount{} ADAPT/FREEZE/ABSTAIN decisions. All
+\CCTCellCount{} served predictions used the frozen model, but the sole helpful cell received FREEZE,
+yielding \CCTFalseFreezeCountWord{} false FREEZE among \CCTFalseFreezeConditionalDenominator{} FREEZE
+actions (\CCTFalseFreezeCount{}/\CCTFalseFreezeOverallDenominator{} overall). The study therefore
+passes only the locked safe-utility check and does not demonstrate selective routing or strong
+success. These retrospective,
+protocol-scoped results do not establish interval coverage or population-risk protection on unseen
+natural shifts.

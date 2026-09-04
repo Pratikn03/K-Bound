@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% kbound_submission.tex -- maintained compact two-column K-Bound submission.
 %%
-%% This driver intentionally does not input the superseded kbound_short_body.tex
-%% or kbound_short_appendix.tex. Both maintained layouts share the corrected
+%% This driver intentionally excludes the retired legacy body and appendix
+%% variants. Both maintained layouts share the corrected
 %% abstract, scientific body, and separately input supplementary material.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -16,13 +16,17 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{url}
 \usepackage{xspace}
 \usepackage{seqsplit}
+\usepackage[section]{placeins}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 \hypersetup{
   pdftitle={K-Bound: When Is Label-Free Adaptation Knowable?},
@@ -63,7 +67,8 @@
 \renewcommand{\dblfloatpagefraction}{0.75}
 \input{paper/generated/kbound_numbers}
 \input{paper/generated/cct20_numbers.tex}
-\input{paper/generated/so2sat_numbers.tex}
+\input{paper/generated/cct20_reporting_numbers.tex}
+\input{paper/generated/current_release_identity.tex}
 \input{paper/figure_fallback}
 
 \newif\ifanon

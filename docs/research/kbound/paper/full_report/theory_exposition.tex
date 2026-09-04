@@ -1,0 +1,814 @@
+% Full-report-only exposition of the maintained K-Bound theory.
+% This module expands the proofs and scope boundaries without importing any
+% historical extension module or introducing a new empirical authority.
+
+\part{A Long-Form Guide to the Population Frontier}
+\label{fr:part-theory-exposition}
+
+\section{Keeping the Estimands Apart}
+\label{fr:sec-estimands}
+
+The compact presentation develops two related decision problems.  The first is a population
+partial-identification problem.  It asks whether the risk difference between a fixed frozen model
+and a fixed candidate has one sign in every target law allowed by a declared class.  The second is
+an empirical prediction problem.  It asks whether a fitted interval for the measured benefit on a
+named evaluation unit lies strictly on one side of zero.  The two problems share an action
+vocabulary, but they do not share an estimand or an uncertainty radius.  This chapter slows down
+the notation and proofs so that no empirical interval is mistaken for a population identified set.
+
+Throughout the population analysis, the model pair is held fixed.  If an adapter used an unlabeled
+batch to construct $f_a$, that construction has already happened.  Population risk is then taken
+over a fresh target draw with both $f_0$ and $f_a$ fixed.  The binary result for zero--one loss also
+holds the target input marginal, the source information, the score $s$, and every label-free model
+output fixed.  Only the target label kernel is allowed to vary inside the declared class.  These
+choices are part of the theorem, not implementation details that may be changed silently.
+
+\subsection{A symbol atlas by inferential level}
+\label{fr:subsec-symbol-atlas}
+
+Let
+\begin{equation}
+  d:=\mu_T(D),
+  \qquad
+  D:=\{x:f_0(x)\ne f_a(x)\}.
+  \label{fr:eq-disagreement-mass}
+\end{equation}
+The maintained population theorem assumes $d>0$.  When $d=0$, the models agree almost surely and
+their zero--one risks are equal; the interesting directional problem disappears.  On $D$, let
+$s(x)\in[0,1]$ be the fixed candidate-correctness score and
+$\eta_a(x)=\Pr_T(f_a(X)=Y\mid X=x)$.  The four central population symbols are
+\begin{align}
+  M
+    &:=\E[s(X)\mid D]-\tfrac12, \\
+  \gamma
+    &:=\E[\eta_a(X)-s(X)\mid D], \\
+  \beta
+    &\ge 0 \quad\text{with the declared restriction }|\gamma|\le\beta, \\
+  \Delta
+    &:=R_T(f_0)-R_T(f_a).
+  \label{fr:eq-population-symbol-chain}
+\end{align}
+Here $M$ is a margin determined by the fixed score and target input law.  The residual $\gamma$ is
+a property of the unobserved target label kernel after conditioning on disagreement.  The number
+$\beta$ is an external class parameter.  Finally, $\Delta$ is the population risk reduction.  In
+particular, $\beta$ is not an estimator, $\gamma$ is not automatically a source-to-target drift
+quantity, and $M$ is not the measured accuracy difference on a finite evaluation cell.
+
+The empirical companion uses a separate collection of symbols.  For a predeclared cell
+$\mathcal E_j$ and a higher-is-better score $S$,
+\begin{equation}
+  \Delta_j^{\mathrm{cell}}
+  :=S(f_a;\mathcal E_j)-S(f_0;\mathcal E_j).
+  \label{fr:eq-cell-benefit}
+\end{equation}
+A fitted model produces $\widehat\Delta_j$, and a calibration procedure supplies a nonnegative
+radius $\varepsilon_j$.  The interval is
+$[\widehat\Delta_j-\varepsilon_j,\widehat\Delta_j+\varepsilon_j]$.  These objects describe a
+prediction error for the chosen cell-level score.  They do not estimate $(M,\gamma,\beta)$, and
+$\varepsilon$ is not a finite-sample version of $\beta$.
+
+\begin{table}[!t]
+\centering
+\small
+\caption{The same model pair appears at two inferential levels.  The population class and the
+cell-prediction interval answer different questions.}
+\label{fr:tab-symbol-atlas}
+\begin{tabular}{@{}p{0.13\textwidth}p{0.20\textwidth}p{0.57\textwidth}@{}}
+\toprule
+Symbol & Level & Role \\
+\midrule
+$d$ & population & target probability of the fixed disagreement region $D$ \\
+$M$ & population & label-free mean score margin on $D$ \\
+$\gamma$ & population & hidden target disagreement-conditional score residual \\
+$\beta$ & population & externally declared upper bound on $|\gamma|$ \\
+$\Delta$ & population & expected zero--one risk reduction for the fixed model pair \\
+$\Delta^{\mathrm{cell}}$ & empirical & observed score difference on one declared evaluation unit \\
+$\widehat\Delta$ & empirical & label-free-at-scoring prediction of that cell difference \\
+$\varepsilon$ & empirical & calibrated prediction-error radius for the named cell target \\
+$B$ & operational & generic scalar target in the coverage-to-action proposition \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The generic symbol $B$ is useful because the interval implication is agnostic about the scientific
+meaning of its scalar target.  Setting $B=\Delta^{\mathrm{cell}}$ gives a cell-level statement.
+Setting $B=\Delta$ would give a population statement only if coverage had actually been justified
+for $\Delta$.  Substituting one symbol for the other in prose cannot create that justification.
+
+\subsection{Why the conditioning event matters}
+\label{fr:subsec-conditioning}
+
+The residual is conditional on $D$.  Even if a score has a useful calibration property under some
+source distribution, that fact need not survive either target transfer or conditioning on the
+event that the two models disagree.  Disagreement can select a highly atypical region of the input
+space.  A score that behaves well on average may have a different residual there.  This is why the
+maintained text calls $\gamma$ a calibration residual rather than treating it as a synonym for
+distribution shift.
+
+The distinction is visible from the identity
+\begin{equation}
+  M+\gamma
+  =\E[\eta_a(X)\mid D]-\tfrac12.
+  \label{fr:eq-residual-identity}
+\end{equation}
+The score cancels.  Equation~\eqref{fr:eq-residual-identity} is always true under the definitions;
+it does not say that either summand is known.  The label-free part $M$ is fixed by the augmented
+evidence law used in the theorem.  The hidden part $\gamma$ records exactly how far the average
+candidate correctness on $D$ can depart from that score margin.
+
+Treating $M$ as fixed also deserves care.  In the population theorem, $M$ is part of the augmented
+observable.  If a practical system estimates $M$ from a finite batch, then estimation error creates
+another uncertainty term.  The exact frontier does not make that term vanish.  A valid practical
+analysis would either condition on the realized augmented object, enlarge the class to cover the
+estimation error, or prove a separate sampling statement.  None of those steps is obtained merely
+by reusing the symbol $M$ for a sample average.
+
+\subsection{A disciplined order for reading a claim}
+\label{fr:subsec-claim-order}
+
+Every directional statement can be checked in four passes.  First identify the estimand: population
+risk, a cell score, or another scalar.  Second identify the information set: label-free target
+outputs, labeled historical cells, target labels, or a frozen calibration artifact.  Third identify
+the uncertainty object: a declared class radius, a prediction-error radius, or a sampling-error
+bound.  Fourth identify the probability law and denominator: all evaluation units, only committed
+units, one time point, or an entire sequence.  A statement that omits one of these items is not yet
+specific enough to compare with either the population theorem or the empirical proposition.
+
+This order prevents several common substitutions.  A wide $\varepsilon$ does not demonstrate that
+$\beta$ is large.  A narrow empirical interval does not show that the population label kernel lies
+in a narrow class.  A low number of observed false actions does not establish interval coverage.
+And an interval-coverage premise for a random cell does not imply conditional error control among
+the cells on which the gate acts.  The remainder of this part derives these boundaries rather than
+leaving them as warnings.
+
+\section{Proof Anatomy of the Exact Population Frontier}
+\label{fr:sec-frontier-anatomy}
+
+The frontier follows from three ingredients: cancellation outside disagreement, binary
+complementarity on disagreement, and an exact description of the residual values allowed by the
+declared class.  Each ingredient has a distinct role.  Separating them shows both why the formula is
+simple and why its assumptions are restrictive.
+
+\subsection{Step one: cancel the agreement region}
+\label{fr:subsec-cancel-agreement}
+
+Under zero--one loss, define
+\begin{equation}
+  C_a:=\mathbf 1\{f_a(X)=Y\},
+  \qquad
+  C_0:=\mathbf 1\{f_0(X)=Y\}.
+  \label{fr:eq-correctness-indicators}
+\end{equation}
+Because $\mathbf 1\{f(X)\ne Y\}=1-\mathbf 1\{f(X)=Y\}$, the pointwise loss difference is
+\begin{equation}
+  \mathbf 1\{f_0(X)\ne Y\}-\mathbf 1\{f_a(X)\ne Y\}
+  =C_a-C_0.
+  \label{fr:eq-loss-correctness-difference}
+\end{equation}
+On $D^c$, the two predictions are equal, so $C_a=C_0$.  The integrand is zero there.  Therefore
+\begin{align}
+  \Delta
+  &=\E[C_a-C_0] \\
+  &=d\,\E[C_a-C_0\mid D].
+  \label{fr:eq-disagreement-reduction-one}
+\end{align}
+This cancellation uses only equality of the predictions on $D^c$.  It is not a calibration
+argument and does not use the class bound.
+
+\subsection{Step two: use binary complementarity}
+\label{fr:subsec-binary-complementarity}
+
+On $D$, the two binary predictions differ, so one predicts zero and the other predicts one.  Since
+the label is also binary, exactly one prediction is correct.  Thus
+\begin{equation}
+  C_0=1-C_a \quad\text{on }D.
+  \label{fr:eq-binary-complement}
+\end{equation}
+Substituting into Equation~\eqref{fr:eq-disagreement-reduction-one} gives
+\begin{align}
+  \Delta
+    &=d\,\E[2C_a-1\mid D] \\
+    &=2d\left(\Pr_T(f_a(X)=Y\mid D)-\tfrac12\right).
+  \label{fr:eq-benefit-from-correctness}
+\end{align}
+The tower property identifies the conditional correctness probability with
+$\E[\eta_a(X)\mid D]$.  Equation~\eqref{fr:eq-residual-identity} then yields
+\begin{equation}
+  \boxed{\Delta=2d(M+\gamma).}
+  \label{fr:eq-benefit-factorization}
+\end{equation}
+This is the maintained reduction written with $d=\mu_T(D)$.  Because $d>0$, multiplying by $2d$
+does not change a sign.  Hence $\sign(\Delta)=\sign(M+\gamma)$ for every target law in the setup,
+whether or not that law satisfies a particular residual budget.
+
+Binary complementarity is the step that fails in a direct multiclass transcription.  With three or
+more labels, two different predictions can both be wrong.  Cancellation outside $D$ remains valid,
+but $C_0=1-C_a$ need not hold on $D$.  The open-extension discussion later in this part begins from
+that exact point rather than carrying the binary factor of two into a setting where it is unjustified.
+
+\subsection{Step three: translate the class into a compatible set}
+\label{fr:subsec-compatible-set}
+
+Let
+\begin{equation}
+  q:=\E[\eta_a(X)\mid D]-\tfrac12=M+\gamma.
+  \label{fr:eq-normalized-benefit}
+\end{equation}
+The conditional correctness probability lies in $[0,1]$, so $q\in[-\tfrac12,\tfrac12]$.
+The declared restriction $|\gamma|\le\beta$ gives
+$q\in[M-\beta,M+\beta]$.  Both restrictions must hold.  The compatible normalized-benefit set is
+therefore
+\begin{equation}
+  \mathcal Q(M,\beta)
+  =[-\tfrac12,\tfrac12]\cap[M-\beta,M+\beta]
+  =\left[\max\{-\tfrac12,M-\beta\},
+          \min\{\tfrac12,M+\beta\}\right].
+  \label{fr:eq-compatible-q}
+\end{equation}
+Scaling by the positive number $2d$ gives the compatible population-benefit set
+\begin{equation}
+  \mathcal I_\Delta(M,\beta,d)
+  =2d\,\mathcal Q(M,\beta).
+  \label{fr:eq-compatible-benefit}
+\end{equation}
+The clipping by $[-\tfrac12,\tfrac12]$ enforces the elementary feasibility of a correctness
+probability.  It is not an optional numerical safeguard.  Omitting it would describe residuals
+whose implied average correctness is below zero or above one.
+
+Every point in Equation~\eqref{fr:eq-compatible-q} is attainable in the full declared class.  To
+see this, choose any $q$ in that interval and set the candidate-correctness kernel on $D$ to the
+constant
+\begin{equation}
+  \eta_q(x):=\tfrac12+q.
+  \label{fr:eq-attaining-kernel}
+\end{equation}
+It is a valid probability because $q\in[-\tfrac12,\tfrac12]$.  Its residual is
+$\gamma_q=q-M$, whose absolute value is at most $\beta$ because
+$q\in[M-\beta,M+\beta]$.  Holding the input law, models, score, and label kernel on $D^c$ fixed
+then produces a target law in the class with benefit $2dq$.  Thus the interval is an identified set,
+not merely an outer bound, for the rich class used by the necessity result.
+
+\subsection{Step four: locate the strict-sign regions}
+\label{fr:subsec-strict-regions}
+
+A uniformly positive benefit requires the lower endpoint of
+$\mathcal Q(M,\beta)$ to be strictly positive.  Because $-\tfrac12$ is not positive, this happens
+exactly when $M-\beta>0$, or $M>\beta$.  Similarly, a uniformly negative benefit requires the upper
+endpoint to be strictly negative.  Since $\tfrac12$ is not negative, this occurs exactly when
+$M+\beta<0$, or $M<-\beta$.  The maximal strict population rule is consequently
+\begin{equation}
+  M>\beta\Rightarrow\adapt,
+  \qquad
+  M<-\beta\Rightarrow\freeze,
+  \qquad
+  |M|\le\beta\Rightarrow\abstain.
+  \label{fr:eq-population-rule}
+\end{equation}
+The inequalities are strict because the action words make strict directional assertions.  A lower
+endpoint equal to zero does not justify the claim that every compatible benefit is positive.  An
+upper endpoint equal to zero does not justify the claim that every compatible benefit is negative.
+
+For $|M|<\beta$, the interval contains values on both sides of zero.  One may select a small
+$r>0$ satisfying $r<\min\{\beta-|M|,\tfrac12\}$ and use the two constant kernels
+$\eta_+(x)=\tfrac12+r$ and $\eta_-(x)=\tfrac12-r$.  Their residuals are $r-M$ and $-r-M$; both have
+absolute value below $\beta$.  They preserve all label-free evidence and yield benefits $2dr$ and
+$-2dr$.  The ambiguity is exact: no additional sample from the same label-free evidence law can
+distinguish these two target worlds.
+
+For $|M|=\beta>0$, opposite nonzero signs need not both be available, but zero is.  Taking
+$\gamma=-M$ gives $q=0$ and hence $\Delta=0$.  The class also contains a strict-benefit law on the
+side indicated by $M$.  Because one compatible law has zero benefit, the strict statement still
+fails uniformly.  Finally, when $M=\beta=0$, the class forces $\gamma=0$ and the benefit is
+identically zero.  This last case is not uncertainty about the sign: the value is identified, but
+neither strict directional assertion is true.
+
+\subsection{Sufficiency, necessity, and class richness}
+\label{fr:subsec-richness}
+
+The outside-band direction needs only the bound $|\gamma|\le\beta$.  If $M>\beta$, then
+$M+\gamma\ge M-\beta>0$ for every admissible law; the negative case is symmetric.  This is a
+sufficiency statement and remains valid for any narrower subclass obeying the same bound.
+
+The inside-band conclusion is different.  To show that no strict direction is uniformly supported,
+the class must contain the evidence-matched kernels used above, including the zero-benefit boundary
+law.  A narrower scientific model might exclude them.  For example, a verified structural relation
+could tie the target label kernel to an observed quantity and leave only one possible sign.  The
+maintained theorem therefore states its necessity and maximality for the full rich class.  It does
+not say that every imaginable restricted problem has the same identified set.
+
+This distinction is central to using impossibility results responsibly.  An impossibility theorem
+does not prohibit action after stronger information is supplied.  It identifies the information
+that the present evidence and class fail to provide.  Escaping the result requires changing an
+assumption, observing a new channel, or narrowing the target class in a way that can be defended for
+the deployment at hand.
+
+\section{Evidence Fibres and the Exact Audit Floor}
+\label{fr:sec-fibres}
+
+The frontier assumes a declared residual budget.  A natural next question is whether the same
+label-free information used by the gate can discover a smaller valid budget.  Evidence fibres make
+the obstacle precise.  They group together target laws that induce exactly the same distribution
+for everything the audit may observe.  An audit can transform its evidence, randomize, and compute
+arbitrarily complicated statistics, but it cannot tell apart two laws in the same fibre.
+
+\subsection{The observable object and its fibres}
+\label{fr:subsec-fibre-definition}
+
+Let $W$ contain the audit's full information set.  It may include the unlabeled target batch,
+predictions from both models, logits, features derived from those outputs, the fixed score, and
+source or development data whose law is unaffected by the deployment label kernel.  Let an audit
+also use an independent random seed $U$ and return
+\begin{equation}
+  \widehat\beta=g(W,U)\in[0,\infty].
+  \label{fr:eq-randomized-audit}
+\end{equation}
+Including $U$ makes the argument cover randomized procedures.  It gives the audit no additional
+information about which compatible target law generated the observable data.
+
+For a declared class $\mathcal C$, two laws are evidence-equivalent when they induce the same law
+of $W$.  If $z$ denotes one such observable law, define
+\begin{align}
+  \mathcal C(z)
+    &:=\{P\in\mathcal C:\Law_P(W)=z\}, \\
+  \Gamma_z(\mathcal C)
+    &:=\sup_{P\in\mathcal C(z)}|\gamma(P)|.
+  \label{fr:eq-fibre-radius}
+\end{align}
+The first object is an evidence fibre.  The second is the largest absolute residual still possible
+within it.  Notice that $z$ indexes a probability law, not merely one realized value of a summary
+statistic.  Equal realized summaries would be a weaker relation; the exact impossibility uses equal
+observable distributions.
+
+The radius is conditional on both the declared class and the chosen evidence.  Enlarging the class
+can enlarge a fibre.  Adding a genuinely informative observable can split a fibre into smaller
+ones.  Merely computing a new deterministic feature of $W$ cannot do so, because equal laws of $W$
+imply equal laws of every measurable function of $W$.
+
+\subsection{How the label-kernel construction preserves evidence}
+\label{fr:subsec-kernel-construction}
+
+Fix the target input marginal, source information, predictors, score, and the label kernel outside
+$D$.  On $D$, choose any measurable $\eta:D\to[0,1]$ and define the conditional label law by
+assigning probability $\eta(x)$ to $Y=f_a(x)$ and probability $1-\eta(x)$ to $Y=f_0(x)$.  This is a
+complete binary conditional distribution because the two predictions are distinct on $D$.
+
+Changing $\eta$ in this construction changes target labels but changes neither the distribution of
+$X$ nor either model's output at a given $X$.  Consequently, it preserves every label-free target
+statistic formed from inputs and the fixed model pair.  It also preserves any source or development
+sample whose law has been fixed independently of the deployment label kernel.  At the same time,
+the residual becomes
+\begin{equation}
+  \gamma(\eta)
+  =\E[\eta(X)\mid D]-\tfrac12-M.
+  \label{fr:eq-kernel-residual}
+\end{equation}
+Thus one evidence law can coexist with a range of target residuals.  The construction isolates the
+missing information: correctness on the target disagreement region.
+
+This is stronger than saying that a finite sample is noisy.  The two worlds can induce identical
+laws for samples of every size drawn from the permitted label-free channel.  More data from that
+same channel can estimate its distribution more accurately, but it cannot reveal which target
+label kernel was paired with it.  The obstacle is identification, not a slow convergence rate.
+
+\subsection{Deriving the audit floor line by line}
+\label{fr:subsec-audit-proof}
+
+Suppose the audit is required to cover the true absolute residual throughout one nonempty fibre:
+\begin{equation}
+  \Pr_P\{\widehat\beta\ge|\gamma(P)|\}\ge1-\delta
+  \qquad\text{for every }P\in\mathcal C(z),
+  \label{fr:eq-audit-validity}
+\end{equation}
+where $0\le\delta<1$.  Every law in the fibre gives $(W,U)$ the same distribution.  Therefore
+$\widehat\beta=g(W,U)$ has one common distribution, which we denote by $\Pr_z$.
+
+If the supremum in $\Gamma_z(\mathcal C)$ is attained at a law $P^\star$, substituting
+$P^\star$ into Equation~\eqref{fr:eq-audit-validity} immediately gives
+\begin{equation}
+  \Pr_z\{\widehat\beta\ge\Gamma_z(\mathcal C)\}\ge1-\delta.
+  \label{fr:eq-audit-floor-attained}
+\end{equation}
+The supremum need not be attained, so the general proof uses approximation.  Select laws $P_n$ in
+the fibre such that $a_n:=|\gamma(P_n)|$ increases to $\Gamma_z(\mathcal C)$.  The events
+$A_n:=\{\widehat\beta\ge a_n\}$ form a decreasing sequence.  Uniform validity gives
+$\Pr_z(A_n)\ge1-\delta$ for every $n$.  By continuity of probability from above,
+\begin{align}
+  \Pr_z\{\widehat\beta\ge\Gamma_z(\mathcal C)\}
+  &=\Pr_z\left(\bigcap_{n=1}^{\infty}A_n\right) \\
+  &=\lim_{n\to\infty}\Pr_z(A_n)
+  \ge1-\delta.
+  \label{fr:eq-audit-floor-limit}
+\end{align}
+This is the exact fibre-wise floor.  A valid audit must return at least the unresolved fibre radius
+with the same high probability at which it promises to cover every compatible residual.  The
+constant procedure $\widehat\beta\equiv\Gamma_z(\mathcal C)$ is valid on that fixed fibre, so the
+floor is sharp as an oracle benchmark.  Calling it an oracle benchmark matters: the statement does
+not provide an algorithm that learns the fibre index or computes its radius from a finite sample.
+
+For the full class $\mathcal C_\beta$ and the maintained feasibility range
+$0\le\beta\le\tfrac12$, the constant-kernel construction attains residuals of magnitude $\beta$
+while preserving the evidence law.  Hence
+\begin{equation}
+  \Gamma_z(\mathcal C_\beta)=\beta.
+  \label{fr:eq-declared-radius-equality}
+\end{equation}
+In this setting the label-free audit cannot uniformly certify a radius below the one already
+declared.  If the allowed budget is larger than the maintained range, probability feasibility can
+clip the attainable residuals, and Equation~\eqref{fr:eq-declared-radius-equality} must not be
+repeated without recalculating the fibre.  The general audit-floor statement remains
+Equation~\eqref{fr:eq-audit-floor-limit}, with $\Gamma_z(\mathcal C)$ rather than an assumed
+numerical substitute.
+
+\subsection{Why labels from an unrelated domain do not shrink the fibre}
+\label{fr:subsec-wrong-domain-labels}
+
+Now add a labeled source or calibration sample $L_S$ to the observable object, so
+$W=(W_0,L_S)$.  If the declared class places no restriction linking the law of $L_S$ to the target
+label kernel on $D$, hold the law of $L_S$ fixed while applying the target kernel construction.
+Both worlds then induce the same joint law of $(W_0,L_S)$ and can still have different values of
+$\gamma$.  The labeled sample may estimate source correctness extremely well; it does not identify
+target correctness on a region whose label law is allowed to change independently.
+
+The point is not that historical labels are intrinsically useless.  They become informative after
+a relation is stated and defended.  Examples include a sampling design that makes them
+representative of the intended target units, a transport model that bounds the change in a
+conditional label law, or a stability premise that is itself externally validated.  In each case,
+the gain comes from the link, not from the word ``labeled.''  Without such a link, adding $L_S$ to
+$W$ leaves the decisive target fibre intact.
+
+This observation also clarifies development-based residual surrogates.  A proxy computed from
+source-like cells can be useful for engineering exploration.  It does not become a uniform bound
+on a deployment residual unless the class restricts how those two quantities differ.  The audit
+theorem asks whether the claimed bound covers every target law in the fibre.  Empirical correlation
+on development domains is not, by itself, that class restriction.
+
+\subsection{Information refinement is set inclusion}
+\label{fr:subsec-information-refinement}
+
+Suppose a new observable $H$ is added.  At a joint observable law $(z,h)$, the refined fibre obeys
+\begin{equation}
+  \mathcal C(z,h)\subseteq\mathcal C(z),
+  \qquad
+  \Gamma_{z,h}(\mathcal C)\le\Gamma_z(\mathcal C).
+  \label{fr:eq-fibre-refinement}
+\end{equation}
+The inequality is simply monotonicity of a supremum under set inclusion.  It gives a clean language
+for escape routes.  New information helps only to the extent that it excludes target laws with
+large residuals.  If $H$ carries representative target labels or a validated structural
+measurement, the inclusion may be strict.
+
+If $H$ is a deterministic function of $W$, then for every compatible joint observable law
+$(z,h)$, the refined fibre equals the original fibre:
+\begin{equation}
+  \mathcal C(z,h)=\mathcal C(z).
+  \label{fr:eq-deterministic-refinement}
+\end{equation}
+Indeed, the law of $(W,H)$ is already determined by the law $z$ of $W$.  A deterministic recoding
+can make the evidence easier to use, but it cannot exclude a target law that was compatible with
+the original evidence distribution.
+
+Equation~\eqref{fr:eq-fibre-refinement} is deliberately one-sided for genuinely new evidence.  It does not say that any
+particular label-shift statistic, rank condition, or symmetry assumption produces a symmetric
+interval or an exact if-and-only-if frontier.  Those conclusions require a separate model-specific
+proof.  Likewise, a closure property under swapping labels does not automatically make arbitrary
+regional benefit signs feasible.  The maintained population theorem obtains exactness from its
+explicit binary kernel construction, not from an abstract slogan about symmetry.
+
+\section{Strict Actions, Closed Bands, and Coverage}
+\label{fr:sec-action-semantics}
+
+The three action names carry logical content.  They are not merely labels for which model is served.
+An adapt decision asserts that the candidate has strictly positive benefit.  A \freeze decision
+asserts that the candidate has strictly negative benefit.  An abstain decision makes neither
+assertion.  In the implementation described in the main text, both \freeze and abstain retain
+$f_0$, but their audit meanings remain different: one is a supported rejection and the other is a
+record of unresolved evidence.
+
+\subsection{Why the boundary is closed}
+\label{fr:subsec-closed-band}
+
+The population compatible set supports adapt only if every member is greater than zero, and it
+supports \freeze only if every member is less than zero.  The word ``every'' explains the closed
+abstention band.  At $M=\beta>0$, the smallest compatible normalized benefit is zero.  At
+$M=-\beta<0$, the largest is zero.  At $M=\beta=0$, zero is the only compatible benefit.  In all
+three cases a strict statement is false for at least one admissible law.
+
+This convention is intentionally stronger than choosing a model with zero regret.  When
+$\Delta=0$, either model has the same population risk, so serving either one incurs no loss relative
+to the pairwise oracle.  Yet neither ``the candidate is better'' nor ``the frozen model is better''
+is true.  The frontier concerns warranted directional assertions, not only realized task loss.
+
+The same logic applies to an empirical interval.  Let
+\begin{equation}
+  L:=\widehat B-\varepsilon,
+  \qquad
+  U:=\widehat B+\varepsilon.
+  \label{fr:eq-operational-endpoints}
+\end{equation}
+The operational rule uses $L>0$ for adapt and $U<0$ for \freeze.  If $L=0$ or $U=0$, the interval
+touches the boundary and the rule abstains.  Replacing either strict comparison by a weak one would
+change the claim: it would permit a directional action even though the interval contains a value
+at which the corresponding strict assertion fails.
+
+Unavailable evidence is another boundary case.  If required features, a candidate, or a frozen
+calibration artifact are unavailable, there is no interval on which to base a negative claim.
+Retaining $f_0$ may be the appropriate service behavior, but its audit record is abstain, together
+with the reason.  Reclassifying missing assessment as \freeze would make the apparent negative
+action count larger without supplying negative evidence.
+
+\subsection{What exact matched evidence forces a randomized rule to do}
+\label{fr:subsec-randomized-actions}
+
+Consider two compatible population laws with exactly the same evidence distribution and opposite
+nonzero benefit signs.  A possibly randomized label-free rule has the same action probabilities in
+both worlds.  If its marginal false-adapt probability may not exceed $\alpha$ in any world, then
+its probability of adapt is at most $\alpha$ in the negative-benefit world.  Because the action
+distribution is shared, the same upper bound applies in the positive-benefit world.  Symmetrically,
+control of false \freeze limits its \freeze probability to at most $\alpha$.  The remaining mass
+must satisfy
+\begin{equation}
+  \Pr\{g=\abstain\}\ge 1-2\alpha.
+  \label{fr:eq-matched-abstention}
+\end{equation}
+Randomization therefore cannot manufacture information.  It can distribute a permitted error
+budget across unsupported actions, but a rule that controls both directions must leave most mass on
+abstention when the evidence law is shared by opposite worlds.  This is a probabilistic error-control
+statement.  It is distinct from the deterministic pointwise-maximal rule, which abstains everywhere
+that no strict action is uniformly sound.
+
+\subsection{Coverage-to-action as a set containment}
+\label{fr:subsec-coverage-containment}
+
+The operational proposition has an even shorter proof because it begins from a coverage premise.
+Let
+\begin{equation}
+  E:=\{|\widehat B-B|\le\varepsilon\}.
+  \label{fr:eq-coverage-event}
+\end{equation}
+On $E$, an adapt decision implies
+$B\ge\widehat B-\varepsilon>0$.  Therefore
+\begin{equation}
+  \{g=\adapt,\ B\le0\}\subseteq E^c.
+  \label{fr:eq-false-adapt-containment}
+\end{equation}
+Likewise, on $E$, a \freeze decision implies
+$B\le\widehat B+\varepsilon<0$, and hence
+\begin{equation}
+  \{g=\freeze,\ B\ge0\}\subseteq E^c.
+  \label{fr:eq-false-freeze-containment}
+\end{equation}
+If $\Pr(E)\ge1-\alpha$, each marginal false-direction probability is at most $\alpha$.  No
+distributional approximation appears in these two inclusions.  All statistical difficulty has
+been placed in the premise that the interval covers the predeclared target under the intended joint
+law.
+
+The proposition does not prove its own premise.  An order statistic, a regression algorithm, or the
+name of a calibration method does not by itself establish coverage for a changed candidate,
+environment, or evaluation unit.  One must specify the unit distribution, all fitting and candidate
+construction randomness, and the assumptions under which calibration units and a future unit are
+related.  The action implication is exact conditional on that work being valid; it cannot replace
+that work.
+
+\subsection{Marginal error, conditional error, and exposure}
+\label{fr:subsec-error-denominators}
+
+Equation~\eqref{fr:eq-false-adapt-containment} bounds
+$\Pr(g=\adapt,B\le0)$, whose denominator is the entire probability space.  It does not directly
+bound
+\begin{equation}
+  \Pr(B\le0\mid g=\adapt),
+  \label{fr:eq-conditional-false-adapt}
+\end{equation}
+whose denominator is only the adapt actions.  When $\Pr(g=\adapt)>0$, the marginal statement gives
+the elementary ratio bound
+\begin{equation}
+  \Pr(B\le0\mid g=\adapt)
+  \le \min\left\{1,\frac{\alpha}{\Pr(g=\adapt)}\right\}.
+  \label{fr:eq-exposure-ratio}
+\end{equation}
+This can be uninformative when action exposure is small.  Obtaining a useful fixed level conditional
+on selection requires a different guarantee.  If the rule never adapts, its marginal false-adapt
+probability is zero mechanically, while the conditional rate is undefined.  Thus every safety
+summary must report exposure alongside error.
+
+The same denominator discipline applies to finite recorded panels.  A count divided by all cells
+answers a marginal descriptive question under equal cell weighting.  A count divided by actions of
+one type answers a conditional descriptive question on the exposed subset.  Neither ratio is an
+independent estimate for a new environment unless the sampling and dependence structure support
+that interpretation.
+
+\subsection{Choosing the target \texorpdfstring{$B$}{B}}
+\label{fr:subsec-choosing-B}
+
+For the empirical gate, $B=\Delta^{\mathrm{cell}}$ yields a statement about the named cell-level
+score.  This target may be an accuracy difference, a macro-averaged score difference, or another
+predeclared scalar.  The population theorem instead concerns $B=\Delta$, the expected zero--one
+risk reduction for a fresh target draw and a fixed binary model pair.  Coverage of the first does
+not entail coverage of the second.
+
+A bridge can be built only by adding an explicit relation.  For example, suppose one event gives
+$|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon$ and another gives
+$|\Delta^{\mathrm{cell}}-\Delta|\le b$.  On their intersection, the triangle inequality gives
+\begin{equation}
+  |\widehat\Delta-\Delta|\le\varepsilon+b.
+  \label{fr:eq-cell-population-bridge}
+\end{equation}
+A probability statement then needs valid coverage levels for both events and an appropriate union
+bound or joint argument.  Without the second event, the extra radius $b$, and their assumptions,
+the empirical interval remains a cell-benefit interval.
+
+Selection and time introduce further distinctions.  Marginal coverage for each of several
+candidates does not automatically cover the candidate selected after inspecting their intervals.
+Pointwise coverage at each time does not control the probability of any error over an indefinite
+sequence.  Reusing outcomes to tune the predictor or radius changes the probability space.  These
+are not defects in the elementary containment proof; they are different statistical targets that
+need stronger premises.
+
+\section{What Must Change to Escape the Impossibility}
+\label{fr:sec-escape}
+
+An escape route must exclude some of the evidence-matched label kernels.  That can happen through a
+new observation or through a narrower class, but the new restriction must be stated at the same
+target level as the desired conclusion.  A useful way to audit a proposed route is to ask three
+questions: What target laws does it remove from the fibre?  Why is that removal credible in the
+deployment domain?  What finite-sample uncertainty remains after the structural restriction is
+accepted?
+
+\subsection{Representative target labels}
+\label{fr:subsec-target-labels}
+
+Labels sampled from the intended target-unit distribution directly reveal target correctness.  In
+the binary setup, labeled observations on $D$ can estimate
+$\E[\eta_a(X)\mid D]$ and hence $M+\gamma$.  Their usefulness depends on disagreement exposure: if
+$D$ is rare, a general target sample can contain few informative labels.  A sampling design that
+targets disagreements may be more efficient, but then its weighting and selection mechanism must
+be accounted for.  In either design, labels replace an identification gap with a sampling problem;
+they do not make uncertainty disappear.
+
+Historical deployment labels can play the same role when the past and future units are connected by
+a defensible sampling or stability model.  The resulting statement is episode- or environment-
+specific.  If conditions can change after calibration, that change requires its own bound or
+monitoring assumption.  The evidence fibre shrinks because the class couples past and future target
+kernels, not because past labels possess universal transfer value.
+
+\subsection{Structural coupling across domains}
+\label{fr:subsec-domain-coupling}
+
+A model may restrict how the target label kernel differs from a source or calibration kernel.  A
+uniform bound on an appropriate conditional discrepancy, a verified invariance, or a mechanistic
+constraint can imply a residual budget.  Such a route is scientifically meaningful when the
+constraint has a domain interpretation and can be stress-tested independently.  Simply naming the
+observed change ``covariate shift'' does not establish the needed equality of conditional label
+laws.
+
+Label-shift models offer another possible restriction: fixed class-conditional feature laws plus a
+changing class prior can make some target quantities recoverable through an evidence operator.  At
+the abstract level, adding informative restrictions cannot enlarge a fibre, as
+Equation~\eqref{fr:eq-fibre-refinement} shows.  Stronger conclusions---including a symmetric
+identified interval, an exact sign frontier, or an if-and-only-if condition---depend on the
+particular operator, feasibility constraints, and invertibility assumptions.  They remain open here
+and are not consequences of monotonicity alone.
+
+\subsection{Additional views and proxy assumptions}
+\label{fr:subsec-additional-views}
+
+Multiple predictions, augmentations, sensors, or independently trained models can supply a richer
+observable $H$.  They help only under a relation between their agreement pattern and correctness.
+Conditional-independence or error-structure assumptions can sometimes provide such a relation, but
+agreement alone is not truth.  A rank pattern may be a useful diagnostic without being a two-sided
+certificate of latent error.  In particular, a small observable residual does not upper-bound an
+unobservable model deviation when the proved inequality goes in the opposite direction.
+
+A domain expert may instead declare a physically meaningful upper bound on the residual.  This is
+not a statistical estimate, but it can be the right object when the mechanism supplies knowledge
+that the data channel cannot.  The decision is then conditional on that declared class.  A good
+report should vary the bound in a sensitivity analysis and explain what evidence would falsify the
+assumption, while avoiding the claim that the unlabeled batch verified it.
+
+\subsection{An assumption ledger for any proposed escape}
+\label{fr:subsec-assumption-ledger}
+
+Before promoting an escape route to a decision rule, its ledger should name: the target population;
+the fixed or adaptively constructed model pair; the exact information available at action time; the
+new structural restriction; the parameter or residual it bounds; the unit over which any coverage
+statement is marginal; and the behavior when a premise cannot be checked.  It should also separate
+identification from estimation.  The first asks what would be known with the evidence distribution
+known exactly.  The second asks how accurately a finite sample recovers the identified object.  A
+rate calculation cannot repair non-identification, while an identification argument does not supply
+a finite-sample rate.
+
+\section{Open Extensions Beyond the Maintained Binary Pair}
+\label{fr:sec-open-extensions}
+
+The following directions are research programs, not additional results claimed by this report.
+Each starts from an identity that remains valid and then states the missing ingredient needed for a
+frontier or certificate.  This format prevents an attractive analogy from being presented as a
+proved extension.
+
+\subsection{Multiclass prediction}
+\label{fr:subsec-multiclass-open}
+
+For multiclass zero--one loss, cancellation outside $D$ still gives
+\begin{equation}
+  \Delta
+  =d\left(p_a-p_0\right),
+  \quad
+  p_a:=\Pr_T(f_a(X)=Y\mid D),
+  \quad
+  p_0:=\Pr_T(f_0(X)=Y\mid D).
+  \label{fr:eq-multiclass-reduction}
+\end{equation}
+The difference from the binary proof is exact: two distinct multiclass predictions may both be
+wrong, so $p_0$ need not equal $1-p_a$.  A useful generalization would model the conditional
+correctness advantage
+\begin{equation}
+  A(x):=\Pr_T(f_a(X)=Y\mid X=x)
+        -\Pr_T(f_0(X)=Y\mid X=x)
+  \label{fr:eq-multiclass-advantage}
+\end{equation}
+and compare it with a label-free proxy $u(x)$.  Defining a proxy mean and a residual yields an
+algebraic decomposition of $\Delta$, and an externally justified residual bound gives an immediate
+outside-band sufficiency statement.  An exact necessity result would require characterizing which
+advantage functions can arise from one multiclass label kernel while all model outputs remain
+fixed.  The feasibility geometry is not the binary interval, so the maintained binary theorem does
+not settle it.
+
+\subsection{Regression and general losses}
+\label{fr:subsec-regression-open}
+
+For a general loss, define the random loss advantage
+\begin{equation}
+  G(X,Y):=\ell(f_0(X),Y)-\ell(f_a(X),Y),
+  \qquad
+  \Delta=\E[G(X,Y)].
+  \label{fr:eq-general-loss-advantage}
+\end{equation}
+If a label-free proxy $t(X)$ is available, the identity
+\begin{equation}
+  \Delta=\E[t(X)]+\E[G(X,Y)-t(X)]
+  \label{fr:eq-general-loss-decomposition}
+\end{equation}
+suggests a margin-plus-residual analysis.  A declared absolute bound on the second term is sufficient
+for a strict sign outside the corresponding band.  Exactness is harder.  It depends on the loss,
+the allowed response distributions, integrability, output bounds, and which label kernels preserve
+the evidence.  Unbounded losses also require tail conditions before a finite residual budget is
+meaningful.  Previously suggested regression brackets and constants are not imported here; a valid
+extension needs a fresh statement and proof under explicit assumptions.
+
+\subsection{More than one candidate}
+\label{fr:subsec-multiple-candidates-open}
+
+With candidates $f_1,\ldots,f_K$, define each benefit relative to the same frozen reference,
+$B_k=R_T(f_0)-R_T(f_k)$ or its cell-level analogue.  Marginally valid intervals for the $K$
+predeclared targets do not automatically remain valid after selecting the candidate with the most
+favorable predicted benefit.  A sound design could reserve independent information for selection
+and evaluation, construct a simultaneous event for all candidates, or use a procedure proved valid
+conditional on the selection rule.  Each choice changes exposure and power.
+
+The population identification problem also changes.  Pairwise model agreements constrain a shared
+label kernel, and the feasible vector $(B_1,\ldots,B_K)$ need not be a product of pairwise intervals.
+Low-rank agreement patterns can suggest structure, but a one-sided fit diagnostic is not an upper
+certificate for violation of that structure.  Nor does pairwise agreement by itself establish
+conditional independence of correctness indicators.  A complete theory would characterize the
+joint feasible benefit set, state the sign anchor that orients it, and prove how an observable test
+controls departures from the assumed model.  Those steps remain open.
+
+\subsection{Sequential and adaptive deployment}
+\label{fr:subsec-sequential-open}
+
+In a sequence, let $\mathcal F_t$ contain all information available before action $g_t$.  The
+candidate at time $t$ may depend on earlier inputs and actions, and an accepted update may become the
+next baseline.  The target $B_t$, its predictor, and its calibration distribution can therefore all
+change with the history.  A marginal guarantee at each fixed time does not imply
+\begin{equation}
+  \Pr\{\text{some false directional action occurs over time}\}\le\alpha.
+  \label{fr:eq-sequential-family-event}
+\end{equation}
+Controlling this event requires a sequential design, such as a valid allocation of error across
+times, a time-uniform confidence sequence, or another supermartingale-based construction, together
+with assumptions robust to the feedback created by adaptation.  Recalibrating on outcomes selected
+because an earlier gate was uncertain can also induce selection bias.
+
+The population fibre becomes history-dependent as well.  New labels can shrink it, while model
+updates and distribution change can redefine the disagreement region and residual.  A sequential
+extension should specify when the declared class is refreshed, what remains fixed between actions,
+and whether safety is required per action, over a finite horizon, or uniformly in time.  The present
+theory and ordinary cell-level interval do not provide that guarantee.
+
+\subsection{A research checklist for extensions}
+\label{fr:subsec-extension-checklist}
+
+An extension is ready to join the maintained theorem stack only after six items are explicit:
+\begin{enumerate}
+  \item the estimand and action semantics;
+  \item the observable evidence and its probability law;
+  \item the admissible target class and feasibility constraints;
+  \item an exact or conservative compatible-value set with a proved construction or bound;
+  \item the statistical premise needed to estimate or cover the intended target; and
+  \item the denominator, selection rule, and time horizon of every error statement.
+\end{enumerate}
+Numerical checks may reveal counterexamples and test algebra, but they do not substitute for these
+items.  Conversely, a population proof does not certify a software pipeline or empirical transfer.
+The value of the K-Bound decomposition is that it makes this division of labor visible: structural
+assumptions determine what can be known, statistical calibration governs finite-sample uncertainty,
+and action semantics determine which claims are made when either layer is inconclusive.

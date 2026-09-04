@@ -1,10 +1,11 @@
 {
   "schema_version": "kbound-claim-ledger-v1",
   "generated_at": "2026-08-29",
+  "generation_identity": "generated_at is the historical evidence-synchronization date retained for downstream compatibility; it is not an artifact-creation timestamp.",
   "claims": [
     {
       "claim_id": "KB-CLAIM-001",
-      "claim_text": "Over the full declared correctness-field target class at a fixed evidence law, a strict adapt or freeze commitment is uniformly supportable iff |M| > beta; in the closed band abstention is the maximal sound three-way action.",
+      "claim_text": "A strict adapt or freeze commitment is uniformly supportable over the declared drift class iff |M| > beta; on |M| <= beta, abstention is the maximal sound three-way action.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "theory_validation",
@@ -25,7 +26,7 @@
         "full admissible class contains the constructed opposite-benefit and zero-benefit target kernels; narrower classes need their own richness premise"
       ],
       "status": "supported",
-      "allowed_wording": "exact strict-commitment frontier over the full declared residual-bounded target class; sufficiency alone for narrower subclasses without richness",
+      "allowed_wording": "strict-commitment frontier over the declared drift class",
       "forbidden_wording": [
         "assumption-free",
         "universal",
@@ -66,7 +67,7 @@
     },
     {
       "claim_id": "KB-CLAIM-003",
-      "claim_text": "For a fixed scalar benefit target and evaluation unit, valid marginal interval coverage implies that each unconditional wrong-direction commitment probability is at most alpha; this does not identify an observed batch outcome with population risk.",
+      "claim_text": "For a fixed declared scalar target B at the declared evaluation unit, valid marginal interval coverage P(|B_hat-B|<=epsilon)>=1-alpha makes the unconditional wrong-direction commitment probability P(g=ADAPT and B<=0) at most alpha. This does not bound P(B<=0 | g=ADAPT) without further conditions and does not identify an observed batch outcome with population risk.",
       "claim_type": "theorem",
       "claim_tier": "A",
       "protocol": "certificate",
@@ -81,12 +82,12 @@
         "kga/certificate.py"
       ],
       "assumptions": [
-        "valid marginal interval coverage for the declared scalar target on the common probability space including fitting, candidate and evaluation randomness",
-        "finite benefit and estimate, measurable nonnegative possibly infinite radius, alpha in (0,1)",
+        "valid marginal interval coverage for the declared scalar target on the common probability space including fitting, candidate, and evaluation randomness",
+        "finite benefit and estimate, measurable nonnegative possibly infinite radius, and alpha in (0,1)",
         "estimate and radius available without the next evaluation unit's labels; exchangeability of the actual scores or another justified calibration argument is needed when using conformal calibration"
       ],
       "status": "supported",
-      "allowed_wording": "coverage-to-action implication for the declared target; empirical cell-outcome protection is not automatic population or repeated-use protection",
+      "allowed_wording": "P(g=ADAPT and B<=0) <= alpha under marginal coverage for B",
       "forbidden_wording": [
         "FA_c <= alpha",
         "guaranteed safe in the wild",
@@ -120,13 +121,13 @@
     },
     {
       "claim_id": "KB-CLAIM-010",
-      "claim_text": "CIFAR-10-C stress grid: Tent and EATA beat both fixed policies in pooled point estimates under the current exact-rank replay, while SAR loses to always-adapt. A retrospective current-policy sensitivity over six corruption families gives Tent positive ordinary family-bootstrap intervals against both baselines, but the p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.09375 for both Tent contrasts; EATA and SAR also fail the two-baseline gate.",
+      "claim_text": "CIFAR-10-C stress grid: Tent and EATA have lower pooled point regret than each fixed policy under the current exact-rank replay, while SAR has higher regret than always-adapt. A retrospective current-policy sensitivity over six corruption families gives Tent positive ordinary family-bootstrap intervals against both baselines, but the p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.140625 versus always-adapt and 0.09375 versus always-freeze; EATA and SAR also fail the two-baseline gate.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "STRESS_GRID_MULTISEED_PROTOCOL_A_v1",
       "dataset": "CIFAR-10-C stress grid",
       "candidate_adapter": "tent,eata",
-      "calibration_method": "loo_gbr + conformal_on_loo_residuals",
+      "calibration_method": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
       "test_split": "per-condition held-out eval within seed",
       "supporting_artifacts": [
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
@@ -152,8 +153,8 @@
       ],
       "current_policy_family_sensitivity": {
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
-        "artifact_bytes": 18964,
+        "artifact_sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
+        "artifact_bytes": 24534,
         "status": "retrospective_current_policy_family_sensitivity",
         "runtime": {
           "python": "3.12.13",
@@ -161,17 +162,25 @@
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
         "live_code_bindings": {
+          "crossfit": {
+            "path": "kga/crossfit.py",
+            "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+          },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
+            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
           },
           "certificate": {
             "path": "kga/certificate.py",
-            "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+            "sha256": "900fc37c4a9c8774e5f092bf359bea931e469ac66566eaa3ef3e5a1350f1bdc5"
           },
           "numeric_validation": {
             "path": "kga/_validation.py",
-            "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
+            "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
+          },
+          "reconciliation": {
+            "path": "scripts/reconcile_result_panels.py",
+            "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
           },
           "preregistered_protocol": {
             "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -180,9 +189,9 @@
         },
         "retrospective_holm_over_six_prospectively_named_contrasts": {
           "raw_p_values": {
-            "tent::always_adapt": 0.03125,
+            "tent::always_adapt": 0.046875,
             "tent::always_freeze": 0.015625,
-            "eata::always_adapt": 0.125,
+            "eata::always_adapt": 0.15625,
             "eata::always_freeze": 0.015625,
             "sar::always_adapt": 0.90625,
             "sar::always_freeze": 0.015625
@@ -191,8 +200,8 @@
             "tent::always_freeze": 0.09375,
             "eata::always_freeze": 0.09375,
             "sar::always_freeze": 0.09375,
-            "tent::always_adapt": 0.09375,
-            "eata::always_adapt": 0.25,
+            "tent::always_adapt": 0.140625,
+            "eata::always_adapt": 0.3125,
             "sar::always_adapt": 0.90625
           },
           "family_size": 6,
@@ -219,13 +228,13 @@
     },
     {
       "claim_id": "KB-CLAIM-011",
-      "claim_text": "ImageNet-C SAR exact-LOO panel has a pooled point estimate below both fixed policies, but the seed-level freeze comparison touches zero and FA_u is 1/135.",
+      "claim_text": "ImageNet-C SAR three-way cross-fit panel has a pooled point estimate below both fixed policies, and both descriptive run-seed gap intervals have positive lower bounds; however, independent checkpoint identities are not recorded for these run seeds; the percentile interval is descriptive and cannot promote a CI-robust claim. FA_u is 0/135.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "imagenetc_protocol_E_v1",
       "dataset": "ImageNet-C",
       "candidate_adapter": "sar_fixed",
-      "calibration_method": "exact_rank_leave_one_condition_out_residual_calibration",
+      "calibration_method": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
       "test_split": "27 cross-fitted conditions per seed x 5 seeds",
       "supporting_artifacts": [
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
@@ -236,7 +245,7 @@
         "seed is the primary inference unit"
       ],
       "status": "no-harm",
-      "allowed_wording": "pooled point-estimate no-harm; no CI-robust beats-both claim",
+      "allowed_wording": "pooled point-estimate no-harm; no confidence-supported two-baseline improvement claim",
       "forbidden_wording": [
         "zero false adaptation",
         "CI-supported beats-both",
@@ -339,7 +348,7 @@
       "status": "withdrawn",
       "allowed_wording": "historical pooled Protocol G headline withdrawn; separate n=18 OOD row is an opened, all-helpful diagnostic",
       "forbidden_wording": "beats both Camelyon17",
-      "artifact_pointer_correction_2026_08_27": "The sealed reconciliation result and verdict are present and hash-verified. They support withdrawal of the pooled Protocol G headline; they do not turn the separate opened OOD row into a prospective or beats-both result."
+      "artifact_pointer_correction_2026_08_27": "The sealed reconciliation result and verdict are present and hash-verified. They support withdrawal of the pooled Protocol G headline; they do not turn the separate opened OOD row into prospective evidence of lower regret than both fixed policies."
     },
     {
       "claim_id": "KB-CLAIM-023",
@@ -361,11 +370,11 @@
         "beats both mixed"
       ],
       "evidence_tier_2026_07_26": "sealed_not_recomputable_from_release",
-      "evidence_tier_note": "The promoted regret triple 0.0000/0.0000/0.1381 (n=18) is recorded ONLY at research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29, a hand-transcribed summary; nothing in the release recomputes it, and the promoted FA_u = 0 is recorded nowhere. SUBMISSION_LEDGER.md section 8a."
+      "evidence_tier_note": "The promoted regret triple 0.0000/0.0000/0.1381 (n=18) is recorded ONLY at research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml:29, a hand-transcribed summary; nothing in the release recomputes it, and the promoted FA_u = 0 is recorded nowhere. Historical context: archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/SUBMISSION_LEDGER.md section 8a."
     },
     {
       "claim_id": "KB-CLAIM-024",
-      "claim_text": "Cross-protocol mixed aggregate (mixed_protocol_oof_v2) beats both fixed policies under per-dataset OOF conformal calibration.",
+      "claim_text": "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "mixed_protocol_oof_v2",
@@ -751,7 +760,7 @@
       ],
       "audit_review_2026_08_31": {
         "classification": "RETAIN_WITH_ASSUMPTIONS; clarify estimands and no automatic label-free bracket",
-        "reason": "The benefit identity and conditional Bonferroni implication are valid. For different candidates define D_k for each pair, or a common D outside which every candidate agrees with the baseline; require positive corresponding mass for strict harm equivalence. No label-free estimation of correctness follows solely from agreement statistics. The source itself leaves general bracketing open at 73–80.",
+        "reason": "The benefit identity and conditional Bonferroni implication are valid. For different candidates define D_k for each pair, or a common D outside which every candidate agrees with the baseline; require positive corresponding mass for strict harm equivalence. No label-free estimation of correctness follows solely from agreement statistics. The source itself leaves general bracketing open at 73\u201380.",
         "record": "docs/research/kbound/audits/research_traceability.json"
       },
       "historical_attempt_artifacts": [
@@ -903,11 +912,11 @@
       ],
       "audit_review_2026_08_31": {
         "classification": "RETAIN_NARROW_PROTOCOL_RESULT; STALE_CLOSURE_SOURCE_AND_ALLOWED_WORDING_MUST_BE_REPLACED",
-        "reason": "The root's fresh strict-core receipt genuinely passes 142 registered declarations, but records full_foundations_scope_complete=false and excludes the historical one-bit/H extension. The cited exact-HEAD closure plan explicitly claims full-foundations PASS and full research closure (3–15), directly contradicting current code/supplement. Strict-core kernel audit does not certify all theorem validators or all historical mathematical prose.",
+        "reason": "The root's fresh strict-core receipt genuinely passes 142 registered declarations, but records full_foundations_scope_complete=false and excludes the historical one-bit/H extension. The cited exact-HEAD closure plan explicitly claims full-foundations PASS and full research closure (3\u201315), directly contradicting current code/supplement. Strict-core kernel audit does not certify all theorem validators or all historical mathematical prose.",
         "record": "docs/research/kbound/audits/research_traceability.json"
       },
       "historical_attempt_artifacts": [
-        "docs/research/kbound/THEORY_100_PERCENT_CLOSURE_PLAN.md",
+        "docs/research/kbound/archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/THEORY_100_PERCENT_CLOSURE_PLAN.md",
         "docs/research/kbound/formal/formal_audit.py",
         "docs/research/kbound/formal/KBound/TheoremMap.lean"
       ]
@@ -940,13 +949,13 @@
     },
     {
       "claim_id": "KB-CLAIM-042",
-      "claim_text": "ImageNet-R Protocol D exact-LOO replay is a negative architecture-panel diagnostic: KGA is worse than always-adapt on 8/10 backbones.",
+      "claim_text": "ImageNet-R Protocol D three-way cross-fit replay is a negative architecture-panel diagnostic: KGA is worse than always-adapt on 8/10 backbones.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "IMAGENETR_PROTOCOL_D_v1",
       "dataset": "ImageNet-R",
       "candidate_adapter": "ten independent ImageNet-1K backbones",
-      "calibration_method": "per-backbone/per-seed exact-rank LOO residual calibration",
+      "calibration_method": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
       "test_split": "12 conditions per backbone per seed",
       "supporting_artifacts": [
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
@@ -1049,7 +1058,7 @@
     },
     {
       "claim_id": "KB-CLAIM-047",
-      "claim_text": "Camelyon17 OOD exact-rank replay is an opened all-helpful diagnostic: KGA adapts on all 18 conditions and ties always-adapt, so it is neither prospective nor beats-both.",
+      "claim_text": "Camelyon17 OOD exact-rank replay is an opened all-helpful diagnostic: KGA adapts on all 18 conditions and ties always-adapt, so it is neither prospective nor lower-regret than both fixed policies.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "CAMELYON17_OOD_ARCHIVED_REPLAY",
@@ -1226,13 +1235,13 @@
     },
     {
       "claim_id": "KB-CLAIM-053",
-      "claim_text": "Camelyon17 B-v2 SAR has lower point regret than both fixed policies in a three-run within-seed replay, but the run seeds do not record independent checkpoint identities and the study is not an untouched hospital-domain evaluation.",
+      "claim_text": "Camelyon17 B-v2 SAR three-way cross-fit has point regret 0.028944227430555556, versus 0.001636646412037037 for always-adapt and 0.1001247829861111 for always-freeze, in a three-run within-seed replay; the run seeds do not record independent checkpoint identities and the study is not an untouched hospital-domain evaluation.",
       "claim_type": "empirical",
       "claim_tier": "B",
       "protocol": "CAMELYON17_B_V2_ARCHIVED_DIAGNOSTIC",
       "dataset": "Camelyon17 B-v2",
       "candidate_adapter": "sar",
-      "calibration_method": "per-candidate/per-run-seed exact-rank leave-one-condition-out residual calibration",
+      "calibration_method": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
       "test_split": "three opened within-seed 36-condition grids",
       "status": "diagnostic",
       "supporting_artifacts": [
@@ -1244,7 +1253,7 @@
         "run seeds are conditional on archived checkpoint identities",
         "independent checkpoint identities are not recorded"
       ],
-      "allowed_wording": "Camelyon17 B-v2 SAR within-seed diagnostic point ordering; no natural-domain or independent-checkpoint promotion",
+      "allowed_wording": "Camelyon17 B-v2 SAR within-seed diagnostic point values; no natural-domain or independent-checkpoint promotion",
       "forbidden_wording": [
         "prospective Camelyon17 win",
         "untouched hospital-domain result",
@@ -1305,17 +1314,17 @@
       ]
     }
   ],
-  "_correction_2026_07_26": "Annotated after an external five-specialist review. This file remains the wording/status authority; its recorded checksum in STORAGE_MANIFEST.json had drifted (F4-15) and has been refreshed. Evidence tiers: SUBMISSION_LEDGER.md section 3.",
+  "_correction_2026_07_26": "Annotated after an external five-specialist review. This file remains the wording/status authority; its recorded checksum in STORAGE_MANIFEST.json had drifted (F4-15) and has been refreshed. Historical evidence-tier discussion: archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/SUBMISSION_LEDGER.md section 3.",
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "canonical_panel_sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
+    "canonical_panel_sha256": "35d4c165843de1ece3cb35ffb4ac50dbfcbfa33b646754e2b6d133fbdfa78c6e",
     "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
-    "source_manifest_sha256": "266ce7cd87ae795e0742d43c40afefef82e82b555baa7dda8c6d270f73e2c031",
+    "source_manifest_sha256": "03b1d2b1e9e5ed1cf835126f871ed83eb8497a1ac81727b3955af0d69eb89742",
     "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "current_policy_family_sensitivity": {
       "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-      "artifact_sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
-      "artifact_bytes": 18964,
+      "artifact_sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
+      "artifact_bytes": 24534,
       "status": "retrospective_current_policy_family_sensitivity",
       "retrospective_six_contrast_holm_gate": "failed_for_all_candidates"
     },
@@ -1323,7 +1332,7 @@
       "cct20": {
         "claim_id": "KB-CLAIM-051",
         "artifact": "docs/research/kbound/paper/generated/cct20_release_manifest.json",
-        "artifact_sha256": "722d2ebbe2d883c7eb173d72af9e4aa4c0a99b1ec320d913bf668f07d28eff48",
+        "artifact_sha256": "2ac7365df0f86eabb284fd0e0646986c4dc1f8f552b3a32f16a2072fdceaf26c",
         "receipt": "docs/research/kbound/paper/generated/cct20_release_manifest.json.receipt.json",
         "verdict": "SAFE_UTILITY_ONLY"
       },
@@ -1361,7 +1370,7 @@
       "confidence_intervals": "ordinary unadjusted family-bootstrap intervals",
       "holm_scope": "six sign-flip p-values only",
       "tent_adjusted_p_values": {
-        "versus_always_adapt": 0.09375,
+        "versus_always_adapt": 0.140625,
         "versus_always_freeze": 0.09375
       },
       "release_verdict": "no candidate passes both baselines at family-wise alpha 0.05; no cluster-robust or confirmatory win",

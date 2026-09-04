@@ -1,22 +1,22 @@
 # K-Bound Claim-To-Artifact Manifest
 
-Date: 2026-08-29
+Generation time: not recorded. Evidence dates belong to the cited authorities and are not file-creation timestamps.
 
 | Claim | Type | Exact requirement | Evidence location | Caveat |
 |---|---|---|---|---|
 | Interior matched-evidence impossibility | theorem | `beta>0`, `|M|<beta`, and a rich class containing the constructed label kernels | `paper/sections/theory_core_main.tex`; `formal/KBound/Frontier.lean` | Opposite nonzero signs are interior-only |
 | Closed-band abstention | theorem | Strict directional soundness over the rich declared class | same theory source and Lean frontier declarations | Boundary may pair zero with one strict sign |
 | Exact strict-commitment frontier | theorem | Valid declared bound `|gamma|<=beta`, fixed augmented evidence, and class richness for necessity | Theorem in shared source; `distributional_frontier_maximal` | No robust commitment if no credible beta is supplied |
-| Marginal FA_u certificate | theorem | `P(|Delta_hat-Delta|<=epsilon)>=1-alpha` at the declared inference unit | `paper/sections/theory_certificate.tex`; Lean measure containment | Does not control FA_c |
+| Marginal FA_u certificate | theorem | `P(|B_hat-B|<=epsilon)>=1-alpha` for one predeclared scalar target `B` and evaluation unit | `paper/sections/theory_certificate.tex`; Lean measure containment | Does not control FA_c; empirical cell coverage is not population-risk coverage |
 | Population-to-KGA bridge | theorem/method | Shared target `Delta`; separately justified operational class and coverage | `paper/sections/theory_algorithm_bridge.tex`; `frontier_kga_bridge_v1/bridge_results.json` | Controlled algebraic check only; KGA does not estimate M, gamma, or beta |
-| CIFAR-10-C Tent routing | empirical | Five run seeds conditional on one archived checkpoint, controlled grid, candidate-specific calibration | canonical JSON, current-policy family-sensitivity artifact, and compact Tables 4-5 | Current exact-rank point win; retrospective ordinary intervals are positive over six families, but retrospective Holm over the six prospectively named contrasts gives $p=0.09375$ for both contrasts; no cluster-robust or confirmatory win |
-| CIFAR-10-C EATA routing | empirical | Same controlled protocol | same current artifacts and compact Tables 4-5 | Current exact-rank point win; adapt-side family interval crosses zero and retrospective six-contrast Holm does not support a confirmatory win |
+| CIFAR-10-C Tent routing | empirical | Five run seeds conditional on one archived checkpoint, opened controlled grid, cell-outcome-disjoint three-way cross-fit | canonical JSON, current-policy family-sensitivity artifact, `tab:cifar-primary`, `tab:cifar-interval-diagnostics`, and `tab:cifar-family-sensitivity` | Current exact-rank point regret is lower than each fixed-policy regret; retrospective ordinary intervals are positive over six families, but retrospective Holm over the six prospectively named contrasts gives $p=0.140625$ against always-adapt and $p=0.09375$ against always-freeze; no cluster-robust or confirmatory win |
+| CIFAR-10-C EATA routing | empirical | Same controlled protocol | same current artifacts and the same three semantic table labels | Current exact-rank point regret is lower than each fixed-policy regret; adapt-side family interval crosses zero and retrospective six-contrast Holm does not support a confirmatory win |
 | CIFAR-10-C SAR negative | empirical | Completed five-seed exact-rank rebuild | canonical JSON | Zero false adapt but loses to always-adapt |
-| ImageNet-C authoritative panel | empirical | 27 conditions per seed, five seeds, exact LOO replay | canonical JSON and ImageNet-C tables | Candidate dependent; SAR point-only |
+| ImageNet-C authoritative panel | empirical | 27 conditions per run seed, five run seeds, cell-outcome-disjoint three-way cross-fit | canonical JSON and ImageNet-C tables | Candidate dependent; SAR has 0/135 false adaptations and favorable descriptive run-seed intervals, but independent checkpoint identities are absent, so no CI-robust promotion |
 | Office-Home primary/replication | empirical/diagnostic | Archived split and source-hashed records replayed under the release-locked numerical runtime | canonical JSON | Primary ties freeze with zero adapts; replication has a tiny point edge whose test-stream CI includes zero |
 | Office-Home five-checkpoint candidate audit | invalidated diagnostic | Five distinct checkpoint hashes; post-hoc fixed-candidate accuracy comparison only | `KBOUND_OFFICEHOME_INDEPENDENT_CHECKPOINT_AUDIT_2026-08-27.md`; data-quality audit | Checkpoint identity passed, but the multicandidate route is invalid: binary-theory mismatch, sign/unbounded estimator, inadequate exact-rank calibration, duplicate candidate predictions, and invalid JSON |
 | iWildCam numerical row | withheld | Pinned rerun using the official WILDS label-present macro-F1 contract and a sealed population manifest | archived canonical records plus data-quality audit | Stored sklearn macro-F1 values are not promoted; diagnostic recomputation gives KGA/adapt/freeze regret 0.005511/0.074502/0.005511, but runtime and population differ |
-| Historical iWildCam beats-both flag | diagnostic/superseded | Reconcile archived radius and metric contract | canonical JSON `historical_reconciliation` and hashed historical artifact | Both the old narrow win and cross-fitted replay use the wrong archived metric; neither is promoted |
+| Historical iWildCam two-baseline-improvement flag | diagnostic/superseded | Reconcile archived radius and metric contract | canonical JSON `historical_reconciliation` and hashed historical artifact | Both the old narrow win and cross-fitted replay use the wrong archived metric; neither is promoted |
 | Camelyon17 OOD one-sided diagnostic | diagnostic | Archived opened OOD evaluation row | canonical JSON | Already opened, all cells helpful, and always-adapt is oracle-equivalent; not prospective or untouched evidence |
 | Camelyon17 B-v2 SAR | diagnostic | Three within-seed grids | canonical JSON | Not an untouched hospital-domain win |
 | RxRx1 freeze behavior | empirical | Three source checkpoints in supporting artifacts; canonical displayed panel | canonical JSON and repetition table | Endpoint no-harm, zero adapt exposure |
@@ -28,9 +28,9 @@ Date: 2026-08-29
 | POEM/AETTA comparison | historical empirical port | Protocol-matched archived port with fixed thresholds and an earlier KGA policy | archived head-to-head artifact; compact historical-context paragraph | Not official implementations; current-policy recomputation pending; confidence intervals are unadjusted and Holm applies only to archived p-values |
 | Constructed heterogeneous mixture | pending | Replay from reconciled components under one prospective protocol | historical artifacts only | Not promoted as a natural win |
 | Universal improvement | not claimed | Would require broad held-out dominance | limitations and claim ledger | Contradicted by negative rows |
-| Single-dataset natural CI-robust beats-both | not claimed | Untouched natural environments and robust inference | remaining-work protocol | No current track meets the bar |
+| Single-dataset natural confidence-supported two-baseline improvement | not claimed | Untouched natural environments and robust inference | remaining-work protocol | No current track meets the bar |
 | Real-camera validation | pending | Fresh locked physical sessions and publication gate | `edge/` protocol and runbook | Templates and demos are not evidence |
-| Unopened natural target audit dated 2026-08-24 | diagnostic/superseded | Point-in-time search for an eligible untouched target | `natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json` | Historical audit only: CCT-20 was subsequently executed prospectively; So2Sat remains target-unopened because its development gate stopped. Neither provides a natural beats-both routing win |
+| Unopened natural target audit dated 2026-08-24 | diagnostic/superseded | Point-in-time search for an eligible untouched target | `natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json` | Historical audit only: CCT-20 was subsequently executed prospectively; So2Sat remains target-unopened because its development gate stopped. Neither provides a natural routing result with lower regret than both fixed policies |
 | Exact split-conformal confirmation | pending | Sealed disjoint fit/calibration/test unit manifest and one-pass execution | `research_lock/KBOUND_EXACT_CONFIRMATION_UNSEALED_v1.json` | Draft manifest only; no result claimed |
 | Official baseline provenance | diagnostic | Pinned clean upstream source and complete successful native logs | `official_repro_v1/OFFICIAL_BASELINE_AUDIT.json` | AETTA and POEM remain protocol-matched ports |
 
@@ -65,9 +65,9 @@ historical comparison; these families are not pooled.
 12. `docs/research/kbound/kbound_submission.tex` and `docs/research/kbound/kbound_tmlr.tex`
 13. maintained compact and synchronized long PDFs
 
-Both maintained PDF drivers consume the same `kbound_submission_body.tex`. The stale
-`kbound_short_body.tex` and `kbound_short_appendix.tex` are excluded from the current generation
-chain.
+Both maintained PDF drivers consume the same `kbound_submission_body.tex`. Superseded body and
+appendix variants are excluded from the current generation chain and indexed byte-for-byte in
+`archive/legacy_publication_surfaces_2026-09-02/MANIFEST.json`.
 
 `src/scripts/validate_manuscript_claims.py` enforces required distinctions and rejects known stale
 counts and overclaim phrases in live LaTeX.

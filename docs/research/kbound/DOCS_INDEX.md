@@ -1,6 +1,6 @@
 # K-Bound research map
 
-**Reviewed 2026-08-31.** Start here for the maintained claims, their evidence, and their limits.
+**Reviewed 2026-09-03.** Start here for the maintained claims, their evidence, and their limits.
 The full audit is [research_traceability.json](audits/research_traceability.json).
 Older status documents and successful numerical validators do not establish theorem closure.
 
@@ -35,7 +35,7 @@ foundational layer or establish that empirical calibration assumptions hold.
 
 | Evidence | Authority | Honest interpretation |
 |---|---|---|
-| CIFAR-10-C Tent/EATA/SAR | [Canonical panel](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json), [current-policy sensitivity](../../../experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json) | Tent/EATA have lower pooled point-estimate regret than both fixed policies; SAR favors always-adapt. Tent's retrospective six-contrast Holm-adjusted p-values are 0.09375. No confirmatory routing result. |
+| CIFAR-10-C Tent/EATA/SAR | [Canonical panel](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json), [current-policy sensitivity](../../../experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json) | Tent/EATA have lower pooled point-estimate regret than both fixed policies; SAR favors always-adapt. Tent's retrospective six-contrast Holm-adjusted values are 0.140625 against always-adapt and 0.09375 against always-freeze. No confirmatory routing result. |
 | Interval quality and action exposure | [Interval diagnostics](paper/generated/current_policy_interval_diagnostics.json) | 2,160 cells per candidate; retrospective inclusion, widths, and false-direction counts. Rank-based observed inclusion is not new independent coverage evidence. |
 | Controlled two-view MNIST (D33) | [Results](../../../experiments/kbound/results/controlled_multimodal_d33/results.json), claim KB-CLAIM-027 | 130 conditions: 9 ADAPT, 119 FREEZE, 2 ABSTAIN. Recorded mean accuracy is 85.6785%, versus 85.3554% single-A and 58.3231% always-fuse. Zero observed false ADAPT among only nine ADAPT decisions does not establish a small conditional error rate. Controlled injected corruption, not a natural-shift result; absent from the maintained paper. |
 | Population/empirical decision bridge | [Seven-example bridge](../../../experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json), claim KB-CLAIM-043 | Five agreements and two disagreements show why the two APIs are related but have different abstention sets. A controlled algebraic diagnostic, not a real-data beta estimator. |
@@ -44,10 +44,12 @@ foundational layer or establish that empirical calibration assumptions hold.
 | Other natural studies | [Result audit](KBOUND_SHORT_RESULT_AUDIT.md), [claim manifest](KBOUND_SHORT_CLAIM_MANIFEST.md) | Office-Home, Camelyon17 OOD, RxRx1, PACS, ImageNet-R and CIFAR-10.1 have differing diagnostic/retention roles. The iWildCam numerical/action row remains withheld; fMoW is not cleared and PovertyMap stopped before held-out evaluation. |
 
 The historical `three_source_oof` block in
-[the table manifest](paper/generated/kbound_result_manifest.json) still carries a stale positive CI
-verdict. KB-CLAIM-024 correctly treats this as a historical constructed aggregate requiring a
-reconciled rerun. Do not promote that block; correcting its generator and adding a regression guard
-remains open. The maintained paper does not claim that aggregate as a natural win.
+[the table manifest](paper/generated/kbound_result_manifest.json) is now generated from the live
+KB-CLAIM-024 authority as a historical diagnostic: its numeric record and raw-evidence linkage are
+preserved, the retired nine-track seal is archive-qualified, and current-policy, numeric-release,
+and headline-promotion eligibility are all false. The compatibility results source is regenerated
+from that table. A reconciled per-track rerun remains required; the maintained paper makes no
+current CI-supported, natural-shift, or transfer claim from this aggregate.
 
 ### Useful theory outside the paper—not a queue of ready-made theorems
 
@@ -66,42 +68,42 @@ remains open. The maintained paper does not claim that aggregate as a natural wi
   local named Lean proofs and 103 exact certificates. Its ledger explicitly forbids promotion into
   K-Bound: most of its proposed research program and novelty assessment remain open.
 
-## Current software and release gaps
+## Current software and release status
 
-The root distribution publishes `kga` and `kga.*`. The hardened core decision path and focused
-HTTP checks pass, but this does **not** make all shipped wrappers safe:
+The fail-open cases previously listed here are now closed in the maintained surface. The public
+decision helpers, experiment shim, KGA/ELARA integrations, promotion assessor, baseline converter,
+release wrappers, checksum/source-seal readers, and So2Sat target boundary reject missing,
+malformed, masked, non-finite, partial, duplicate-key, stale, or forged inputs. Insufficient
+evidence remains `ABSTAIN` and retains the frozen model; it is not relabelled as certified
+`FREEZE`. The dated machine-readable audit is
+[`maintained_wrapper_fail_closed_audit_2026_09_02.json`](audits/maintained_wrapper_fail_closed_audit_2026_09_02.json),
+with its human-readable companion
+[`MAINTAINED_WRAPPER_FAIL_CLOSED_AUDIT_2026_09_02.md`](audits/MAINTAINED_WRAPPER_FAIL_CLOSED_AUDIT_2026_09_02.md).
 
-1. [Experiment shim](scripts/kbound_decide.py): masking can be lost; errors can fall through to
-   comparisons that certify infinite estimates or negative radii.
-2. [Public assumption helpers](../../../kga/assumptions.py): masked calibration can produce a
-   zero radius and a “certify” gate; empty calibration can raise a formatting exception.
-3. [ELARA integration](../../../kga/integrations/elara.py): the artifact's own protocol/schema
-   identity is supplied as its expected identity; masked inputs and non-JSON-safe infinity remain.
-4. [Promotion assessor](../../../kga/integrations/claims.py): malformed Boolean, failure-list, and
-   probability metadata can be accepted.
-5. The historical [prototype](kbound_pkg/README.md) and edge adapter paths have further legacy
-   contract gaps. Gradient scaling is not parameter-preserving FREEZE. Compatibility tests do not
-   certify deployment safety.
-
-These failures were reproduced with synthetic fixtures, without opening target data. They do not
-by themselves show that the existing finite-valued canonical panel is numerically wrong. They are
-release blockers until corrected and covered by regression tests.
-
-The full isolated audit ran 130 test modules. It is not a clean-checkout release: missing data,
-Git/cache context, stale assertions, and a native OpenMP problem are reported separately from
-passing tests and reproduced software bugs. See the machine audit for exact counts and logs.
+This closure is scoped to the dynamically inventoried maintained entry points. Archived historical
+writers remain non-executable evidence, and a newly tracked wrapper or validator fails repository
+classification until it is reviewed. It also does not, by itself, certify the numerical truth of
+the canonical empirical panel. The final clean-commit, full-repository execution receipt, rebuilt
+publication artifacts, source seal, and independently verified checksums remain release gates.
 
 ## Maintained artifacts and authoritative inputs
 
 | Read/build | Maintained path |
 |---|---|
-| Compact submission | [kbound_submission.tex](kbound_submission.tex), [PDF](kbound_short_final_draft.pdf), [Word](kbound_short_final_draft.docx) |
-| Synchronized long companion | [kbound_tmlr.tex](kbound_tmlr.tex), [PDF](kbound_tmlr.pdf) |
-| Shared manuscript | [Body](kbound_submission_body.tex), [supplement](kbound_submission_supplement.tex); the recursive live closure has 23 TeX inputs |
+| Named compact main paper (20--28 page, double-column target; main argument and references only) | [kbound_short_main.tex](kbound_short_main.tex), [current PDF](release/current/kbound_short_main.pdf) |
+| Named standalone supplement (Appendices A--N; independent of the main paper's page numbers and auxiliary file) | [kbound_short_supplement.tex](kbound_short_supplement.tex), [current PDF](release/current/kbound_short_supplement.pdf) |
+| Anonymous integrated TMLR review manuscript | [kbound_tmlr.tex](kbound_tmlr.tex), [current PDF](release/current/kbound_tmlr.pdf) |
+| Named full technical report (current theory, evidence, proof, and reproducibility record) | [kbound_full_report.tex](kbound_full_report.tex), [current PDF](release/current/kbound_full_report.pdf) |
+| Nonrelease combined comparison artifact | [kbound_submission.tex](kbound_submission.tex), [local comparison build](kbound_short_final_draft.pdf) |
+| Shared manuscript | [Body](kbound_submission_body.tex), [supplement](kbound_submission_supplement.tex); the recursive live closure has 30 TeX inputs |
+| Current publication checksum manifest | [KBOUND_CURRENT_SHA256SUMS.txt](release/current/KBOUND_CURRENT_SHA256SUMS.txt); `release/current/` and `output/pdf/` contain the same four role-distinct current PDFs |
 | Current claim wording | [claim_ledger.json](claim_ledger.json); theorem entries were reviewed against actual proofs in this audit |
 | Canonical panel provenance | [source_manifest.json](../../../experiments/kbound/results/reconciled_panels_v1/source_manifest.json), [Phase-1 audit](KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md) |
 | Current full audit | [research_traceability.json](audits/research_traceability.json) |
 | Reproduction and publication checklist | [REPRODUCE.md](REPRODUCE.md), [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md), [data acquisition](../../../DATA.md) |
+| Superseded empirical authorities and retired entry points (not current authority) | [2026-09-02 archive](archive/superseded_empirical_authorities_2026-09-02/README.md), [retired-surface guide](archive/superseded_empirical_authorities_2026-09-02/RETIRED_SURFACES_README.md), and their byte manifests |
+| Legacy publication surfaces (not current authority) | [107-file archive](archive/legacy_publication_surfaces_2026-09-02/README.md) and its [byte manifest](archive/legacy_publication_surfaces_2026-09-02/MANIFEST.json) |
+| Historical publication builds (not deliverables) | [2026-09-02 archive](archive/stale_publication_builds_2026-09-02/README.md) and its byte manifest |
 
 This audit does not rebuild the PDFs/Word file or manufacture a clean-source release seal.
 [The prior revision receipt](audits/revision_verification_2026_08_31.json) and
@@ -125,6 +127,13 @@ component checks above and it does not launch training.
 
 ## Documentation cleanup
 
+The 2026-09-02 authority cleanup also retired three duplicate or obsolete reproduction notebooks,
+the historical G5/showcase/full-panel launchers, the unbannered WIN_HUNT v4/v5 copy-paste
+runsheets, and the subjective 85+ readiness route. Their baseline bytes are in the
+superseded-authority archive. Compatibility launchers now fail closed; the maintained notebook
+entry point is `notebooks/00_KBound_Master_Guide.ipynb`, and release verification runs only through
+`runbooks/release_candidate.sh all`.
+
 Eight superseded process documents were removed from the active tree only after byte-for-byte
 recovery verification. Their paths, SHA-256 hashes, reasons, replacement authorities, and recovery
 archive name are in [the audit](audits/research_traceability.json). The recovery archive lives
@@ -136,19 +145,18 @@ Removed: the old manuscript strategy, two completed/obsolete cleanup plans, thre
 No dataset, checkpoint, proof, TeX source, implementation, unique derivation, sealed protocol,
 or unreadable cloud placeholder was deleted.
 
-Retained but **not current authority**:
+The same review moved 107 superseded paper drivers, body/appendix variants, book-narrative files,
+status/plan/report documents, panel-review prose, obsolete scripts, and stale snapshots into the
+[legacy-publication archive](archive/legacy_publication_surfaces_2026-09-02/README.md). The
+[deterministic manifest](archive/legacy_publication_surfaces_2026-09-02/MANIFEST.json) records every
+original path, replacement authority, byte count, and SHA-256 digest. These files remain readable
+as history but cannot override this map, the claim ledger, either maintained driver, or the release
+runner.
 
-- `THEORY_TO_CODE_MAP.md`, `THEORY_100_PERCENT_CLOSURE_PLAN.md`, and
-  `PROJECT_STATUS_AND_OPEN_PROBLEMS.md`: contain obsolete closure/status assertions; do not use
-  them to override this map or the active theorem statements.
-- `KBOUND_EMPIRICAL_AND_RELEASE_CLOSURE_PLAN.md`: executed in part and superseded as current
-  status, not an active blanket work order.
-- `KBOUND_REMAINING_TODOS.md`: preserves calibration/leakage correction history and still has
-  incoming references.
-- `reports/THEORY_AUDIT_FULL.md`: generated by a historical checker with stale fixed expectations;
-  not a current proof-completeness gate.
-- Audit receipts, research locks, unique failed attempts, reproducibility instructions, and
-  download scripts still needed to obtain data: retained for scientific reproducibility.
+Retained live but **not current authority**: audit receipts, research locks, unique derivations and
+failed attempts, raw recomputation evidence, formal sources, sealed protocols, and the
+reproducibility/download material needed to obtain data. They were deliberately excluded from the
+legacy-publication archive.
 
 [Audit-history rules](audits/README.md) explain how dated records are kept separate from current
 evidence. No old cleanup plan authorizes further deletion.

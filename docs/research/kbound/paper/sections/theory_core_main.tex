@@ -2,6 +2,10 @@
 
 \subsection{Benefit Reduction and Matched-Evidence Impossibility}
 
+The first result connects the decision target to the three population symbols. Agreement outside
+$D$ contributes no risk difference. Binary complementarity on $D$ then makes the sign of benefit
+depend only on $M+\gamma$.
+
 \begin{lemma}[Disagreement-region reduction]\label{lem:reduction}
 Under Assumption~\ref{ass:deploy}, with $\bar a:=\Pr_T(f_a{=}Y\mid D)$,
 \begin{align*}
@@ -12,134 +16,162 @@ The identity $\sign\Delta=\sign(M+\gamma)$ holds for \emph{every} target law; it
 assume $|\gamma|\le\beta$.
 \end{lemma}
 \begin{proof}
-On $D$ exactly one of $f_0,f_a$ is correct under $0/1$ loss, so the benefit equals
-$2\mu_T(D)(\bar a-\tfrac12)$. By the definitions of $M$ and $\gamma$,
+Outside $D$, the two predictors agree and incur the same $0/1$ loss. On $D$, exactly one is
+correct. The adapted and frozen accuracies conditional on $D$ are therefore $\bar a$ and
+$1-\bar a$. Hence $\Delta=2\mu_T(D)(\bar a-\tfrac12)$. The definitions of $M$ and $\gamma$ give
 \begin{align*}
 M+\gamma
 &=\Bigl(\E_{\mu_T\mid D}[s]-\tfrac12\Bigr)
   +\E_{\mu_T\mid D}[\eta_a-s]\\
 &=\E_{\mu_T\mid D}[\eta_a]-\tfrac12
- =\bar a-\tfrac12,
+ =\bar a-\tfrac12.
 \end{align*}
-so $\sign\Delta=\sign(\bar a-\tfrac12)=\sign(M+\gamma)$.
+Because $\mu_T(D)>0$, the three quantities have the same sign.
 \end{proof}
+
+The reduction tells us which hidden quantity controls the sign. The harder question is
+identification. Can two target worlds agree on every permitted observation while assigning
+opposite signs to $\Delta$? Inside the declared band, the answer is yes.
 
 \begin{theorem}[Interior matched-evidence impossibility]\label{lem:nonid}
-Fix $\beta>0$. For any feasible margin $M\in[-\tfrac12,\tfrac12]$ with $|M|<\beta$ there exist
-$P_T^1,P_T^2\in\mathcal{C}_\beta$ such
-that $\Law(\widetilde Z\mid P_T^1)=\Law(\widetilde Z\mid P_T^2)$ for
-$\widetilde Z=(Z,M)$, $M(P_T^1)=M(P_T^2)=M$, and
-$\sign\Delta_1=-\sign\Delta_2\neq0$. (For $\beta=0$ the class
-$\mathcal{C}_0$ forces $\gamma=0$, so $\sign\Delta=\sign M$
-is determined and no such pair exists: matched-evidence ambiguity requires a positive
-declared residual bound.)
+Fix $\beta>0$. For any feasible margin $M\in[-\tfrac12,\tfrac12]$ with $|M|<\beta$, there exist
+$P_T^+,P_T^-\in\mathcal{C}_\beta$ with the following properties:
+\begin{gather*}
+  \Law(\widetilde Z\mid P_T^+)=\Law(\widetilde Z\mid P_T^-),\\
+  M(P_T^+)=M(P_T^-)=M,\\
+  \sign\Delta_+=-\sign\Delta_-\ne0,
+\end{gather*}
+where $\widetilde Z=(Z,M)$. If $\beta=0$, then $\mathcal C_0$ forces $\gamma=0$ and
+$\sign\Delta=\sign M$; matched-evidence ambiguity therefore requires $\beta>0$.
 \end{theorem}
 \begin{proof}
-This is Lemma~\ref{lem:fibre} read at one radius. Choose
-$0<\delta<\min\{\beta-|M|,\tfrac12\}$ and apply the lemma with the two constant kernels
-$\eta\equiv\tfrac12+\theta\delta$, $\theta\in\{+1,-1\}$, holding the off-$D$ kernel $K^\circ$
-common to both worlds. The lemma supplies the two laws $P_T^\theta$, and:
-\emph{class membership,} $\bar a_\theta=\tfrac12+\theta\delta$ so
-$\gamma_\theta=\theta\delta-M$ with $|\gamma_\theta|\le\delta+|M|<\beta$, hence both worlds lie
-in $\mathcal C_\beta$; \emph{matched evidence,} $\Law(W\mid P_T^\eta)$ does not depend on $\eta$
-by the lemma and $\widetilde Z=(Z,M)$ is a function of $W$, so
-$\Law(\widetilde Z\mid P_T^{+})=\Law(\widetilde Z\mid P_T^{-})$; \emph{opposite signs,}
-Lemma~\ref{lem:reduction} gives $\Delta_\theta=2\mu_T(D)\,\theta\delta\neq0$ with
-$\sign\Delta_\theta=\theta$.
+Choose $0<\delta<\min\{\beta-|M|,\tfrac12\}$. For
+$\theta\in\{+1,-1\}$, apply Lemma~\ref{lem:fibre} with the constant correctness kernel
+\[
+  \eta_\theta(x)=\tfrac12+\theta\delta,\qquad x\in D,
+\]
+and use the same fixed label kernel outside $D$. Denote the resulting target law by
+$P_T^\theta$. The input marginal, predictors, score, and source law are fixed, so $M$ is the
+same under $P_T^+$ and $P_T^-$. Lemma~\ref{lem:fibre} also gives the same law of $Z$ in the two
+worlds. Consequently,
+$\Law(\widetilde Z\mid P_T^+)=\Law(\widetilde Z\mid P_T^-)$ for
+$\widetilde Z=(Z,M)$.
+
+It remains to verify class membership and the benefit signs. Under $P_T^\theta$,
+$\bar a_\theta=\tfrac12+\theta\delta$ and
+\[
+  \gamma_\theta=\theta\delta-M,
+  \qquad
+  |\gamma_\theta|\le\delta+|M|<\beta.
+\]
+Thus both laws belong to $\mathcal C_\beta$. Lemma~\ref{lem:reduction} yields
+$\Delta_\theta=2\mu_T(D)\theta\delta$. The two benefits are nonzero and have opposite signs.
 \end{proof}
-\noindent The two evidence laws here coincide \emph{exactly}, not merely approximately: the
-construction changes only the label kernel on $D$, and $Z$ is a function of unlabeled inputs and
-model outputs. We therefore do not present this as a Le Cam two-point argument. A Le Cam argument
-trades off a positive total-variation distance against the achievable error; here the distance is
-zero, which is the degenerate and strongest case, and the corresponding statement is exact
-non-identifiability rather than a rate.
+\noindent The two evidence laws coincide exactly because only the label kernel on $D$ changes.
+This is not a rate-based Le Cam argument. Their total-variation distance is zero, so the conclusion
+is exact non-identifiability rather than a lower bound that varies with separation.
+
+Randomization cannot resolve two worlds that induce exactly the same evidence law. A controller
+that limits both directional errors must instead leave most of its probability on ABSTAIN.
 
 \begin{corollary}[Matched-evidence abstention lower bound]\label{cor:matched-abstain}
-Fix $\alpha\in(0,\tfrac12)$. On the shared evidence law constructed in
-Theorem~\ref{lem:nonid}, any possibly randomized label-free rule $g$ satisfying
-$\Pr[g=\adapt,\Delta\le0]\le\alpha$ in every admissible world and
-$\Pr[g=\freeze,\Delta\ge0]\le\alpha$ in every admissible world must satisfy
-$\Pr[g=\abstain]\ge1-2\alpha$.
+Fix $\alpha\in(0,\tfrac12)$ and the shared evidence law from Theorem~\ref{lem:nonid}. Let $g$ be
+any possibly randomized label-free rule. If, in every admissible world,
+\begin{align*}
+  \Pr[g=\adapt,\Delta\le0]&\le\alpha,\\
+  \Pr[g=\freeze,\Delta\ge0]&\le\alpha,
+\end{align*}
+then $\Pr[g=\abstain]\ge1-2\alpha$.
 \end{corollary}
 \begin{proof}
-The rule has the same action probabilities in the two evidence-identical worlds. Its adapt
-probability is at most $\alpha$ in the negative world and its freeze probability is at most
-$\alpha$ in the positive world. The three action probabilities sum to one.
+The rule has the same action probabilities in both worlds. Its ADAPT probability is at most
+$\alpha$ in the negative world. Its FREEZE probability is at most $\alpha$ in the positive world.
+The three action probabilities sum to one.
 \end{proof}
 
 \subsection{Boundary Case}
 
+The interior construction gives opposite nonzero signs. The boundary needs a separate argument:
+one evidence-compatible world with zero benefit is already enough to defeat a uniform strict claim.
+
 \begin{proposition}[Boundary case and closed-band abstention]\label{prop:closed-band}
 Fix $\alpha\in(0,\tfrac12)$. Under Definition~\ref{def:strict-sound}, abstention is the pointwise
-maximal sound three-way action throughout the closed band $|M|\le\beta$, and any label-free rule
-controlling both marginal errors at level $\alpha$ abstains there with probability at least
-$1-2\alpha$. Opposite nonzero signs are asserted only in the interior $|M|<\beta$.
+maximal sound action throughout $|M|\le\beta$. Any label-free rule that controls both marginal
+directional errors at level $\alpha$ must abstain there with probability at least $1-2\alpha$.
+Opposite nonzero benefit signs are asserted only when $|M|<\beta$.
 \end{proposition}
 \begin{proof}
-For $|M|<\beta$ this is Theorem~\ref{lem:nonid} together with
-Corollary~\ref{cor:matched-abstain}. For $|M|=\beta>0$, the declared class contains an
-augmented-evidence-identical zero-benefit world (take $\gamma=-M$, admissible since
-$|\gamma|=\beta$) and a strict-benefit world of sign $M$ (take $\gamma=0$). In the zero-benefit world
-$\Delta=0$, so \emph{both} directional error events $\{\adapt,\Delta\le0\}$ and
-$\{\freeze,\Delta\ge0\}$ occur whenever the rule commits; since the rule's action
-probabilities are identical across the two evidence-identical worlds, dual control at level $\alpha$
-gives $\Pr[\adapt]\le\alpha$ and $\Pr[\freeze]\le\alpha$, hence
-$\Pr[\abstain]\ge1-2\alpha$, and neither strict action is uniformly directionally sound.
-For $M=\beta=0$ the class $\mathcal C_0$ forces $\gamma=0$, so $\Delta\equiv0$ and the same
-conclusion holds directly.
+For $|M|<\beta$, apply Theorem~\ref{lem:nonid} and
+Corollary~\ref{cor:matched-abstain}.
+
+Now suppose $|M|=\beta>0$. The declared class contains a zero-benefit world with $\gamma=-M$ and
+a strict-benefit world with $\gamma=0$. These worlds have the same augmented-evidence law. In the
+zero-benefit world, both directional error events occur whenever the rule commits. Dual error
+control therefore gives $\Pr[\adapt]\le\alpha$ and $\Pr[\freeze]\le\alpha$. It follows that
+$\Pr[\abstain]\ge1-2\alpha$, and neither strict action is uniformly sound.
+
+Finally, if $M=\beta=0$, then $\mathcal C_0$ forces $\gamma=0$ and $\Delta\equiv0$. The same
+conclusion follows directly.
 \end{proof}
-\noindent This directional convention is stricter
-than task regret: at $\Delta=0$, adapt and freeze are risk-equivalent but neither certifies a strict
-sign.
+\noindent This convention is stricter than task regret. When $\Delta=0$, adapt and freeze are
+risk-equivalent, but neither certifies a strict sign.
 
 \subsection{Exact Strict-Commitment Frontier}
 
+We can now answer the population question completely. The theorem separates four jobs: reduction,
+sufficiency outside the band, necessity inside the band, and maximality of the resulting rule.
+
 \begin{theorem}[Exact strict-commitment frontier]\label{thm:headline}\label{thm:frontier}
-Under Assumption~\ref{ass:deploy}, fix the observables $(\mu_T,P_S,f_0,f_a,s)$ so $M$ is
-determined, and let $\beta\ge0$. The necessity and maximality clauses use the full class
-$\mathcal C_\beta$ and therefore its richness: it contains the evidence-identical label kernels
-constructed in Theorem~\ref{lem:nonid} and the zero-benefit boundary law. For a narrower declared
-subclass not closed under these constructions, only the sufficiency clause follows without an
-additional richness assumption.
+Under Assumption~\ref{ass:deploy}, fix $(\mu_T,P_S,f_0,f_a,s)$ so that $M$ is determined. Let
+$\beta\ge0$. Necessity and maximality use the full, rich class $\mathcal C_\beta$. In particular,
+that class contains the evidence-identical kernels from Theorem~\ref{lem:nonid} and the zero-benefit
+boundary law. For a narrower subclass not closed under these constructions, only sufficiency
+follows without an additional richness assumption.
 \begin{enumerate}
 \item[\textnormal{(i)}] \textbf{Reduction.} For every $P_T$, $\sign\Delta=\sign(M+\gamma)$
 (Lemma~\ref{lem:reduction}).
 \item[\textnormal{(ii)}] \textbf{Sufficiency.} If $|M|>\beta$ and $P_T\in\mathcal{C}_\beta$, then
 $\sign\Delta=\sign M$.
-\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$ (which requires $\beta>0$), there exist
-$P_T^1,P_T^2\in\mathcal{C}_\beta$ with the same augmented-evidence law and opposite \emph{nonzero} benefit
-signs; at $|M|=\beta>0$ the admissible residual $\gamma=-\sign(M)\beta$ yields $\Delta=0$, and in the
-degenerate case $M=\beta=0$ the class $\mathcal{C}_0$ forces $\Delta\equiv0$. Hence no \emph{strict}
-benefit direction is uniformly supported by $\Law(\widetilde Z)$ over $\mathcal{C}_\beta$
-whenever $|M|\le\beta$.
+\item[\textnormal{(iii)}] \textbf{Necessity.} If $|M|<\beta$, two laws in $\mathcal C_\beta$ have
+the same augmented-evidence law and opposite nonzero benefit signs. If $|M|=\beta>0$, the
+admissible residual $\gamma=-\sign(M)\beta$ gives $\Delta=0$. If $M=\beta=0$, then
+$\Delta\equiv0$ throughout $\mathcal C_0$. Thus $|M|\le\beta$ supports no uniform strict direction.
 \item[\textnormal{(iv)}] \textbf{Strict-commitment iff.} At the fixed augmented-evidence law, a
-strict action in $\{\adapt,\freeze\}$ is uniformly directionally sound in the
-sense of Definition~\ref{def:strict-sound} if and only if
-$|M|>\beta$; on the closed band $|M|\le\beta$ (including $M=\beta=0$, where $\Delta\equiv0$) abstention
-is the pointwise maximal sound action.
+strict action is uniformly directionally sound if and only if $|M|>\beta$. On the closed band,
+abstention is the pointwise maximal sound action in the sense of
+Definition~\ref{def:strict-sound}.
 \end{enumerate}
 The population rule $M>\beta\Rightarrow\adapt$, $M<-\beta\Rightarrow\freeze$,
 $|M|\le\beta\Rightarrow\abstain$ is the pointwise maximal sound certificate on
 $\mathcal{C}_\beta$.
 \end{theorem}
 \begin{proof}
-Part~(i) is Lemma~\ref{lem:reduction}. For~(ii), if $M>\beta$ and $|\gamma|\le\beta$, then
-$M+\gamma>0$, so $\sign\Delta=\sign(M+\gamma)=+1$; the negative case is symmetric. For~(iii),
-Theorem~\ref{lem:nonid} supplies two laws in the same augmented-evidence fibre with opposite
-nonzero signs whenever $|M|<\beta$. At $|M|=\beta$ the boundary law with
-$\gamma=-\sign(M)\beta$ gives $\Delta=0$, still precluding a determined nonzero sign. Part~(iv)
-combines (ii), (iii), and Proposition~\ref{prop:closed-band}. Pointwise maximality follows because
-(ii) certifies the unique strict direction outside the band, while Theorem~\ref{lem:nonid} and
-Proposition~\ref{prop:closed-band} rule out both strict directions inside and on the boundary.
+Part~(i) is Lemma~\ref{lem:reduction}. For~(ii), suppose $M>\beta$ and
+$|\gamma|\le\beta$. Then $M+\gamma>0$, so Lemma~\ref{lem:reduction} gives $\Delta>0$. The negative
+case is symmetric.
+
+For~(iii), Theorem~\ref{lem:nonid} supplies opposite nonzero signs when $|M|<\beta$. At
+$|M|=\beta>0$, the boundary law with $\gamma=-\sign(M)\beta$ has zero benefit. When
+$M=\beta=0$, every law in $\mathcal C_0$ has zero benefit. These cases preclude a uniform strict
+direction throughout the closed band.
+
+Part~(iv) combines (ii), (iii), and Proposition~\ref{prop:closed-band}. Sufficiency gives the unique
+sound strict direction outside the band. The impossibility and boundary results rule out both
+strict directions on the band.
 \end{proof}
-\noindent The feasible range can also be read directly from the identified benefit set. Write
-$d=\mu_T(D)>0$. Over the full declared class with the observables fixed,
+\noindent Outside the band, the permitted residual is too small to reverse the visible direction
+$M$. Inside the band, the same evidence is compatible with a failed strict claim. Abstention is
+therefore part of the identified answer, not a defect of the decision rule.
+
+\noindent The same frontier is visible from the identified benefit set. Let $d=\mu_T(D)>0$. With
+the observables fixed, the full declared class gives
 \[
  \Delta(\mathcal C_\beta)
  =2d\left[\max\{-\tfrac12,M-\beta\},
           \min\{\tfrac12,M+\beta\}\right].
 \]
-Indeed, $\bar a-\tfrac12\in[-\tfrac12,\tfrac12]$ and
-$|\bar a-\tfrac12-M|\le\beta$; every value in their intersection is attained by a constant
-correctness kernel on $D$. A strict direction is available exactly when this whole interval
-lies above or below zero.
+The interval inside brackets is
+$[-\tfrac12,\tfrac12]\cap[M-\beta,M+\beta]$. The first set enforces
+$\bar a\in[0,1]$; the second enforces $|\bar a-\tfrac12-M|\le\beta$. Every point in their
+intersection is attained by a constant correctness kernel on $D$. A strict direction is available
+exactly when the entire benefit interval lies above or below zero.

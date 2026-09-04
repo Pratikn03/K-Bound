@@ -46,12 +46,23 @@ should be re-labeled as covering the current uncommitted source edits.
 
 ## 2. Run the local release gate
 
-Use Python 3.12 with `requirements-research.txt` installed from a clean checkout. First commit every
+Use Python 3.12.13 with the hash-complete `requirements-release-macos-arm64.lock.txt` installed
+from a clean checkout. Verify both `python_environment_2026_09_02.json` and the path-free external
+tool receipt `release_toolchain_2026_09_02.json` against
+`release_toolchain_macos_arm64.json`. First commit every
 maintained source/code edit and record that clean commit as the source freeze. Do not mix newly
 regenerated publication artifacts into that source-freeze commit. The release driver never launches
-training or modifies raw datasets. Its default manuscript gate is portable: it validates the
+training or modifies raw datasets. Its default `all` mode does not resolve or require local
+ImageNet-R/PACS roots; `deep-local-preflight` and `all-deep-local` are the explicit modes that
+perform those read-only dataset checks. Its default manuscript gate is portable: it validates the
 receipt-bound CCT-20 manifest, internal ledgers, adjacent receipt, and repository-generated
-artifacts without opening the manifest's author-machine absolute upstream paths.
+artifacts without opening the manifest's author-machine absolute upstream paths. The default
+`all` mode reuses and semantically verifies the committed strict-provenance public CCT-20 bundle;
+it does not refresh that bundle or the CCT-20 release files from machine-local sources.
+The external profile must cover all ten executed publication tools, including
+Pandoc, `latexpand`, and the Perl interpreter used to run both `latexpand` and
+`latexmk`. Each tool-using phase must import the verifier's exact realpaths;
+prepending tool directories to `PATH` is not sufficient.
 
 If pre-release generated outputs are already modified, preserve and review them
 in a separately identified baseline-artifact commit before the final source freeze;
@@ -79,24 +90,45 @@ is mounted:
 
 ```bash
 KBOUND_PYTHON=.venv/bin/python \
+  bash docs/research/kbound/runbooks/release_candidate.sh deep-local-preflight
+KBOUND_PYTHON=.venv/bin/python \
   bash docs/research/kbound/runbooks/release_candidate.sh deep-local-provenance
 ```
+
+Refreshing the CCT-20 release files is a separate, explicitly mutating local mode. To perform the
+entire release with that refresh, deep provenance verification, and a rebuilt public bundle, use
+`all-deep-local` instead of `all`. Both ZIP builders use `--replace-verified`: an existing archive
+must pass its complete semantic verifier before an atomic replacement is permitted.
+
+The standalone `checksums` mode is intentionally byte/environment-independent. It performs only a
+canonical structural source-seal check before hashing the authoritative inventory; it does not
+claim checkout/source semantics or reproduce the macOS build. The `all` and `all-deep-local` modes
+retain the full checkout-bound source-seal and strict macOS environment checks before and after
+checksum emission. Linux CI uses `verify-portable-release` to verify committed checksums, checkout
+binding, and both archive formats; that mode is an artifact verification gate, not a release build
+or dataset-validation claim. The Linux environment receipt is deliberately labeled as a
+runtime-and-installed-version check: hash-locked installation authenticates downloaded wheels,
+but CI does not claim the macOS installed-content profile. CI writes its regenerated repository
+inventory to runner-temporary storage and requires its source commit to equal the exact checkout
+SHA, leaving the sealed checkout unchanged. The dashboard gate starts with an empty temporary npm
+cache and downloads only the exact integrity-bound TypeScript tarball in `package-lock.json`.
+Portable archive verification likewise uses hash-verified Ubuntu Poppler packages, and Lean uses
+the hash-verified Lean release archive while building exact Git revisions without executing the
+remote Mathlib cache helper. Package gates disable build isolation, use the hash-locked setuptools
+backend declared by `pyproject.toml`, and execute both `python -m kga` and the installed `kga`
+console script from the built wheel.
 
 Required outcomes:
 
 - [ ] result reconciliation, claim validation, test suite, and the declared Lean core audit pass;
   the documented full-foundations failures must remain disclosed, not waived as proved;
-- [ ] complete full Git integrity verification; a passed graph/resident-object check
-  or an interrupted fsck is not a substitute. Resolve unavailable iCloud objects
-  without discarding history or modifying account settings automatically;
-- [x] verify the complete current HEAD tree: all 4,244 paths, modes and object IDs
-  match the index. Exact-object restoration preserved 20 original placeholders;
-  this does not certify all historical objects or hydrate every working file;
-- [ ] obtain explicit approval for the 125-file, exact-hash working-file recovery
-  inventory, preserve originals in backup, and restore only still-unmodified cloud
-  placeholders. Permission review rejected the bulk restore before execution;
-- [ ] recover the remaining unavailable source test,
-  `edge/tests/test_protocol_inventory_reporting.py`, at its recorded Git identity;
+- [x] establish a fully resident durable clone outside synchronized folders;
+  `main`, `origin/main`, connectivity, and the no-missing-object walk agree at the
+  recorded baseline. The primary, legacy, and So2Sat indexes contain no staged runtime-metadata
+  delta to recover;
+- [ ] complete the final post-freeze `git fsck --full`, commit-graph write/verify, ref audit, and
+  independent checkout test. The earlier clean connectivity check is not this final proof;
+- [x] confirm `edge/tests/test_protocol_inventory_reporting.py` is resident, tracked, and readable;
 - [x] retain the Section 9 receipts for 847 selected revision/provenance/metadata
   tests and the earlier canonical/manuscript/authority checks as historical component
   evidence, not as a PASS for the later Section 10 source edits;
@@ -114,17 +146,20 @@ Required outcomes:
   31 rendered pages, including source-derived algorithm branches and corrected equation layout;
 - [x] verify the Section 11 manuscript/canonical/interval checks and 868 distinct selected
   component cases, run in separate processes; these are not a complete release-suite PASS;
-- [ ] resolve the local mixed-import OpenMP startup error before claiming a successful
-  combined release suite. The affected CCT-20 and binding modules pass separately without
-  an OpenMP override; an import-only `sklearn`-then-`torch` child reproduces the native error;
+- [x] resolve the former mixed-import OpenMP blocker in the pinned release environment: an
+  unmodified child imports scikit-learn 1.8.0 followed by Torch 2.5.1 successfully. The complete
+  repository run, rather than this import smoke alone, remains the release authority;
 - [ ] `KBOUND_RELEASE_SHA256SUMS.txt` is regenerated after every maintained artifact is final;
 - [ ] a separate byte-for-byte checksum verification passes;
+- [ ] the anonymous archive passes its full semantic/privacy verifier under the exact pinned
+  Poppler paths immediately before its separate post-checksum receipt is generated;
 - [ ] the source seal binds maintained checkout bytes to the recorded clean source-freeze commit;
 - [ ] generated outputs are reviewed and committed separately from the source freeze;
 - [ ] the working tree is clean after the final freeze commit.
 
-The dated July `RELEASE_MANIFEST.json` and `reports/reproducibility_release_report.md` are historical
-snapshots. They do not satisfy this gate.
+The dated July [release manifest](archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/RELEASE_MANIFEST.json)
+and [reproducibility report](archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/reports/reproducibility_release_report.md)
+are archived historical snapshots. They do not satisfy this gate.
 
 The earlier page counts and 847-case component count describe the Section 9 build;
 the later scoped checks are identified separately above. Section 11 records the
@@ -176,7 +211,7 @@ python3.12 -m venv "$paper_pkg_tmp/.venv"
 - [ ] Copy the validated distributions into the release staging area only after inspection.
 - [ ] Use TestPyPI before any permanent PyPI upload.
 
-## 4. Stage two distinct publication bundles
+## 4. Stage the role-distinct publication bundles
 
 ### Anonymous TMLR submission bundle
 
@@ -185,21 +220,24 @@ python3.12 -m venv "$paper_pkg_tmp/.venv"
   required figure assets, the vendored TMLR style/licence, and the bibliography;
 - portable derived result indices or checksums only when the venue permits supplementary files.
 
-Exclude the named compact PDF, compact DOCX, named compact driver, `CITATION.cff`, root README,
+Exclude the three named PDFs, the nonrelease combined PDF/DOCX, named drivers, `CITATION.cff`, root README,
 repository URLs, author metadata, and raw CCT-20 provenance authorities. The sealed CCT manifest,
 its receipt, and nested upstream identities intentionally retain canonical author-machine paths;
 they are audit authorities, not anonymous-submission files.
 
 ### Public reproducibility release after deanonymization
 
-- `kbound_short_final_draft.pdf`, `kbound_tmlr.pdf`, and `kbound_short_final_draft.docx`;
+- `kbound_short_main.pdf`, `kbound_short_supplement.pdf`, `kbound_tmlr.pdf`, and
+  `kbound_full_report.pdf` from `release/current/`;
 - the maintained source, figures, bibliography, code, lock files, licences, README, and
   `CITATION.cff`;
 - `KBOUND_RELEASE_SHA256SUMS.txt`, portable derived indices, reviewer instructions, and the sealed
   audit/provenance authorities when their path disclosure is intentional and reviewed.
 
-Do not attach the historical compatibility PDFs (`kbound.pdf`, `kbound_short.pdf`, edited/companion
-variants) as current deliverables.
+Do not attach the superseded `kbound.pdf`, `kbound_short.pdf`, or `kbound_submission.pdf`, or any
+edited/companion variants, as current deliverables.
+Their preserved pre-freeze bytes are indexed in the
+[2026-09-02 stale-build archive](archive/stale_publication_builds_2026-09-02/README.md).
 
 ## 5. Review external metadata
 

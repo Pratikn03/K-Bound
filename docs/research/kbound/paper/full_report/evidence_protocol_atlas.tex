@@ -1,0 +1,741 @@
+% Full-report-only evidence and protocol atlas.
+% Quantitative statements below are either expanded from generated macros or
+% explicitly attributed to a maintained authority.  This file is explanatory;
+% it is never an independent numerical source of truth.
+
+\part{Current Evidence and Protocol Atlas}
+\label{fr:part-evidence-protocol}
+
+% Ragged paragraph cells without a preamble-only package dependency.  The
+% surrounding braces keep \raggedright local to one table cell.
+\providecommand{\frRaggedCell}[1]{{\raggedright #1\par}}
+
+\section{How to Read the Empirical Record}
+\label{fr:sec-evidence-hierarchy}
+
+The empirical record answers a narrower question than the population theory.  The theory asks
+which benefit signs are uniform over a declared class of target laws.  The experiments instead
+record what a fixed gate did on named evaluation cells after a particular candidate, evidence map,
+benefit predictor, and calibration rule had been frozen.  Keeping those two questions separate is
+not a stylistic precaution.  It determines which denominator is meaningful, which sources may
+support a sentence, and what an observed error can falsify.
+
+This atlas therefore uses an evidence-role taxonomy.  The roles are not cumulative stages, and a
+record does not ``move upward'' merely by accumulating artifacts.  A strong checksum cannot
+compensate for a weak study design, and a prospectively governed design cannot compensate for an
+invalid metric.  Conversely, an unfavorable or stopped study remains informative when its status
+and stopping rule are stated accurately.  The objective is an auditable account of directional
+action, error exposure, and utility consequences, not a tournament table of adaptation methods.
+
+\FloatBarrier
+\begin{table}[t]
+\centering
+\small
+\caption{Evidence-role taxonomy used in this report.  The rows are non-cumulative logical roles,
+not a ranking of datasets or stages on a promotion ladder.  The last column states the largest
+conclusion that a record in the named role can support.}
+\label{fr:tab-evidence-hierarchy}
+\begin{tabular}{@{}p{0.19\textwidth}p{0.39\textwidth}p{0.32\textwidth}@{}}
+\toprule
+\frRaggedCell{Role} & \frRaggedCell{Minimum obligation} & \frRaggedCell{Permitted conclusion} \tabularnewline
+\midrule
+\frRaggedCell{Population theorem} & \frRaggedCell{assumptions, quantifiers, and declared class stated explicitly} & \frRaggedCell{uniform sign claim only inside that class} \tabularnewline
+\frRaggedCell{Operational implication} & \frRaggedCell{coverage or testing premise for one named target and unit} & \frRaggedCell{marginal wrong-direction event control for that target} \tabularnewline
+\frRaggedCell{Software invariant} & \frRaggedCell{executable dependency test over the complete decision path} & \frRaggedCell{absence of the tested information-flow defect} \tabularnewline
+\frRaggedCell{Current diagnostic} & \frRaggedCell{valid metric, fixed reconstruction rule, current authority, and stated dependence} & \frRaggedCell{measured action and utility behavior on recorded cells} \tabularnewline
+\frRaggedCell{Governed target study} & \frRaggedCell{pre-outcome lock, complete receipts, one-pass scoring, and declared inference unit} & \frRaggedCell{result under the locked endpoint, including a negative result} \tabularnewline
+\frRaggedCell{Historical provenance} & \frRaggedCell{immutable old artifact whose protocol is no longer current} & \frRaggedCell{what was once run; never current comparative support} \tabularnewline
+\frRaggedCell{Missing evidence} & \frRaggedCell{protocol or comparator not completed under the required contract} & \frRaggedCell{an explicit research gap, not an implied result} \tabularnewline
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+
+\subsection{The object that receives an action}
+\label{fr:sec-action-object}
+
+An evaluation cell is the smallest unit to which the recorded gate assigns one action.  A cell can
+be a corruption condition, a checkpoint--location pair, or another protocol-defined collection of
+examples.  For a higher-is-better score $S$, the measured outcome for cell $i$ is
+\begin{equation}
+ B_i=\Delta_i^{\mathrm{cell}}
+   =S(f_a;\mathcal E_i)-S(f_0;\mathcal E_i).
+\label{fr:eq-observed-cell-benefit}
+\end{equation}
+This is an observed score difference after labels are joined offline.  It is not automatically an
+estimate of the population benefit $\Delta$, and it need not be an average of per-example losses.
+For example, a difference in cell-level macro-F1 is a nonlinear functional of a confusion table.
+No sample-size argument converts such a difference into the population quantity merely because
+the action itself did not read the labels.
+
+The prediction $\widehat\Delta_i$ and its empirical radius $\varepsilon_i$ are separate objects.
+The gate commits to ADAPT when $\widehat\Delta_i-\varepsilon_i>0$, commits to FREEZE when
+$\widehat\Delta_i+\varepsilon_i<0$, and otherwise records ABSTAIN while serving the frozen model.
+FREEZE and ABSTAIN therefore have the same served predictor but different meanings.  FREEZE is a
+directional rejection of the candidate.  ABSTAIN records unresolved or unavailable evidence.  A
+system that silently converts every missing assessment into FREEZE would manufacture apparent
+negative-direction confidence that the evidence never supplied.
+
+\subsection{Four denominators that must not be conflated}
+\label{fr:sec-denominator-discipline}
+
+Let $n$ be the number of equally weighted recorded cells, $A$ the number of ADAPT actions, $F$ the
+number of FREEZE actions, and $U=n-A-F$ the number of abstentions.  Let $A^{-}$ count ADAPT actions
+on cells with $B_i\le 0$, and let $F^{+}$ count FREEZE actions on cells with $B_i\ge 0$.  The basic
+descriptive quantities are
+\begin{align}
+  \mathrm{exposure}_{A}&=A/n,&
+  \mathrm{exposure}_{F}&=F/n,&
+  \mathrm{commitment}&=(A+F)/n,\label{fr:eq-action-exposure}\\
+  \widehat{\mathrm{FA}}_{\mathrm u}&=A^{-}/n,&
+  \widehat{\mathrm{FA}}_{\mathrm c}&=A^{-}/A,&
+  \widehat{\mathrm{FF}}_{\mathrm u}&=F^{+}/n,&
+  \widehat{\mathrm{FF}}_{\mathrm c}&=F^{+}/F.
+\label{fr:eq-directional-errors}
+\end{align}
+The conditional ratios are undefined when the corresponding action count is zero.  The all-cell
+and action-conditional denominators answer different operational questions.  The first asks how
+often a wrong directional commitment appears in the stream of all decisions.  The second asks how
+often a particular commitment is wrong among the times that branch is exercised.  Neither is the
+population event involving the unobserved population benefit, and neither is an interval-coverage
+rate.
+
+A zero numerator is uninterpretable without exposure.  Zero false adaptations among many ADAPT
+actions describes a different operating record from zero false adaptations produced by a gate that
+never adapts.  Likewise, an all-frozen policy may preserve utility when the candidate is harmful,
+but it has supplied no evidence about its ability to recognize a helpful candidate.  For that
+reason every result discussion below begins with $A/F/U$ and the relevant error numerator before
+turning to accuracy or regret.
+
+Regret is a secondary utility measure.  On each cell the observed oracle serves the model with the
+higher recorded score.  The policy regret is its shortfall from that oracle, averaged using the
+protocol's declared weights.  Always-adapt and always-freeze are useful reference policies because
+they expose the cost of the two unconditional choices.  A lower point regret for the gate is a
+candidate- and panel-specific utility fact.  It is not a definition of safety and cannot establish
+a uniform advantage over future candidates or target laws.
+
+\section{Canonical Authority and Reconstruction Chain}
+\label{fr:sec-canonical-authority}
+
+{\raggedright The current controlled and auxiliary panel is bound to
+\path{experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json}.  Its SHA-256 is
+\hashtext{\CanonicalPanelSHA}.  The corresponding input inventory is
+\path{experiments/kbound/results/reconciled_panels_v1/source_manifest.json}, whose SHA-256 is
+\hashtext{\SourceManifestSHA}.  These two hashes have different jobs.  The first identifies the
+derived panel consumed by the manuscript.  The second identifies the inventory of compact sources
+from which that panel was reconciled.  Equality of one digest does not imply equality of the other.\par}
+
+The storage manifest records the canonical panel as a tracked derived release authority and gives
+its exact reconstruction command.  It also records that large datasets, checkpoints, and raw
+prediction arrays are external rather than silently treating their absence from Git as proof that
+they never existed.  Where a historical run failed to serialize dataset, population, checkpoint,
+or code identity, the gap remains a gap.  A post-hoc tree hash may document current local bytes, but
+it does not retroactively identify the inputs used by the historical run.
+
+\FloatBarrier
+\begin{table}[t]
+\centering
+\small
+\caption{Authority names and roles for quantitative claims in this atlas.  Exact
+repository-relative paths follow the table.  The status column prevents one artifact from being
+used for a role it was not designed to fill.}
+\label{fr:tab-authority-chain}
+\begin{tabular}{@{}p{0.31\textwidth}p{0.26\textwidth}p{0.32\textwidth}@{}}
+\toprule
+\frRaggedCell{Authority} & \frRaggedCell{Role} & \frRaggedCell{Status boundary} \tabularnewline
+\midrule
+\frRaggedCell{Canonical reconciled panel} & \frRaggedCell{current cell-level panel and reconstructed decisions} & \frRaggedCell{current point-estimate authority; study design remains protocol-specific} \tabularnewline
+\frRaggedCell{Canonical source manifest} & \frRaggedCell{compact-input inventory and source digests} & \frRaggedCell{provenance binding, not a statistical guarantee} \tabularnewline
+\frRaggedCell{Current-policy family sensitivity} & \frRaggedCell{six-family CIFAR sensitivity} & \frRaggedCell{retrospective analysis, separate from the canonical point panel} \tabularnewline
+\frRaggedCell{CCT-20 release manifest and receipt} & \frRaggedCell{CCT-20 target actions, effects, and inference} & \frRaggedCell{separate governed study with verdict SAFE\_UTILITY\_ONLY} \tabularnewline
+\frRaggedCell{So2Sat candidate selection and receipts} & \frRaggedCell{So2Sat development selection and stopping decision} & \frRaggedCell{development-stage authority; no target result exists} \tabularnewline
+\frRaggedCell{Claim ledger} & \frRaggedCell{allowed wording, forbidden wording, and support links} & \frRaggedCell{hand-maintained claim/status authority, not a numerical generator} \tabularnewline
+\frRaggedCell{Storage manifest} & \frRaggedCell{storage class, expected path, size, and digest} & \frRaggedCell{evidence inventory; existence alone does not validate a claim} \tabularnewline
+\bottomrule
+\end{tabular}
+\end{table}
+\FloatBarrier
+
+\noindent\textbf{Exact repository-relative authority paths.}
+\begin{itemize}
+  \item \textbf{Canonical reconciled panel.} {\raggedright
+  \path{experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json}.\par}
+  \item \textbf{Canonical source manifest.} {\raggedright
+  \path{experiments/kbound/results/reconciled_panels_v1/source_manifest.json}.\par}
+  \item \textbf{Current-policy family sensitivity.} {\raggedright
+  \path{experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json}.\par}
+  \item \textbf{CCT-20 release manifest and receipt.} {\raggedright
+  \path{docs/research/kbound/paper/generated/cct20_release_manifest.json} and
+  \path{docs/research/kbound/paper/generated/cct20_release_manifest.json.receipt.json}.\par}
+  \item \textbf{So2Sat candidate selection and receipt.} {\raggedright
+  \path{experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/so2sat_candidate_selection.json}
+  and
+  \path{experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/so2sat_candidate_selection.json.receipt.json}.\par}
+  \item \textbf{Claim ledger.} {\raggedright \path{docs/research/kbound/claim_ledger.json}.\par}
+  \item \textbf{Storage manifest.} {\raggedright \path{docs/research/kbound/STORAGE_MANIFEST.json}.\par}
+\end{itemize}
+
+\subsection{Why a generated table is not a new experiment}
+\label{fr:sec-generated-surfaces}
+
+The presentation tables under \path{paper/generated/} are consumers of the authorities above.
+They round values and arrange columns for LaTeX.  They do not create observations, change action
+rules, or promote a diagnostic.  In this report, a literal number not expanded through a macro is
+transcribed only from one of those current generated surfaces or from exact maintained text whose
+artifact is named.  The presentation layer must be regenerated when an authority changes; it must
+not be edited to force agreement with prose.
+
+This distinction is especially important for later studies.  CCT-20 and the So2Sat development
+screen occurred after the canonical 106-source panel was assembled.  Their separate, receipt-linked
+authorities are not merged into that JSON.  Treating absence from the canonical panel as absence of
+the study would be wrong.  Silently copying their rows into the canonical panel would also be wrong,
+because it would erase the independent protocol and release boundary.  The claim ledger links each
+study to the authority that actually governs it.
+
+\subsection{A reproducible claim is a tuple, not a sentence}
+\label{fr:sec-claim-tuple}
+
+For audit purposes, an empirical claim should be read as the tuple
+\begin{equation}
+  \mathcal Q=(\text{candidate},\text{checkpoint},\text{cell unit},\text{metric},
+  \text{gate},\text{calibration},\text{weights},\text{status},\text{authority}).
+\label{fr:eq-claim-tuple}
+\end{equation}
+Changing any component creates a different empirical question.  A new adapter learning rate
+changes the candidate.  Replacing accuracy by macro-F1 changes the outcome.  Pooling cells instead
+of weighting families equally changes the estimand.  Reusing the same radius after changing the
+checkpoint changes the calibration identity.  Calling an opened grid prospective changes the
+status without changing the data, which is precisely why it is not allowed.
+
+The tuple also clarifies what a checksum can establish.  A digest can show that the bytes named by
+the authority have not changed.  It cannot show that the metric was appropriate, that candidate
+construction was independent of the test inputs, that residual scores are exchangeable, or that a
+corruption family represents a future deployment environment.  Those are semantic or statistical
+premises and require their own evidence.
+
+\section{Controlled CIFAR-10-C Dossier}
+\label{fr:sec-cifar-dossier}
+
+The CIFAR-10-C study is the largest current record of both directional branches.  Its value comes
+from dense controlled variation and explicit outcome-disjoint reconstruction.  Its limitation is
+equally important: the grid is fully opened, its cells are related constructions from one corpus,
+and all candidates reuse one source checkpoint.  The correct description is therefore an
+\emph{opened, dependent, constructed six-family diagnostic}.  It is neither prospective
+confirmation nor a sample of independent deployments.
+
+\subsection{Factorial construction and weighting}
+\label{fr:sec-cifar-grid}
+
+For each candidate and RNG seed, the grid crosses six corruption families---Gaussian noise,
+defocus blur, fog, contrast, pixelate, and JPEG compression---with severities 1 and 5.  Each of
+those 12 corruption--severity states is crossed with three batch sizes (200, 16, and 8), three
+compositions (IID, imbalanced, and single-class), two update schedules (10 steps at learning rate
+$10^{-3}$ and 50 steps at $2.5\times10^{-3}$), and two repeats.  The product is
+\begin{equation}
+  6\times2\times3\times3\times2\times2=432
+  \quad\text{cells per RNG seed}.
+\label{fr:eq-cifar-grid-size}
+\end{equation}
+Seeds 0 through 4 give 2,160 cells for each candidate.  These are five stream/run seeds conditional
+on one archived ResNet-18 checkpoint.  They repeat stream construction and adapter randomness;
+they are not five independently trained models.
+
+Primary point summaries assign equal weight to all 2,160 cells.  The family sensitivity has a
+different, explicitly hierarchical aggregation: it first averages seeds and condition cells within
+each corruption family, then assigns equal weight to the six family means.  The two summaries
+answer different questions.  A cell-weighted average emphasizes every factorial condition equally.
+A family-weighted analysis treats the six named corruption families as its six resampling units.
+Neither weighting scheme makes the families independent, and neither turns the opened grid into a
+future-domain sample.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Construction of one candidate--seed CIFAR-10-C grid.  The product gives 432 cells; five
+RNG seeds give 2,160 cells per candidate.  The table describes the protocol, not independent sample
+sizes.}
+\label{fr:tab-cifar-grid}
+\begin{tabular}{@{}lcl@{}}
+\toprule
+Factor & Levels & Recorded values \\
+\midrule
+Corruption family & 6 & Gaussian noise, defocus blur, fog, contrast, pixelate, JPEG \\
+Severity & 2 & 1, 5 \\
+Batch size & 3 & 200, 16, 8 \\
+Composition & 3 & IID, imbalanced, single-class \\
+Update schedule & 2 & 10 at $10^{-3}$; 50 at $2.5\times10^{-3}$ \\
+Repeat & 2 & two recorded repeats \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Local ports and the composite operating point}
+\label{fr:sec-cifar-operating-point}
+
+Tent, EATA, and SAR in this grid are local protocol-matched ports, not untouched reproductions of
+each paper's default implementation.  Candidate preview runs in training mode.  Target-batch
+statistics replace stored BatchNorm running statistics, while gradient updates modify the selected
+normalization affine parameters, including LayerNorm parameters where present.  Scoring retains
+the train-mode BatchNorm behavior in evaluation chunks of 512 images.  Consequently a recorded
+cell benefit combines at least two mechanisms: replacement of running statistics by
+evaluation-batch statistics, and parameter updates from the adapter objective.
+
+This composite is the candidate that was actually measured.  It would be inaccurate to attribute
+the full cell delta to gradients alone, and it would be equally inaccurate to call the delta a
+BatchNorm-only effect.  A BatchNorm-statistics-only control exists in code but was not executed on
+this grid.  Candidate names identify the local ports; they do not erase the operating-point
+details.  Any comparison to a published method must therefore carry the local-port qualifier.
+
+The ImageNet-C SAR port makes the consequence concrete.  Its learning rate is
+$4\times10^{-3}$, compared with the published $2.5\times10^{-4}$ setting, a factor of 16.  The port
+also adapts the recorded BatchNorm affine parameters in an upper ResNet block excluded by the
+published default, and it combines target-batch statistics with gradient updates.  No matched
+control was run at the published SAR operating point.  The ImageNet-C record therefore describes
+this aggressive local candidate, not SAR as published.
+
+\subsection{Three-way cross-fitting as an information-flow contract}
+\label{fr:sec-three-way-crossfit}
+
+The current reconstruction does not reuse the scored outcome in either of the two artifacts that
+determine its action.  Stable sample identifiers are sorted by a SHA-256-derived order and assigned
+round-robin to five score folds.  For a given score fold $S_k$, the complement is reordered with a
+fold-specific salt.  Approximately 30 percent of that complement, subject to the exact-rank minimum,
+is assigned to residual calibration; the remainder is assigned to estimator fitting.  Writing
+$T_k$ for the fit indices and $C_k$ for the calibration indices gives
+\begin{equation}
+  S_k\cap T_k=S_k\cap C_k=T_k\cap C_k=\varnothing.
+\label{fr:eq-three-way-disjoint}
+\end{equation}
+The benefit regressor is fitted on $(Z_j,B_j)$ for $j\in T_k$.  Absolute residuals on $C_k$ produce
+the exact-rank radius.  Only then are prediction, radius, and action computed for $i\in S_k$.
+
+This design repairs a subtle leak in the older two-stage replay.  Excluding $B_i$ from the model
+that predicts cell $i$ is not sufficient if $B_i$ can alter another cell's fitted prediction,
+enter that cell's residual, and then flow back into the radius used for cell $i$.  The separate
+calibration role blocks that indirect path.  The maintained implementation records hashes of the
+score, fit, and calibration IDs for each fold together with hashes of normalized inputs and live
+code dependencies.
+
+The contract is tested at the whole-pipeline level.  The test changes one scored $B_i$, reruns all
+fits and calibrations, and requires that the same cell's $\widehat\Delta_i$,
+$\varepsilon_i$, and action are unchanged.  The test lives at
+\path{tests/test_controlled_grid_crossfit.py}; it also demonstrates that the retired radius path
+changes under this perturbation.  This is stronger than inspecting a function signature because
+it follows the complete implemented dependency path.
+
+The invariant proves only what it tests: scored-cell outcome disjointness.  It does not prove that
+different cells are independent or exchangeable.  Score folds reuse overlapping complements.
+Cells share the source checkpoint, corpus, corruption generator, and factorial design.  Exact-rank
+coverage for a future unit would need a defensible calibration/deployment relation beyond this
+software invariant.  The current inclusion rates are consequently descriptive audits of opened
+cells, not verified coverage promises for a new corruption family.
+
+\subsection{Action exposure and directional errors}
+\label{fr:sec-cifar-action-ledger}
+
+The current generated primary table and interval-diagnostic authority record the following
+$A/F/U$ triplets: Tent 1,091/337/732, EATA 1,207/105/848, and SAR 1,414/0/746.  Each triplet has
+denominator 2,160 and sums to that denominator.  Thus all three candidates exercise ADAPT, but only
+Tent and EATA exercise FREEZE.  SAR's false-freeze conditional rate is undefined because its
+FREEZE denominator is zero.
+
+Tent records two false ADAPT actions.  Its all-cell frequency is $2/2160$, reported after rounding
+as $0.0009$, and its action-conditional frequency is $2/1091$, reported as $0.0018$.  Tent also
+records one false FREEZE: $1/2160$ on the all-cell denominator and $1/337$ on the FREEZE-action
+denominator.  EATA records no false ADAPT among 1,207 ADAPT actions and no false FREEZE among 105
+FREEZE actions.  SAR records no false ADAPT among 1,414 ADAPT actions.  These are observed
+measured-cell signs on an opened diagnostic, not population error probabilities.
+
+For SAR, the false-FREEZE all-cell numerator is also zero, written $0/2160$.  Its conditional
+false-FREEZE rate is undefined because the policy issued no FREEZE action; it must not be printed as
+zero.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Current CIFAR-10-C action and error exposure.  Every row has 2,160 equally weighted
+opened cells.  Conditional error is undefined when its action denominator is zero.  Counts are
+transcribed from the generated primary and interval-diagnostic authorities.}
+\label{fr:tab-cifar-actions}
+\begin{tabular}{@{}lrrrrll@{}}
+\toprule
+Candidate & A & F & U & false A & false-A denominators & false-F exposure \\
+\midrule
+Tent & 1091 & 337 & 732 & 2 & $2/2160$; $2/1091$ & $1/2160$; $1/337$ \\
+EATA & 1207 & 105 & 848 & 0 & $0/2160$; $0/1207$ & $0/2160$; $0/105$ \\
+SAR & 1414 & 0 & 746 & 0 & $0/2160$; $0/1414$ & $0/2160$; conditional undefined \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Observed interval inclusion supplies another denominator.  The nominal setting is 90 percent.
+The current intervals include 1,976 of 2,160 Tent outcomes, 1,950 of 2,160 EATA outcomes, and
+1,949 of 2,160 SAR outcomes.  Inclusion is not commitment: an interval can include the measured
+outcome while crossing zero, and an interval can exclude the outcome while still triggering an
+action.  The near-nominal pooled values are not independent validation because the grid is opened,
+dependent, and cross-fitted through overlapping complements.
+
+The point-regret consequences are candidate-specific.  Tent's KGA, always-adapt, and always-freeze
+regrets are $\CIFARtentKga$, $\CIFARtentAdapt$, and $\CIFARtentFreeze$.  EATA's are
+$\CIFAReataKga$, $\CIFAReataAdapt$, and $\CIFAReataFreeze$.  For SAR the generated table reports
+$0.0018$, $0.0003$, and $0.1405$, respectively.  Thus the current point rule has lower regret than
+each fixed policy for Tent and EATA, while always-adapt has lower regret for SAR.  These values
+describe three separately calibrated candidates.  Averaging them into one headline would create a
+policy that was never deployed.
+
+\subsection{Six-family sensitivity and the multiplicity boundary}
+\label{fr:sec-cifar-family-inference}
+
+For the family analysis, define a paired gap as fixed-policy regret minus KGA regret, so positive
+values favor KGA.  Tent's gap against always-adapt is $0.00606$ with ordinary, unadjusted nominal
+95 percent family-bootstrap interval $[0.00209,0.00954]$.  Its gap against always-freeze is
+$0.12202$ with interval $[0.06282,0.17757]$.  EATA's adapt-side interval is
+$[-0.00135,0.00438]$ and therefore crosses zero, although its freeze-side interval is positive.
+SAR's adapt-side gap is negative.  This is why Tent and EATA must not be described with the same
+interval sentence: Tent has two favorable nominal intervals, whereas EATA does not.
+
+The ordinary intervals and the retrospective reference tests are different inferential objects.
+The six candidate-by-baseline contrasts were prospectively named, but the exact-rank replay,
+corruption-family bootstrap, sign-flip calculation, and Holm analysis were chosen after the grid
+was open.  Under Holm adjustment over all six sign-flip values, Tent's adjusted values are
+$0.140625$ against always-adapt and $0.09375$ against always-freeze.  EATA's are $0.3125$ and
+$0.09375$.  No candidate clears both comparisons at family-wise level $0.05$.
+
+A within-Tent two-comparison adjustment gives smaller post-hoc values, but it is not the declared
+six-comparison family and cannot replace it.  Likewise, a positive unadjusted interval endpoint is
+not a multiplicity-adjusted confidence statement.  The family count is small, the clusters share a
+checkpoint, and coordinatewise sign-flip invariance is an unverified reference assumption.  The
+proper conclusion is a favorable nominal Tent pattern accompanied by a failed retrospective Holm
+gate, not confirmatory or cluster-robust evidence.
+
+\section{Natural and Architecture-Panel Dossiers}
+\label{fr:sec-natural-dossiers}
+
+The natural and semantic-shift records test different failure modes from the constructed CIFAR
+grid.  They do not form one pooled benchmark.  Some predominantly exercise retention, some expose
+a candidate-specific adverse pattern, and one stops before the target stage.  Their scientific
+value lies in showing where the gate's action branches were and were not exercised.
+
+\subsection{CCT-20: a governed all-frozen outcome}
+\label{fr:sec-cct-dossier}
+
+CCT-20 crosses \CCTCheckpointCount{} independently trained source checkpoints with
+\CCTLocationCount{} target camera locations, giving \CCTCellCount{} checkpoint--location cells.
+The release macros record \CCTProbeImageCount{} probe images and
+\CCTEvaluationImageCount{} evaluation images, \CCTTargetImageCount{} in total.  Its primary metric
+is set-membership top-1 accuracy: a prediction is correct if it matches any distinct archived
+category for the image.  It is not the official single-label leaderboard metric.
+
+The Tent candidate uses the official implementation with one non-episodic Adam update per incoming
+batch at learning rate $10^{-3}$.  Each batch is scored using pre-update logits, adaptation state
+continues within one checkpoint--location cell, and state resets between cells.  This was a
+cell-outcome-unopened, internally sealed execution: individual cell outcomes remained unopened until
+one-shot scoring.  Aggregate target-label metadata had previously been inspected, so the study was
+not globally label-unopened or publicly preregistered.
+
+Two endpoints were locked.  The limited safe-utility endpoint uses nominal pointwise 95 percent
+paired product-bootstrap lower endpoints.  With $L_a$ denoting the gap against always-adapt and
+$L_f$ the gap against always-freeze, it requires
+\begin{equation}
+  L_a>0,\qquad L_f>\CCTSafeUtilityMargin.
+\label{fr:eq-cct-safe-utility}
+\end{equation}
+The generated margin \CCTSafeUtilityMargin{} is on the accuracy-proportion scale.  The second
+inequality is noninferiority to the frozen policy and can be satisfied by a controller that always
+serves $f_0$.  The endpoint name does not turn this check into a population-safety theorem.
+
+The strong-success rule is more demanding and is the appropriate test of bidirectional selective
+routing.  It requires all 45 cells; nominal 97.5 percent Bonferroni intervals strictly above zero
+against both fixed policies; both exact one-sided tests over nine location means to survive Holm
+adjustment at $0.05$; ADAPT rate at least $0.10$; FREEZE rate at least $0.10$; and total commitment
+at least $0.30$.  Failure of any component blocks that claim.  These thresholds were not added
+after seeing the result.
+
+The nominal pointwise 95 percent intervals in the CCT safe-utility table belong to the locked
+safe-utility endpoint.  The nominal 97.5 percent Bonferroni intervals in the strong-success audit
+belong to a separate, stricter two-comparison criterion; they are not alternate versions of the same
+interval.
+
+The realized action record was \CCTAdaptCount{} ADAPT, \CCTFreezeCount{} FREEZE, and
+\CCTAbstainCount{} ABSTAIN.
+Because both FREEZE and ABSTAIN serve $f_0$, every evaluated prediction came from the frozen model.
+Tent helped in \CCTHelpfulCount{} cell, tied in \CCTZeroCount{}, and harmed in
+\CCTHarmfulCount{} cells.  The gate issued FREEZE on the one helpful cell and on 43 harmful cells;
+on the remaining harmful cell, the ABSTAIN action served the frozen model.  The observed
+false-FREEZE frequency is
+$\CCTFalseFreezeCount{}/\CCTFalseFreezeOverallDenominator{}$ over all cells and
+$\CCTFalseFreezeCount{}/\CCTFalseFreezeConditionalDenominator{}$ conditional on a FREEZE action.  The
+false-ADAPT frequency is $0/45$, while the conditional false-ADAPT rate is undefined because the
+ADAPT count is zero.  The zero false-ADAPT numerator is therefore mechanical for that branch.
+
+Against always-adapt, the baseline-minus-KGA point contrast is \CCTVsAdaptPoint{} with nominal
+97.5 percent interval $[\CCTVsAdaptCILower,\CCTVsAdaptCIUpper]$, exact location sign-flip value
+\CCTVsAdaptExactP{}, and Holm value \CCTVsAdaptHolmP{}.  Against always-freeze, the contrast and
+interval endpoints are \CCTVsFreezePoint{}, $[\CCTVsFreezeCILower,\CCTVsFreezeCIUpper]$, with
+Holm value \CCTVsFreezeHolmP{}.  The stored decision therefore matches always-freeze and avoids the
+measured loss from always-adapt.  It passes the limited safe-utility endpoint but fails strict
+improvement over freeze and fails the ADAPT-exposure threshold.  Its release verdict remains
+\CCTVerdict: all-frozen fail-closed behavior, not selective-routing success.
+
+The inferential assumptions remain visible.  The two-way bootstrap resamples checkpoint rows and
+location columns; the exact test enumerates sign flips of nine location means.  Enumeration removes
+Monte Carlo error, but not the need for coordinatewise sign-flip invariance.  The ridge estimator
+was fitted using 10 rows from only two camera locations and calibrated on 45 rows aggregated to
+nine cis-test locations.  The target locations are trans-test.  All 55 development cells were
+harmful for Tent, so the estimator saw no helpful development example.  These facts explain why
+the result is evidence of conservative retention rather than evidence that a helpful/harmful
+boundary was learned across natural locations.
+
+\subsection{ImageNet-R: architecture variation is not environment replication}
+\label{fr:sec-imagenetr-dossier}
+
+The current ImageNet-R authority contains four registered run seeds, ten backbone-specific
+candidates, and 12 conditions per backbone and seed, for 480 cells.  The architecture-panel
+aggregate is descriptive because each backbone is a separately calibrated candidate.  It is not
+one router applied to ten independent target domains.
+
+Before utility is considered, the aggregate action record is $A/F/U=179/34/267$: 179 ADAPT,
+34 FREEZE, and 267 ABSTAIN actions.
+There are six false ADAPT actions, giving $6/480$ on the all-cell denominator and $6/179$
+conditional on ADAPT.  These are descriptive sums across separately calibrated backbone
+candidates, not error estimates for one deployable policy.
+
+The canonical aggregate gives KGA regret $0.0137$, always-adapt regret $0.0064$, and
+always-freeze regret $0.0325$.  KGA has higher regret than always-adapt on eight of the ten
+backbones.  Four of those eight have a 0 percent harmful-update base rate, leaving no candidate harm
+for a router to avoid.  The two remaining backbone patterns are conservative ties.  On
+\texttt{efficientnet\_b0}, KGA has lower regret than always-adapt but exactly matches
+always-freeze at zero regret.  On \texttt{swin\_t}, it again has lower regret than always-adapt but
+matches always-freeze at $0.00473958$.  Both rows make no ADAPT decisions.  Thus KGA has lower
+regret than each fixed comparator on zero of ten backbones.
+
+This breakdown is adverse but useful.  It shows that an aggregate gap can hide two structurally
+different limits: when adaptation is uniformly helpful, abstention or freezing forgoes utility;
+when adaptation is harmful, a conservative controller may merely recover the frozen policy.  The
+panel does not support a universal ranking, but it directly constrains any claim that the current
+gate transfers across architectures.
+
+\subsection{ImageNet-C: candidate identity and an aggressive SAR port}
+\label{fr:sec-imagenetc-dossier}
+
+The current ImageNet-C authority has 27 conditions per run seed and five run seeds, or 135 cells
+per candidate.  The candidate rows differ sharply.  The SAR row has 28/9/98 ADAPT/FREEZE/ABSTAIN
+actions and records $0/135$ marginal false-adapt events, or $0/28$ conditional on ADAPT.  Its point regrets are $\ICkga$ for KGA,
+$\ICadapt$ for always-adapt, and $\ICfreeze$ for always-freeze.  Descriptive run-seed intervals have
+positive lower endpoints against the two fixed policies, but the run seeds do not record
+independent checkpoint identities.  Those intervals cannot support an independent-checkpoint or
+confidence-robust promotion.
+
+The operating-point disclosure is inseparable from the numerical row.  As noted above, SAR uses
+the $4\times10^{-3}$ local learning rate rather than the published $2.5\times10^{-4}$ setting,
+includes a broader set of BatchNorm affine parameters, and combines evaluation-batch statistics
+with updates.  No published-setting control exists.  The point record is therefore a diagnosis of
+that candidate configuration only.  It is not evidence for a statement about SAR under its
+published default.
+
+\subsection{So2Sat-LCZ42: stopping is the result}
+\label{fr:sec-so2sat-dossier}
+
+The locked So2Sat-LCZ42 v1 study evaluated two candidates, Tent and SAR, at a development-only
+feasibility stage.  Its current generated surface records nine development cities, five independent
+source checkpoints, and 45 development cells per candidate, hence 90 opened development outcomes.
+Tent showed both helpful and harmful cities, but neither candidate passed all nine predeclared
+feasibility checks.  The locked decision was to stop before gate calibration.
+
+The access boundary is more important than a target score because no target score exists.
+Gate-calibration rows read before selection were zero.  Target-input count, target-pixel reads, and
+target-label reads were all zero.  The target runner was not executed.  The v1 protocol also named
+one action per city while the dormant runner would have produced city--checkpoint actions.  That
+mismatch did not affect an action because the study stopped before any target action was created.
+
+The development outcomes are now open.  Retuning on them cannot make the same panel fresh.  A v2
+design resolves the action unit, but it remains a no-go without its own pre-calibration seal and
+target authorization.  The defensible conclusion from v1 is a negative development-stage
+eligibility result with no target access.  It is not a natural-shift routing result, and the absence
+of a target table must not be filled with exploratory handoff notes.
+
+\section{Negative Results That Define the Present Boundary}
+\label{fr:sec-negative-results}
+
+Negative results are not ancillary in a decision paper.  They identify which tempting shortcuts do
+not support the desired action claim.  Three records are particularly important: the failure of a
+development proxy for the population budget, the mismatch between exploratory search counts and a
+frozen multiplicity family, and the historical status of local comparator ports.
+
+\subsection{The development surrogate for \texorpdfstring{$\beta$}{beta} failed}
+\label{fr:sec-beta-failure}
+
+The population theorem assumes an external bound $|\gamma|\le\beta$ on a hidden
+disagreement-conditional calibration residual.  The empirical radius $\varepsilon$ instead
+describes prediction error for a measured cell target under a calibration protocol.  The two
+quantities live in different layers.  Replacing $\beta$ by a fitted development residual would
+need a justified bridge from source-like development cells to the target disagreement fibre.
+
+That route was tested and failed.  The development-based estimate was between $1.4$ and
+$50\times$ too small on real evaluation cells.  Across the reported configurations, 24--73 percent
+of cells fell outside the declared class induced by that estimate, and commit error ranged from
+0.4 to 16.6 percent.  In five of ten configurations the route returned no commitments on all 405
+ImageNet-C cells.  The estimation route is therefore withdrawn; $\beta$ must be declared from
+domain knowledge or another explicit structural assumption instead.
+
+This negative result has a provenance limit of its own.  The maintained manuscript records the
+exact result text, but the named raw beta-sweep artifact is not present in the canonical release
+bundle.  The result is historically documented rather than currently regenerable from the
+canonical panel.  That limitation must accompany the numbers.  It would be incorrect either to
+hide the failed test or to present its historical record as a newly sealed experiment.  KGA does
+not estimate $\beta$ and does not apply the population inequality numerically.
+
+\subsection{Search history is not a multiplicity family}
+\label{fr:sec-search-history}
+
+One superseded repository census reported 1,387 determinations and 326 positives, or 23.5 percent.
+A broader archived scan reported 1,427 determinations and 345 positives, or 24.2 percent.  These
+counts overlap, and neither froze a reproducible family definition, exact file list, and repository
+state before the outcomes were examined.  They are historical search summaries, not two
+independent experiments and not a basis for calculating a release-wide adjusted $p$-value.
+
+The current six-contrast CIFAR family is narrower and separately defined.  CCT-20 has its own
+two-comparison inference family.  Archived comparator-port values have another historical scope.
+Pooling these families after the fact would obscure rather than solve selection.  A future
+confirmatory inventory must enumerate candidate--track arms, incomplete runs, exclusions,
+calibration choices, and both fixed-policy contrasts before target outcomes are opened.
+
+\par\medskip
+\noindent\rule{\textwidth}{0.4pt}
+\begin{quote}
+\small
+\textbf{Non-evidentiary provenance note: historical POEM/AETTA ports.}
+The archived CIFAR-10-C Tent-stream comparison used local protocol-matched, non-official ports and
+an earlier KGA policy that was not recomputed under the current three-way cross-fit.  Its historical
+regrets were $0.00157361$ for that earlier KGA policy, $0.00880463$ for the POEM-style port,
+$0.00732986$ for the AETTA-style port, $0.00792338$ for always-adapt, and $0.12409792$ for
+always-freeze.  The stored KGA-minus-port differences were $-0.00723102$ with unadjusted paired
+bootstrap interval $[-0.00878038,-0.00570806]$ against the POEM-style port, and $-0.00575625$ with
+interval $[-0.00714260,-0.00439859]$ against the AETTA-style port.  Holm was applied only to the
+archived paired $p$-values; the stored adjusted value was $0.00039996$ for each comparison.
+
+These numbers document what the old artifact contains.  They do not support the current policy,
+do not constitute an official reproduction of either comparator, and do not establish superiority.
+The current claim ledger marks native official reproduction as pending.  A usable comparison must
+run all methods on identical current-policy records and freeze its multiplicity family before
+scoring.  No argument elsewhere in this report relies on the historical ordering.
+\end{quote}
+\noindent\rule{\textwidth}{0.4pt}
+\par\medskip
+
+\section{From an Artifact to a Defensible Sentence}
+\label{fr:sec-interpretation-workflow}
+
+The same numerical row can support several sentences of very different strength.  The following
+workflow makes the choice explicit.  It is deliberately conservative because the cost of an
+ambiguous claim is larger than the cost of one additional qualifier.
+
+\subsection{First identify the direction and target}
+\label{fr:sec-interpret-target}
+
+Write down the sign convention before comparing values.  In this report, measured benefit is
+adapted score minus frozen score.  Regret is a nonnegative shortfall from the cell oracle.  Paired
+policy gaps are fixed-policy regret minus KGA regret, so a positive gap favors KGA.  Changing the
+sign convention between a table and its interval reverses the interpretation even when every
+number is copied correctly.
+
+Then name the target.  A cell-benefit outcome, a mean family gap, a location-cluster contrast, and
+population risk reduction are not synonyms.  The interval must cover the same target that appears
+in the action proposition.  If the target is $B_i=\Delta_i^{\mathrm{cell}}$, the resulting statement
+is about the cell.  Moving to $\Delta$ needs an additional sampling and metric bridge.
+
+\subsection{Then expose the branch that generated the utility}
+\label{fr:sec-interpret-exposure}
+
+Report $A/F/U$ before describing regret.  A policy can match always-freeze because it correctly
+rejects many harmful candidates, because every interval is unresolved, or because its action path
+is unavailable.  Those mechanisms have different deployment meaning even when the served
+predictions are identical.  Similarly, low regret on an all-helpful panel can come from adapting on
+every cell without demonstrating harm detection.
+
+For each wrong-direction numerator, print the all-cell denominator and the action denominator.
+When a denominator is zero, use ``undefined,'' not zero.  Preserve ties in the error definition:
+strict directional semantics count ADAPT with $B_i\le0$ and FREEZE with $B_i\ge0$ as unsupported
+directions, even though a tie has zero utility regret for either served model.
+
+\subsection{Finally state design, dependence, and multiplicity}
+\label{fr:sec-interpret-design}
+
+Label access is not a binary adjective for an entire project.  A study can use labeled development
+cells, keep target cell outcomes unopened until scoring, and still have inspected aggregate target
+metadata during dataset selection.  State each boundary.  Likewise, distinguish one checkpoint
+with five RNG seeds from five independent checkpoints, and distinguish ten candidate backbones
+from ten environments for one router.
+
+Every interval needs its resampling or calibration unit and its status.  A retrospective family
+bootstrap over six corruptions is not an independently validated confidence interval.  A sign-flip
+enumeration is exact relative to its reference distribution but does not verify the sign-symmetry
+assumption.  Holm adjustment acts on the named collection of $p$-values; it neither adjusts ordinary
+confidence intervals nor repairs an invalid marginal test.
+
+\section{Interpretation Checklist}
+\label{fr:sec-interpretation-checklist}
+
+Before accepting an empirical sentence from this report, verify every item below.  A failed item
+does not always invalidate the underlying artifact, but it narrows the admissible wording.
+
+\begin{enumerate}
+  \item \textbf{Authority.} Is the number expanded from a current macro or copied from the exact
+  generated surface linked to the canonical, CCT-20, or So2Sat authority?  Is its digest recorded?
+
+  \item \textbf{Status.} Is the study current diagnostic, governed target execution, development
+  stop, withheld row, invalid route, or historical provenance?  Does the sentence use that status
+  rather than a more favorable one?
+
+  \item \textbf{Candidate identity.} Are checkpoint, adapter port, learning rate, update schedule,
+  adapted parameters, BatchNorm mode, and state-reset semantics the ones actually evaluated?
+
+  \item \textbf{Evaluation unit.} Is one action attached to a condition cell,
+  checkpoint--location pair, city--checkpoint pair, or another declared unit?  Are images within a
+  cell being mistaken for independent gate decisions?
+
+  \item \textbf{Metric.} Is the score accuracy, set-membership accuracy, balanced accuracy, or
+  macro-F1?  Does the metric match the authority and the population claim, if any?
+
+  \item \textbf{Action exposure.} Are ADAPT, FREEZE, and ABSTAIN counts visible?  Does a reported
+  zero error come with nonzero exposure, or is it mechanical because the branch never ran?
+
+  \item \textbf{Error denominator.} Is a false-action numerator divided by all cells or only by the
+  corresponding action count?  Is an absent conditional denominator marked undefined?
+
+  \item \textbf{Outcome flow.} Could the scored $B_i$ change its own prediction, radius, or action?
+  For the controlled grid, does the whole-pipeline perturbation test still pass under the current
+  implementation?
+
+  \item \textbf{Dependence.} Do folds share a checkpoint, corpus, environment, or overlapping
+  complement?  Are RNG seeds being presented accurately rather than relabeled as independent model
+  replications?
+
+  \item \textbf{Interval premise.} What target, level, rank rule, and resampling unit does the
+  interval use?  Is exchangeability, sign symmetry, or transfer assumed rather than verified?
+
+  \item \textbf{Multiplicity.} Which contrasts form the family, when was that family frozen, and
+  what exactly was adjusted?  Are historical search counts or separate studies being inappropriately
+  pooled?
+
+  \item \textbf{Utility scope.} Does a regret or accuracy contrast describe only the recorded
+  candidate and panel?  Is it kept secondary to directional correctness, exposure, and the protocol
+  that made the action possible?
+
+  \item \textbf{Population boundary.} Has a measured-cell statement been promoted to population
+  benefit without a sampling-error bridge?  Has the empirical radius $\varepsilon$ been confused
+  with the externally declared population residual budget $\beta$?
+
+  \item \textbf{Negative evidence.} Are stopped studies, adverse architecture patterns, failed
+  estimators, withheld metrics, and absent official comparisons retained rather than omitted from
+  the claim family?
+
+  \item \textbf{Reproduction boundary.} Do the available compact sources suffice to recompute the
+  displayed result?  If raw data or checkpoints are external or historical identity is incomplete,
+  does the sentence say so?
+\end{enumerate}
+
+Passing this sentence-level checklist does not certify a deployment.  It shows only that the claim
+is traceable, action exposure is explicit, and remaining assumptions are visible.  That is the
+reporting standard for directional action under uncertainty; accuracy and regret remain scoped
+consequences.

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -10,12 +10,86 @@ from pathlib import Path
 import pytest
 
 from docs.research.kbound.scripts import build_release_source_seal as seal
+from docs.research.kbound.scripts import verify_release_checksums as checksums
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout.strip()
+    return subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True).stdout.strip()
+
+
+def _first_artifact(payload: dict[str, object]) -> dict[str, object]:
+    artifacts = payload["artifacts"]
+    assert isinstance(artifacts, list)
+    assert artifacts
+    artifact = artifacts[0]
+    assert isinstance(artifact, dict)
+    return artifact
+
+
+def _empty_structural_seal(marker: str = "a") -> dict[str, object]:
+    rows: list[dict[str, object]] = []
+    return {
+        "schema_version": seal.SCHEMA,
+        "source_commit": marker * 40,
+        "source_tree": marker * 40,
+        "working_tree_gate": "fixture",
+        "sealed_artifact_count": 0,
+        "artifacts_sha256": hashlib.sha256(b"[]").hexdigest(),
+        "artifacts": rows,
+        "exclusions": [],
+    }
+
+
+def test_structural_source_seal_check_is_environment_and_checkout_independent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = tmp_path / "release-seal.json"
+    path.write_bytes(seal._seal_bytes(_empty_structural_seal()))
+    monkeypatch.setattr(
+        seal,
+        "verify_release_python_content",
+        lambda: (_ for _ in ()).throw(AssertionError("structural check must not inspect the runtime")),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["build_release_source_seal.py", "--check-structure", "--output", str(path)],
+    )
+
+    assert seal.main() == 0
+    assert "structure: PASS" in capsys.readouterr().out
+
+    malformed = dict(_empty_structural_seal())
+    malformed["artifacts_sha256"] = "0" * 64
+    path.write_bytes(seal._seal_bytes(malformed))
+    with pytest.raises(ValueError, match="aggregate hash"):
+        seal.validate_seal_structure(path)
+
+
+def test_portable_source_seal_check_keeps_checkout_binding_but_skips_build_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "release-seal.json"
+    path.write_bytes(seal._seal_bytes(_empty_structural_seal()))
+    observed: list[tuple[Path, Path]] = []
+    monkeypatch.setattr(
+        seal,
+        "verify_release_python_content",
+        lambda: (_ for _ in ()).throw(AssertionError("portable verification must not inspect the build runtime")),
+    )
+    monkeypatch.setattr(
+        seal,
+        "validate_seal",
+        lambda repo, output: observed.append((repo, output)) or _empty_structural_seal(),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["build_release_source_seal.py", "--check-portable", "--output", str(path)],
+    )
+
+    assert seal.main() == 0
+    assert observed == [(seal.ROOT, path.absolute())]
 
 
 def test_source_seal_binds_head_tree_and_rejects_dirty_maintained_path(
@@ -43,8 +117,9 @@ def test_source_seal_binds_head_tree_and_rejects_dirty_maintained_path(
     assert payload["source_commit"] == head
     assert payload["source_tree"] == _git(tmp_path, "rev-parse", "HEAD^{tree}")
     assert payload["sealed_artifact_count"] == 1
-    assert payload["artifacts"][0]["path"] == "maintained.txt"
-    assert payload["artifacts"][0]["git_blob"]
+    artifact = _first_artifact(payload)
+    assert artifact["path"] == "maintained.txt"
+    assert artifact["git_blob"]
 
     generated.write_text("v2\n", encoding="utf-8")
     assert seal.build_payload(tmp_path, head)["artifacts"] == payload["artifacts"]
@@ -57,9 +132,7 @@ def test_source_seal_binds_head_tree_and_rejects_dirty_maintained_path(
         seal.build_payload(tmp_path, head)
 
 
-def test_source_seal_rejects_non_head_commit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_seal_rejects_non_head_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _git(tmp_path, "init", "-q")
     _git(tmp_path, "config", "user.name", "Release Test")
     _git(tmp_path, "config", "user.email", "release@example.invalid")
@@ -75,7 +148,20 @@ def test_source_seal_rejects_non_head_commit(
         seal.build_payload(tmp_path, old)
 
 
-def test_tree_enumeration_does_not_request_unrelated_blob_sizes(
+def test_source_seal_rejects_duplicate_and_nonfinite_json_before_git(
+    tmp_path: Path,
+) -> None:
+    duplicate = tmp_path / "duplicate.json"
+    duplicate.write_bytes(b'{"schema_version":"x","schema_version":"y"}\n')
+    with pytest.raises(ValueError, match="duplicate JSON key"):
+        seal.validate_seal(tmp_path, duplicate)
+    nonfinite = tmp_path / "nonfinite.json"
+    nonfinite.write_bytes(b'{"schema_version":NaN}\n')
+    with pytest.raises(ValueError, match="non-finite"):
+        seal.validate_seal(tmp_path, nonfinite)
+
+
+def test_tree_enumeration_uses_positive_source_scopes_and_never_requests_blob_sizes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     calls: list[tuple[str, ...]] = []
@@ -88,8 +174,29 @@ def test_tree_enumeration_does_not_request_unrelated_blob_sizes(
 
     monkeypatch.setattr(seal, "_git_bytes", fake_git_bytes)
 
-    assert seal._tree_blobs(tmp_path, "source-commit") == {"maintained.txt": oid}
-    assert calls == [("ls-tree", "-r", "-z", "source-commit")]
+    assert seal._tree_blobs(
+        tmp_path,
+        "source-commit",
+        pathspecs=("maintained.txt",),
+    ) == {"maintained.txt": oid}
+    assert calls == [
+        (
+            "ls-tree",
+            "-r",
+            "-z",
+            "source-commit",
+            "--",
+            "maintained.txt",
+        )
+    ]
+
+
+def test_default_source_tree_scopes_are_positive_and_exclude_protected_artifacts() -> None:
+    pathspecs = seal._source_tree_pathspecs()
+
+    assert pathspecs
+    assert "." not in pathspecs
+    assert not any("so2sat" in path.casefold() for path in pathspecs)
 
 
 def test_source_seal_verifies_checkout_without_materializing_loose_blobs(
@@ -119,8 +226,9 @@ def test_source_seal_verifies_checkout_without_materializing_loose_blobs(
 
     payload = seal.build_payload(tmp_path, head)
     assert payload["sealed_artifact_count"] == 1
-    assert payload["artifacts"][0]["git_blob"] == maintained_oid
-    assert payload["artifacts"][0]["bytes"] == len(b"sealed source\n")
+    artifact = _first_artifact(payload)
+    assert artifact["git_blob"] == maintained_oid
+    assert artifact["bytes"] == len(b"sealed source\n")
 
     maintained.write_bytes(b"different bytes\n")
     with pytest.raises(ValueError, match="checked-out bytes do not match source commit"):
@@ -137,11 +245,44 @@ def test_release_generated_authorities_are_outer_checksum_outputs() -> None:
         "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
         "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
     }
-    source_inventory = {
-        path for paths in seal.EXPLICIT_FILES.values() for path in paths
-    }
+    source_inventory = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
     assert generated.isdisjoint(source_inventory)
     assert generated <= seal.GENERATED_OUTPUT_ALLOWLIST
+
+
+def test_required_frontier_release_artifact_is_not_gitignored() -> None:
+    """A fresh release checkout must be able to stage the recovered authority."""
+
+    relative = "experiments/kbound/frontier_sweep_v1/decision_value_results.json"
+    assert relative in seal.GENERATED_OUTPUT_ALLOWLIST
+    result = subprocess.run(
+        ["git", "check-ignore", "--quiet", "--", relative],
+        cwd=seal.ROOT,
+        check=False,
+    )
+    assert result.returncode == 1, f"{relative} is a required release artifact but is hidden by .gitignore"
+
+
+def test_cct_release_products_are_outer_artifacts_not_source_inventory() -> None:
+    generated = {
+        "docs/research/kbound/paper/generated/cct20_release_manifest.json",
+        "docs/research/kbound/paper/generated/cct20_release_manifest.json.receipt.json",
+        "docs/research/kbound/paper/generated/cct20_numbers.tex",
+        "docs/research/kbound/paper/generated/cct20_primary_table.tex",
+        "docs/research/kbound/paper/generated/cct20_location_effects.tex",
+    }
+    source_inventory = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+    assert generated.isdisjoint(source_inventory)
+    assert generated <= seal.GENERATED_OUTPUT_ALLOWLIST
+    assert generated <= set(checksums.REQUIRED_RELEASE_PATHS)
+
+
+def test_default_source_seal_does_not_preauthorize_so2sat_gate_or_target_material() -> None:
+    """The default source seal must remain safe before explicit authorization."""
+
+    explicit = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+    assert not any("so2sat" in path.casefold() for path in explicit)
+    assert not any("so2sat" in prefix.casefold() for _, prefix, _ in seal.SOURCE_PREFIX_RULES)
 
 
 def test_direct_release_scripts_are_explicitly_source_sealed() -> None:
@@ -153,8 +294,26 @@ def test_direct_release_scripts_are_explicitly_source_sealed() -> None:
         "docs/research/kbound/scripts/render_pdf_pages.py",
         "docs/research/kbound/scripts/run_frontier_kga_bridge.py",
         "docs/research/kbound/scripts/validate_closure_protocol.py",
+        "docs/research/kbound/scripts/verify_python_environment.py",
     }
     assert required <= set(seal.EXPLICIT_FILES["release_code"])
+
+
+def test_public_release_builders_and_privacy_tests_are_source_sealed() -> None:
+    assert {
+        "docs/research/kbound/scripts/build_cct20_public_bundle.py",
+        "docs/research/kbound/scripts/build_anonymous_supplement.py",
+        "docs/research/kbound/scripts/release_privacy.py",
+    } <= set(seal.EXPLICIT_FILES["release_code"])
+    assert {
+        "tests/test_cct20_public_bundle.py",
+        "tests/test_anonymous_supplement.py",
+        "tests/test_release_privacy.py",
+    } <= set(seal.EXPLICIT_FILES["release_validation"])
+    assert {
+        "docs/research/kbound/release/cct20_public_evidence_bundle.zip",
+        "docs/research/kbound/release/kbound_anonymous_supplement.zip",
+    } <= seal.GENERATED_OUTPUT_ALLOWLIST
 
 
 def _small_source_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, str]:
@@ -168,9 +327,7 @@ def _small_source_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple
     _git(repo, "add", "maintained.txt", "generated.json")
     _git(repo, "commit", "-qm", "source freeze")
     monkeypatch.setattr(seal, "EXPLICIT_FILES", {"test_source": ("maintained.txt",)})
-    monkeypatch.setattr(
-        seal, "GENERATED_OUTPUT_ALLOWLIST", frozenset({"generated.json", "release_seal.json"})
-    )
+    monkeypatch.setattr(seal, "GENERATED_OUTPUT_ALLOWLIST", frozenset({"generated.json", "release_seal.json"}))
     return repo, _git(repo, "rev-parse", "HEAD")
 
 
@@ -186,9 +343,61 @@ def test_clean_start_rejects_even_allowlisted_generated_changes(
     assert seal.build_payload(repo, source)["source_commit"] == source
 
 
-def test_phase_check_rejects_source_change_and_commit_advance(
+def test_source_seal_write_is_atomic_and_rejects_symlink_targets(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    repo, source = _small_source_repo(tmp_path, monkeypatch)
+    payload = seal.build_payload(repo, source)
+    target = repo / "release_seal.json"
+    target.write_bytes(b"original\n")
+    linked = repo / "linked-seal.json"
+    linked.symlink_to(target)
+    with pytest.raises(ValueError, match="symlink"):
+        seal._write(linked, payload)
+
+    def fail_replace(_source: Path, _target: Path) -> None:
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr(seal.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="simulated"):
+        seal._write(target, payload)
+    assert target.read_bytes() == b"original\n"
+    assert not list(repo.glob(".release_seal.json.*.tmp"))
+
+
+def test_source_seal_cli_does_not_resolve_away_output_symlink(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, source = _small_source_repo(tmp_path, monkeypatch)
+    payload = seal.build_payload(repo, source)
+    outside = tmp_path / "outside.json"
+    outside.write_bytes(b"sentinel\n")
+    linked = tmp_path / "linked.json"
+    linked.symlink_to(outside)
+    monkeypatch.setattr(seal, "build_payload", lambda *_args, **_kwargs: payload)
+    monkeypatch.setattr(seal, "verify_release_python_content", lambda: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["build_release_source_seal.py", "--source-commit", source, "--output", str(linked)],
+    )
+
+    with pytest.raises(ValueError, match="symlink"):
+        seal.main()
+
+    assert outside.read_bytes() == b"sentinel\n"
+
+
+def test_source_seal_validator_rejects_a_symlinked_receipt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, source = _small_source_repo(tmp_path, monkeypatch)
+    target = repo / "release_seal.json"
+    seal._write(target, seal.build_payload(repo, source))
+    linked = tmp_path / "linked-seal.json"
+    linked.symlink_to(target)
+
+    with pytest.raises(ValueError, match="symlink"):
+        seal.validate_seal(repo, linked)
+
+
+def test_phase_check_rejects_source_change_and_commit_advance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     (repo / "maintained.txt").write_text("changed source\n", encoding="utf-8")
     with pytest.raises(ValueError, match="maintained release-source paths are dirty"):
@@ -199,9 +408,7 @@ def test_phase_check_rejects_source_change_and_commit_advance(
         seal.build_payload(repo, source)
 
 
-def test_source_check_rejects_head_change_while_hashing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_check_rejects_head_change_while_hashing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     original_rows = seal._artifact_rows
 
@@ -215,9 +422,7 @@ def test_source_check_rejects_head_change_while_hashing(
         seal.build_payload(repo, source)
 
 
-def test_source_artifact_reader_rejects_symlinked_parent(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_artifact_reader_rejects_symlinked_parent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -244,9 +449,7 @@ def test_final_seal_remains_valid_after_generated_artifact_commit(
     assert payload["source_commit"] == source
 
 
-def test_final_seal_rejects_committed_non_output_change(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_final_seal_rejects_committed_non_output_change(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     path = repo / "release_seal.json"
     seal._write(path, seal.build_payload(repo, source))
@@ -257,41 +460,259 @@ def test_final_seal_rejects_committed_non_output_change(
         seal.validate_seal(repo, path)
 
 
-def test_final_seal_rejects_mutable_source_reference(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_final_seal_rejects_mutable_source_reference(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     payload = seal.build_payload(repo, source)
     payload["source_commit"] = "HEAD"
     path = repo / "release_seal.json"
-    seal._write(path, payload)
+    path.write_bytes(seal._seal_bytes(payload))
     with pytest.raises(ValueError, match="full immutable commit ID"):
         seal.validate_seal(repo, path)
 
 
 def test_formal_pins_and_selected_validation_files_are_source_sealed() -> None:
+    from docs.research.kbound.scripts import run_repository_verification
+
     prefix = "docs/research/kbound/formal/"
     required = {
         prefix + name
         for name in (
-            "KBound.lean", "README.md", "build.sh", "formal_audit.py",
-            "lakefile.lean", "lake-manifest.json", "lean-toolchain",
+            "KBound.lean",
+            "README.md",
+            "build.sh",
+            "formal_audit.py",
+            "lakefile.lean",
+            "lake-manifest.json",
+            "lean-toolchain",
         )
     }
     assert required <= set(seal.EXPLICIT_FILES["formal_source"])
     runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text()
-    executed: set[str] = set()
-    for line in runbook.replace("\\\n", " ").splitlines():
-        if not line.lstrip().startswith('"$PY" -m pytest'):
-            continue
-        tokens = shlex.split(line, comments=True)
-        if "--collect-only" not in tokens:
-            executed.update(t for t in tokens if t.startswith("tests/") and t.endswith(".py"))
-    assert executed <= set(seal.EXPLICIT_FILES["release_validation"])
-    assert {
-        "tests/test_kbound_formal_audit.py", "tests/test_kga_masked_inputs.py",
+    assert '"$KB/scripts/run_repository_verification.py"' in runbook
+    required_validation = {
+        "tests/test_kbound_formal_audit.py",
+        "tests/test_kga_masked_inputs.py",
         "tests/test_kbound_current_policy_bindings.py",
-    } <= executed
+    }
+    discovered = run_repository_verification.classify_test_paths(required_validation)
+    assert set(discovered["pytest_paths"]) == required_validation
+    assert required_validation <= set(seal.EXPLICIT_FILES["release_validation"])
+
+
+def test_task7_executable_surface_is_source_sealed() -> None:
+    explicit = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+    assert {
+        ".pre-commit-config.yaml",
+        ".python-version",
+        "Dockerfile",
+        "requirements-api-py311-linux.lock.txt",
+        "requirements-ci-py312-linux.lock.txt",
+        "requirements-release.txt",
+        "requirements-release-macos-arm64.lock.txt",
+        "docs/research/kbound/dashboard/package.json",
+        "docs/research/kbound/dashboard/package-lock.json",
+        "docs/research/kbound/dashboard/tsconfig.json",
+        "docs/research/multiclass_vector_capacity/formal/lake-manifest.json",
+        "docs/research/multiclass_vector_capacity/formal/lean-toolchain",
+    } <= explicit
+
+    rules = {(category, prefix, suffixes) for category, prefix, suffixes in seal.SOURCE_PREFIX_RULES}
+    assert (
+        "release_validation",
+        "tests/",
+        (".py",),
+    ) in rules
+    assert (
+        "release_validation",
+        "experiments/kbound/theory_validation/",
+        (".py",),
+    ) in rules
+    assert (
+        "formal_source",
+        "docs/research/multiclass_vector_capacity/formal/",
+        (".lean", ".py"),
+    ) in rules
+
+
+def test_anonymous_bibliography_is_source_bound() -> None:
+    bibliography = "docs/research/kbound/paper/references/refs.bib"
+    assert bibliography in seal.EXPLICIT_FILES["paper_source"]
+
+
+def test_all_four_current_manuscript_roles_and_shared_inputs_are_source_bound() -> None:
+    required_paper_sources = {
+        "docs/research/kbound/kbound_short_main.tex",
+        "docs/research/kbound/kbound_short_supplement.tex",
+        "docs/research/kbound/kbound_tmlr.tex",
+        "docs/research/kbound/kbound_full_report.tex",
+        "docs/research/kbound/kbound_abstract_core.tex",
+        "docs/research/kbound/kbound_submission_body.tex",
+        "docs/research/kbound/kbound_submission_supplement.tex",
+        "docs/research/kbound/paper/full_report/evidence_protocol_atlas.tex",
+        "docs/research/kbound/paper/full_report/formal_reproducibility_atlas.tex",
+        "docs/research/kbound/paper/full_report/theory_exposition.tex",
+        "docs/research/kbound/kbound_full_report_extensions.tex",
+        "docs/research/kbound/paper/figures/decision_flow.tex",
+        "docs/research/kbound/paper/generated/cct20_reporting_numbers.tex",
+    }
+    required_release_code = {
+        "docs/research/kbound/scripts/audit_current_kbound_release.py",
+        "docs/research/kbound/scripts/audit_tmlr_anonymity.py",
+        "docs/research/kbound/scripts/compare_pdf_renders.py",
+        "docs/research/kbound/scripts/generate_release_identity.py",
+        "docs/research/kbound/scripts/verify_pdf_structure.py",
+    }
+    required_release_validation = {
+        "tests/test_kbound_pdf_visual_verification.py",
+        "tests/test_tmlr_anonymity_audit.py",
+    }
+
+    assert required_paper_sources <= set(seal.EXPLICIT_FILES["paper_source"])
+    assert required_release_code <= set(seal.EXPLICIT_FILES["release_code"])
+    assert required_release_validation <= set(seal.EXPLICIT_FILES["release_validation"])
+
+
+def test_current_release_guidance_and_table_crosswalk_are_source_bound() -> None:
+    required_configuration = {
+        "docs/research/kbound/KBOUND_SHORT_CLAIM_MANIFEST.md",
+        "docs/research/kbound/KBOUND_SHORT_RESULT_AUDIT.md",
+        "docs/research/kbound/RELEASE_CHECKLIST.md",
+        "docs/research/kbound/paper/RELEASE_TABLE_CROSSWALK.md",
+    }
+
+    assert required_configuration <= set(seal.EXPLICIT_FILES["configuration"])
+
+
+def test_source_seal_allows_and_outer_checksums_bind_only_current_release_pdfs() -> None:
+    expected = {
+        "docs/research/kbound/release/current/kbound_short_main.pdf",
+        "docs/research/kbound/release/current/kbound_short_supplement.pdf",
+        "docs/research/kbound/release/current/kbound_tmlr.pdf",
+        "docs/research/kbound/release/current/kbound_full_report.pdf",
+    }
+    allowed_current_documents = {
+        path
+        for path in seal.GENERATED_OUTPUT_ALLOWLIST
+        if path.startswith("docs/research/kbound/release/current/")
+        and path.endswith((".pdf", ".docx"))
+    }
+
+    assert allowed_current_documents == expected
+    assert expected <= set(checksums.REQUIRED_RELEASE_PATHS)
+    assert (
+        "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt"
+        in seal.GENERATED_OUTPUT_ALLOWLIST
+    )
+    assert not any(path.endswith(".docx") for path in checksums.REQUIRED_RELEASE_PATHS)
+
+    nonrelease_build_outputs = {
+        "docs/research/kbound/kbound_short_final_draft.pdf",
+        "docs/research/kbound/kbound_short_final_draft.docx",
+        "docs/research/kbound/kbound_tmlr.pdf",
+        "docs/research/kbound/kbound_short_main.pdf",
+        "docs/research/kbound/kbound_short_supplement.pdf",
+        "docs/research/kbound/kbound_full_report.pdf",
+        "output/pdf/kbound_short_main.pdf",
+        "output/pdf/kbound_short_supplement.pdf",
+        "output/pdf/kbound_tmlr.pdf",
+        "output/pdf/kbound_full_report.pdf",
+        "output/pdf/KBOUND_CURRENT_SHA256SUMS.txt",
+    }
+    assert nonrelease_build_outputs <= seal.GENERATED_OUTPUT_ALLOWLIST
+    assert nonrelease_build_outputs.isdisjoint(checksums.REQUIRED_RELEASE_PATHS)
+
+
+def test_post_commit_release_identity_is_outer_bound_not_source_sealed() -> None:
+    identity_outputs = {
+        "docs/research/kbound/paper/release/current_release.json",
+        "docs/research/kbound/paper/generated/current_release_identity.tex",
+    }
+    source_inventory = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+
+    assert identity_outputs.isdisjoint(source_inventory)
+    assert identity_outputs <= seal.GENERATED_OUTPUT_ALLOWLIST
+    assert identity_outputs <= set(checksums.REQUIRED_RELEASE_PATHS)
+
+
+def test_real_source_inventory_has_one_category_per_path() -> None:
+    rows = seal._inventory(seal.ROOT, "HEAD")
+    paths = [path for _, path in rows]
+    assert len(paths) == len(set(paths))
+    assert (
+        "formal_source",
+        "docs/research/multiclass_vector_capacity/formal/lakefile.lean",
+    ) in rows
+
+
+def test_release_environment_receipt_is_lock_bound_sealed_and_checksums_required() -> None:
+    receipt_relative = "docs/research/kbound/audits/python_environment_2026_09_02.json"
+    lock_relative = "requirements-release-macos-arm64.lock.txt"
+    receipt = json.loads((seal.ROOT / receipt_relative).read_text(encoding="utf-8"))
+    lock_sha256 = hashlib.sha256((seal.ROOT / lock_relative).read_bytes()).hexdigest()
+    explicit = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+
+    assert receipt["status"] == "verified"
+    assert receipt["runtime"] == {"python": "3.12.13", "platform": "macos-arm64"}
+    assert receipt["lock"]["path"] == lock_relative
+    assert receipt["lock"]["sha256"] == lock_sha256
+    assert receipt_relative in explicit
+    assert receipt_relative in checksums.REQUIRED_RELEASE_PATHS
+
+    runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text(encoding="utf-8")
+    preflight = runbook.split("step_preflight() {", 1)[1].split("\n}", 1)[0]
+    verifier = runbook.split("verify_release_python_environment() {", 1)[1].split("\n}", 1)[0]
+    assert "verify_release_python_environment" in preflight
+    assert "verify_python_environment.py" in verifier
+    assert lock_relative in verifier
+    assert receipt_relative.removeprefix("docs/research/kbound/") in verifier
+
+
+def test_all_mode_regenerates_source_bound_results_before_validation() -> None:
+    runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text(encoding="utf-8")
+    all_mode = runbook.split("  all)\n", 1)[1].split("    ;;", 1)[0]
+    assert all_mode.index("step_generate") < all_mode.index("step_validate_results")
+    assert "check_release_source" in all_mode[all_mode.index("step_generate") : all_mode.index("step_validate_results")]
+
+
+def test_only_explicit_deep_local_generation_refreshes_receipt_bound_cct_authority() -> None:
+    runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text(encoding="utf-8")
+    generation = runbook.split("step_generate() {", 1)[1].split("\n}", 1)[0]
+    deep_generation = runbook.split("step_generate_deep_local_cct20() {", 1)[1].split("\n}", 1)[0]
+    assert '"$KB/scripts/build_cct20_release.py" --refresh-from-existing' not in generation
+    assert '"$KB/scripts/build_cct20_release.py" --refresh-from-existing' in deep_generation
+    assert '--release-manifest "$KB/paper/generated/cct20_release_manifest.json"' in deep_generation
+    assert '--generated-dir "$KB/paper/generated"' in deep_generation
+    assert "${TMPDIR:-/tmp}/kbound-cct20-history.XXXXXX" in deep_generation
+    assert '--history-dir "$cct_history_dir"' in deep_generation
+
+
+def test_external_release_toolchain_is_profile_bound_sealed_and_checksums_required() -> None:
+    receipt_relative = "docs/research/kbound/audits/release_toolchain_2026_09_02.json"
+    profile_relative = "docs/research/kbound/release_toolchain_macos_arm64.json"
+    receipt = json.loads((seal.ROOT / receipt_relative).read_text(encoding="utf-8"))
+    profile_sha256 = hashlib.sha256((seal.ROOT / profile_relative).read_bytes()).hexdigest()
+    explicit = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+
+    assert receipt["schema"] == "kbound-release-toolchain-receipt-v1"
+    assert receipt["status"] == "verified"
+    assert receipt["profile"] == {
+        "path": "release_toolchain_macos_arm64.json",
+        "sha256": profile_sha256,
+    }
+    assert receipt["runtime"]["zlib_compile"] == "1.2.12"
+    assert receipt["runtime"]["zlib_runtime"] == "1.2.12"
+    assert receipt_relative in explicit
+    assert profile_relative in explicit
+    assert receipt_relative in checksums.REQUIRED_RELEASE_PATHS
+
+    runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text(encoding="utf-8")
+    preflight = runbook.split("step_preflight() {", 1)[1].split("\n}", 1)[0]
+    verifier = runbook.split("verify_release_toolchain_for_phase() {", 1)[1].split("\n}", 1)[0]
+    assert "verify_release_toolchain_for_phase" in preflight
+    assert "verify_release_toolchain.py" in verifier
+    assert profile_relative.removeprefix("docs/research/kbound/") in verifier
+    assert receipt_relative.removeprefix("docs/research/kbound/") in verifier
+    assert "--resolved-tools-output" in verifier
 
 
 def test_source_prefix_inventory_excludes_caches_reports_and_data(
@@ -318,9 +739,18 @@ def test_source_prefix_inventory_excludes_caches_reports_and_data(
         "experiments/kbound/results/old_history.py",
     }
     monkeypatch.setattr(seal, "EXPLICIT_FILES", {})
-    monkeypatch.setattr(seal, "_tree_blobs", lambda *args: {p: "a" * 40 for p in wanted | excluded})
+    monkeypatch.setattr(seal, "_tree_blobs", lambda *args: dict.fromkeys(wanted | excluded, "a" * 40))
     inventory = {path for _, path in seal._inventory(tmp_path, "source")}
     assert inventory == wanted
+
+
+def test_protected_natural_shift_authorities_require_a_separate_authorized_seal() -> None:
+    explicit = {path.casefold() for paths in seal.EXPLICIT_FILES.values() for path in paths}
+    prefixes = {prefix.casefold() for _, prefix, _ in seal.SOURCE_PREFIX_RULES}
+    generated = {path.casefold() for path in seal.GENERATED_OUTPUT_ALLOWLIST}
+    checksummed = {path.casefold() for path in checksums.REQUIRED_RELEASE_PATHS}
+
+    assert not any("so2sat" in path for path in explicit | prefixes | generated | checksummed)
 
 
 def test_generated_formal_receipt_is_output_not_source() -> None:
@@ -328,7 +758,45 @@ def test_generated_formal_receipt_is_output_not_source() -> None:
     assert receipt in seal.GENERATED_OUTPUT_ALLOWLIST
     assert receipt not in {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
     runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text()
-    assert 'bash "$KB/formal/build.sh" --json-out "$REPO/$KB/audits/formal_foundations_2026_08_31.json"' in runbook
+    runner = (seal.ROOT / "docs/research/kbound/scripts/run_repository_verification.py").read_text()
+    assert "--all-gates" in runbook
+    assert "docs/research/kbound/formal/build.sh" in runner
+    assert "formal_foundations_2026_08_31.json" in runner
+
+
+def test_source_seal_cli_verifies_exact_python_content_before_source_semantics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+    monkeypatch.setattr(seal, "verify_release_python_content", lambda: calls.append("environment"))
+
+    def fixture_payload(*_args: object, **_kwargs: object) -> dict[str, object]:
+        calls.append("source")
+        return {
+            "schema_version": seal.SCHEMA,
+            "source_commit": "a" * 40,
+            "source_tree": "b" * 40,
+            "working_tree_gate": "fixture",
+            "sealed_artifact_count": 0,
+            "artifacts_sha256": hashlib.sha256(b"[]").hexdigest(),
+            "artifacts": [],
+            "exclusions": [],
+        }
+
+    monkeypatch.setattr(
+        seal,
+        "build_payload",
+        fixture_payload,
+    )
+    monkeypatch.setattr(seal, "_write", lambda _path, _payload: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["build_release_source_seal.py", "--source-commit", "a" * 40, "--output", str(tmp_path / "seal.json")],
+    )
+
+    assert seal.main() == 0
+    assert calls == ["environment", "source"]
 
 
 @pytest.mark.parametrize("change", ["dirty_start", "source_during_run", "head_during_run"])
@@ -354,10 +822,25 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
         f"    spec = importlib.util.spec_from_file_location('release_seal', {seal.__file__!r})\n"
         "    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)\n"
         "    module.ROOT = pathlib.Path.cwd()\n"
+        "    module.verify_release_python_content = lambda: None\n"
         "    module.EXPLICIT_FILES = {'source': ('maintained.txt',)}\n"
-        "    module.GENERATED_OUTPUT_ALLOWLIST = frozenset({'generated.json', 'release_seal.json'})\n"
+        "    module.GENERATED_OUTPUT_ALLOWLIST = frozenset({'generated.json', 'release_seal.json', 'docs/research/kbound/audits/python_environment_2026_09_02.json', 'docs/research/kbound/audits/release_toolchain_2026_09_02.json'})\n"
         "    sys.argv = args\n"
         "    raise SystemExit(module.main())\n"
+        "if args and args[0].endswith('verify_python_environment.py'):\n"
+        "    output = pathlib.Path(args[args.index('--output') + 1])\n"
+        "    output.parent.mkdir(parents=True, exist_ok=True)\n"
+        "    output.write_text(json.dumps({'status': 'verified'}, sort_keys=True) + '\\n')\n"
+        "    raise SystemExit(0)\n"
+        "if args and args[0].endswith('verify_release_toolchain.py'):\n"
+        "    output = pathlib.Path(args[args.index('--output') + 1])\n"
+        "    output.parent.mkdir(parents=True, exist_ok=True)\n"
+        "    output.write_text(json.dumps({'status': 'verified'}, sort_keys=True) + '\\n')\n"
+        "    resolved = pathlib.Path(args[args.index('--resolved-tools-output') + 1])\n"
+        "    executable = pathlib.Path(sys.argv[0]).resolve()\n"
+        "    names = ('LATEXMK', 'LATEXPAND', 'PANDOC', 'PDFDETACH', 'PDFINFO', 'PDFLATEX', 'PDFTOPPM', 'PDFTOTEXT', 'PERL', 'SOFFICE')\n"
+        "    resolved.write_text(''.join(f'KBOUND_TOOL_{name}\\t{executable}\\n' for name in names))\n"
+        "    raise SystemExit(0)\n"
         f"change = {change!r}\n"
         "if args == ['-'] and change != 'dirty_start':\n"
         "    source = pathlib.Path('maintained.txt')\n"
@@ -377,8 +860,12 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
     environment.pop("KBOUND_SOURCE_COMMIT", None)
     environment.pop("RELEASE_SOURCE_COMMIT", None)
     completed = subprocess.run(
-        ["bash", str(runbook), "all"], cwd=repo, env=environment,
-        capture_output=True, text=True, timeout=30,
+        ["bash", str(runbook), "all"],
+        cwd=repo,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     assert completed.returncode != 0
     events = [json.loads(line) for line in event_log.read_text().splitlines()]
@@ -389,6 +876,16 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
         assert "completely clean working tree" in combined_output
     else:
         assert any("--check-source" in event for event in events)
-        expected = "source commit must equal HEAD" if change == "head_during_run" else "maintained release-source paths are dirty"
+        expected = (
+            "source commit must equal HEAD"
+            if change == "head_during_run"
+            else "maintained release-source paths are dirty"
+        )
         assert expected in combined_output
-        assert all(event == ["-"] or event[0].endswith("build_release_source_seal.py") for event in events)
+        assert all(
+            event == ["-"]
+            or event[0].endswith("build_release_source_seal.py")
+            or event[0].endswith("verify_python_environment.py")
+            or event[0].endswith("verify_release_toolchain.py")
+            for event in events
+        )

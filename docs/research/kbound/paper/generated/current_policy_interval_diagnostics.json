@@ -1,23 +1,24 @@
 {
   "schema": "kbound-current-policy-interval-diagnostics-v1",
   "analysis_script": "docs/research/kbound/scripts/build_current_policy_interval_diagnostics.py",
-  "analysis_script_sha256": "bcb5c337684641fb261a3bb175c9e22578110390fd914df8e3f0b198b65e5d13",
+  "analysis_script_sha256": "297544ca94a2af38eff572855e4e0b001ac0a5c248e5951f3bfde15a7ff236d1",
   "runtime": {
     "python": "3.12.13",
     "numpy": "2.4.4"
   },
-  "scope": "Retrospective descriptive interval inclusion on already-opened dependent CIFAR-10-C cells; no fitting or new data access.",
+  "scope": "Retrospective descriptive interval inclusion from canonical three-way cross-fit authorities on already-opened dependent CIFAR-10-C cells; no fitting or new data access.",
   "calibration": {
-    "entry_point": "kga.policy.decide_kga",
-    "method": "leave-one-cell-out empirical order-statistic calibration",
+    "entry_point": "canonical_panel_results.json per-file current_cell_authority",
+    "method": "cell-outcome-disjoint fit/calibrate/score cross-fit with exact-rank residual calibration",
     "alpha": 0.1,
     "nominal_inclusion_target": 0.9,
-    "pool": "other 431 cells of the same candidate and run seed; unchanged across family summaries",
+    "pool": "per-fold residual-calibration subset disjoint from both estimator-fit and score cells; unchanged across family summaries",
     "historical_fields_ignored": [
+      "b_hat",
       "eps_conformal",
       "kga_decision"
     ],
-    "reuse_warning": "LOO residual pools reuse the same scored collection. Aggregate inclusion is strongly rank-constrained, not independent validation of calibration."
+    "reuse_warning": "The opened dependent grid is reused for retrospective cross-fit diagnostics; this is not independent calibration validation."
   },
   "units": {
     "record": "candidate x run seed x controlled condition",
@@ -25,7 +26,7 @@
     "groups": "3 candidates; 6 corruption families each; 2160 cells/candidate; 360 cells/family/candidate",
     "weighting": "each saved cell has equal weight; no aggregation across candidate policies",
     "outcome": "measured cell accuracy benefit B = adapted accuracy - frozen accuracy; not population benefit",
-    "interval_inclusion": "abs(b_hat - B) <= epsilon, including equality and all +infinity intervals",
+    "interval_inclusion": "abs(current cross-fit prediction - B) <= radius, including equality and all +infinity intervals",
     "interval_width": "2 * epsilon (full, unclipped width), accuracy proportion units, not percentage points",
     "commitment": "(ADAPT + FREEZE) / all cells; different from interval inclusion and adapt rate",
     "false_adapt": "ADAPT and B <= 0; marginal denominator all cells; conditional denominator ADAPT cells",
@@ -44,32 +45,40 @@
   "input_authorities": [
     {
       "path": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-      "sha256": "4239a7b38b087fe8d4c81eb935d9da5104545a228fffb7c956b29c6e00d97062",
-      "bytes": 587516
+      "sha256": "35d4c165843de1ece3cb35ffb4ac50dbfcbfa33b646754e2b6d133fbdfa78c6e",
+      "bytes": 4455085
     },
     {
       "path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-      "sha256": "5942d60b0287604a63442b336f703adc91e55893177b3b0df6f97f5a52e1ff5e",
-      "bytes": 18964
+      "sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
+      "bytes": 24534
     },
     {
       "path": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
-      "sha256": "266ce7cd87ae795e0742d43c40afefef82e82b555baa7dda8c6d270f73e2c031",
+      "sha256": "03b1d2b1e9e5ed1cf835126f871ed83eb8497a1ac81727b3955af0d69eb89742",
       "bytes": 56011
     }
   ],
   "code_bindings": {
+    "crossfit": {
+      "path": "kga/crossfit.py",
+      "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+    },
     "policy": {
       "path": "kga/policy.py",
-      "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
+      "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
     },
     "certificate": {
       "path": "kga/certificate.py",
-      "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+      "sha256": "900fc37c4a9c8774e5f092bf359bea931e469ac66566eaa3ef3e5a1350f1bdc5"
     },
     "numeric_validation": {
       "path": "kga/_validation.py",
-      "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
+      "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
+    },
+    "reconciliation": {
+      "path": "scripts/reconcile_result_panels.py",
+      "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
     },
     "preregistered_protocol": {
       "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -223,8 +232,8 @@
     {
       "check": "canonical.source_manifest_sha256",
       "comparison": "exact_equality",
-      "observed": "266ce7cd87ae795e0742d43c40afefef82e82b555baa7dda8c6d270f73e2c031",
-      "expected": "266ce7cd87ae795e0742d43c40afefef82e82b555baa7dda8c6d270f73e2c031",
+      "observed": "03b1d2b1e9e5ed1cf835126f871ed83eb8497a1ac81727b3955af0d69eb89742",
+      "expected": "03b1d2b1e9e5ed1cf835126f871ed83eb8497a1ac81727b3955af0d69eb89742",
       "passed": true
     },
     {
@@ -285,16 +294,33 @@
       "comparison": "exact_equality",
       "observed": [
         "certificate",
+        "crossfit",
         "numeric_validation",
         "policy",
-        "preregistered_protocol"
+        "preregistered_protocol",
+        "reconciliation"
       ],
       "expected": [
         "certificate",
+        "crossfit",
         "numeric_validation",
         "policy",
-        "preregistered_protocol"
+        "preregistered_protocol",
+        "reconciliation"
       ],
+      "passed": true
+    },
+    {
+      "check": "current_policy.code.crossfit",
+      "comparison": "exact_equality",
+      "observed": {
+        "path": "kga/crossfit.py",
+        "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+      },
+      "expected": {
+        "path": "kga/crossfit.py",
+        "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+      },
       "passed": true
     },
     {
@@ -302,11 +328,11 @@
       "comparison": "exact_equality",
       "observed": {
         "path": "kga/policy.py",
-        "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
+        "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
       },
       "expected": {
         "path": "kga/policy.py",
-        "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
+        "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
       },
       "passed": true
     },
@@ -315,11 +341,11 @@
       "comparison": "exact_equality",
       "observed": {
         "path": "kga/certificate.py",
-        "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+        "sha256": "900fc37c4a9c8774e5f092bf359bea931e469ac66566eaa3ef3e5a1350f1bdc5"
       },
       "expected": {
         "path": "kga/certificate.py",
-        "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+        "sha256": "900fc37c4a9c8774e5f092bf359bea931e469ac66566eaa3ef3e5a1350f1bdc5"
       },
       "passed": true
     },
@@ -328,11 +354,24 @@
       "comparison": "exact_equality",
       "observed": {
         "path": "kga/_validation.py",
-        "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
+        "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
       },
       "expected": {
         "path": "kga/_validation.py",
-        "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
+        "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
+      },
+      "passed": true
+    },
+    {
+      "check": "current_policy.code.reconciliation",
+      "comparison": "exact_equality",
+      "observed": {
+        "path": "scripts/reconcile_result_panels.py",
+        "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
+      },
+      "expected": {
+        "path": "scripts/reconcile_result_panels.py",
+        "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
       },
       "passed": true
     },
@@ -382,8 +421,8 @@
     {
       "check": "tent.replay.entry_point",
       "comparison": "exact_equality",
-      "observed": "kga.policy.decide_kga",
-      "expected": "kga.policy.decide_kga",
+      "observed": "canonical_panel_results.json per-file current_cell_authority",
+      "expected": "canonical_panel_results.json per-file current_cell_authority",
       "passed": true
     },
     {
@@ -396,8 +435,15 @@
     {
       "check": "tent.replay.calibration",
       "comparison": "exact_equality",
-      "observed": "loo",
-      "expected": "loo",
+      "observed": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+      "expected": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+      "passed": true
+    },
+    {
+      "check": "tent.replay.stored_b_hat_used_for_scoring",
+      "comparison": "exact_equality",
+      "observed": false,
+      "expected": false,
       "passed": true
     },
     {
@@ -830,8 +876,8 @@
     {
       "check": "eata.replay.entry_point",
       "comparison": "exact_equality",
-      "observed": "kga.policy.decide_kga",
-      "expected": "kga.policy.decide_kga",
+      "observed": "canonical_panel_results.json per-file current_cell_authority",
+      "expected": "canonical_panel_results.json per-file current_cell_authority",
       "passed": true
     },
     {
@@ -844,8 +890,15 @@
     {
       "check": "eata.replay.calibration",
       "comparison": "exact_equality",
-      "observed": "loo",
-      "expected": "loo",
+      "observed": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+      "expected": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+      "passed": true
+    },
+    {
+      "check": "eata.replay.stored_b_hat_used_for_scoring",
+      "comparison": "exact_equality",
+      "observed": false,
+      "expected": false,
       "passed": true
     },
     {
@@ -1278,8 +1331,8 @@
     {
       "check": "sar.replay.entry_point",
       "comparison": "exact_equality",
-      "observed": "kga.policy.decide_kga",
-      "expected": "kga.policy.decide_kga",
+      "observed": "canonical_panel_results.json per-file current_cell_authority",
+      "expected": "canonical_panel_results.json per-file current_cell_authority",
       "passed": true
     },
     {
@@ -1292,8 +1345,15 @@
     {
       "check": "sar.replay.calibration",
       "comparison": "exact_equality",
-      "observed": "loo",
-      "expected": "loo",
+      "observed": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+      "expected": "cell-outcome-disjoint fit/calibrate/score cross-fit",
+      "passed": true
+    },
+    {
+      "check": "sar.replay.stored_b_hat_used_for_scoring",
+      "comparison": "exact_equality",
+      "observed": false,
+      "expected": false,
       "passed": true
     },
     {
@@ -1731,66 +1791,66 @@
         "n": 2160,
         "nominal_inclusion_target": 0.9,
         "observed_inclusion": {
-          "numerator": 1945,
+          "numerator": 1976,
           "denominator": 2160,
-          "value": 0.9004629629629629,
+          "value": 0.9148148148148149,
           "defined": true,
           "undefined_reason": null
         },
         "finite_interval_count": 2160,
         "infinite_interval_count": 0,
         "finite_interval_inclusion": {
-          "numerator": 1945,
+          "numerator": 1976,
           "denominator": 2160,
-          "value": 0.9004629629629629,
+          "value": 0.9148148148148149,
           "defined": true,
           "undefined_reason": null
         },
         "full_interval_width": {
           "definition": "2 * epsilon, unclipped; accuracy proportion units",
           "mean": {
-            "value": 0.042558685290953066,
+            "value": 0.0478430386952217,
             "status": "finite"
           },
           "median": {
-            "value": 0.04319009499388249,
+            "value": 0.045738896460885525,
             "status": "finite"
           },
           "minimum": {
-            "value": 0.03987669825344087,
+            "value": 0.04194962956891979,
             "status": "finite"
           },
           "maximum": {
-            "value": 0.044119632414677055,
+            "value": 0.06292402703005096,
             "status": "finite"
           }
         },
         "commitment": {
-          "numerator": 1466,
+          "numerator": 1428,
           "denominator": 2160,
-          "value": 0.6787037037037037,
+          "value": 0.6611111111111111,
           "defined": true,
           "undefined_reason": null
         },
         "actions": {
           "ADAPT": {
-            "numerator": 1107,
+            "numerator": 1091,
             "denominator": 2160,
-            "value": 0.5125,
+            "value": 0.5050925925925925,
             "defined": true,
             "undefined_reason": null
           },
           "FREEZE": {
-            "numerator": 359,
+            "numerator": 337,
             "denominator": 2160,
-            "value": 0.16620370370370371,
+            "value": 0.15601851851851853,
             "defined": true,
             "undefined_reason": null
           },
           "ABSTAIN": {
-            "numerator": 694,
+            "numerator": 732,
             "denominator": 2160,
-            "value": 0.3212962962962963,
+            "value": 0.3388888888888889,
             "defined": true,
             "undefined_reason": null
           }
@@ -1798,16 +1858,16 @@
         "false_adapt": {
           "event": "ADAPT and measured cell B <= 0",
           "marginal": {
-            "numerator": 0,
+            "numerator": 2,
             "denominator": 2160,
-            "value": 0.0,
+            "value": 0.000925925925925926,
             "defined": true,
             "undefined_reason": null
           },
           "conditional": {
-            "numerator": 0,
-            "denominator": 1107,
-            "value": 0.0,
+            "numerator": 2,
+            "denominator": 1091,
+            "value": 0.0018331805682859762,
             "defined": true,
             "undefined_reason": null
           }
@@ -1823,8 +1883,8 @@
           },
           "conditional": {
             "numerator": 1,
-            "denominator": 359,
-            "value": 0.002785515320334262,
+            "denominator": 337,
+            "value": 0.002967359050445104,
             "defined": true,
             "undefined_reason": null
           }
@@ -1835,44 +1895,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 287,
+            "numerator": 301,
             "denominator": 360,
-            "value": 0.7972222222222223,
+            "value": 0.8361111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 287,
+            "numerator": 301,
             "denominator": 360,
-            "value": 0.7972222222222223,
+            "value": 0.8361111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.04249557509211391,
+              "value": 0.04783581483019766,
               "status": "finite"
             },
             "median": {
-              "value": 0.043083275912500496,
+              "value": 0.045738896460885525,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03987669825344087,
+              "value": 0.04194962956891979,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.044119632414677055,
+              "value": 0.06292402703005096,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 253,
+            "numerator": 249,
             "denominator": 360,
-            "value": 0.7027777777777777,
+            "value": 0.6916666666666667,
             "defined": true,
             "undefined_reason": null
           },
@@ -1885,16 +1945,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 73,
+              "numerator": 69,
               "denominator": 360,
-              "value": 0.20277777777777778,
+              "value": 0.19166666666666668,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 107,
+              "numerator": 111,
               "denominator": 360,
-              "value": 0.2972222222222222,
+              "value": 0.30833333333333335,
               "defined": true,
               "undefined_reason": null
             }
@@ -1927,7 +1987,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 73,
+              "denominator": 69,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -1956,26 +2016,26 @@
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.04259101979447108,
+              "value": 0.04795839124719041,
               "status": "finite"
             },
             "median": {
-              "value": 0.04319009499388249,
+              "value": 0.045738896460885525,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03987669825344087,
+              "value": 0.04194962956891979,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.044119632414677055,
+              "value": 0.06292402703005096,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 260,
+            "numerator": 255,
             "denominator": 360,
-            "value": 0.7222222222222222,
+            "value": 0.7083333333333334,
             "defined": true,
             "undefined_reason": null
           },
@@ -1988,16 +2048,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 80,
+              "numerator": 75,
               "denominator": 360,
-              "value": 0.2222222222222222,
+              "value": 0.20833333333333334,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 100,
+              "numerator": 105,
               "denominator": 360,
-              "value": 0.2777777777777778,
+              "value": 0.2916666666666667,
               "defined": true,
               "undefined_reason": null
             }
@@ -2030,7 +2090,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 80,
+              "denominator": 75,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -2041,44 +2101,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 336,
+            "numerator": 341,
             "denominator": 360,
-            "value": 0.9333333333333333,
+            "value": 0.9472222222222222,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 336,
+            "numerator": 341,
             "denominator": 360,
-            "value": 0.9333333333333333,
+            "value": 0.9472222222222222,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.042567979671621174,
+              "value": 0.047986237291705966,
               "status": "finite"
             },
             "median": {
-              "value": 0.04319009499388249,
+              "value": 0.045738896460885525,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03987669825344087,
+              "value": 0.04194962956891979,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.044119632414677055,
+              "value": 0.06292402703005096,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 257,
+            "numerator": 249,
             "denominator": 360,
-            "value": 0.7138888888888889,
+            "value": 0.6916666666666667,
             "defined": true,
             "undefined_reason": null
           },
@@ -2091,16 +2151,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 77,
+              "numerator": 69,
               "denominator": 360,
-              "value": 0.21388888888888888,
+              "value": 0.19166666666666668,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 103,
+              "numerator": 111,
               "denominator": 360,
-              "value": 0.2861111111111111,
+              "value": 0.30833333333333335,
               "defined": true,
               "undefined_reason": null
             }
@@ -2133,7 +2193,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 77,
+              "denominator": 69,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -2144,66 +2204,66 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 308,
+            "numerator": 312,
             "denominator": 360,
-            "value": 0.8555555555555555,
+            "value": 0.8666666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 308,
+            "numerator": 312,
             "denominator": 360,
-            "value": 0.8555555555555555,
+            "value": 0.8666666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.0425352875781323,
+              "value": 0.047993928631834,
               "status": "finite"
             },
             "median": {
-              "value": 0.04319009499388249,
+              "value": 0.045786369599674054,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03987669825344087,
+              "value": 0.04194962956891979,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.044119632414677055,
+              "value": 0.06292402703005096,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 310,
+            "numerator": 308,
             "denominator": 360,
-            "value": 0.8611111111111112,
+            "value": 0.8555555555555555,
             "defined": true,
             "undefined_reason": null
           },
           "actions": {
             "ADAPT": {
-              "numerator": 308,
+              "numerator": 305,
               "denominator": 360,
-              "value": 0.8555555555555555,
+              "value": 0.8472222222222222,
               "defined": true,
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 2,
+              "numerator": 3,
               "denominator": 360,
-              "value": 0.005555555555555556,
+              "value": 0.008333333333333333,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 50,
+              "numerator": 52,
               "denominator": 360,
-              "value": 0.1388888888888889,
+              "value": 0.14444444444444443,
               "defined": true,
               "undefined_reason": null
             }
@@ -2219,7 +2279,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 308,
+              "denominator": 305,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -2236,8 +2296,8 @@
             },
             "conditional": {
               "numerator": 1,
-              "denominator": 2,
-              "value": 0.5,
+              "denominator": 3,
+              "value": 0.3333333333333333,
               "defined": true,
               "undefined_reason": null
             }
@@ -2247,66 +2307,66 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 347,
+            "numerator": 349,
             "denominator": 360,
-            "value": 0.9638888888888889,
+            "value": 0.9694444444444444,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 347,
+            "numerator": 349,
             "denominator": 360,
-            "value": 0.9638888888888889,
+            "value": 0.9694444444444444,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.04259837857660336,
+              "value": 0.047824644525250884,
               "status": "finite"
             },
             "median": {
-              "value": 0.04319009499388249,
+              "value": 0.045738896460885525,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03987669825344087,
+              "value": 0.04194962956891979,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.044119632414677055,
+              "value": 0.06292402703005096,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 142,
+            "numerator": 125,
             "denominator": 360,
-            "value": 0.39444444444444443,
+            "value": 0.3472222222222222,
             "defined": true,
             "undefined_reason": null
           },
           "actions": {
             "ADAPT": {
-              "numerator": 79,
+              "numerator": 66,
               "denominator": 360,
-              "value": 0.21944444444444444,
+              "value": 0.18333333333333332,
               "defined": true,
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 63,
+              "numerator": 59,
               "denominator": 360,
-              "value": 0.175,
+              "value": 0.1638888888888889,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 218,
+              "numerator": 235,
               "denominator": 360,
-              "value": 0.6055555555555555,
+              "value": 0.6527777777777778,
               "defined": true,
               "undefined_reason": null
             }
@@ -2314,16 +2374,16 @@
           "false_adapt": {
             "event": "ADAPT and measured cell B <= 0",
             "marginal": {
-              "numerator": 0,
+              "numerator": 2,
               "denominator": 360,
-              "value": 0.0,
+              "value": 0.005555555555555556,
               "defined": true,
               "undefined_reason": null
             },
             "conditional": {
-              "numerator": 0,
-              "denominator": 79,
-              "value": 0.0,
+              "numerator": 2,
+              "denominator": 66,
+              "value": 0.030303030303030304,
               "defined": true,
               "undefined_reason": null
             }
@@ -2339,7 +2399,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 63,
+              "denominator": 59,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -2350,44 +2410,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 328,
+            "numerator": 334,
             "denominator": 360,
-            "value": 0.9111111111111111,
+            "value": 0.9277777777777778,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 328,
+            "numerator": 334,
             "denominator": 360,
-            "value": 0.9111111111111111,
+            "value": 0.9277777777777778,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.04256387103277655,
+              "value": 0.04745921564515127,
               "status": "finite"
             },
             "median": {
-              "value": 0.04319009499388249,
+              "value": 0.045724794067513175,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03987669825344087,
+              "value": 0.04194962956891979,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.044119632414677055,
+              "value": 0.06292402703005096,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 244,
+            "numerator": 242,
             "denominator": 360,
-            "value": 0.6777777777777778,
+            "value": 0.6722222222222223,
             "defined": true,
             "undefined_reason": null
           },
@@ -2400,16 +2460,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 64,
+              "numerator": 62,
               "denominator": 360,
-              "value": 0.17777777777777778,
+              "value": 0.17222222222222222,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 116,
+              "numerator": 118,
               "denominator": 360,
-              "value": 0.32222222222222224,
+              "value": 0.3277777777777778,
               "defined": true,
               "undefined_reason": null
             }
@@ -2442,7 +2502,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 64,
+              "denominator": 62,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -2453,18 +2513,18 @@
       "unchanged_replay_score": {
         "n": 2160,
         "regret": {
-          "kga": 0.0016453700209105456,
+          "kga": 0.0019159718796058938,
           "always_adapt": 0.007975694592352266,
           "always_freeze": 0.12393680485310378
         },
-        "adapt_count": 1107,
-        "freeze_count": 359,
-        "abstain_count": 694,
-        "false_adapt_count": 0,
-        "fa_u": 0.0,
-        "fa_c": 0.0,
-        "adapt_rate": 0.5125,
-        "decision_coverage": 0.6787037037037037
+        "adapt_count": 1091,
+        "freeze_count": 337,
+        "abstain_count": 732,
+        "false_adapt_count": 2,
+        "fa_u": 0.000925925925925926,
+        "fa_c": 0.0018331805682859762,
+        "adapt_rate": 0.5050925925925925,
+        "decision_coverage": 0.6611111111111111
       },
       "scientific_equality_checks": [
         {
@@ -2478,107 +2538,107 @@
           "check": "canonical.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0016453700209105456,
+            "kga": 0.0019159718796058938,
             "always_adapt": 0.007975694592352266,
             "always_freeze": 0.12393680485310378
           },
           "expected": {
             "always_adapt": 0.007975694592352266,
             "always_freeze": 0.12393680485310378,
-            "kga": 0.0016453700209105456
+            "kga": 0.0019159718796058938
           },
           "passed": true
         },
         {
           "check": "canonical.adapt_count",
           "comparison": "exact_equality",
-          "observed": 1107,
-          "expected": 1107,
+          "observed": 1091,
+          "expected": 1091,
           "passed": true
         },
         {
           "check": "canonical.freeze_count",
           "comparison": "exact_equality",
-          "observed": 359,
-          "expected": 359,
+          "observed": 337,
+          "expected": 337,
           "passed": true
         },
         {
           "check": "canonical.abstain_count",
           "comparison": "exact_equality",
-          "observed": 694,
-          "expected": 694,
+          "observed": 732,
+          "expected": 732,
           "passed": true
         },
         {
           "check": "canonical.false_adapt_count",
           "comparison": "exact_equality",
-          "observed": 0,
-          "expected": 0,
+          "observed": 2,
+          "expected": 2,
           "passed": true
         },
         {
           "check": "canonical.fa_u",
           "comparison": "exact_equality",
-          "observed": 0.0,
-          "expected": 0.0,
+          "observed": 0.000925925925925926,
+          "expected": 0.000925925925925926,
           "passed": true
         },
         {
           "check": "canonical.fa_c",
           "comparison": "exact_equality",
-          "observed": 0.0,
-          "expected": 0.0,
+          "observed": 0.0018331805682859762,
+          "expected": 0.0018331805682859762,
           "passed": true
         },
         {
           "check": "canonical.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5125,
-          "expected": 0.5125,
+          "observed": 0.5050925925925925,
+          "expected": 0.5050925925925925,
           "passed": true
         },
         {
           "check": "canonical.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6787037037037037,
-          "expected": 0.6787037037037037,
+          "observed": 0.6611111111111111,
+          "expected": 0.6611111111111111,
           "passed": true
         },
         {
           "check": "current_policy.decision_counts",
           "comparison": "exact_equality",
           "observed": {
-            "ADAPT": 1107,
-            "FREEZE": 359,
-            "ABSTAIN": 694
+            "ADAPT": 1091,
+            "FREEZE": 337,
+            "ABSTAIN": 732
           },
           "expected": {
-            "ADAPT": 1107,
-            "FREEZE": 359,
-            "ABSTAIN": 694
+            "ADAPT": 1091,
+            "FREEZE": 337,
+            "ABSTAIN": 732
           },
           "passed": true
         },
         {
           "check": "current_policy.adapt_exposure",
           "comparison": "exact_equality",
-          "observed": 0.5125,
-          "expected": 0.5125,
+          "observed": 0.5050925925925925,
+          "expected": 0.5050925925925925,
           "passed": true
         },
         {
           "check": "current_policy.freeze_exposure",
           "comparison": "exact_equality",
-          "observed": 0.16620370370370371,
-          "expected": 0.16620370370370371,
+          "observed": 0.15601851851851853,
+          "expected": 0.15601851851851853,
           "passed": true
         },
         {
           "check": "current_policy.strict_decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6787037037037037,
-          "expected": 0.6787037037037037,
+          "observed": 0.6611111111111111,
+          "expected": 0.6611111111111111,
           "passed": true
         },
         {
@@ -2660,36 +2720,36 @@
           "check": "canonical.seed0.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.001606480942832099,
+            "kga": 0.002006943855020735,
             "always_adapt": 0.008593750220757944,
             "always_freeze": 0.12318518323202927
           },
           "expected": {
             "always_adapt": 0.008593750220757944,
             "always_freeze": 0.12318518323202927,
-            "kga": 0.001606480942832099
+            "kga": 0.002006943855020735
           },
           "passed": true
         },
         {
           "check": "canonical.seed0.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 220,
-          "expected": 220,
+          "observed": 215,
+          "expected": 215,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 73,
-          "expected": 73,
+          "observed": 69,
+          "expected": 69,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 139,
-          "expected": 139,
+          "observed": 148,
+          "expected": 148,
           "passed": true
         },
         {
@@ -2716,36 +2776,36 @@
         {
           "check": "canonical.seed0.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5092592592592593,
-          "expected": 0.5092592592592593,
+          "observed": 0.4976851851851852,
+          "expected": 0.4976851851851852,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6782407407407407,
-          "expected": 0.6782407407407407,
+          "observed": 0.6574074074074074,
+          "expected": 0.6574074074074074,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.021541637956250248,
-          "expected": 0.021541637956250248,
+          "observed": 0.02201292806603966,
+          "expected": 0.02201292806603966,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.022008238279568167,
-          "expected": 0.022008238279568167,
+          "observed": 0.023387061182344855,
+          "expected": 0.023387061182344855,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.022059816207338528,
-          "expected": 0.022059816207338528,
+          "observed": 0.025757397091929257,
+          "expected": 0.025757397091929257,
           "passed": true
         },
         {
@@ -2759,14 +2819,14 @@
           "check": "canonical.seed1.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0016307859785026973,
+            "kga": 0.0018333323575832226,
             "always_adapt": 0.008165508646655965,
             "always_freeze": 0.12373379445462315
           },
           "expected": {
             "always_adapt": 0.008165508646655965,
             "always_freeze": 0.12373379445462315,
-            "kga": 0.0016307859785026973
+            "kga": 0.0018333323575832226
           },
           "passed": true
         },
@@ -2780,36 +2840,36 @@
         {
           "check": "canonical.seed1.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 75,
-          "expected": 75,
+          "observed": 68,
+          "expected": 68,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 133,
-          "expected": 133,
+          "observed": 140,
+          "expected": 140,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.false_adapt_count",
           "comparison": "exact_equality",
-          "observed": 0,
-          "expected": 0,
+          "observed": 2,
+          "expected": 2,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.fa_u",
           "comparison": "exact_equality",
-          "observed": 0.0,
-          "expected": 0.0,
+          "observed": 0.004629629629629629,
+          "expected": 0.004629629629629629,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.fa_c",
           "comparison": "exact_equality",
-          "observed": 0.0,
-          "expected": 0.0,
+          "observed": 0.008928571428571428,
+          "expected": 0.008928571428571428,
           "passed": true
         },
         {
@@ -2822,29 +2882,29 @@
         {
           "check": "canonical.seed1.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6921296296296297,
-          "expected": 0.6921296296296297,
+          "observed": 0.6759259259259259,
+          "expected": 0.6759259259259259,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.019938349126720434,
-          "expected": 0.019938349126720434,
+          "observed": 0.020974814784459894,
+          "expected": 0.020974814784459894,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.020031118185132875,
-          "expected": 0.020031118185132875,
+          "observed": 0.02305309745868281,
+          "expected": 0.02305309745868281,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.02004137286254093,
-          "expected": 0.02004137286254093,
+          "observed": 0.024842425968235944,
+          "expected": 0.024842425968235944,
           "passed": true
         },
         {
@@ -2858,36 +2918,36 @@
           "check": "canonical.seed2.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0016967589380564513,
+            "kga": 0.0018819440846089964,
             "always_adapt": 0.0075659724297346895,
             "always_freeze": 0.12393171322980413
           },
           "expected": {
             "always_adapt": 0.0075659724297346895,
             "always_freeze": 0.12393171322980413,
-            "kga": 0.0016967589380564513
+            "kga": 0.0018819440846089964
           },
           "passed": true
         },
         {
           "check": "canonical.seed2.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 220,
-          "expected": 220,
+          "observed": 217,
+          "expected": 217,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 72,
-          "expected": 72,
+          "observed": 70,
+          "expected": 70,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 140,
-          "expected": 140,
+          "observed": 145,
+          "expected": 145,
           "passed": true
         },
         {
@@ -2914,36 +2974,36 @@
         {
           "check": "canonical.seed2.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5092592592592593,
-          "expected": 0.5092592592592593,
+          "observed": 0.5023148148148148,
+          "expected": 0.5023148148148148,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6759259259259259,
-          "expected": 0.6759259259259259,
+          "observed": 0.6643518518518519,
+          "expected": 0.6643518518518519,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.020946710456022664,
-          "expected": 0.020946710456022664,
+          "observed": 0.021225082885825253,
+          "expected": 0.021225082885825253,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.02153051394888685,
-          "expected": 0.02153051394888685,
+          "observed": 0.02400396007860768,
+          "expected": 0.02400396007860768,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.021595047496941244,
-          "expected": 0.021595047496941244,
+          "observed": 0.028255201519992557,
+          "expected": 0.028255201519992557,
           "passed": true
         },
         {
@@ -2957,36 +3017,36 @@
           "check": "canonical.seed3.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0014398147662480671,
+            "kga": 0.001839120492891029,
             "always_adapt": 0.007769675856387174,
             "always_freeze": 0.12392013930474166
           },
           "expected": {
             "always_adapt": 0.007769675856387174,
             "always_freeze": 0.12392013930474166,
-            "kga": 0.0014398147662480671
+            "kga": 0.001839120492891029
           },
           "passed": true
         },
         {
           "check": "canonical.seed3.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 223,
-          "expected": 223,
+          "observed": 217,
+          "expected": 217,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 72,
-          "expected": 72,
+          "observed": 66,
+          "expected": 66,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 137,
-          "expected": 137,
+          "observed": 149,
+          "expected": 149,
           "passed": true
         },
         {
@@ -3013,36 +3073,36 @@
         {
           "check": "canonical.seed3.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5162037037037037,
-          "expected": 0.5162037037037037,
+          "observed": 0.5023148148148148,
+          "expected": 0.5023148148148148,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6828703703703703,
-          "expected": 0.6828703703703703,
+          "observed": 0.6550925925925926,
+          "expected": 0.6550925925925926,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.0209623127334769,
-          "expected": 0.0209623127334769,
+          "observed": 0.021746336682493206,
+          "expected": 0.021746336682493206,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.021005865619805726,
-          "expected": 0.021005865619805726,
+          "observed": 0.02531786543196233,
+          "expected": 0.02531786543196233,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.021010679949142838,
-          "expected": 0.021010679949142838,
+          "observed": 0.03146201351502548,
+          "expected": 0.03146201351502548,
           "passed": true
         },
         {
@@ -3056,36 +3116,36 @@
           "check": "canonical.seed4.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0018530094789134131,
+            "kga": 0.0020185186079254855,
             "always_adapt": 0.007783565808225561,
             "always_freeze": 0.12491319404432068
           },
           "expected": {
             "always_adapt": 0.007783565808225561,
             "always_freeze": 0.12491319404432068,
-            "kga": 0.0018530094789134131
+            "kga": 0.0020185186079254855
           },
           "passed": true
         },
         {
           "check": "canonical.seed4.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 220,
-          "expected": 220,
+          "observed": 218,
+          "expected": 218,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 67,
-          "expected": 67,
+          "observed": 64,
+          "expected": 64,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 145,
-          "expected": 145,
+          "observed": 150,
+          "expected": 150,
           "passed": true
         },
         {
@@ -3112,36 +3172,36 @@
         {
           "check": "canonical.seed4.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5092592592592593,
-          "expected": 0.5092592592592593,
+          "observed": 0.5046296296296297,
+          "expected": 0.5046296296296297,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6643518518518519,
-          "expected": 0.6643518518518519,
+          "observed": 0.6527777777777778,
+          "expected": 0.6527777777777778,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.021468872466786082,
-          "expected": 0.021468872466786082,
+          "observed": 0.022483146571337764,
+          "expected": 0.022483146571337764,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.02182097719398905,
-          "expected": 0.02182097719398905,
+          "observed": 0.023845612586456573,
+          "expected": 0.023845612586456573,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.021859898796224853,
-          "expected": 0.021859898796224853,
+          "observed": 0.026967172251704245,
+          "expected": 0.026967172251704245,
           "passed": true
         },
         {
@@ -3151,16 +3211,16 @@
             "contrast": 0.008229167262713114,
             "defocus_blur": 0.010590276949935489,
             "fog": 0.010380557345019446,
-            "gaussian_noise": -0.0020555557476149666,
-            "jpeg_compression": 0.003368055820465088,
+            "gaussian_noise": -0.002508333490954505,
+            "jpeg_compression": 0.002197222411632538,
             "pixelate": 0.007469445798132155
           },
           "expected": {
             "contrast": 0.008229167262713114,
             "defocus_blur": 0.010590276949935489,
             "fog": 0.010380557345019446,
-            "gaussian_noise": -0.0020555557476149666,
-            "jpeg_compression": 0.003368055820465088,
+            "gaussian_noise": -0.002508333490954505,
+            "jpeg_compression": 0.002197222411632538,
             "pixelate": 0.007469445798132155
           },
           "passed": true
@@ -3168,8 +3228,8 @@
         {
           "check": "current_policy.always_adapt.point",
           "comparison": "exact_equality",
-          "observed": 0.006330324571441721,
-          "expected": 0.006330324571441721,
+          "observed": 0.006059722712746373,
+          "expected": 0.006059722712746373,
           "passed": true
         },
         {
@@ -3179,16 +3239,16 @@
             "contrast": 0.22884583324193955,
             "defocus_blur": 0.12017222195863723,
             "fog": 0.06325694289472368,
-            "gaussian_noise": 0.17364722390969595,
-            "jpeg_compression": 0.006643055048253801,
+            "gaussian_noise": 0.1731944461663564,
+            "jpeg_compression": 0.005472221639421251,
             "pixelate": 0.1411833319399092
           },
           "expected": {
             "contrast": 0.22884583324193955,
             "defocus_blur": 0.12017222195863723,
             "fog": 0.06325694289472368,
-            "gaussian_noise": 0.17364722390969595,
-            "jpeg_compression": 0.006643055048253801,
+            "gaussian_noise": 0.1731944461663564,
+            "jpeg_compression": 0.005472221639421251,
             "pixelate": 0.1411833319399092
           },
           "passed": true
@@ -3196,8 +3256,8 @@
         {
           "check": "current_policy.always_freeze.point",
           "comparison": "exact_equality",
-          "observed": 0.12229143483219324,
-          "expected": 0.12229143483219324,
+          "observed": 0.12202083297349788,
+          "expected": 0.12202083297349788,
           "passed": true
         }
       ]
@@ -3207,66 +3267,66 @@
         "n": 2160,
         "nominal_inclusion_target": 0.9,
         "observed_inclusion": {
-          "numerator": 1945,
+          "numerator": 1950,
           "denominator": 2160,
-          "value": 0.9004629629629629,
+          "value": 0.9027777777777778,
           "defined": true,
           "undefined_reason": null
         },
         "finite_interval_count": 2160,
         "infinite_interval_count": 0,
         "finite_interval_inclusion": {
-          "numerator": 1945,
+          "numerator": 1950,
           "denominator": 2160,
-          "value": 0.9004629629629629,
+          "value": 0.9027777777777778,
           "defined": true,
           "undefined_reason": null
         },
         "full_interval_width": {
           "definition": "2 * epsilon, unclipped; accuracy proportion units",
           "mean": {
-            "value": 0.034043808428373665,
+            "value": 0.039676391660644926,
             "status": "finite"
           },
           "median": {
-            "value": 0.03433239757660361,
+            "value": 0.03893667933928646,
             "status": "finite"
           },
           "minimum": {
-            "value": 0.03006371109242234,
+            "value": 0.029812155407284546,
             "status": "finite"
           },
           "maximum": {
-            "value": 0.03698443726119194,
+            "value": 0.05202342370297797,
             "status": "finite"
           }
         },
         "commitment": {
-          "numerator": 1373,
+          "numerator": 1312,
           "denominator": 2160,
-          "value": 0.6356481481481482,
+          "value": 0.6074074074074074,
           "defined": true,
           "undefined_reason": null
         },
         "actions": {
           "ADAPT": {
-            "numerator": 1241,
+            "numerator": 1207,
             "denominator": 2160,
-            "value": 0.5745370370370371,
+            "value": 0.5587962962962963,
             "defined": true,
             "undefined_reason": null
           },
           "FREEZE": {
-            "numerator": 132,
+            "numerator": 105,
             "denominator": 2160,
-            "value": 0.06111111111111111,
+            "value": 0.04861111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "ABSTAIN": {
-            "numerator": 787,
+            "numerator": 848,
             "denominator": 2160,
-            "value": 0.36435185185185187,
+            "value": 0.3925925925925926,
             "defined": true,
             "undefined_reason": null
           }
@@ -3282,7 +3342,7 @@
           },
           "conditional": {
             "numerator": 0,
-            "denominator": 1241,
+            "denominator": 1207,
             "value": 0.0,
             "defined": true,
             "undefined_reason": null
@@ -3299,7 +3359,7 @@
           },
           "conditional": {
             "numerator": 0,
-            "denominator": 132,
+            "denominator": 105,
             "value": 0.0,
             "defined": true,
             "undefined_reason": null
@@ -3311,44 +3371,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 300,
+            "numerator": 303,
             "denominator": 360,
-            "value": 0.8333333333333334,
+            "value": 0.8416666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 300,
+            "numerator": 303,
             "denominator": 360,
-            "value": 0.8333333333333334,
+            "value": 0.8416666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.0340301426305866,
+              "value": 0.03956072136789309,
               "status": "finite"
             },
             "median": {
-              "value": 0.03433239757660361,
+              "value": 0.03893667933928646,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03006371109242234,
+              "value": 0.029812155407284546,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.03698443726119194,
+              "value": 0.05202342370297797,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 208,
+            "numerator": 205,
             "denominator": 360,
-            "value": 0.5777777777777777,
+            "value": 0.5694444444444444,
             "defined": true,
             "undefined_reason": null
           },
@@ -3361,16 +3421,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 28,
+              "numerator": 25,
               "denominator": 360,
-              "value": 0.07777777777777778,
+              "value": 0.06944444444444445,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 152,
+              "numerator": 155,
               "denominator": 360,
-              "value": 0.4222222222222222,
+              "value": 0.4305555555555556,
               "defined": true,
               "undefined_reason": null
             }
@@ -3403,7 +3463,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 28,
+              "denominator": 25,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3414,44 +3474,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 335,
+            "numerator": 334,
             "denominator": 360,
-            "value": 0.9305555555555556,
+            "value": 0.9277777777777778,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 335,
+            "numerator": 334,
             "denominator": 360,
-            "value": 0.9305555555555556,
+            "value": 0.9277777777777778,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.03405244059053657,
+              "value": 0.03984426636347056,
               "status": "finite"
             },
             "median": {
-              "value": 0.03433239757660361,
+              "value": 0.03916649293032126,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03006371109242234,
+              "value": 0.029812155407284546,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.03698443726119194,
+              "value": 0.05202342370297797,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 217,
+            "numerator": 205,
             "denominator": 360,
-            "value": 0.6027777777777777,
+            "value": 0.5694444444444444,
             "defined": true,
             "undefined_reason": null
           },
@@ -3464,16 +3524,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 37,
+              "numerator": 25,
               "denominator": 360,
-              "value": 0.10277777777777777,
+              "value": 0.06944444444444445,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 143,
+              "numerator": 155,
               "denominator": 360,
-              "value": 0.3972222222222222,
+              "value": 0.4305555555555556,
               "defined": true,
               "undefined_reason": null
             }
@@ -3506,7 +3566,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 37,
+              "denominator": 25,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3517,44 +3577,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 327,
+            "numerator": 329,
             "denominator": 360,
-            "value": 0.9083333333333333,
+            "value": 0.9138888888888889,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 327,
+            "numerator": 329,
             "denominator": 360,
-            "value": 0.9083333333333333,
+            "value": 0.9138888888888889,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.034043578066490714,
+              "value": 0.03986915785867421,
               "status": "finite"
             },
             "median": {
-              "value": 0.03433239757660361,
+              "value": 0.03893667933928646,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03006371109242234,
+              "value": 0.029812155407284546,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.03698443726119194,
+              "value": 0.05202342370297797,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 215,
+            "numerator": 207,
             "denominator": 360,
-            "value": 0.5972222222222222,
+            "value": 0.575,
             "defined": true,
             "undefined_reason": null
           },
@@ -3567,16 +3627,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 35,
+              "numerator": 27,
               "denominator": 360,
-              "value": 0.09722222222222222,
+              "value": 0.075,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 145,
+              "numerator": 153,
               "denominator": 360,
-              "value": 0.4027777777777778,
+              "value": 0.425,
               "defined": true,
               "undefined_reason": null
             }
@@ -3609,7 +3669,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 35,
+              "denominator": 27,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3620,52 +3680,52 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 305,
+            "numerator": 307,
             "denominator": 360,
-            "value": 0.8472222222222222,
+            "value": 0.8527777777777777,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 305,
+            "numerator": 307,
             "denominator": 360,
-            "value": 0.8472222222222222,
+            "value": 0.8527777777777777,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.03403502473572779,
+              "value": 0.03988657555849643,
               "status": "finite"
             },
             "median": {
-              "value": 0.03433239757660361,
+              "value": 0.03893667933928646,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03006371109242234,
+              "value": 0.029812155407284546,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.03698443726119194,
+              "value": 0.05202342370297797,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 354,
+            "numerator": 350,
             "denominator": 360,
-            "value": 0.9833333333333333,
+            "value": 0.9722222222222222,
             "defined": true,
             "undefined_reason": null
           },
           "actions": {
             "ADAPT": {
-              "numerator": 354,
+              "numerator": 350,
               "denominator": 360,
-              "value": 0.9833333333333333,
+              "value": 0.9722222222222222,
               "defined": true,
               "undefined_reason": null
             },
@@ -3677,9 +3737,9 @@
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 6,
+              "numerator": 10,
               "denominator": 360,
-              "value": 0.016666666666666666,
+              "value": 0.027777777777777776,
               "defined": true,
               "undefined_reason": null
             }
@@ -3695,7 +3755,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 354,
+              "denominator": 350,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3723,66 +3783,66 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 348,
+            "numerator": 349,
             "denominator": 360,
-            "value": 0.9666666666666667,
+            "value": 0.9694444444444444,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 348,
+            "numerator": 349,
             "denominator": 360,
-            "value": 0.9666666666666667,
+            "value": 0.9694444444444444,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.034057850157505516,
+              "value": 0.03957491954141172,
               "status": "finite"
             },
             "median": {
-              "value": 0.03433239757660361,
+              "value": 0.03893667933928646,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03006371109242234,
+              "value": 0.029812155407284546,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.03698443726119194,
+              "value": 0.05202342370297797,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 178,
+            "numerator": 146,
             "denominator": 360,
-            "value": 0.49444444444444446,
+            "value": 0.40555555555555556,
             "defined": true,
             "undefined_reason": null
           },
           "actions": {
             "ADAPT": {
-              "numerator": 167,
+              "numerator": 137,
               "denominator": 360,
-              "value": 0.4638888888888889,
+              "value": 0.38055555555555554,
               "defined": true,
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 11,
+              "numerator": 9,
               "denominator": 360,
-              "value": 0.030555555555555555,
+              "value": 0.025,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 182,
+              "numerator": 214,
               "denominator": 360,
-              "value": 0.5055555555555555,
+              "value": 0.5944444444444444,
               "defined": true,
               "undefined_reason": null
             }
@@ -3798,7 +3858,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 167,
+              "denominator": 137,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3815,7 +3875,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 11,
+              "denominator": 9,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3826,44 +3886,44 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 330,
+            "numerator": 328,
             "denominator": 360,
-            "value": 0.9166666666666666,
+            "value": 0.9111111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 330,
+            "numerator": 328,
             "denominator": 360,
-            "value": 0.9166666666666666,
+            "value": 0.9111111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.03404381438939479,
+              "value": 0.03932270927392351,
               "status": "finite"
             },
             "median": {
-              "value": 0.03433239757660361,
+              "value": 0.038872412894465636,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.03006371109242234,
+              "value": 0.029812155407284546,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.03698443726119194,
+              "value": 0.05202342370297797,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 201,
+            "numerator": 199,
             "denominator": 360,
-            "value": 0.5583333333333333,
+            "value": 0.5527777777777778,
             "defined": true,
             "undefined_reason": null
           },
@@ -3876,16 +3936,16 @@
               "undefined_reason": null
             },
             "FREEZE": {
-              "numerator": 21,
+              "numerator": 19,
               "denominator": 360,
-              "value": 0.058333333333333334,
+              "value": 0.05277777777777778,
               "defined": true,
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 159,
+              "numerator": 161,
               "denominator": 360,
-              "value": 0.44166666666666665,
+              "value": 0.44722222222222224,
               "defined": true,
               "undefined_reason": null
             }
@@ -3918,7 +3978,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 21,
+              "denominator": 19,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -3929,18 +3989,18 @@
       "unchanged_replay_score": {
         "n": 2160,
         "regret": {
-          "kga": 0.0013249999947018093,
+          "kga": 0.0016335646587389487,
           "always_adapt": 0.003276389064612212,
           "always_freeze": 0.13133703588887496
         },
-        "adapt_count": 1241,
-        "freeze_count": 132,
-        "abstain_count": 787,
+        "adapt_count": 1207,
+        "freeze_count": 105,
+        "abstain_count": 848,
         "false_adapt_count": 0,
         "fa_u": 0.0,
         "fa_c": 0.0,
-        "adapt_rate": 0.5745370370370371,
-        "decision_coverage": 0.6356481481481482
+        "adapt_rate": 0.5587962962962963,
+        "decision_coverage": 0.6074074074074074
       },
       "scientific_equality_checks": [
         {
@@ -3954,36 +4014,36 @@
           "check": "canonical.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0013249999947018093,
+            "kga": 0.0016335646587389487,
             "always_adapt": 0.003276389064612212,
             "always_freeze": 0.13133703588887496
           },
           "expected": {
             "always_adapt": 0.003276389064612212,
             "always_freeze": 0.13133703588887496,
-            "kga": 0.0013249999947018093
+            "kga": 0.0016335646587389487
           },
           "passed": true
         },
         {
           "check": "canonical.adapt_count",
           "comparison": "exact_equality",
-          "observed": 1241,
-          "expected": 1241,
+          "observed": 1207,
+          "expected": 1207,
           "passed": true
         },
         {
           "check": "canonical.freeze_count",
           "comparison": "exact_equality",
-          "observed": 132,
-          "expected": 132,
+          "observed": 105,
+          "expected": 105,
           "passed": true
         },
         {
           "check": "canonical.abstain_count",
           "comparison": "exact_equality",
-          "observed": 787,
-          "expected": 787,
+          "observed": 848,
+          "expected": 848,
           "passed": true
         },
         {
@@ -4010,51 +4070,51 @@
         {
           "check": "canonical.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5745370370370371,
-          "expected": 0.5745370370370371,
+          "observed": 0.5587962962962963,
+          "expected": 0.5587962962962963,
           "passed": true
         },
         {
           "check": "canonical.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6356481481481482,
-          "expected": 0.6356481481481482,
+          "observed": 0.6074074074074074,
+          "expected": 0.6074074074074074,
           "passed": true
         },
         {
           "check": "current_policy.decision_counts",
           "comparison": "exact_equality",
           "observed": {
-            "ADAPT": 1241,
-            "FREEZE": 132,
-            "ABSTAIN": 787
+            "ADAPT": 1207,
+            "FREEZE": 105,
+            "ABSTAIN": 848
           },
           "expected": {
-            "ADAPT": 1241,
-            "FREEZE": 132,
-            "ABSTAIN": 787
+            "ADAPT": 1207,
+            "FREEZE": 105,
+            "ABSTAIN": 848
           },
           "passed": true
         },
         {
           "check": "current_policy.adapt_exposure",
           "comparison": "exact_equality",
-          "observed": 0.5745370370370371,
-          "expected": 0.5745370370370371,
+          "observed": 0.5587962962962963,
+          "expected": 0.5587962962962963,
           "passed": true
         },
         {
           "check": "current_policy.freeze_exposure",
           "comparison": "exact_equality",
-          "observed": 0.06111111111111111,
-          "expected": 0.06111111111111111,
+          "observed": 0.04861111111111111,
+          "expected": 0.04861111111111111,
           "passed": true
         },
         {
           "check": "current_policy.strict_decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6356481481481482,
-          "expected": 0.6356481481481482,
+          "observed": 0.6074074074074074,
+          "expected": 0.6074074074074074,
           "passed": true
         },
         {
@@ -4136,36 +4196,36 @@
           "check": "canonical.seed0.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0014837965093277119,
+            "kga": 0.0012893520847514824,
             "always_adapt": 0.003665509875173922,
             "always_freeze": 0.13106134057872826
           },
           "expected": {
             "always_adapt": 0.003665509875173922,
             "always_freeze": 0.13106134057872826,
-            "kga": 0.0014837965093277119
+            "kga": 0.0012893520847514824
           },
           "passed": true
         },
         {
           "check": "canonical.seed0.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 242,
-          "expected": 242,
+          "observed": 247,
+          "expected": 247,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 32,
-          "expected": 32,
+          "observed": 26,
+          "expected": 26,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 158,
-          "expected": 158,
+          "observed": 159,
+          "expected": 159,
           "passed": true
         },
         {
@@ -4192,36 +4252,36 @@
         {
           "check": "canonical.seed0.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5601851851851852,
-          "expected": 0.5601851851851852,
+          "observed": 0.5717592592592593,
+          "expected": 0.5717592592592593,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6342592592592593,
-          "expected": 0.6342592592592593,
+          "observed": 0.6319444444444444,
+          "expected": 0.6319444444444444,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.017157765617454565,
-          "expected": 0.017157765617454565,
+          "observed": 0.014906077703642273,
+          "expected": 0.014906077703642273,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.017165359375462843,
-          "expected": 0.017165359375462843,
+          "observed": 0.018445650405584425,
+          "expected": 0.018445650405584425,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.017166198788301806,
-          "expected": 0.017166198788301806,
+          "observed": 0.022639217105345444,
+          "expected": 0.022639217105345444,
           "passed": true
         },
         {
@@ -4235,36 +4295,36 @@
           "check": "canonical.seed1.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0013275456925233204,
+            "kga": 0.0017986105823958362,
             "always_adapt": 0.0033900461815021656,
             "always_freeze": 0.1308124986373716
           },
           "expected": {
             "always_adapt": 0.0033900461815021656,
             "always_freeze": 0.1308124986373716,
-            "kga": 0.0013275456925233204
+            "kga": 0.0017986105823958362
           },
           "passed": true
         },
         {
           "check": "canonical.seed1.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 252,
-          "expected": 252,
+          "observed": 244,
+          "expected": 244,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 25,
-          "expected": 25,
+          "observed": 20,
+          "expected": 20,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 155,
-          "expected": 155,
+          "observed": 168,
+          "expected": 168,
           "passed": true
         },
         {
@@ -4291,36 +4351,36 @@
         {
           "check": "canonical.seed1.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5833333333333334,
-          "expected": 0.5833333333333334,
+          "observed": 0.5648148148148148,
+          "expected": 0.5648148148148148,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6412037037037037,
-          "expected": 0.6412037037037037,
+          "observed": 0.6111111111111112,
+          "expected": 0.6111111111111112,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.016793825030214975,
-          "expected": 0.016793825030214975,
+          "observed": 0.015772718938494343,
+          "expected": 0.015772718938494343,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.016876730432107398,
-          "expected": 0.016876730432107398,
+          "observed": 0.01959048167083841,
+          "expected": 0.01959048167083841,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.01688589478244512,
-          "expected": 0.01688589478244512,
+          "observed": 0.024029647685685274,
+          "expected": 0.024029647685685274,
           "passed": true
         },
         {
@@ -4334,36 +4394,36 @@
           "check": "canonical.seed2.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0013784719286141572,
+            "kga": 0.0014861106044716304,
             "always_adapt": 0.0033483803272247314,
             "always_freeze": 0.13122453523316868
           },
           "expected": {
             "always_adapt": 0.0033483803272247314,
             "always_freeze": 0.13122453523316868,
-            "kga": 0.0013784719286141572
+            "kga": 0.0014861106044716304
           },
           "passed": true
         },
         {
           "check": "canonical.seed2.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 244,
-          "expected": 244,
+          "observed": 242,
+          "expected": 242,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 22,
-          "expected": 22,
+          "observed": 23,
+          "expected": 23,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 166,
-          "expected": 166,
+          "observed": 167,
+          "expected": 167,
           "passed": true
         },
         {
@@ -4390,36 +4450,36 @@
         {
           "check": "canonical.seed2.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5648148148148148,
-          "expected": 0.5648148148148148,
+          "observed": 0.5601851851851852,
+          "expected": 0.5601851851851852,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6157407407407407,
-          "expected": 0.6157407407407407,
+          "observed": 0.6134259259259259,
+          "expected": 0.6134259259259259,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.0181256156650228,
-          "expected": 0.0181256156650228,
+          "observed": 0.016035161806291994,
+          "expected": 0.016035161806291994,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.018455728057633822,
-          "expected": 0.018455728057633822,
+          "observed": 0.019290954259674982,
+          "expected": 0.019290954259674982,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.01849221863059597,
-          "expected": 0.01849221863059597,
+          "observed": 0.022210358488885057,
+          "expected": 0.022210358488885057,
           "passed": true
         },
         {
@@ -4433,36 +4493,36 @@
           "check": "canonical.seed3.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0014722223083178203,
+            "kga": 0.0018136573058587532,
             "always_adapt": 0.002962962344840721,
             "always_freeze": 0.1314826390740496
           },
           "expected": {
             "always_adapt": 0.002962962344840721,
             "always_freeze": 0.1314826390740496,
-            "kga": 0.0014722223083178203
+            "kga": 0.0018136573058587532
           },
           "passed": true
         },
         {
           "check": "canonical.seed3.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 243,
-          "expected": 243,
+          "observed": 236,
+          "expected": 236,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 23,
-          "expected": 23,
+          "observed": 14,
+          "expected": 14,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 166,
-          "expected": 166,
+          "observed": 182,
+          "expected": 182,
           "passed": true
         },
         {
@@ -4489,36 +4549,36 @@
         {
           "check": "canonical.seed3.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.5625,
-          "expected": 0.5625,
+          "observed": 0.5462962962962963,
+          "expected": 0.5462962962962963,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6157407407407407,
-          "expected": 0.6157407407407407,
+          "observed": 0.5787037037037037,
+          "expected": 0.5787037037037037,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.017543499407477653,
-          "expected": 0.017543499407477653,
+          "observed": 0.018193079149279746,
+          "expected": 0.018193079149279746,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.017577724334674902,
-          "expected": 0.017577724334674902,
+          "observed": 0.02297797014865679,
+          "expected": 0.02297797014865679,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.017581507552848374,
-          "expected": 0.017581507552848374,
+          "observed": 0.026011711851488983,
+          "expected": 0.026011711851488983,
           "passed": true
         },
         {
@@ -4532,36 +4592,36 @@
           "check": "canonical.seed4.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0009629635347260369,
+            "kga": 0.001780092716217041,
             "always_adapt": 0.00301504659431952,
             "always_freeze": 0.1321041659210567
           },
           "expected": {
             "always_adapt": 0.00301504659431952,
             "always_freeze": 0.1321041659210567,
-            "kga": 0.0009629635347260369
+            "kga": 0.001780092716217041
           },
           "passed": true
         },
         {
           "check": "canonical.seed4.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 260,
-          "expected": 260,
+          "observed": 238,
+          "expected": 238,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.freeze_count",
           "comparison": "exact_equality",
-          "observed": 30,
-          "expected": 30,
+          "observed": 22,
+          "expected": 22,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 142,
-          "expected": 142,
+          "observed": 172,
+          "expected": 172,
           "passed": true
         },
         {
@@ -4588,36 +4648,36 @@
         {
           "check": "canonical.seed4.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6018518518518519,
-          "expected": 0.6018518518518519,
+          "observed": 0.5509259259259259,
+          "expected": 0.5509259259259259,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6712962962962963,
-          "expected": 0.6712962962962963,
+          "observed": 0.6018518518518519,
+          "expected": 0.6018518518518519,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.01503185554621117,
-          "expected": 0.01503185554621117,
+          "observed": 0.017258510765217228,
+          "expected": 0.017258510765217228,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.015033978871055191,
-          "expected": 0.015033978871055191,
+          "observed": 0.018885922666857697,
+          "expected": 0.018885922666857697,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.015034213583055941,
-          "expected": 0.015034213583055941,
+          "observed": 0.020605683603234226,
+          "expected": 0.020605683603234226,
           "passed": true
         },
         {
@@ -4627,16 +4687,16 @@
             "contrast": 0.002649999823835161,
             "defocus_blur": 0.00548888858821657,
             "fog": 0.005572223001056247,
-            "gaussian_noise": -0.00022083371877670288,
-            "jpeg_compression": -0.0033013885219891864,
+            "gaussian_noise": -0.00047083381149503917,
+            "jpeg_compression": -0.0049027764134936865,
             "pixelate": 0.0015194452471203274
           },
           "expected": {
             "contrast": 0.002649999823835161,
             "defocus_blur": 0.00548888858821657,
             "fog": 0.005572223001056247,
-            "gaussian_noise": -0.00022083371877670288,
-            "jpeg_compression": -0.0033013885219891864,
+            "gaussian_noise": -0.00047083381149503917,
+            "jpeg_compression": -0.0049027764134936865,
             "pixelate": 0.0015194452471203274
           },
           "passed": true
@@ -4644,8 +4704,8 @@
         {
           "check": "current_policy.always_adapt.point",
           "comparison": "exact_equality",
-          "observed": 0.0019513890699104023,
-          "expected": 0.0019513890699104023,
+          "observed": 0.001642824405873263,
+          "expected": 0.001642824405873263,
           "passed": true
         },
         {
@@ -4655,16 +4715,16 @@
             "contrast": 0.23968055546283723,
             "defocus_blur": 0.12648055454095206,
             "fog": 0.06860277652740479,
-            "gaussian_noise": 0.186472221215566,
-            "jpeg_compression": 0.012358331514729395,
+            "gaussian_noise": 0.18622222112284767,
+            "jpeg_compression": 0.010756943623224895,
             "pixelate": 0.14647777610354953
           },
           "expected": {
             "contrast": 0.23968055546283723,
             "defocus_blur": 0.12648055454095206,
             "fog": 0.06860277652740479,
-            "gaussian_noise": 0.186472221215566,
-            "jpeg_compression": 0.012358331514729395,
+            "gaussian_noise": 0.18622222112284767,
+            "jpeg_compression": 0.010756943623224895,
             "pixelate": 0.14647777610354953
           },
           "passed": true
@@ -4672,8 +4732,8 @@
         {
           "check": "current_policy.always_freeze.point",
           "comparison": "exact_equality",
-          "observed": 0.13001203589417318,
-          "expected": 0.13001203589417318,
+          "observed": 0.129703471230136,
+          "expected": 0.129703471230136,
           "passed": true
         }
       ]
@@ -4683,52 +4743,52 @@
         "n": 2160,
         "nominal_inclusion_target": 0.9,
         "observed_inclusion": {
-          "numerator": 1945,
+          "numerator": 1949,
           "denominator": 2160,
-          "value": 0.9004629629629629,
+          "value": 0.9023148148148148,
           "defined": true,
           "undefined_reason": null
         },
         "finite_interval_count": 2160,
         "infinite_interval_count": 0,
         "finite_interval_inclusion": {
-          "numerator": 1945,
+          "numerator": 1949,
           "denominator": 2160,
-          "value": 0.9004629629629629,
+          "value": 0.9023148148148148,
           "defined": true,
           "undefined_reason": null
         },
         "full_interval_width": {
           "definition": "2 * epsilon, unclipped; accuracy proportion units",
           "mean": {
-            "value": 0.026031182526012282,
+            "value": 0.0285592049394698,
             "status": "finite"
           },
           "median": {
-            "value": 0.02630890643728928,
+            "value": 0.029006236616110237,
             "status": "finite"
           },
           "minimum": {
-            "value": 0.02433731253848137,
+            "value": 0.020351380965327848,
             "status": "finite"
           },
           "maximum": {
-            "value": 0.027066865669459313,
+            "value": 0.036012668203223075,
             "status": "finite"
           }
         },
         "commitment": {
-          "numerator": 1446,
+          "numerator": 1414,
           "denominator": 2160,
-          "value": 0.6694444444444444,
+          "value": 0.6546296296296297,
           "defined": true,
           "undefined_reason": null
         },
         "actions": {
           "ADAPT": {
-            "numerator": 1446,
+            "numerator": 1414,
             "denominator": 2160,
-            "value": 0.6694444444444444,
+            "value": 0.6546296296296297,
             "defined": true,
             "undefined_reason": null
           },
@@ -4740,9 +4800,9 @@
             "undefined_reason": null
           },
           "ABSTAIN": {
-            "numerator": 714,
+            "numerator": 746,
             "denominator": 2160,
-            "value": 0.33055555555555555,
+            "value": 0.3453703703703704,
             "defined": true,
             "undefined_reason": null
           }
@@ -4758,7 +4818,7 @@
           },
           "conditional": {
             "numerator": 0,
-            "denominator": 1446,
+            "denominator": 1414,
             "value": 0.0,
             "defined": true,
             "undefined_reason": null
@@ -4787,37 +4847,37 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 316,
+            "numerator": 313,
             "denominator": 360,
-            "value": 0.8777777777777778,
+            "value": 0.8694444444444445,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 316,
+            "numerator": 313,
             "denominator": 360,
-            "value": 0.8777777777777778,
+            "value": 0.8694444444444445,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.02602332130726109,
+              "value": 0.02870604390849235,
               "status": "finite"
             },
             "median": {
-              "value": 0.02630890643728928,
+              "value": 0.029006236616110237,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.02433731253848137,
+              "value": 0.020351380965327848,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.027066865669459313,
+              "value": 0.036012668203223075,
               "status": "finite"
             }
           },
@@ -4890,37 +4950,37 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 330,
+            "numerator": 335,
             "denominator": 360,
-            "value": 0.9166666666666666,
+            "value": 0.9305555555555556,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 330,
+            "numerator": 335,
             "denominator": 360,
-            "value": 0.9166666666666666,
+            "value": 0.9305555555555556,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.026032693881751817,
+              "value": 0.028659445830064485,
               "status": "finite"
             },
             "median": {
-              "value": 0.02630890643728928,
+              "value": 0.029006236616110237,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.02433731253848137,
+              "value": 0.020351380965327848,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.027066865669459313,
+              "value": 0.036012668203223075,
               "status": "finite"
             }
           },
@@ -4993,37 +5053,37 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 325,
+            "numerator": 322,
             "denominator": 360,
-            "value": 0.9027777777777778,
+            "value": 0.8944444444444445,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 325,
+            "numerator": 322,
             "denominator": 360,
-            "value": 0.9027777777777778,
+            "value": 0.8944444444444445,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.02603011055011084,
+              "value": 0.02831372496806676,
               "status": "finite"
             },
             "median": {
-              "value": 0.02630890643728928,
+              "value": 0.0289143438458241,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.02433731253848137,
+              "value": 0.020351380965327848,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.027066865669459313,
+              "value": 0.036012668203223075,
               "status": "finite"
             }
           },
@@ -5096,37 +5156,37 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 299,
+            "numerator": 303,
             "denominator": 360,
-            "value": 0.8305555555555556,
+            "value": 0.8416666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 299,
+            "numerator": 303,
             "denominator": 360,
-            "value": 0.8305555555555556,
+            "value": 0.8416666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.02601336301705123,
+              "value": 0.0285601672099585,
               "status": "finite"
             },
             "median": {
-              "value": 0.02630890643728928,
+              "value": 0.029006236616110237,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.02433731253848137,
+              "value": 0.020351380965327848,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.027066865669459313,
+              "value": 0.036012668203223075,
               "status": "finite"
             }
           },
@@ -5199,52 +5259,52 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 345,
+            "numerator": 348,
             "denominator": 360,
-            "value": 0.9583333333333334,
+            "value": 0.9666666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 345,
+            "numerator": 348,
             "denominator": 360,
-            "value": 0.9583333333333334,
+            "value": 0.9666666666666667,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.02605091953392727,
+              "value": 0.02831902497575047,
               "status": "finite"
             },
             "median": {
-              "value": 0.02630890643728928,
+              "value": 0.029006236616110237,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.02433731253848137,
+              "value": 0.020351380965327848,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.027066865669459313,
+              "value": 0.036012668203223075,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 347,
+            "numerator": 322,
             "denominator": 360,
-            "value": 0.9638888888888889,
+            "value": 0.8944444444444445,
             "defined": true,
             "undefined_reason": null
           },
           "actions": {
             "ADAPT": {
-              "numerator": 347,
+              "numerator": 322,
               "denominator": 360,
-              "value": 0.9638888888888889,
+              "value": 0.8944444444444445,
               "defined": true,
               "undefined_reason": null
             },
@@ -5256,9 +5316,9 @@
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 13,
+              "numerator": 38,
               "denominator": 360,
-              "value": 0.03611111111111111,
+              "value": 0.10555555555555556,
               "defined": true,
               "undefined_reason": null
             }
@@ -5274,7 +5334,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 347,
+              "denominator": 322,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -5302,52 +5362,52 @@
           "n": 360,
           "nominal_inclusion_target": 0.9,
           "observed_inclusion": {
-            "numerator": 330,
+            "numerator": 328,
             "denominator": 360,
-            "value": 0.9166666666666666,
+            "value": 0.9111111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "finite_interval_count": 360,
           "infinite_interval_count": 0,
           "finite_interval_inclusion": {
-            "numerator": 330,
+            "numerator": 328,
             "denominator": 360,
-            "value": 0.9166666666666666,
+            "value": 0.9111111111111111,
             "defined": true,
             "undefined_reason": null
           },
           "full_interval_width": {
             "definition": "2 * epsilon, unclipped; accuracy proportion units",
             "mean": {
-              "value": 0.02603668686597145,
+              "value": 0.02879682274448623,
               "status": "finite"
             },
             "median": {
-              "value": 0.02630890643728928,
+              "value": 0.029006236616110237,
               "status": "finite"
             },
             "minimum": {
-              "value": 0.02433731253848137,
+              "value": 0.020351380965327848,
               "status": "finite"
             },
             "maximum": {
-              "value": 0.027066865669459313,
+              "value": 0.036012668203223075,
               "status": "finite"
             }
           },
           "commitment": {
-            "numerator": 199,
+            "numerator": 192,
             "denominator": 360,
-            "value": 0.5527777777777778,
+            "value": 0.5333333333333333,
             "defined": true,
             "undefined_reason": null
           },
           "actions": {
             "ADAPT": {
-              "numerator": 199,
+              "numerator": 192,
               "denominator": 360,
-              "value": 0.5527777777777778,
+              "value": 0.5333333333333333,
               "defined": true,
               "undefined_reason": null
             },
@@ -5359,9 +5419,9 @@
               "undefined_reason": null
             },
             "ABSTAIN": {
-              "numerator": 161,
+              "numerator": 168,
               "denominator": 360,
-              "value": 0.44722222222222224,
+              "value": 0.4666666666666667,
               "defined": true,
               "undefined_reason": null
             }
@@ -5377,7 +5437,7 @@
             },
             "conditional": {
               "numerator": 0,
-              "denominator": 199,
+              "denominator": 192,
               "value": 0.0,
               "defined": true,
               "undefined_reason": null
@@ -5405,18 +5465,18 @@
       "unchanged_replay_score": {
         "n": 2160,
         "regret": {
-          "kga": 0.0015581017842999211,
+          "kga": 0.001782870375447803,
           "always_adapt": 0.0003354167496716535,
           "always_freeze": 0.1404706014527215
         },
-        "adapt_count": 1446,
+        "adapt_count": 1414,
         "freeze_count": 0,
-        "abstain_count": 714,
+        "abstain_count": 746,
         "false_adapt_count": 0,
         "fa_u": 0.0,
         "fa_c": 0.0,
-        "adapt_rate": 0.6694444444444444,
-        "decision_coverage": 0.6694444444444444
+        "adapt_rate": 0.6546296296296297,
+        "decision_coverage": 0.6546296296296297
       },
       "scientific_equality_checks": [
         {
@@ -5430,22 +5490,22 @@
           "check": "canonical.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0015581017842999211,
+            "kga": 0.001782870375447803,
             "always_adapt": 0.0003354167496716535,
             "always_freeze": 0.1404706014527215
           },
           "expected": {
             "always_adapt": 0.0003354167496716535,
             "always_freeze": 0.1404706014527215,
-            "kga": 0.0015581017842999211
+            "kga": 0.001782870375447803
           },
           "passed": true
         },
         {
           "check": "canonical.adapt_count",
           "comparison": "exact_equality",
-          "observed": 1446,
-          "expected": 1446,
+          "observed": 1414,
+          "expected": 1414,
           "passed": true
         },
         {
@@ -5458,8 +5518,8 @@
         {
           "check": "canonical.abstain_count",
           "comparison": "exact_equality",
-          "observed": 714,
-          "expected": 714,
+          "observed": 746,
+          "expected": 746,
           "passed": true
         },
         {
@@ -5486,37 +5546,37 @@
         {
           "check": "canonical.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6694444444444444,
-          "expected": 0.6694444444444444,
+          "observed": 0.6546296296296297,
+          "expected": 0.6546296296296297,
           "passed": true
         },
         {
           "check": "canonical.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6694444444444444,
-          "expected": 0.6694444444444444,
+          "observed": 0.6546296296296297,
+          "expected": 0.6546296296296297,
           "passed": true
         },
         {
           "check": "current_policy.decision_counts",
           "comparison": "exact_equality",
           "observed": {
-            "ADAPT": 1446,
+            "ADAPT": 1414,
             "FREEZE": 0,
-            "ABSTAIN": 714
+            "ABSTAIN": 746
           },
           "expected": {
-            "ADAPT": 1446,
+            "ADAPT": 1414,
             "FREEZE": 0,
-            "ABSTAIN": 714
+            "ABSTAIN": 746
           },
           "passed": true
         },
         {
           "check": "current_policy.adapt_exposure",
           "comparison": "exact_equality",
-          "observed": 0.6694444444444444,
-          "expected": 0.6694444444444444,
+          "observed": 0.6546296296296297,
+          "expected": 0.6546296296296297,
           "passed": true
         },
         {
@@ -5529,8 +5589,8 @@
         {
           "check": "current_policy.strict_decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6694444444444444,
-          "expected": 0.6694444444444444,
+          "observed": 0.6546296296296297,
+          "expected": 0.6546296296296297,
           "passed": true
         },
         {
@@ -5612,22 +5672,22 @@
           "check": "canonical.seed0.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0012592593276942218,
+            "kga": 0.0015578703195960433,
             "always_adapt": 0.00043750030023080334,
             "always_freeze": 0.14039120402325084
           },
           "expected": {
             "always_adapt": 0.00043750030023080334,
             "always_freeze": 0.14039120402325084,
-            "kga": 0.0012592593276942218
+            "kga": 0.0015578703195960433
           },
           "passed": true
         },
         {
           "check": "canonical.seed0.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 292,
-          "expected": 292,
+          "observed": 283,
+          "expected": 283,
           "passed": true
         },
         {
@@ -5640,8 +5700,8 @@
         {
           "check": "canonical.seed0.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 140,
-          "expected": 140,
+          "observed": 149,
+          "expected": 149,
           "passed": true
         },
         {
@@ -5668,36 +5728,36 @@
         {
           "check": "canonical.seed0.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6759259259259259,
-          "expected": 0.6759259259259259,
+          "observed": 0.6550925925925926,
+          "expected": 0.6550925925925926,
           "passed": true
         },
         {
           "check": "canonical.seed0.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6759259259259259,
-          "expected": 0.6759259259259259,
+          "observed": 0.6550925925925926,
+          "expected": 0.6550925925925926,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.012168656269240685,
-          "expected": 0.012168656269240685,
+          "observed": 0.011450139664441694,
+          "expected": 0.011450139664441694,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.012206252232219326,
-          "expected": 0.012206252232219326,
+          "observed": 0.014843065405218295,
+          "expected": 0.014843065405218295,
           "passed": true
         },
         {
           "check": "canonical.seed0.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.012210408084168123,
-          "expected": 0.012210408084168123,
+          "observed": 0.017861305253251844,
+          "expected": 0.017861305253251844,
           "passed": true
         },
         {
@@ -5711,22 +5771,22 @@
           "check": "canonical.seed1.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0014467584314169708,
+            "kga": 0.001807869584472091,
             "always_adapt": 0.00030671308437983197,
             "always_freeze": 0.14003008997274768
           },
           "expected": {
             "always_adapt": 0.00030671308437983197,
             "always_freeze": 0.14003008997274768,
-            "kga": 0.0014467584314169708
+            "kga": 0.001807869584472091
           },
           "passed": true
         },
         {
           "check": "canonical.seed1.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 295,
-          "expected": 295,
+          "observed": 286,
+          "expected": 286,
           "passed": true
         },
         {
@@ -5739,8 +5799,8 @@
         {
           "check": "canonical.seed1.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 137,
-          "expected": 137,
+          "observed": 146,
+          "expected": 146,
           "passed": true
         },
         {
@@ -5767,36 +5827,36 @@
         {
           "check": "canonical.seed1.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6828703703703703,
-          "expected": 0.6828703703703703,
+          "observed": 0.6620370370370371,
+          "expected": 0.6620370370370371,
           "passed": true
         },
         {
           "check": "canonical.seed1.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6828703703703703,
-          "expected": 0.6828703703703703,
+          "observed": 0.6620370370370371,
+          "expected": 0.6620370370370371,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.012928380298047049,
-          "expected": 0.012928380298047049,
+          "observed": 0.010175690482663924,
+          "expected": 0.010175690482663924,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.012992421645704709,
-          "expected": 0.012992421645704709,
+          "observed": 0.01307613846151706,
+          "expected": 0.01307613846151706,
           "passed": true
         },
         {
           "check": "canonical.seed1.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.012999500766396943,
-          "expected": 0.012999500766396943,
+          "observed": 0.017018640146179775,
+          "expected": 0.017018640146179775,
           "passed": true
         },
         {
@@ -5810,22 +5870,22 @@
           "check": "canonical.seed2.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0016666664569466203,
+            "kga": 0.0019409722752041286,
             "always_adapt": 0.00031018505493799847,
             "always_freeze": 0.14097453746944666
           },
           "expected": {
             "always_adapt": 0.00031018505493799847,
             "always_freeze": 0.14097453746944666,
-            "kga": 0.0016666664569466203
+            "kga": 0.0019409722752041286
           },
           "passed": true
         },
         {
           "check": "canonical.seed2.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 288,
-          "expected": 288,
+          "observed": 280,
+          "expected": 280,
           "passed": true
         },
         {
@@ -5838,8 +5898,8 @@
         {
           "check": "canonical.seed2.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 144,
-          "expected": 144,
+          "observed": 152,
+          "expected": 152,
           "passed": true
         },
         {
@@ -5866,36 +5926,36 @@
         {
           "check": "canonical.seed2.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6666666666666666,
-          "expected": 0.6666666666666666,
+          "observed": 0.6481481481481481,
+          "expected": 0.6481481481481481,
           "passed": true
         },
         {
           "check": "canonical.seed2.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6666666666666666,
-          "expected": 0.6666666666666666,
+          "observed": 0.6481481481481481,
+          "expected": 0.6481481481481481,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.012597132637597217,
-          "expected": 0.012597132637597217,
+          "observed": 0.0142141552240026,
+          "expected": 0.0142141552240026,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.01309897917932742,
-          "expected": 0.01309897917932742,
+          "observed": 0.015214748253984476,
+          "expected": 0.015214748253984476,
           "passed": true
         },
         {
           "check": "canonical.seed2.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.01315445321864464,
-          "expected": 0.01315445321864464,
+          "observed": 0.015991707589544796,
+          "expected": 0.015991707589544796,
           "passed": true
         },
         {
@@ -5909,22 +5969,22 @@
           "check": "canonical.seed3.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.0019027785294585759,
+            "kga": 0.0020497695163444237,
             "always_adapt": 0.0002777779267893897,
             "always_freeze": 0.1403043992748415
           },
           "expected": {
             "always_adapt": 0.0002777779267893897,
             "always_freeze": 0.1403043992748415,
-            "kga": 0.0019027785294585759
+            "kga": 0.0020497695163444237
           },
           "passed": true
         },
         {
           "check": "canonical.seed3.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 277,
-          "expected": 277,
+          "observed": 273,
+          "expected": 273,
           "passed": true
         },
         {
@@ -5937,8 +5997,8 @@
         {
           "check": "canonical.seed3.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 155,
-          "expected": 155,
+          "observed": 159,
+          "expected": 159,
           "passed": true
         },
         {
@@ -5965,36 +6025,36 @@
         {
           "check": "canonical.seed3.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6412037037037037,
-          "expected": 0.6412037037037037,
+          "observed": 0.6319444444444444,
+          "expected": 0.6319444444444444,
           "passed": true
         },
         {
           "check": "canonical.seed3.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6412037037037037,
-          "expected": 0.6412037037037037,
+          "observed": 0.6319444444444444,
+          "expected": 0.6319444444444444,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.013429716456236696,
-          "expected": 0.013429716456236696,
+          "observed": 0.012042891627194881,
+          "expected": 0.012042891627194881,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.013523109213722255,
-          "expected": 0.013523109213722255,
+          "observed": 0.014693854320908663,
+          "expected": 0.014693854320908663,
           "passed": true
         },
         {
           "check": "canonical.seed3.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.013533432834729657,
-          "expected": 0.013533432834729657,
+          "observed": 0.018006334101611537,
+          "expected": 0.018006334101611537,
           "passed": true
         },
         {
@@ -6008,22 +6068,22 @@
           "check": "canonical.seed4.score.regret",
           "comparison": "exact_equality",
           "observed": {
-            "kga": 0.001515046175983217,
+            "kga": 0.0015578701816223285,
             "always_adapt": 0.00034490738202024387,
             "always_freeze": 0.14065277652332075
           },
           "expected": {
             "always_adapt": 0.00034490738202024387,
             "always_freeze": 0.14065277652332075,
-            "kga": 0.001515046175983217
+            "kga": 0.0015578701816223285
           },
           "passed": true
         },
         {
           "check": "canonical.seed4.score.adapt_count",
           "comparison": "exact_equality",
-          "observed": 294,
-          "expected": 294,
+          "observed": 292,
+          "expected": 292,
           "passed": true
         },
         {
@@ -6036,8 +6096,8 @@
         {
           "check": "canonical.seed4.score.abstain_count",
           "comparison": "exact_equality",
-          "observed": 138,
-          "expected": 138,
+          "observed": 140,
+          "expected": 140,
           "passed": true
         },
         {
@@ -6064,36 +6124,36 @@
         {
           "check": "canonical.seed4.score.adapt_rate",
           "comparison": "exact_equality",
-          "observed": 0.6805555555555556,
-          "expected": 0.6805555555555556,
+          "observed": 0.6759259259259259,
+          "expected": 0.6759259259259259,
           "passed": true
         },
         {
           "check": "canonical.seed4.score.decision_coverage",
           "comparison": "exact_equality",
-          "observed": 0.6805555555555556,
-          "expected": 0.6805555555555556,
+          "observed": 0.6759259259259259,
+          "expected": 0.6759259259259259,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_min",
           "comparison": "exact_equality",
-          "observed": 0.013045883095135252,
-          "expected": 0.013045883095135252,
+          "observed": 0.0109241195006346,
+          "expected": 0.0109241195006346,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_mean",
           "comparison": "exact_equality",
-          "observed": 0.013257194044056996,
-          "expected": 0.013257194044056996,
+          "observed": 0.013570205907046003,
+          "expected": 0.013570205907046003,
           "passed": true
         },
         {
           "check": "canonical.seed4.epsilon_max",
           "comparison": "exact_equality",
-          "observed": 0.013280552323757855,
-          "expected": 0.013280552323757855,
+          "observed": 0.015462508459701596,
+          "expected": 0.015462508459701596,
           "passed": true
         },
         {
@@ -6104,24 +6164,24 @@
             "defocus_blur": 6.388939089245267e-05,
             "fog": 6.945265663994683e-06,
             "gaussian_noise": 0.0,
-            "jpeg_compression": -0.000545833342605167,
-            "pixelate": -0.004320832755830553
+            "jpeg_compression": -0.0017375007271766662,
+            "pixelate": -0.0044777769181463456
           },
           "expected": {
             "contrast": -0.0025402787658903333,
             "defocus_blur": 6.388939089245267e-05,
             "fog": 6.945265663994683e-06,
             "gaussian_noise": 0.0,
-            "jpeg_compression": -0.000545833342605167,
-            "pixelate": -0.004320832755830553
+            "jpeg_compression": -0.0017375007271766662,
+            "pixelate": -0.0044777769181463456
           },
           "passed": true
         },
         {
           "check": "current_policy.always_adapt.point",
           "comparison": "exact_equality",
-          "observed": -0.0012226850346282677,
-          "expected": -0.0012226850346282677,
+          "observed": -0.0014474536257761499,
+          "expected": -0.0014474536257761499,
           "passed": true
         },
         {
@@ -6132,24 +6192,24 @@
             "defocus_blur": 0.13258749975098505,
             "fog": 0.07422638850079642,
             "gaussian_noise": 0.1980319455265999,
-            "jpeg_compression": 0.025679164628187815,
-            "pixelate": 0.15338749918672773
+            "jpeg_compression": 0.024487497243616315,
+            "pixelate": 0.15323055502441194
           },
           "expected": {
             "contrast": 0.24956250041723252,
             "defocus_blur": 0.13258749975098505,
             "fog": 0.07422638850079642,
             "gaussian_noise": 0.1980319455265999,
-            "jpeg_compression": 0.025679164628187815,
-            "pixelate": 0.15338749918672773
+            "jpeg_compression": 0.024487497243616315,
+            "pixelate": 0.15323055502441194
           },
           "passed": true
         },
         {
           "check": "current_policy.always_freeze.point",
           "comparison": "exact_equality",
-          "observed": 0.13891249966842156,
-          "expected": 0.13891249966842156,
+          "observed": 0.1386877310772737,
+          "expected": 0.1386877310772737,
           "passed": true
         }
       ]

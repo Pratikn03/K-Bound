@@ -24,6 +24,22 @@ def _load_validator():
 VALIDATOR = _load_validator()
 
 
+def test_canonical_negative_preregistration_status_is_not_an_overclaim() -> None:
+    snippet = (
+        r"\section{CCT-20 protocol} This was a cell-outcome-unopened, internally sealed execution: "
+        r"individual cell outcomes remained unopened until one-shot scoring. Aggregate target-label "
+        r"metadata had previously been inspected, so the study was not globally label-unopened or "
+        r"publicly preregistered."
+    )
+    problems = VALIDATOR.validate_cct20_claims(
+        snippet,
+        release_manifest_path=ROOT
+        / "docs/research/kbound/paper/generated/cct20_release_manifest.json",
+        repository_root=ROOT,
+    )
+    assert not any("registration overclaim" in problem for problem in problems), problems
+
+
 @pytest.mark.parametrize(
     ("snippet", "expected"),
     [
@@ -826,6 +842,13 @@ def test_release_runbook_keeps_deep_local_cct_provenance_explicit() -> None:
     assert "deep-local-provenance" in runbook
     assert "KBOUND_DEEP_LOCAL_CCT20_PROVENANCE=1" in runbook
     assert "--deep-local-cct20-provenance" in runbook
+    portable_all_mode = runbook.split("  all)\n", 1)[1].split("    ;;", 1)[0]
+    assert "step_deep_local_provenance" not in portable_all_mode
+    deep_all_mode = runbook.split("  all-deep-local)\n", 1)[1].split("    ;;", 1)[0]
+    assert "step_deep_local_provenance" in deep_all_mode
+    assert deep_all_mode.index("step_deep_local_provenance") < deep_all_mode.index(
+        "step_public_bundle"
+    )
 
 
 def test_release_manifest_requires_builder_ledgers_and_aggregate_hashes(tmp_path: Path) -> None:

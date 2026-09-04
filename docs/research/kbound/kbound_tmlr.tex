@@ -7,7 +7,7 @@
 %% layouts. Build this companion with BUILD_LONG_TMLR=1.
 %%
 %% WHY THIS FILE EXISTS
-%%   The IEEEtran two-column build (kbound_short.tex) ran to 23 pages with 26
+%%   The retired IEEEtran two-column diagnostic ran to 23 pages with 26
 %%   tables, which is a desk-reject risk at a conference and, more importantly,
 %%   is too dense for a reviewer to hold in mind. TMLR is single-column with no
 %%   hard page limit and judges claim-evidence support rather than novelty
@@ -35,13 +35,17 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{url}
 \usepackage{xspace}
 \usepackage{seqsplit}
+\usepackage[section]{placeins}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 \hypersetup{
   pdftitle={K-Bound: When Is Label-Free Adaptation Knowable?},
@@ -91,7 +95,8 @@
 \emergencystretch=3em
 \input{paper/generated/kbound_numbers}  % auto-generated result numbers (scripts/make_tables.py)
 \input{paper/generated/cct20_numbers.tex}
-\input{paper/generated/so2sat_numbers.tex}
+\input{paper/generated/cct20_reporting_numbers.tex}
+\input{paper/generated/current_release_identity.tex}
 
 \input{paper/float_params}  % float placement parameters (layout only)
 \input{paper/figure_fallback}  % graceful degradation for absent figure assets
@@ -107,6 +112,8 @@
 test-time adaptation, safe adaptation, abstention, selective prediction, distribution shift,
 identifiability, label-free risk estimation
 \end{IEEEkeywords}
+
+\KBoundAnonymousReleaseBlock
 
 \input{kbound_submission_body}
 

@@ -1,0 +1,35 @@
+\documentclass{article}
+\usepackage{pdfpages}
+\usepackage{xcolor}
+\usepackage{tikz}
+\pagestyle{empty}
+
+\newcommand{\SupersededWatermark}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[
+      rotate=27,
+      align=center,
+      text=red!88!black,
+      opacity=0.32,
+      font=\sffamily\bfseries\fontsize{19}{25}\selectfont,
+      inner sep=9pt,
+      draw=red!88!black,
+      line width=1.5pt,
+      rounded corners=4pt
+    ] at (current page.center) {SUPERSEDED DRAFT\\NUMBERS AND CLAIMS DO NOT MATCH\\THE CURRENT SUBMISSION};
+  \end{tikzpicture}%
+}
+
+\begin{document}
+\includepdf[
+  pages={1},
+  fitpaper=true,
+  pagecommand={},
+  picturecommand={\SupersededWatermark}
+]{\SourcePdf}
+\includepdf[
+  pages={2-last},
+  fitpaper=true,
+  pagecommand={}
+]{\SourcePdf}
+\end{document}

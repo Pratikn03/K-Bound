@@ -1,0 +1,366 @@
+\part{Formal Verification and Reproducibility}
+\label{fr:part-formal-reproducibility}
+
+\section{Formal Proof and Reproducibility Atlas}
+\label{fr:formal-atlas}
+
+This chapter explains what is proved, what is checked mechanically, what remains a scientific
+assumption, and how a reader can reproduce the maintained publication surfaces without confusing
+those four categories.  The distinction is central to K-Bound.  A theorem may be correct under its
+encoded assumptions while a benchmark fails those assumptions.  A data validator may establish
+that a table agrees with a sealed artifact while saying nothing about the theorem.  A successful
+PDF build establishes neither.  Treating all three as a single notion of ``verification'' would
+erase the boundary that the paper is designed to expose.
+
+The current formal receipt registers 142 selected Lean declarations: 65 retained core
+declarations and 77 newer foundational or counterexample capstones.  This is a
+registry count, not the total number of authored lemmas, and it is not a score of novelty or
+scientific importance.  Supporting declarations compile as dependencies, while some declarations
+that are displayed by the theorem map are intentionally not registry capstones.  The precise
+claim is therefore narrow: the dated strict-core build and transitive-axiom audit report success
+for the 142 registered names under their encoded assumptions.  The machine-readable receipt is
+\path{audits/formal_foundations_2026_08_31.json}.  It does not report that every sentence in every
+earlier theory draft has been formalized.
+
+\subsection{Four independent verification layers}
+\label{fr:four-verification-layers}
+
+The repository separates four layers that are often collapsed in machine-learning papers.
+
+\paragraph{Mathematical statement.}
+A paper theorem specifies objects, assumptions, and a conclusion.  The decisive questions are
+whether the assumptions define a nonempty class, whether every symbol has one type and one unit,
+and whether the conclusion follows for every member of that class.  For the population frontier,
+the key objects are the target law, the frozen and adapted predictors, the positive-mass
+disagreement region, and the externally declared residual budget.  For the empirical
+coverage-to-action implication, the target is instead an observed cell-level benefit and the
+conclusion is an event containment conditional on interval coverage.
+
+\paragraph{Proof implementation.}
+Lean encodes selected statements and checks proof terms against a pinned kernel and library.  A
+compiled proof establishes the encoded statement, not a nearby prose statement.  Small differences
+matter.  A fixed finite-real radius is not an arbitrary measurable extended-real random radius.
+A full measurable correctness-field class is not an arbitrary restricted deployment class.
+Arithmetic showing that two opposite worlds force abstention is not, by itself, the measure-law
+construction showing that the worlds have identical observable evidence.
+
+\paragraph{Empirical authority.}
+Generated tables are checked against current result artifacts and the claim ledger.  These checks
+can detect stale counts, a mismatched hash, or an unsupported table cell.  They do not transform a
+retrospective diagnostic into prospective confirmation, and they do not prove exchangeability or
+population transfer.  The result validators guard factual consistency; the paper's interpretation
+must still state the design and denominator.
+
+\paragraph{Publication rendering.}
+The TeX build resolves references, lays out tables, and emits the PDFs.  Rendering every page can
+detect clipping, blank pages, malformed glyphs, or an unreadable table.  That is a necessary
+publication check, but it has no authority over the science.  In particular, a clean log cannot
+rehabilitate a stale numerical claim or an invalid theorem module.
+
+Table~\ref{fr:tab-layer-boundaries} records the useful negative rule for each layer: what a pass
+does \emph{not} authorize.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Verification layers and their nonimplications.  The rows are deliberately separate: no
+single green check subsumes the others.}
+\label{fr:tab-layer-boundaries}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.18\linewidth}
+                >{\raggedright\arraybackslash}p{0.31\linewidth}
+                >{\raggedright\arraybackslash}p{0.38\linewidth}}
+\toprule
+Layer & A successful check establishes & It does not establish \\
+\midrule
+Paper mathematics & A stated argument is valid under its written assumptions & That a benchmark
+satisfies those assumptions, or that the assumptions are learnable from label-free evidence \\
+Lean kernel & The encoded declaration has a checked proof with the audited axiom dependencies &
+Equivalence between the encoded declaration and every prose generalization \\
+Evidence validation & Current displayed values agree with the named current artifacts &
+Prospective confirmation, external validity, or population-risk protection \\
+PDF validation & The maintained sources compile and render legibly & Mathematical truth, data
+provenance, or deployment readiness \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Clause-level proof coverage}
+\label{fr:clause-coverage}
+
+The maintained theorem map is \path{formal/KBound/TheoremMap.lean}.  It is an executable index: its
+\texttt{\#check} commands ensure that named declarations remain available with types accepted by
+Lean.  The map also documents the intended correspondence between paper clauses and formal
+objects.  That correspondence is more informative than reporting one aggregate proof count.
+
+\paragraph{Benefit reduction.}
+Lemma~\ref{lem:reduction} has an algebraic finite core and a measurable target-law realization.
+The finite declarations check the binary sign reduction and margin split.  The measurable files
+construct label kernels, a joint target law, and the population zero--one loss integral.  On the
+disagreement region, the constructed class is supported on the two predictor outputs.  This gives
+an exact formal counterpart for the maintained binary reduction under the encoded class.  It does
+not silently extend the same scalar residual geometry to unrestricted multiclass kernels or to a
+different loss.
+
+\paragraph{Matched-evidence nonidentifiability.}
+The finite arithmetic says that opposite fixed benefits cannot both receive a sound strict
+direction from the same evidence.  Separate measurable constructions show how target label kernels
+can vary while the target input law and all label-free evidence derived from it remain fixed.  The
+combination supports the maintained full-class necessity argument.  Two limitations remain
+explicit.  First, the construction does not imply that an arbitrary restricted deployment class
+contains both witnesses.  Second, the probabilistic interpretation that composes matched evidence
+with the abstract abstention-probability inequality is presented in the paper; the finite
+\path{Impossibility.lean} file checks the arithmetic abstraction rather than that complete
+composition as one declaration.
+
+\paragraph{Closed band and strict frontier.}
+The formal core checks the positive and negative sufficient branches, the deterministic action
+rule, the zero witness in the closed band, opposite-sign witnesses in the open band, and the two
+boundary configurations in which zero competes with a strict sign.  A finite target-law file gives
+a distributional lift under an explicit richness premise.  The measurable frontier file gives a
+separate construction over the full measurable correctness-field class and clips the feasible
+interval to the probability range.  These are strong but scoped statements.  They do not prove
+richness for a deployment class selected by a practitioner.
+
+\paragraph{Coverage-to-action certificate.}
+The deterministic certificate checks pointwise containment: a false ADAPT or false FREEZE action
+can occur only if the named interval misses the named scalar target.  A measure-level file proves
+the corresponding probability inequality for a fixed finite-real radius.  A conformal file proves
+a specialized random-threshold result under exchangeable measurable residual scores, including
+ties.  The paper states a more general event-containment proposition with a measurable random
+extended-real radius.  At that generality, the containment proof is pen-and-paper; it should not be
+described as wholly covered by the fixed-radius file.  Conversely, the specialized conformal
+formalization proves its own score-law result but does not prove that the heterogeneous benchmark
+cells used in the empirical study are exchangeable.
+
+\paragraph{Probability foundations outside the headline.}
+The strict-core also includes general testing, concentration, optional-stopping, and measurable
+swap results.  They strengthen the library available for future work, but they do not enlarge the
+headline theorem by proximity.  The general Le Cam layer treats arbitrary probability measures
+and randomized measurable tests.  The concentration layer treats bounded independent sums and
+adapted martingale differences under explicit assumptions.  The filtered Ville layer treats
+nonnegative supermartingales and predictable betting products.  The measurable swap layer proves
+invariance and opposite-benefit constructions for a channel, and the channel counterexample shows
+why selecting one representative per swap orbit does not orient an entire evidence fibre.  None of
+these facts proves the unfinished historical one-bit, ratio, or rate characterization.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Clause-level formal status of the maintained headline.  ``Exact'' always means exact for
+the encoded assumptions, not for an unstated deployment class.}
+\label{fr:tab-formal-status}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.20\linewidth}
+                >{\raggedright\arraybackslash}p{0.25\linewidth}
+                >{\raggedright\arraybackslash}p{0.43\linewidth}}
+\toprule
+Paper clause & Status & Boundary \\
+\midrule
+Binary benefit/sign reduction & Exact for the encoded binary zero--one class & No automatic
+multiclass or arbitrary-loss lift \\
+Evidence-fibre witnesses & Exact for the full encoded class; restricted-class membership separate
+& Richness of a practitioner-declared subclass must be justified externally \\
+Matched-abstention corollary & Formal arithmetic plus measurable witnesses; composition explained
+in prose & Not a single end-to-end probabilistic declaration in the finite file \\
+Closed-band/strict frontier & Exact finite and full-measurable constructions under their explicit
+premises & Equality gives no strict direction; arbitrary restricted classes are not certified \\
+Fixed-radius certificate & Exact for the encoded finite-real radius & Does not cover the paper's
+most general random extended-real radius \\
+Exchangeable random threshold & Exact specialized conformal result & Does not establish empirical
+exchangeability or transfer for the benchmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The strict-core gate and the disclosed incomplete layer}
+\label{fr:strict-core-gate}
+
+The recommended command invokes the pinned Lean build and then the strict-core audit.  The audit
+checks that every registered name exists, scans the maintained formal source for forbidden proof
+holes, and asks Lean to print transitive axiom dependencies.  The allowed kernel dependencies are
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}.  A missing declaration,
+failed build, proof hole, or extra axiom fails the gate.  Running the audit without the build flag
+is only a static inventory check and is not reported as kernel verification.
+
+The command \texttt{-{}-full-foundations} deliberately asks a stronger question.  It remains a
+failure because the sixth, one-bit/channel characterization is incomplete: a verified
+counterexample refutes the earlier orbit-selection sufficiency idea, and the associated H/ratio
+and rate claims have not been repaired.  This failure is informative rather than cosmetic.  It
+prevents a local success on the five maintained probability layers from being advertised as a
+proof of every proposed extension.  The full report uses the strict-core receipt and preserves the
+stronger failure as a boundary.
+
+Three counts should therefore never be conflated:
+
+\begin{enumerate}[leftmargin=*]
+\item the number of registered capstones audited transitively;
+\item the number of declarations displayed by the theorem map; and
+\item the total number of theorem and lemma declarations compiled as source or dependency.
+\end{enumerate}
+
+Only the first count is 142 in the current receipt.  The second is a deliberately broader index,
+and the third is not claimed by that number.  Reporting this distinction avoids the common but
+incorrect phrase ``142 total proofs.''
+
+\subsection{Authority graph for numerical claims}
+\label{fr:authority-graph}
+
+The numerical publication path is a directed graph, not a collection of manually copied table
+cells.  Raw or reconciled result artifacts feed bounded generator scripts.  Generated TeX macros
+feed shared manuscript sources.  The claim ledger records allowed wording, supporting artifacts,
+and prohibited interpretations.  A storage manifest binds mutable current authorities by byte
+count and SHA-256, while sealed evidence entries retain their own immutable checksums.  The
+manuscript validator then compares these surfaces.  Finally, the PDF builder validates before it
+regenerates presentation files.
+
+The order matters.  If a current claim-ledger byte count changes, refreshing only the PDF cannot
+repair the broken storage binding.  If a table macro changes without its current source artifact,
+the validator should fail rather than accept the visually plausible number.  If a historical seal
+does not match, the bounded mutable-authority refresh must not rewrite that seal.  Each repair must
+occur at the layer that owns the discrepancy.
+
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}{0.91\linewidth}
+\centering
+current result artifacts
+$\longrightarrow$ bounded generators
+$\longrightarrow$ generated TeX macros\\[3pt]
+$\downarrow$\hspace{0.28\linewidth}$\downarrow$\\[-2pt]
+claim ledger $\longrightarrow$ manuscript validator
+$\longrightarrow$ shared TeX sources
+$\longrightarrow$ PDFs\\[3pt]
+storage hashes and immutable seals constrain the corresponding artifact edges
+\end{minipage}}
+\caption{Conceptual authority graph.  Arrows denote a checked derivation or binding, not an
+assumption that two files agree.}
+\label{fr:fig-authority-graph}
+\end{figure}
+
+This graph also explains why the canonical panel hash appears in the primary result presentation.
+It is an identity for the scored panel, not a decorative reproducibility token.  A reviewer can
+use it to distinguish the current three-way cross-fit outcome from an older panel with similar
+method names.  CCT-20 and So2Sat have separate receipt-linked authorities and are not silently
+folded into that panel identity.
+
+\subsection{Reproduction modes and mutation boundaries}
+\label{fr:reproduction-modes}
+
+Reproduction is safer when read-only verification is separated from regeneration.  The current
+workflow has three practical modes.
+
+\paragraph{Inspection.}
+A reader may inspect the claim ledger, current manifests, generated macros, and theorem map without
+changing any artifact.  This is the right starting point for peer review.  It can answer questions
+such as: Which artifact supports this count?  Is a result current evidence or non-evidentiary
+provenance?  Which formal file covers this theorem clause?  Inspection cannot establish that the
+local checkout is complete or that every external dataset is mounted.
+
+\paragraph{Bounded manuscript verification.}
+The manuscript-claim validator checks the maintained TeX closure, canonical panel, release
+consistency surfaces, direct storage hashes, and sealed evidence hashes.  The PDF build runs this
+check before table and figure regeneration.  New output is compiled in a fresh temporary directory
+so an old auxiliary file cannot supply a missing label or citation.  Only allowlisted PDF and log
+names can be published back to the manuscript directory.  These controls make it harder for an old
+successful build to mask a broken current source.
+
+\paragraph{Full release.}
+A publication release is stronger than a manuscript build.  It requires a reviewed clean source
+freeze, pinned Python and external-tool content, the complete declared test inventory, the Lean
+strict-core build, archive and privacy verification, source sealing, rendered-page inspection, and
+a final outer checksum inventory.  The repository's older end-to-end release wrapper, page-render
+helper, and checksum verifier have not been generalized to this new four-artifact family.  This
+handoff therefore uses the bounded build flags together with a separate manual all-page rendering
+check and a newly emitted outer SHA-256 inventory.  That is a handoff receipt, not a clean source
+seal.  External publication actions---pushing a tag, uploading an archive, creating a DOI, or
+submitting to a venue---remain author actions and are not implied by a local pass.
+
+The separation also defines what not to do.  A presentation build must not rerun training.  A
+manifest refresh must not reseal historical evidence.  A checksum file must be emitted only after
+the final PDFs are fixed.  A dirty-tree checksum is useful for local handoff but is not a clean
+source seal.  A missing cloud-backed Git object cannot be repaired by describing a component test
+as a release pass.
+
+\subsection{A tested implementation invariant}
+\label{fr:software-invariance}
+
+The empirical action for cell $i$ is intended to be outcome-disjoint: its own scored outcome
+$B_i$ cannot influence its prediction, radius, or action.  The recorded regression test checks
+that property for index 7 in two synthetic controlled-grid instances.  Each instance holds the
+fold assignment, features, and hyperparameters fixed, perturbs only $B_7$, and reruns the recorded
+cross-fit procedure.  For the focal cell it requires equality of the prediction, radius, and
+action.  Changes for other cells are allowed because their fitted models may legitimately use the
+perturbed cell.
+
+This is a tested implementation invariant, not a software theorem or a population theorem.  Its
+scope is the two fixed synthetic instances; it does not exercise every possible upstream feature,
+preprocessing, or hyperparameter-selection path.  It also does not establish coverage,
+exchangeability, or generalization.  Conversely, a mathematical coverage proposition cannot
+compensate for an implementation that leaks the scored outcome.  The formal and software claims
+are complementary because they guard different arrows in the authority graph.
+
+The most useful failure diagnostics localize the broken arrow:
+
+\begin{itemize}[leftmargin=*]
+\item a changed prediction implicates fit, selection, or preprocessing leakage;
+\item an unchanged prediction but changed radius implicates residual or calibration leakage;
+\item unchanged prediction and radius but changed action implicates action-rule state or a hidden
+tie-breaking path;
+\item a stable focal cell with changes elsewhere can be correct under cross-fitting and should not
+be rejected automatically.
+\end{itemize}
+
+\subsection{Reviewer trace procedure}
+\label{fr:reviewer-trace}
+
+A compact way to audit any important sentence is to trace it backwards through six questions.
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Claim type.} Is the sentence a definition, theorem, finite-panel observation,
+diagnostic interpretation, or future protocol?
+\item \textbf{Target.} Does it concern population benefit $\Delta$, observed cell benefit
+$\Delta^{\mathrm{cell}}$, a fitted prediction $\widehat\Delta$, or an action consequence?
+\item \textbf{Scope.} Which candidate, dataset family, action exposure, loss, and deployment class
+are named?
+\item \textbf{Authority.} Which current artifact or proof clause supports it, and is that identity
+bound by a current hash or theorem map?
+\item \textbf{Negative boundary.} Which nearby stronger reading is expressly not supported?
+\item \textbf{Reproduction.} Which read-only validator or build command would fail if the supporting
+surface changed?
+\end{enumerate}
+
+For example, a sentence about a false ADAPT count is incomplete until it names the ADAPT exposure
+and the all-cell denominator.  A sentence about an interval is incomplete until it names the
+scalar target and whether the interval is nominal, retrospective, or prospectively covered.  A
+sentence about the population frontier is incomplete until it names the declared class and the
+external residual budget.  A sentence about formalization is incomplete until it distinguishes
+the paper clause from the encoded declaration.
+
+\subsection{Reproducibility checklist for this report}
+\label{fr:report-checklist}
+
+The following checklist is intentionally shorter than the repository release runbook.  It states
+the evidence needed to reproduce the publication family itself.
+
+\begin{enumerate}[leftmargin=*]
+\item Verify the storage manifest and immutable evidence bindings before generating tables.
+\item Run the manuscript-claim validator and the focused claim-consistency tests.
+\item Run the scored-cell outcome-invariance regression and publication-driver boundary tests.
+\item Build the strict Lean core with the pinned toolchain; retain the stronger
+full-foundations failure rather than relabeling it as a pass.
+\item Build each PDF from a fresh auxiliary directory with its explicit artifact flag.
+\item Reject undefined references or citations, multiply defined labels, missing files, and serious
+overfull boxes.
+\item Confirm the short main-paper boundary, the standalone supplement boundary, and the minimum
+full-report page count from the physical PDFs rather than source estimates.
+\item Extract PDF text and scan for stale counts, prohibited current-superiority wording, and a
+missing population-versus-empirical distinction.
+\item Render every page of every latest PDF.  Inspect contact sheets and full-resolution pages for
+tables, equations, hash wrapping, and appendix transitions.
+\item Only after all artifacts are final, emit and independently verify their SHA-256 inventory.
+\end{enumerate}
+
+The checklist cannot guarantee a favorable review.  Its purpose is narrower and more useful: it
+makes contradictions, stale evidence, invalid source boundaries, and rendering defects observable
+before submission.  The scientific conclusion remains the one supported by the theory and current
+diagnostics: strict action can be justified only inside an explicit scope; abstention is the
+correct output when that scope does not orient the compatible outcomes.

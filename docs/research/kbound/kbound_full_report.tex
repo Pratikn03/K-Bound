@@ -1,0 +1,69 @@
+% Book-level technical-report driver. Report-only extensions are deliberately
+% isolated in their own input so their audited composition remains explicit.
+\documentclass[12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,graphicx,booktabs,array,float,algorithm,algpseudocode,tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{xcolor,enumitem,url,xspace,seqsplit}
+\usepackage[section]{placeins}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\hypersetup{pdftitle={K-Bound Technical Report},pdfauthor={Pratik Niroula}}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\Pr}{\mathbb{P}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\KGA}{\textnormal{\textsc{KGA}}\xspace}
+\newcommand{\adapt}{\textnormal{\textsc{adapt}}\xspace}
+\newcommand{\freeze}{\textnormal{\textsc{freeze}}\xspace}
+\newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
+\DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
+\providecommand{\path}[1]{\texttt{#1}}
+\setlength{\emergencystretch}{3em}
+\Urlmuskip=0mu plus 1mu
+\setlist{nosep,leftmargin=*}
+\input{paper/generated/kbound_numbers}
+\input{paper/generated/cct20_numbers.tex}
+\input{paper/generated/cct20_reporting_numbers.tex}
+\input{paper/generated/current_release_identity.tex}
+\input{paper/generated/so2sat_numbers.tex}
+\input{paper/figure_fallback}
+\newif\ifanon
+\anonfalse
+\title{\textbf{K-Bound: When Is Label-Free Adaptation Knowable?}\\[3pt]
+\large Full Technical Report on Directional Action Under Distribution Shift}
+\author{Pratik Niroula\\
+\small Minnesota State University, Mankato\\
+\small \texttt{pratik.niroula@mnsu.edu}}
+\date{Source closure: September 3, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}\input{kbound_abstract}\end{abstract}
+\noindent\textbf{Report scope.} This book-level report expands the maintained paper with proof
+anatomy, current protocol dossiers, formal-coverage boundaries, and reproducibility guidance.
+Accuracy and regret are reported as scoped utility consequences; the headline is whether the
+available information supports ADAPT, FREEZE, or explicit ABSTAIN.
+\KBoundNamedReleaseBlock{\KBoundRoleFullReport}
+\tableofcontents
+\listoftables
+\listoffigures
+\part{Core Manuscript}
+\input{kbound_submission_body}
+\input{kbound_full_report_extensions}
+\part{Current Evidence Appendices}
+\input{kbound_submission_supplement}
+{\footnotesize\input{paper/references_kbound_expanded}}
+\end{document}

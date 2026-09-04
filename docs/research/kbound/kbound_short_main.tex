@@ -1,0 +1,65 @@
+% Standalone short-main driver. Its source boundary is intentionally limited
+% to the shared abstract, current main argument, and bibliography.
+\documentclass[11pt,twocolumn]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage[letterpaper,margin=0.74in,columnsep=0.25in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,graphicx,booktabs,algorithm,algpseudocode,tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{xcolor,enumitem,url,xspace,seqsplit}
+\usepackage[section]{placeins}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\hypersetup{pdftitle={K-Bound Short Main Paper},pdfauthor={Pratik Niroula}}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\Pr}{\mathbb{P}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\KGA}{\textnormal{\textsc{KGA}}\xspace}
+\newcommand{\adapt}{\textnormal{\textsc{adapt}}\xspace}
+\newcommand{\freeze}{\textnormal{\textsc{freeze}}\xspace}
+\newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
+\DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
+\providecommand{\path}[1]{\texttt{#1}}
+% A standalone main paper must not depend on labels defined only in the
+% separately compiled supplement.  Shared prose supplies a descriptive third
+% argument for every such reference.
+\newcommand{\KBSuppRef}[3]{#3}
+\setlength{\emergencystretch}{3em}
+\setlist{nosep,leftmargin=*}
+\setcounter{dbltopnumber}{2}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.75}
+\input{paper/generated/kbound_numbers}
+\input{paper/generated/cct20_numbers.tex}
+\input{paper/generated/cct20_reporting_numbers.tex}
+\input{paper/generated/current_release_identity.tex}
+\input{paper/figure_fallback}
+\newif\ifanon
+\anonfalse
+\title{\vspace{-1.5em}\textbf{K-Bound: When Is Label-Free Adaptation Knowable?}\\[-1pt]
+\large Helpful, Harmful, and Unknowable Regimes Under Distribution Shift}
+\author{Pratik Niroula\\
+\small Minnesota State University, Mankato\\
+\small \texttt{pratik.niroula@mnsu.edu}}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}\input{kbound_abstract}\end{abstract}
+\noindent\textbf{Keywords:} test-time adaptation; abstention; distribution shift;
+label-free risk estimation; conformal calibration; selective decisions.
+\KBoundNamedReleaseBlock{\KBoundRoleShortMain}
+\input{kbound_submission_body}
+{\footnotesize\input{paper/references_kbound_expanded}}
+\end{document}

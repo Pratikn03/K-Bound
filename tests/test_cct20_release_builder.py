@@ -116,6 +116,73 @@ def _upstream() -> dict:
     }
 
 
+def _write_refresh_source_manifest(
+    tmp_path: Path,
+) -> tuple[Path, Path, dict[str, Path], list[Path]]:
+    generated_dir = tmp_path / "paper" / "generated"
+    generated_dir.mkdir(parents=True)
+    generated_payloads = {
+        "cct20_numbers_tex": b"% committed numbers\n",
+        "cct20_primary_table_tex": b"% committed primary table\n",
+        "cct20_location_effects_tex": b"% committed location effects\n",
+    }
+    generated_names = {
+        "cct20_numbers_tex": "cct20_numbers.tex",
+        "cct20_primary_table_tex": "cct20_primary_table.tex",
+        "cct20_location_effects_tex": "cct20_location_effects.tex",
+    }
+    generated_artifacts = {}
+    for role, payload in generated_payloads.items():
+        path = generated_dir / generated_names[role]
+        path.write_bytes(payload)
+        generated_artifacts[role] = {
+            "path": str(path.resolve()),
+            "bytes": len(payload),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+        }
+
+    upstream_dir = tmp_path / "upstreams"
+    upstream_dir.mkdir()
+    bindings: dict[str, Path] = {}
+    upstream_artifacts = {}
+    for role in (
+        "checkpoint_audit",
+        "development_gate",
+        "development_trace_collection",
+        "execution_seal",
+        "prediction_collection",
+        "one_shot_scoring_marker",
+        "one_shot_score",
+        "two_way_inference",
+    ):
+        path = upstream_dir / f"{role}.json"
+        path.write_text("{}\n", encoding="ascii")
+        bindings[role] = path.resolve()
+        upstream_artifacts[role] = {"path": str(path.resolve())}
+    cell_paths = []
+    cell_items = []
+    for index in range(release.CELL_COUNT):
+        path = upstream_dir / f"cell-{index:02d}.json"
+        path.write_text("{}\n", encoding="ascii")
+        cell_paths.append(path.resolve())
+        cell_items.append({"path": str(path.resolve())})
+    upstream_artifacts["prediction_cells"] = {
+        "count": release.CELL_COUNT,
+        "aggregate_sha256": "a" * 64,
+        "items": cell_items,
+    }
+    document = {
+        "schema": release.RELEASE_SCHEMA,
+        "status": release.RELEASE_STATUS,
+        "upstream_artifacts": upstream_artifacts,
+        "generated_artifacts": generated_artifacts,
+    }
+    document["release_sha256"] = stable_sha256(document)
+    manifest_path = generated_dir / "cct20_release_manifest.json"
+    write_immutable_json_with_receipt(manifest_path, document)
+    return manifest_path, generated_dir, bindings, cell_paths
+
+
 def test_release_core_exposes_locked_design_signs_and_exact_inference(strong_bundle) -> None:
     score, inference = strong_bundle
     result = release.build_release_core(
@@ -496,10 +563,16 @@ def test_verdict_has_honest_nonpromotion_branches(
 
 def test_emit_writes_all_four_immutable_release_files(tmp_path: Path, strong_bundle) -> None:
     score, inference = strong_bundle
+    upstream = _upstream()
+    upstream["release_generator"] = {
+        "path": str(Path(release.__file__).resolve()),
+        "bytes": 1,
+        "sha256": "a" * 64,
+    }
     core = release.build_release_core(
         score=score,
         inference=inference,
-        upstream_artifacts=_upstream(),
+        upstream_artifacts=upstream,
     )
     generated = tmp_path / "paper" / "generated"
     manifest_path = tmp_path / "cct20_release_manifest.json"
@@ -545,12 +618,465 @@ def test_emit_writes_all_four_immutable_release_files(tmp_path: Path, strong_bun
     assert "KGA acc. $-$ adapt acc." in locations
     assert len([line for line in locations.splitlines() if line.endswith(r"\\")]) == 10
 
-    with pytest.raises(IntegrityError, match="already exist"):
+    for path in [
+        manifest_path,
+        manifest_path.with_name(manifest_path.name + ".receipt.json"),
+        *(Path(record["path"]) for record in result["generated_artifacts"].values()),
+    ]:
+        path.chmod(0o644)
+    repeated = release.emit_release(
+        core,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+    )
+    assert repeated == result
+    for path in [
+        manifest_path,
+        manifest_path.with_name(manifest_path.name + ".receipt.json"),
+        *(Path(record["path"]) for record in result["generated_artifacts"].values()),
+    ]:
+        assert path.stat().st_mode & 0o777 == 0o444
+
+
+def test_emit_rejects_partial_or_tampered_complete_pair(tmp_path: Path, strong_bundle) -> None:
+    score, inference = strong_bundle
+    upstream = _upstream()
+    upstream["release_generator"] = {
+        "path": str(Path(release.__file__).resolve()),
+        "bytes": 1,
+        "sha256": "a" * 64,
+    }
+    core = release.build_release_core(
+        score=score,
+        inference=inference,
+        upstream_artifacts=upstream,
+    )
+    generated = tmp_path / "paper" / "generated"
+    manifest_path = tmp_path / "cct20_release_manifest.json"
+    release.emit_release(
+        core,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+    )
+    receipt_path = manifest_path.with_name(manifest_path.name + ".receipt.json")
+    receipt_payload = receipt_path.read_bytes()
+    receipt_path.unlink()
+    with pytest.raises(IntegrityError, match="incomplete release artifact/receipt pair"):
         release.emit_release(
             core,
             release_manifest_path=manifest_path,
             generated_dir=generated,
         )
+
+    receipt_path.write_bytes(receipt_payload)
+    manifest_path.chmod(0o644)
+    manifest_path.write_bytes(manifest_path.read_bytes() + b" ")
+    with pytest.raises(IntegrityError, match="differs from the requested bytes"):
+        release.emit_release(
+            core,
+            release_manifest_path=manifest_path,
+            generated_dir=generated,
+        )
+
+
+def test_refresh_archives_and_atomically_replaces_only_the_exact_release_set(
+    tmp_path: Path, strong_bundle
+) -> None:
+    score, inference = strong_bundle
+    upstream = _upstream()
+    upstream["release_generator"] = {
+        "path": str(Path(release.__file__).resolve()),
+        "bytes": 1,
+        "sha256": "a" * 64,
+    }
+    core = release.build_release_core(
+        score=score,
+        inference=inference,
+        upstream_artifacts=upstream,
+    )
+    generated = tmp_path / "paper" / "generated"
+    manifest_path = tmp_path / "cct20_release_manifest.json"
+    first = release.emit_release(
+        core,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+    )
+    receipt_path = manifest_path.with_name(manifest_path.name + ".receipt.json")
+    paths = {
+        "release_manifest": manifest_path,
+        "release_receipt": receipt_path,
+        **{
+            name: Path(record["path"])
+            for name, record in first["generated_artifacts"].items()
+        },
+    }
+    old_payloads = {name: path.read_bytes() for name, path in paths.items()}
+    old_manifest_sha = hashlib.sha256(old_payloads["release_manifest"]).hexdigest()
+
+    changed = copy.deepcopy(core)
+    changed["upstream_artifacts"]["release_generator"] = {
+        **changed["upstream_artifacts"]["release_generator"],
+        "bytes": 999,
+        "sha256": "f" * 64,
+    }
+    with pytest.raises(IntegrityError, match="differs from the requested bytes"):
+        release.emit_release(
+            changed,
+            release_manifest_path=manifest_path,
+            generated_dir=generated,
+        )
+
+    history = tmp_path / "history"
+    refreshed = release.emit_release(
+        changed,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+        refresh_existing=True,
+        history_dir=history,
+    )
+    assert refreshed["release_sha256"] != first["release_sha256"]
+    archived = history / old_manifest_sha
+    assert (archived / "archive_manifest.json").is_file()
+    for name, payload in old_payloads.items():
+        archived_path = archived / f"{name}.bin"
+        assert archived_path.read_bytes() == payload
+        assert archived_path.stat().st_mode & 0o777 == 0o444
+    history_snapshot = {
+        path.relative_to(history): path.read_bytes()
+        for path in history.rglob("*")
+        if path.is_file()
+    }
+
+    repeated = release.emit_release(
+        changed,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+        refresh_existing=True,
+        history_dir=history,
+    )
+    assert repeated == refreshed
+    assert history_snapshot == {
+        path.relative_to(history): path.read_bytes()
+        for path in history.rglob("*")
+        if path.is_file()
+    }
+    for path in paths.values():
+        assert path.stat().st_mode & 0o777 == 0o444
+
+
+def test_refresh_rejects_tampering_or_non_generator_scientific_change(
+    tmp_path: Path, strong_bundle
+) -> None:
+    score, inference = strong_bundle
+    upstream = _upstream()
+    upstream["release_generator"] = {
+        "path": str(Path(release.__file__).resolve()),
+        "bytes": 1,
+        "sha256": "a" * 64,
+    }
+    core = release.build_release_core(
+        score=score,
+        inference=inference,
+        upstream_artifacts=upstream,
+    )
+    generated = tmp_path / "paper" / "generated"
+    manifest_path = tmp_path / "cct20_release_manifest.json"
+    release.emit_release(
+        core,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+    )
+    changed = copy.deepcopy(core)
+    changed["upstream_artifacts"]["release_generator"]["sha256"] = "f" * 64
+    numbers = generated / "cct20_numbers.tex"
+    numbers.chmod(0o644)
+    numbers.write_bytes(numbers.read_bytes() + b"% tampered\n")
+    with pytest.raises(IntegrityError, match="generated artifact"):
+        release.emit_release(
+            changed,
+            release_manifest_path=manifest_path,
+            generated_dir=generated,
+            refresh_existing=True,
+            history_dir=tmp_path / "history",
+        )
+    assert not (tmp_path / "history").exists()
+
+    numbers.write_bytes(release.render_numbers_tex(core).encode("ascii"))
+    numbers.chmod(0o444)
+    changed_science = copy.deepcopy(changed)
+    changed_science["status"] = "FABRICATED_CHANGE"
+    with pytest.raises(IntegrityError, match="receipt-bound scientific content"):
+        release.emit_release(
+            changed_science,
+            release_manifest_path=manifest_path,
+            generated_dir=generated,
+            refresh_existing=True,
+            history_dir=tmp_path / "history",
+        )
+
+
+def test_refresh_rolls_back_every_replaced_file_on_transaction_failure(
+    tmp_path: Path, strong_bundle, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    score, inference = strong_bundle
+    upstream = _upstream()
+    upstream["release_generator"] = {
+        "path": str(Path(release.__file__).resolve()),
+        "bytes": 1,
+        "sha256": "a" * 64,
+    }
+    core = release.build_release_core(
+        score=score,
+        inference=inference,
+        upstream_artifacts=upstream,
+    )
+    generated = tmp_path / "paper" / "generated"
+    manifest_path = tmp_path / "cct20_release_manifest.json"
+    first = release.emit_release(
+        core,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+    )
+    paths = [
+        manifest_path,
+        manifest_path.with_name(manifest_path.name + ".receipt.json"),
+        *(Path(record["path"]) for record in first["generated_artifacts"].values()),
+    ]
+    before = {path: path.read_bytes() for path in paths}
+    changed = copy.deepcopy(core)
+    changed["upstream_artifacts"]["release_generator"]["sha256"] = "f" * 64
+    real_replace = release.os.replace
+    calls = 0
+
+    def fail_once(source: Path, destination: Path) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            raise OSError("injected transaction fault")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(release.os, "replace", fail_once)
+    with pytest.raises(IntegrityError, match="transaction failed"):
+        release.emit_release(
+            changed,
+            release_manifest_path=manifest_path,
+            generated_dir=generated,
+            refresh_existing=True,
+            history_dir=tmp_path / "history",
+        )
+    assert before == {path: path.read_bytes() for path in paths}
+    verify_artifact_receipt(manifest_path)
+
+
+def test_refresh_from_existing_derives_every_input_from_the_verified_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest_path, generated_dir, bindings, cell_paths = _write_refresh_source_manifest(
+        tmp_path
+    )
+    history_dir = tmp_path / "history"
+    captured: dict = {}
+
+    def replay_verified_release(**kwargs):
+        captured.update(kwargs)
+        return {
+            "verdict": {"code": "CONFIRMATORY_STRONG_SUCCESS"},
+            "release_sha256": "b" * 64,
+        }
+
+    monkeypatch.setattr(release, "build_release", replay_verified_release)
+
+    result = release.refresh_release_from_existing(
+        release_manifest_path=manifest_path,
+        generated_dir=generated_dir,
+        history_dir=history_dir,
+    )
+
+    assert result["release_sha256"] == "b" * 64
+    assert captured == {
+        "checkpoint_audit_path": bindings["checkpoint_audit"],
+        "development_gate_path": bindings["development_gate"],
+        "development_collection_path": bindings["development_trace_collection"],
+        "execution_seal_path": bindings["execution_seal"],
+        "prediction_collection_path": bindings["prediction_collection"],
+        "prediction_cell_paths": cell_paths,
+        "scoring_marker_path": bindings["one_shot_scoring_marker"],
+        "score_path": bindings["one_shot_score"],
+        "inference_path": bindings["two_way_inference"],
+        "release_manifest_path": manifest_path.resolve(),
+        "generated_dir": generated_dir.resolve(),
+        "refresh_existing": True,
+        "history_dir": history_dir.resolve(),
+    }
+
+
+def test_refresh_from_existing_rejects_manifest_tampering_before_replay(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest_path, generated_dir, _, _ = _write_refresh_source_manifest(tmp_path)
+    manifest_path.chmod(0o644)
+    manifest_path.write_bytes(manifest_path.read_bytes() + b" ")
+    replayed = False
+
+    def replay_verified_release(**kwargs):
+        nonlocal replayed
+        replayed = True
+        return kwargs
+
+    monkeypatch.setattr(release, "build_release", replay_verified_release)
+
+    with pytest.raises(IntegrityError, match="receipt .* mismatch"):
+        release.refresh_release_from_existing(
+            release_manifest_path=manifest_path,
+            generated_dir=generated_dir,
+            history_dir=tmp_path / "history",
+        )
+    assert replayed is False
+
+
+@pytest.mark.parametrize("mutation", ["missing", "duplicate", "relative"])
+def test_refresh_from_existing_rejects_an_invalid_committed_cell_ledger(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    manifest_path, generated_dir, _, _ = _write_refresh_source_manifest(tmp_path)
+    document = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_path.unlink()
+    manifest_path.with_name(manifest_path.name + ".receipt.json").unlink()
+    items = document["upstream_artifacts"]["prediction_cells"]["items"]
+    if mutation == "missing":
+        items.pop()
+        document["upstream_artifacts"]["prediction_cells"]["count"] -= 1
+    elif mutation == "duplicate":
+        items[-1]["path"] = items[0]["path"]
+    else:
+        items[-1]["path"] = "relative/cell.json"
+    unsigned = dict(document)
+    unsigned.pop("release_sha256")
+    document["release_sha256"] = stable_sha256(unsigned)
+    write_immutable_json_with_receipt(manifest_path, document)
+    replayed = False
+
+    def replay_verified_release(**kwargs):
+        nonlocal replayed
+        replayed = True
+        return kwargs
+
+    monkeypatch.setattr(release, "build_release", replay_verified_release)
+
+    with pytest.raises(IntegrityError, match="prediction-cell"):
+        release.refresh_release_from_existing(
+            release_manifest_path=manifest_path,
+            generated_dir=generated_dir,
+            history_dir=tmp_path / "history",
+        )
+    assert replayed is False
+
+
+def test_refresh_rejects_a_symlinked_existing_receipt(
+    tmp_path: Path,
+    strong_bundle,
+) -> None:
+    score, inference = strong_bundle
+    upstream = _upstream()
+    upstream["release_generator"] = {
+        "path": str(Path(release.__file__).resolve()),
+        "bytes": 1,
+        "sha256": "a" * 64,
+    }
+    core = release.build_release_core(
+        score=score,
+        inference=inference,
+        upstream_artifacts=upstream,
+    )
+    generated = tmp_path / "paper" / "generated"
+    manifest_path = tmp_path / "cct20_release_manifest.json"
+    release.emit_release(
+        core,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+    )
+    receipt_path = manifest_path.with_name(manifest_path.name + ".receipt.json")
+    external_receipt = tmp_path / "external-receipt.json"
+    external_receipt.write_bytes(receipt_path.read_bytes())
+    receipt_path.unlink()
+    receipt_path.symlink_to(external_receipt)
+    changed = copy.deepcopy(core)
+    changed["upstream_artifacts"]["release_generator"]["sha256"] = "f" * 64
+
+    with pytest.raises(IntegrityError, match="regular file"):
+        release.emit_release(
+            changed,
+            release_manifest_path=manifest_path,
+            generated_dir=generated,
+            refresh_existing=True,
+            history_dir=tmp_path / "history",
+        )
+
+    assert receipt_path.is_symlink()
+    assert external_receipt.stat().st_mode & 0o777 == 0o644
+
+
+def test_refresh_cli_replays_only_the_existing_manifest_bindings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    manifest_path = tmp_path / "cct20_release_manifest.json"
+    generated_dir = tmp_path / "generated"
+    history_dir = tmp_path / "history"
+    captured: dict = {}
+
+    def replay(**kwargs):
+        captured.update(kwargs)
+        return {
+            "verdict": {"code": "CONFIRMATORY_STRONG_SUCCESS"},
+            "release_sha256": "c" * 64,
+        }
+
+    monkeypatch.setattr(release, "refresh_release_from_existing", replay)
+
+    release.main(
+        [
+            "--refresh-from-existing",
+            "--release-manifest",
+            str(manifest_path),
+            "--generated-dir",
+            str(generated_dir),
+            "--history-dir",
+            str(history_dir),
+        ]
+    )
+
+    assert captured == {
+        "release_manifest_path": manifest_path,
+        "generated_dir": generated_dir,
+        "history_dir": history_dir,
+    }
+    assert "release_sha256=" + "c" * 64 in capsys.readouterr().out
+
+
+def test_refresh_cli_rejects_any_caller_supplied_upstream_override(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit, match="2"):
+        release.main(
+            [
+                "--refresh-from-existing",
+                "--release-manifest",
+                str(tmp_path / "cct20_release_manifest.json"),
+                "--history-dir",
+                str(tmp_path / "history"),
+                "--checkpoint-audit",
+                str(tmp_path / "substituted.json"),
+            ]
+        )
+
+    assert "does not accept upstream overrides" in capsys.readouterr().err
 
 
 def test_emit_recovers_an_exact_read_only_partial_transaction(tmp_path: Path, strong_bundle) -> None:
@@ -573,6 +1099,30 @@ def test_emit_recovers_an_exact_read_only_partial_transaction(tmp_path: Path, st
     assert result["status"] == "RELEASE_COMPLETE"
     verify_artifact_receipt(manifest_path)
     assert partial.read_bytes() == release.render_numbers_tex(core).encode("ascii")
+
+
+def test_exact_existing_release_output_is_hardened_to_read_only(tmp_path: Path) -> None:
+    output = tmp_path / "cct20_numbers.tex"
+    payload = b"% exact interrupted release output\n"
+    output.write_bytes(payload)
+    output.chmod(0o644)
+
+    release._publish_exact_immutable(output, payload)
+
+    assert output.read_bytes() == payload
+    assert output.stat().st_mode & 0o777 == 0o444
+
+
+def test_exact_existing_release_output_rejects_a_symlink(tmp_path: Path) -> None:
+    target = tmp_path / "target.tex"
+    target.write_bytes(b"exact\n")
+    linked = tmp_path / "cct20_numbers.tex"
+    linked.symlink_to(target)
+
+    with pytest.raises(IntegrityError, match="regular file"):
+        release._publish_exact_immutable(linked, b"exact\n")
+
+    assert target.stat().st_mode & 0o777 == 0o644
 
 
 def test_emit_rejects_a_different_partial_transaction(
@@ -621,6 +1171,7 @@ def test_script_has_no_target_annotation_or_scorer_entrypoint() -> None:
 
 
 def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
+    from docs.research.kbound.scripts import run_repository_verification
     from docs.research.kbound.scripts.verify_release_checksums import REQUIRED_RELEASE_PATHS
 
     runbook = (
@@ -633,9 +1184,19 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
     ).read_text(encoding="utf-8")
 
     assert 'BUILD_LONG_TMLR=1 PYTHON="$PY"' in runbook
-    assert "tests/test_cct20_release_builder.py" in runbook
-    assert "tests/test_cct20_manuscript_claim_validation.py" in runbook
-    assert "tests/test_build_docx_pipeline.py" in runbook
+    assert '"$KB/scripts/run_repository_verification.py"' in runbook
+    discovered = run_repository_verification.classify_test_paths(
+        [
+            "tests/test_cct20_release_builder.py",
+            "tests/test_cct20_manuscript_claim_validation.py",
+            "tests/test_build_docx_pipeline.py",
+        ]
+    )
+    assert discovered["pytest_paths"] == [
+        "tests/test_build_docx_pipeline.py",
+        "tests/test_cct20_manuscript_claim_validation.py",
+        "tests/test_cct20_release_builder.py",
+    ]
     # The runbook and verifier share one exact-path inventory. Do not require
     # a duplicated filename list in the shell producer.
     assert '"$KB/scripts/verify_release_checksums.py" --list-required' in runbook
@@ -648,4 +1209,11 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
     ):
         prefix = "docs/research/kbound/" if name.endswith(".docx") else "docs/research/kbound/paper/generated/"
         assert prefix + name in REQUIRED_RELEASE_PATHS
-    assert '("kbound_short_final_draft.pdf", "kbound_tmlr.pdf")' in renderer
+    for current_name in (
+        "kbound_short_main.pdf",
+        "kbound_short_supplement.pdf",
+        "kbound_tmlr.pdf",
+        "kbound_full_report.pdf",
+    ):
+        assert current_name in renderer
+    assert "kbound_short_final_draft.pdf" not in renderer

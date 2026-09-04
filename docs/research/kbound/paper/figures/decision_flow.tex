@@ -1,0 +1,32 @@
+% Deterministic vector workflow diagram; no empirical values are encoded here.
+\begin{tikzpicture}[
+  >=Latex,
+  node distance=0.62cm,
+  flow/.style={draw=black, very thick, minimum height=1.7cm, align=center,
+    font=\sffamily\large, inner xsep=0.34cm},
+  action/.style={draw=black, very thick, minimum width=2.55cm, minimum height=0.72cm,
+    align=center, font=\sffamily\normalsize, text=white},
+  arrow/.style={->, very thick, draw=black!60}
+]
+  \node[font=\sffamily\Large] (title) at (6.8,2.75) {KGA decision flow};
+  \node[flow, fill=black!7, minimum width=2.45cm] (batch) at (0,0)
+    {unlabeled\\batch};
+  \node[flow, fill=teal!15, minimum width=2.55cm, right=of batch] (evidence)
+    {evidence\\$Z=\phi(\cdot)$};
+  \node[flow, fill=teal!15, minimum width=2.55cm, right=of evidence] (estimate)
+    {estimate\\$\widehat\Delta(Z),\ \varepsilon$};
+  \node[flow, fill=orange!22, minimum width=2.60cm, right=of estimate] (gate)
+    {interval gate\\$\widehat\Delta\!\pm\!\varepsilon$ vs. $0$};
+  \node[action, fill=teal!72!black, right=1.10cm of gate, yshift=1.18cm] (adapt)
+    {ADAPT\quad $\widehat\Delta-\varepsilon>0$};
+  \node[action, fill=blue!62!black, right=1.10cm of gate] (freeze)
+    {FREEZE\quad $\widehat\Delta+\varepsilon<0$};
+  \node[action, fill=black!48, right=1.10cm of gate, yshift=-1.18cm] (abstain)
+    {ABSTAIN\quad $0\in[\widehat\Delta-\varepsilon,\widehat\Delta+\varepsilon]$};
+  \draw[arrow, draw=black] (batch) -- (evidence);
+  \draw[arrow, draw=black] (evidence) -- (estimate);
+  \draw[arrow, draw=black] (estimate) -- (gate);
+  \draw[arrow] (gate.east) -- (adapt.west);
+  \draw[arrow] (gate.east) -- (freeze.west);
+  \draw[arrow] (gate.east) -- (abstain.west);
+\end{tikzpicture}

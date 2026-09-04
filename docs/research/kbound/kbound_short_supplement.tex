@@ -1,0 +1,69 @@
+% Standalone supplement driver, bound to the same current shared authorities.
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage[letterpaper,margin=0.9in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,graphicx,booktabs,float,algorithm,algpseudocode,tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{xcolor,enumitem,url,xspace,seqsplit}
+\usepackage{placeins}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\hypersetup{
+  pdftitle={K-Bound: When Is Label-Free Adaptation Knowable? -- Supplementary Material},
+  pdfauthor={Pratik Niroula}
+}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\Pr}{\mathbb{P}}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\KGA}{\textnormal{\textsc{KGA}}\xspace}
+\newcommand{\adapt}{\textnormal{\textsc{adapt}}\xspace}
+\newcommand{\freeze}{\textnormal{\textsc{freeze}}\xspace}
+\newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
+\DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
+\providecommand{\path}[1]{\texttt{#1}}
+% Resolve links to the separately compiled main paper as descriptive prose;
+% no external .aux file or page numbering is required.
+\newcommand{\KBMainRef}[3]{#3}
+\newcommand{\KBMainEqRef}[2]{#2}
+\setlength{\emergencystretch}{3em}
+\setlist{nosep,leftmargin=*}
+\input{paper/generated/kbound_numbers}
+\input{paper/generated/cct20_numbers.tex}
+\input{paper/generated/cct20_reporting_numbers.tex}
+\input{paper/generated/current_release_identity.tex}
+\input{paper/figure_fallback}
+\newif\ifanon
+\anonfalse
+\title{\textbf{K-Bound: When Is Label-Free Adaptation Knowable?}\\[2pt]
+\large Supplementary Material}
+\author{Pratik Niroula\\
+\small Minnesota State University, Mankato\\
+\small \texttt{pratik.niroula@mnsu.edu}}
+\date{Source closure: September 3, 2026}
+\begin{document}
+\maketitle
+\noindent This independently compiled supplement accompanies the current
+\emph{K-Bound Short Main Paper}. It uses the same generated numerical authorities and
+records Appendices A--N: secondary evidence, proof dependencies, protocol ledgers,
+failure analyses, and reproducibility details. References to results stated in the
+main paper are descriptive here so this document does not depend on an external
+auxiliary file or on the main paper's page numbering.
+\KBoundNamedReleaseBlock{\KBoundRoleShortSupplement}
+\input{kbound_submission_supplement}
+% Keep the complete shared bibliography while avoiding an almost-empty final
+% page caused by a single spillover entry in this standalone layout.
+{\scriptsize\input{paper/references_kbound_expanded}}
+\end{document}

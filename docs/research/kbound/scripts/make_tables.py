@@ -30,6 +30,10 @@ CCT_LOCATION_DISPLAY_OUT = os.path.join(
     KBOUND,
     "paper/generated/cct20_location_effects_display.tex",
 )
+CCT_REPORTING_NUMBERS_OUT = os.path.join(
+    KBOUND,
+    "paper/generated/cct20_reporting_numbers.tex",
+)
 LOCKED_DEFAULT = os.path.join(ROOT, "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json")
 H2H_DEFAULT = os.path.join(
     ROOT,
@@ -49,6 +53,11 @@ def f(x):
 
 def pct(x):
     return f"{x * 100:.0f}"
+
+
+def pct_one_decimal(x):
+    """Format small diagnostic rates without rounding nonzero events to zero."""
+    return f"{x * 100:.1f}"
 
 
 def zero_event_cp95(n):
@@ -77,15 +86,31 @@ def _headtohead():
     if not raw:
         return {}
     h = raw.get("headtohead", raw)
+    if not isinstance(h, dict) or h.get("VERDICT") not in {"WIN", "TIE", "LOSE"}:
+        raise ValueError("head-to-head fallback is missing a valid verdict")
+
+    def required_number(container, key, *, rate=False):
+        values = raw.get(container)
+        value = values.get(key) if isinstance(values, dict) else None
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value < 0
+            or (rate and value > 1)
+        ):
+            raise ValueError(f"head-to-head fallback has missing or invalid {container}.{key}")
+        return float(value)
+
     return {
-        "verdict": h.get("VERDICT", "—"),
-        "kga_regret": float(raw.get("policy_mean_regret", {}).get("kga", 0)),
-        "adapt_regret": float(raw.get("policy_mean_regret", {}).get("always_adapt", 0)),
-        "freeze_regret": float(raw.get("policy_mean_regret", {}).get("always_freeze", 0)),
-        "poem_regret": float(raw.get("policy_mean_regret", {}).get("poem", 0)),
-        "aetta_regret": float(raw.get("policy_mean_regret", {}).get("aetta", 0)),
-        "kga_fa": float(raw.get("policy_false_adapt_rate", {}).get("kga", 0)),
-        "kga_decisive": float(raw.get("policy_decisive_rate", {}).get("kga", 0)),
+        "verdict": h["VERDICT"],
+        "kga_regret": required_number("policy_mean_regret", "kga"),
+        "adapt_regret": required_number("policy_mean_regret", "always_adapt"),
+        "freeze_regret": required_number("policy_mean_regret", "always_freeze"),
+        "poem_regret": required_number("policy_mean_regret", "poem"),
+        "aetta_regret": required_number("policy_mean_regret", "aetta"),
+        "kga_fa": required_number("policy_false_adapt_rate", "kga", rate=True),
+        "kga_decisive": required_number("policy_decisive_rate", "kga", rate=True),
     }
 
 
@@ -97,6 +122,8 @@ if canonical:
     source_manifest_sha256 = canonical.get("source_manifest_sha256")
     if not isinstance(source_manifest_sha256, str) or len(source_manifest_sha256) != 64:
         raise ValueError("canonical panel is missing a valid source_manifest_sha256")
+    with open(RECONCILED, "rb") as handle:
+        canonical_panel_sha256 = hashlib.sha256(handle.read()).hexdigest()
     panels = canonical["panels"]
     iwild_release_eligible = panels["iwildcam"].get("release_promotion", {}).get("eligible", False)
 
@@ -105,6 +132,7 @@ if canonical:
         return {
             "regret": [regret["kga"], regret["always_adapt"], regret["always_freeze"]],
             "false_adapt": score["fa_u"],
+            "false_adapt_count": score["false_adapt_count"],
         }
 
     tracks = {
@@ -133,6 +161,7 @@ if canonical:
     generated_macros.update(
         {
             "SourceManifestSHA": source_manifest_sha256,
+            "CanonicalPanelSHA": canonical_panel_sha256,
             "OHRepKga": f(office_replication["regret"]["kga"]),
             "OHRepAdapt": f(office_replication["regret"]["always_adapt"]),
             "OHRepFreeze": f(office_replication["regret"]["always_freeze"]),
@@ -197,9 +226,15 @@ if tracks:
         "cifar10c_stress": {
             "candidates": {
                 "tent": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_tent"]["regret"]))
-                | {"false_adapt": tracks["cifar10c_tent"]["false_adapt"]},
+                | {
+                    "false_adapt": tracks["cifar10c_tent"]["false_adapt"],
+                    "false_adapt_count": tracks["cifar10c_tent"]["false_adapt_count"],
+                },
                 "eata": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_eata"]["regret"]))
-                | {"false_adapt": tracks["cifar10c_eata"]["false_adapt"]},
+                | {
+                    "false_adapt": tracks["cifar10c_eata"]["false_adapt"],
+                    "false_adapt_count": tracks["cifar10c_eata"]["false_adapt_count"],
+                },
             }
         },
         "imagenetc_sar": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["imagenetc_sar"]["regret"])),
@@ -225,7 +260,10 @@ for cand in ("tent", "eata"):
         M[f"CIFAR{cand}Kga"] = f(c.get("regret_kga", c.get("kga_mean_regret")))
         M[f"CIFAR{cand}Adapt"] = f(c.get("regret_adapt", c.get("adapt_mean_regret")))
         M[f"CIFAR{cand}Freeze"] = f(c.get("regret_freeze", c.get("freeze_mean_regret")))
-        M[f"CIFAR{cand}FA"] = pct(c.get("false_adapt", c.get("false_adapt_rate_pooled", 0)))
+        false_adapt_rate = c.get("false_adapt", c.get("false_adapt_rate_pooled", 0))
+        M[f"CIFAR{cand}FA"] = pct_one_decimal(false_adapt_rate)
+        if "false_adapt_count" in c:
+            M[f"CIFAR{cand}FACount"] = str(c["false_adapt_count"])
 
 hh = _headtohead()
 if hh:
@@ -346,6 +384,69 @@ def _write_cct20_primary_display_table():
     with open(CCT_PRIMARY_DISPLAY_OUT, "w", encoding="ascii") as handle:
         handle.write(provenance + display)
     print("wrote", CCT_PRIMARY_DISPLAY_OUT)
+
+
+def _write_cct20_reporting_numbers():
+    """Derive manuscript-only false-FREEZE counts from the sealed CCT manifest.
+
+    The receipt-bound ``cct20_numbers.tex`` remains byte-for-byte unchanged.
+    This presentation include supplies only the reporting quantities that the
+    sealed generator did not expose, and fails closed if the current release
+    no longer matches the audited 45-cell action/effect record.
+    """
+
+    release = _load_json(CCT_RELEASE)
+    actions = release["action_exposure"]["counts"]
+    mix = release["adaptation_effect_mix"]
+    design = release["design"]
+    effect_rows = [
+        row
+        for sign_rows in release["adaptation_effect_cells_by_sign"].values()
+        for row in sign_rows
+    ]
+    false_freeze = sum(
+        row["decision"] == "FREEZE" and row["adaptation_benefit"] >= 0
+        for row in effect_rows
+    )
+    observed = {
+        "cells": design["cell_count"],
+        "helpful": mix["helpful_cells_strictly_positive"],
+        "tied": mix["neutral_cells_exactly_zero"],
+        "harmful": mix["harmful_cells_strictly_negative"],
+        "adapt": actions["ADAPT"],
+        "freeze": actions["FREEZE"],
+        "abstain": actions["ABSTAIN"],
+        "false_freeze": false_freeze,
+    }
+    expected = {
+        "cells": 45,
+        "helpful": 1,
+        "tied": 0,
+        "harmful": 44,
+        "adapt": 0,
+        "freeze": 44,
+        "abstain": 1,
+        "false_freeze": 1,
+    }
+    if observed != expected or len(effect_rows) != observed["cells"]:
+        raise ValueError(
+            "CCT-20 manifest no longer implies the audited 1/0/44 effect mix, "
+            "0/44/1 actions, and one false FREEZE"
+        )
+    source = "\n".join(
+        [
+            "% AUTO-GENERATED by scripts/make_tables.py from the sealed CCT-20 manifest.",
+            "% Reporting-only additions; receipt-bound authorities are unchanged.",
+            rf"\newcommand{{\CCTFalseFreezeCount}}{{{false_freeze}}}",
+            r"\newcommand{\CCTFalseFreezeCountWord}{one}",
+            rf"\newcommand{{\CCTFalseFreezeConditionalDenominator}}{{{actions['FREEZE']}}}",
+            rf"\newcommand{{\CCTFalseFreezeOverallDenominator}}{{{design['cell_count']}}}",
+            "",
+        ]
+    )
+    with open(CCT_REPORTING_NUMBERS_OUT, "w", encoding="ascii") as handle:
+        handle.write(source)
+    print("wrote", CCT_REPORTING_NUMBERS_OUT)
 
 
 
@@ -478,6 +579,7 @@ def _write_cct20_safe_utility_display_table():
     print("wrote", path)
 
 _write_metric_separated_display_tables()
+_write_cct20_reporting_numbers()
 _write_cct20_safe_utility_display_table()
 _write_cct20_location_display_table()
 _write_cct20_primary_display_table()

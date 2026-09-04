@@ -1,4 +1,5 @@
 """Scientific narrative and manuscript-closure guards; no datasets or training."""
+
 from __future__ import annotations
 
 import re
@@ -7,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from docs.research.kbound.scripts import build_release_source_seal as seal
+from docs.research.kbound.scripts import run_repository_verification as repository_verification
 from docs.research.kbound.scripts import verify_release_checksums as checksums
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,13 +26,13 @@ def words(path: Path) -> str:
 
 def test_abstract_is_concise_and_keeps_empirical_and_population_targets_separate():
     abstract = words(PAPER / "kbound_abstract_core.tex")
-    assert 180 <= len(abstract.split()) <= 230
+    assert 180 <= len(abstract.split()) <= 250
     for required in (
         "empirical companion, not an implementation",
         "observed evaluation-cell benefit",
-        "labeled historical outcomes",
+        "labeled development and residual-calibration cells",
         "SAR favors always-adapt",
-        "no ADAPT decisions",
+        "\\CCTAdaptCount{}/\\CCTFreezeCount{}/\\CCTAbstainCount{} ADAPT/FREEZE/ABSTAIN decisions",
         "do not establish interval coverage or population-risk protection",
     ):
         assert required in abstract
@@ -38,23 +40,123 @@ def test_abstract_is_concise_and_keeps_empirical_and_population_targets_separate
     assert r"\hashtext" not in abstract
 
 
+def test_headline_flow_prioritizes_directional_actions_and_exposure():
+    abstract = words(PAPER / "kbound_abstract_core.tex")
+    for required in (
+        "directionally correct action",
+        "explicit ABSTAIN",
+        "false-action denominators",
+        "utility preservation",
+        r"$\operatorname{sign}(\Delta)=\operatorname{sign}(M+\gamma)$",
+        "opened, dependent, constructed six-family CIFAR-10-C diagnostic",
+        "2/1,091 false ADAPT",
+        "2/2,160 overall",
+        "1/337 false FREEZE",
+        "0/1,207 false ADAPT",
+        "0/105 false FREEZE",
+        "1,414 ADAPT",
+        "no FREEZE exposure",
+    ):
+        assert required in abstract
+    assert r"$\Delta=M+\gamma$" not in abstract
+    assert abstract.index("directionally correct action") < abstract.index("point regret")
+
+    body = live(PAPER / "kbound_submission_body.tex")
+    introduction = body.split(r"\section{Introduction}", 1)[1].split(r"\section{Related Work}", 1)[0]
+    assert "directional action correctness" in introduction
+    assert "action exposure and false-action denominators" in introduction
+
+    results_lead = body.split(r"\section{Primary Results}", 1)[1].split(r"\begin{table*}", 1)[0]
+    for required in ("ADAPT/FREEZE/ABSTAIN", "false ADAPT", "utility"):
+        assert required in results_lead
+    assert results_lead.index("false ADAPT") < results_lead.index("regret")
+
+    limitations = body.split(r"\section{Limitations and Broader Impact}", 1)[1]
+    limitations = limitations.split(r"\section{Conclusion}", 1)[0]
+    assert "measured action record does not demonstrate universal safety" in limitations
+
+    conclusion = body.split(r"\section{Conclusion}", 1)[1]
+    assert "directional action correctness" in conclusion
+    assert "false-action denominators" in conclusion
+    assert "utility preservation" in conclusion
+
+    supplement = live(PAPER / "kbound_submission_supplement.tex")
+    assert r"\subsection{Historical Protocol-Matched Controller Ports}" not in body
+    assert r"\subsection{Historical Protocol-Matched POEM and AETTA Ports}" in supplement
+
+
 def test_main_story_has_ten_scientific_sections_and_three_contributions():
     body = live(PAPER / "kbound_submission_body.tex")
     sections = re.findall(r"^\\section\{([^}]+)\}", body, re.M)
     assert sections == [
-        "Introduction", "Related Work", "Setup, Notation, and Claim Levels",
+        "Introduction",
+        "Related Work",
+        "Setup, Notation, and Claim Levels",
         "Population Partial-Identification Frontier",
         "What Label-Free Evidence Cannot Learn",
         "KGA: An Empirical Benefit-Interval Gate",
-        "Primary Experimental Protocols", "Primary Results",
-        "Limitations and Broader Impact", "Conclusion",
+        "Primary Experimental Protocols",
+        "Primary Results",
+        "Limitations and Broader Impact",
+        "Conclusion",
     ]
     assert body.count("Our primary research question is:") == 1
     contributions = body.split(r"\subsection{Three Scientific Contributions}", 1)[1]
     contributions = contributions.split(r"\end{enumerate}", 1)[0]
     assert contributions.count(r"\item") == 3
-    assert body.index(r"\label{tab:compact-bridge}") < body.index(r"\section{Population Partial-Identification")
+    assert body.index(r"\label{tab:notation-levels}") < body.index(r"\section{Population Partial-Identification")
     assert body.index(r"\label{eq:cct-safe-utility}") < body.index(r"\section{Primary Results}")
+
+
+def test_six_symbol_bridge_precedes_theory_and_frames_the_two_decision_questions():
+    """Readers should understand both inferential boxes before dense population notation."""
+    body = live(PAPER / "kbound_submission_body.tex")
+    theory_start = body.index(r"\section{Population Partial-Identification Frontier}")
+    pre_theory = body[:theory_start]
+
+    required = (
+        "Before turning to the formal results, it is useful to keep six quantities in view.",
+        r"\boxed{(M,\gamma,\beta)\longrightarrow\Delta}",
+        "Across all allowed target worlds, can the sign of benefit change?",
+        r"Z\longrightarrow\widehat\Delta\mathbin{\pm}\varepsilon",
+        r"\{\adapt,\freeze,\abstain\}",
+        "For this deployment unit, is estimated benefit sufficiently separated from zero?",
+        "The conceptual bridge between the two boxes is benefit, not an equality of estimands:",
+        r"\Delta\ \text{(population)}",
+        r"\Delta^{\mathrm{cell}}\ \text{(deployment unit)}",
+    )
+    for phrase in required:
+        assert phrase in pre_theory
+
+    assert pre_theory.index("Population box") < pre_theory.index("Deployment box")
+    assert pre_theory.index("Deployment box") < pre_theory.index(
+        "The conceptual bridge between the two boxes is benefit, not an equality of estimands:"
+    )
+
+
+def test_dense_theory_sections_follow_question_intuition_result_consequence_rhythm():
+    """Guard the question-first narrative requested for the load-bearing theory."""
+    body = words(PAPER / "kbound_submission_body.tex")
+    core = words(PAPER / "paper/sections/theory_core_main.tex")
+
+    for phrase in (
+        r"The decision depends on one unknown sign: the sign of $\Delta$.",
+        "Target labels hide that sign.",
+        r"$M$ supplies the visible direction, $\gamma$ records what labels still hide, and $\beta$ limits how large that hidden term may be.",
+        r"The population frontier becomes usable only after $\beta$ has been declared.",
+        "Can the same label-free evidence learn a smaller valid budget?",
+        "The next section therefore changes the question from population identification to deployment-time prediction.",
+        "For the current evaluation unit, can KGA support which side of zero the benefit lies on?",
+    ):
+        assert phrase in body
+
+    for phrase in (
+        "The first result connects the decision target to the three population symbols.",
+        "The harder question is identification.",
+        "Randomization cannot resolve two worlds that induce exactly the same evidence law.",
+        "We can now answer the population question completely.",
+    ):
+        assert phrase in core
 
 
 @pytest.mark.parametrize("name", ["kbound_submission.tex", "kbound_tmlr.tex"])
@@ -84,10 +186,17 @@ def test_audits_move_to_supplement_without_discarding_adverse_records():
     for token in (r"\SourceManifestSHA", r"\CCTInferenceSHA", r"\appendix", "literal " + r"\texttt{Infinity}"):
         assert token not in body
     assert supplement.count(r"\SourceManifestSHA") >= 2
+    assert r"\CanonicalPanelSHA" in body
     for token in (
-        "five-checkpoint", "invalid", "withheld", "PACS", "ImageNet-R",
-        "no target natural-shift", "Historical Protocol-Matched POEM and AETTA",
-        "142 declarations", "--full-foundations",
+        "five-checkpoint",
+        "invalid",
+        "withheld",
+        "PACS",
+        "ImageNet-R",
+        "no target natural-shift",
+        "Historical Protocol-Matched POEM and AETTA",
+        "142 declarations",
+        "--full-foundations",
     ):
         assert token in supplement
     assert r"\input{paper/generated/kbound_primary_accuracy_table.tex}" in body
@@ -110,23 +219,32 @@ def test_coverage_to_action_is_a_proposition_not_a_new_calibration_theorem():
 def test_interval_audit_cannot_be_promoted_to_fresh_group_validation():
     body = words(PAPER / "kbound_submission_body.tex")
     supplement = words(PAPER / "kbound_submission_supplement.tex")
-    for token in ("rank-constrained", "not independent validation", "one false FREEZE among 359",
-                  "only two FREEZE decisions", "conditional false-freeze frequency is undefined"):
+    for token in (
+        "cell-outcome-disjoint three-way cross-fit",
+        "not independent validation",
+        "one false FREEZE among 337",
+        "SAR makes no false ADAPT and no FREEZE decisions",
+        "conditional false-freeze rate is undefined",
+    ):
         assert token in body
-    assert "pooled LOO inclusion remains rank-constrained" in supplement
-    assert "No fitting, tuning, new target access, or training is performed" in supplement
-    assert "empirical order-statistic calibration" in body
-    assert "exact-rank" not in body
+    assert (
+        "in-sample cross-fit diagnostics on opened, dependent cells, not independent estimates "
+        "for new environments"
+    ) in supplement
+    assert "measured outcome was absent from both estimator fitting and residual calibration" in supplement
+    assert "order-statistic rule" in body
+    assert "exact-rank" in body
     assert "Commitment rate" in body
     assert r"\mathrm{Cov}_{\mathrm{cell}}" in body
 
 
 def test_fallback_semantics_and_development_labels_are_explicit():
     body = words(PAPER / "kbound_submission_body.tex")
-    assert "label-free at deployment, not during development and calibration" in body
+    assert "label-free at the scored decision, not during development and calibration" in body
     assert "must be logged as ABSTAIN, not as a certified FREEZE" in body
     assert "not those additional interventions" in body
-    assert "requires improvement over both fixed policies" in body
+    assert "requires complete data for all 45 cells" in body
+    assert "improvement over both fixed policies" in body
 
 
 def test_new_inputs_and_outputs_are_in_the_release_inventory():
@@ -138,13 +256,18 @@ def test_new_inputs_and_outputs_are_in_the_release_inventory():
         "tests/test_kbound_metric_display_tables.py",
         "tests/test_kbound_narrative_revision.py",
         "tests/test_kbound_pdf_build_isolation.py",
+        "tests/test_kbound_current_pdf_publication.py",
+        "docs/research/kbound/scripts/publish_current_pdfs.py",
     }
     expected_outputs = {
         f"docs/research/kbound/paper/generated/{name}"
         for name in (
-            "current_policy_interval_diagnostics.json", "current_policy_interval_diagnostics.tex",
-            "current_policy_interval_diagnostics_groups.tex", "kbound_primary_accuracy_table.tex",
-            "kbound_auxiliary_accuracy_table.tex", "kbound_auxiliary_balanced_accuracy_table.tex",
+            "current_policy_interval_diagnostics.json",
+            "current_policy_interval_diagnostics.tex",
+            "current_policy_interval_diagnostics_groups.tex",
+            "kbound_primary_accuracy_table.tex",
+            "kbound_auxiliary_accuracy_table.tex",
+            "kbound_auxiliary_balanced_accuracy_table.tex",
             "cct20_safe_utility_display.tex",
         )
     }
@@ -159,5 +282,14 @@ def test_build_checks_diagnostics_and_full_generation_refreshes_explicitly():
     runbook = (PAPER / "runbooks/release_candidate.sh").read_text()
     assert "scripts/build_current_policy_interval_diagnostics.py --check" in build
     assert '"$KB/scripts/build_current_policy_interval_diagnostics.py" --refresh-existing' in runbook
-    for test_name in ("test_kbound_interval_diagnostics", "test_kbound_metric_display_tables", "test_kbound_narrative_revision", "test_kbound_pdf_build_isolation"):
-        assert f"tests/{test_name}.py" in runbook
+    assert "run_repository_verification.py" in runbook
+    assert "--all-gates" in runbook
+    inventory = repository_verification.classify_test_paths(repository_verification.tracked_paths(ROOT))
+    discovered = set(inventory["pytest_paths"])
+    for test_name in (
+        "test_kbound_interval_diagnostics",
+        "test_kbound_metric_display_tables",
+        "test_kbound_narrative_revision",
+        "test_kbound_pdf_build_isolation",
+    ):
+        assert f"tests/{test_name}.py" in discovered
