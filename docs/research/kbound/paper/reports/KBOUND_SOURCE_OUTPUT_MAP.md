@@ -1,40 +1,48 @@
 # K-Bound current source-to-output map
 
 Baseline captured on September 3, 2026, before the release-sync edits requested in
-`KBOUND-2026-09-03-R1`. The checkout is on
-`fix/kbound-current-release-sync-2026-09-03`. A separate linked worktree was not safe because the
-current manuscript roots and full-report modules include untracked working-tree files that are not
-present in `HEAD`; the existing publication branch is therefore the isolation boundary. No user
-changes were reset, stashed, cleaned, or discarded.
+`KBOUND-2026-09-03-R1`; final outputs were sealed on September 4, 2026. The source checkout is on
+`fix/kbound-current-release-sync-2026-09-03`. Because the primary iCloud-backed checkout contains
+unrelated and partly dataless files, no reset, stash, clean, or broad checkout was used. Source
+edits were committed on that branch, and the final build and audits ran from an isolated sparse
+mirror at `/tmp/kbound-r1-final.SZUjxm/worktree` containing the exact source closure. The source
+snapshot commit is `efecbafd74e192c1314ea81a0aa8868a8e784a94`.
 
 ## Current role map
 
-| Current role | Source build | Root TeX | Build selector | Anonymity | Baseline pages | Baseline SHA-256 | PDF tracked in Git |
-|---|---|---|---|---|---:|---|---|
-| Named compact main paper | `docs/research/kbound/kbound_short_main.pdf` | `docs/research/kbound/kbound_short_main.tex` | `BUILD_SHORT_MAIN=1` | named author block and named PDF metadata | 22 | `5e66b290472ac26f1ee79590e680e3d9234789a237e6a00f45bc2178f1fcc2bd` | no |
-| Named standalone supplement | `docs/research/kbound/kbound_short_supplement.pdf` | `docs/research/kbound/kbound_short_supplement.tex` | `BUILD_SHORT_SUPPLEMENT=1` | named author block and named PDF metadata | 25 | `8861e564671004f525cdb9b199aeefe62fa4497c555cb6140cf9c499d43b5ce6` | no |
-| Anonymous integrated TMLR review manuscript | `docs/research/kbound/kbound_tmlr.pdf` | `docs/research/kbound/kbound_tmlr.tex` | `BUILD_LONG_TMLR=1` | `\anontrue`; anonymous visible author block and scrubbed metadata | 46 | `ef461adbec9c25dd274aee9a1b6f91f70dc32df3d39290b587c700738a80ec7b` | yes |
-| Named full technical report | `docs/research/kbound/kbound_full_report.pdf` | `docs/research/kbound/kbound_full_report.tex` | `BUILD_FULL_REPORT=1` | named author block and named PDF metadata | 100 | `6c6f9f7d1d151b8ef9648ff93003fd196915129bc72432e585c51f453f68960a` | no |
+| Current role | Published PDF | Root TeX | Shared source | Generated macros | Build selector | Anonymity | Baseline pages | Final pages | Final SHA-256 | PDF tracked in Git |
+|---|---|---|---|---|---|---|---:|---:|---|---|
+| Named compact main paper | `docs/research/kbound/release/current/kbound_short_main.pdf` | `docs/research/kbound/kbound_short_main.tex` | abstract core, submission body, theory modules, references | primary tables, interval diagnostics, CCT reporting macros, release identity | `BUILD_SHORT_MAIN=1` | named visible author block and named metadata | 22 | 20 | `8a60e37a3212236b2c2fce044e35eeeaab2e788c4fbbd2a3cc92463920b29dae` | yes, current release artifact |
+| Named standalone supplement | `docs/research/kbound/release/current/kbound_short_supplement.pdf` | `docs/research/kbound/kbound_short_supplement.tex` | submission supplement, figure fallback, references | auxiliary tables, family sensitivity, CCT tables, release identity | `BUILD_SHORT_SUPPLEMENT=1` | named visible author block and named metadata | 25 | 26 | `7549e8370ebb2035a5a6f08143d281f28d1f453d6d5818c20c5916dda27eea0a` | yes, current release artifact |
+| Anonymous integrated TMLR review manuscript | `docs/research/kbound/release/current/kbound_tmlr.pdf` | `docs/research/kbound/kbound_tmlr.tex` | main-paper closure plus appendices and float parameters | all main and appendix generated tables plus anonymous release identity | `BUILD_LONG_TMLR=1` | `\anontrue`; anonymous author block; empty Author metadata; no source commit printed | 46 | 43 | `a33dbbb403eedeb4df532bec1c697a99b660e8ef7c7e1e0f5fff1c303951ea62` | yes, current release artifact |
+| Named full technical report | `docs/research/kbound/release/current/kbound_full_report.pdf` | `docs/research/kbound/kbound_full_report.tex` | main-paper closure, supplement, report extensions, three full-report atlas modules | all current generated tables plus named release identity | `BUILD_FULL_REPORT=1` | named visible author block and named metadata | 100 | 97 | `9de2fac1405bb5f89077d2ae8fc9ccdbf636b068f9f964684f9edcc2a5b1c6d1` | yes, current release artifact |
 
-The count-free release names are intentional. The current layout has 22, 25, 46, and 100 pages;
+The count-free release names are intentional. The final layout has 20, 26, 43, and 97 pages;
 the obsolete count-bearing names in the incoming checklist are not treated as page-count
 assertions. The pre-existing named combined main-plus-supplement build
 `kbound_short_final_draft.pdf` is a comparison artifact, not one of the four current release roles.
+The integrated TMLR manuscript finishes at 43 pages because avoidable float gaps and repeated prose
+were removed while required supplement tables were restored and wide tables were kept after their
+introducing prose; no blank material or forced page
+break was added merely to reach an exact page count within the blueprint's approximate
+42--45-page range.
 
 ## Build command
 
 All four roles are built together so release publication cannot mix source generations:
 
 ```bash
-BUILD_LONG_TMLR=1 \
-BUILD_SHORT_MAIN=1 \
-BUILD_SHORT_SUPPLEMENT=1 \
-BUILD_FULL_REPORT=1 \
+SOURCE_SNAPSHOT_COMMIT=efecbafd74e1 \
+PYTHON=/tmp/kbound-release-venv2/bin/python \
+BUILD_LONG_TMLR=1 BUILD_SHORT_MAIN=1 \
+BUILD_SHORT_SUPPLEMENT=1 BUILD_FULL_REPORT=1 \
 bash docs/research/kbound/scripts/build_pdfs.sh
 ```
 
-`docs/research/kbound/scripts/build_pdfs.sh` always compiles the named combined comparison driver
-first, then the four role builds selected above. A normal manuscript build leaves the protected
+The command was run twice. References, contents, and counters settled, and all four PDF SHA-256
+digests matched across the two builds.
+`docs/research/kbound/scripts/build_pdfs.sh` compiles the named combined comparison driver first,
+then the four role builds selected above. A normal manuscript build leaves the protected
 So2Sat development authority untouched; `KBOUND_AUTHORIZE_PROTECTED_SO2SAT` must remain unset for
 this release-sync task.
 

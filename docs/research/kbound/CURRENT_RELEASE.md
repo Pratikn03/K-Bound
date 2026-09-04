@@ -2,7 +2,7 @@
 
 Release ID: `KBOUND-2026-09-03-R1`  
 Source closure: September 3, 2026  
-Source snapshot commit: `pending-source-only-commit`  
+Source snapshot commit: `efecbafd74e1`  
 Canonical panel SHA-256: `35d4c165843de1ece3cb35ffb4ac50dbfcbfa33b646754e2b6d133fbdfa78c6e`  
 Source-manifest SHA-256: `03b1d2b1e9e5ed1cf835126f871ed83eb8497a1ac81727b3955af0d69eb89742`
 
@@ -31,7 +31,7 @@ is not part of the four-document current release.
 From the repository root, after choosing the reviewed 12-character source snapshot commit:
 
 ```bash
-SOURCE_SNAPSHOT_COMMIT=<12-hex-source-commit> \
+SOURCE_SNAPSHOT_COMMIT=efecbafd74e1 \
 PYTHON=<python-3.12-executable> \
 BUILD_LONG_TMLR=1 BUILD_SHORT_MAIN=1 BUILD_SHORT_SUPPLEMENT=1 BUILD_FULL_REPORT=1 \
 bash docs/research/kbound/scripts/build_pdfs.sh
