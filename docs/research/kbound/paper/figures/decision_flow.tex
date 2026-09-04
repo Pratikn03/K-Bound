@@ -8,10 +8,12 @@
     align=center, font=\sffamily\normalsize, text=white},
   arrow/.style={->, very thick, draw=black!60}
 ]
-  \node[font=\sffamily\Large] (title) at (6.8,2.75) {KGA decision flow};
+  \node[font=\sffamily\Large] (title) at (8.15,2.75) {KGA empirical decision flow};
   \node[flow, fill=black!7, minimum width=2.45cm] (batch) at (0,0)
     {unlabeled\\batch};
-  \node[flow, fill=teal!15, minimum width=2.55cm, right=of batch] (evidence)
+  \node[flow, fill=black!7, minimum width=2.45cm, right=of batch] (candidate)
+    {shadow\\candidate $f_a$};
+  \node[flow, fill=teal!15, minimum width=2.55cm, right=of candidate] (evidence)
     {evidence\\$Z=\phi(\cdot)$};
   \node[flow, fill=teal!15, minimum width=2.55cm, right=of evidence] (estimate)
     {estimate\\$\widehat\Delta(Z),\ \varepsilon$};
@@ -23,7 +25,8 @@
     {FREEZE\quad $\widehat\Delta+\varepsilon<0$};
   \node[action, fill=black!48, right=1.10cm of gate, yshift=-1.18cm] (abstain)
     {ABSTAIN\quad $0\in[\widehat\Delta-\varepsilon,\widehat\Delta+\varepsilon]$};
-  \draw[arrow, draw=black] (batch) -- (evidence);
+  \draw[arrow, draw=black] (batch) -- (candidate);
+  \draw[arrow, draw=black] (candidate) -- (evidence);
   \draw[arrow, draw=black] (evidence) -- (estimate);
   \draw[arrow, draw=black] (estimate) -- (gate);
   \draw[arrow] (gate.east) -- (adapt.west);

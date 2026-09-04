@@ -9,7 +9,15 @@
     \bibitem{#1}%
   \fi
 }
-\begin{thebibliography}{99}\itemsep0pt
+\begin{thebibliography}{99}%
+\ifdefined\KBoundTMLRLayout
+  % The integrated review manuscript keeps enough separation for a dense
+  % author-year list to remain scannable. Compact companion builds retain the
+  % zero-gap setting below.
+  \itemsep6pt
+\else
+  \itemsep0pt
+\fi
 
 \KBbibitem{wang2021tent}{Wang et al.}{2021} D. Wang, E. Shelhamer, S. Liu, B. Olshausen, T. Darrell.
 Tent: Fully test-time adaptation by entropy minimization. \emph{ICLR}, 2021.

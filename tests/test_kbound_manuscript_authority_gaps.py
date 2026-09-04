@@ -72,16 +72,28 @@ def test_certificate_claim_names_a_fixed_scalar_target_and_joint_unconditional_e
 def test_claim_manifest_points_to_the_currently_named_cifar_tables() -> None:
     manifest = (KBOUND / "KBOUND_SHORT_CLAIM_MANIFEST.md").read_text(encoding="utf-8")
     body = (KBOUND / "kbound_submission_body.tex").read_text(encoding="utf-8")
-    table_labels = re.findall(
+    supplement = (KBOUND / "kbound_submission_supplement.tex").read_text(encoding="utf-8")
+    body_table_labels = re.findall(
         r"\\begin\{table\*?\}.*?\\label\{([^}]+)\}.*?\\end\{table\*?\}",
         body,
+        flags=re.DOTALL,
+    )
+    supplement_table_labels = re.findall(
+        r"\\begin\{table\*?\}.*?\\label\{([^}]+)\}.*?\\end\{table\*?\}",
+        supplement,
         flags=re.DOTALL,
     )
 
     assert "Generation time: not recorded" in manifest
     assert "Date: 2026-08-29" not in manifest
-    assert table_labels[4] == "tab:cifar-primary"
-    assert table_labels[5] == "tab:cifar-interval-diagnostics"
+    assert "tab:cifar-primary" in body_table_labels
+    # The 45-page TMLR revision keeps the primary action/utility table in the
+    # main results and moves the full interval and family diagnostics to
+    # Appendix F.  Guard the semantic labels and their document roles rather
+    # than a brittle ordinal table position.
+    assert "tab:cifar-interval-diagnostics" not in body_table_labels
+    assert "tab:cifar-interval-diagnostics" in supplement_table_labels
+    assert "tab:cifar-family-sensitivity" in supplement_table_labels
     assert "`tab:cifar-primary`" in manifest
     assert "`tab:cifar-interval-diagnostics`" in manifest
     assert "`tab:cifar-family-sensitivity`" in manifest

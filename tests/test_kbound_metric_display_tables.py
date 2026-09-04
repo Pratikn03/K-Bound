@@ -33,10 +33,11 @@ def resident_text(path: Path) -> str:
 
 
 @pytest.fixture(scope="module")
-def authorities() -> tuple[dict, dict]:
+def authorities() -> tuple[dict, dict, dict]:
     return (
         json.loads(resident_text(CANONICAL)),
         json.loads(resident_text(GENERATED / "cct20_release_manifest.json")),
+        json.loads(resident_text(GENERATED / "current_policy_interval_diagnostics.json")),
     )
 
 
@@ -51,11 +52,12 @@ def helpers(tmp_path: Path, authorities) -> dict:
     functions_only = ast.Module(body=selected, type_ignores=[])
     output = tmp_path / "paper/generated"
     output.mkdir(parents=True)
-    canonical, cct = authorities
+    canonical, cct, interval_diagnostics = authorities
     namespace = {
         "math": math,
         "os": os,
         "canonical": copy.deepcopy(canonical),
+        "current_policy_diagnostics": copy.deepcopy(interval_diagnostics),
         "KBOUND": str(tmp_path),
         "CCT_RELEASE": "in-memory-sealed-cct20",
         "_load_json": lambda path: copy.deepcopy(cct),
@@ -74,6 +76,7 @@ def score() -> dict:
         "adapt_count": 4,
         "freeze_count": 3,
         "abstain_count": 3,
+        "false_adapt_count": 0,
     }
 
 
@@ -81,12 +84,21 @@ def rendered_rows(source: str) -> list[str]:
     return [line for line in source.splitlines() if " & " in line and not line.startswith(("Candidate &", "Protocol &", "Comparator &"))]
 
 
-def expected_row(label: str, recorded: dict, *, primary=False, aggregate=False) -> str:
+def expected_row(label: str, recorded: dict, *, primary=False, aggregate=False, diagnostic=None, status=None) -> str:
     n = recorded["n_domain_seed_units" if aggregate else "n"]
-    columns = [label, str(n), *(format(recorded["regret"][key], ".4f") for key in ("kga", "always_adapt", "always_freeze"))]
+    columns = [label]
+    if status is not None:
+        columns.append(status)
+    columns.extend([str(n), *(format(recorded["regret"][key], ".4f") for key in ("kga", "always_adapt", "always_freeze"))])
     if primary:
         columns.append("/".join(str(recorded[key]) for key in ("adapt_count", "freeze_count", "abstain_count")))
-    columns.extend(format(recorded[key], ".4f") for key in ("fa_u", "decision_coverage"))
+        assert diagnostic is not None
+        for event in ("false_adapt", "false_freeze"):
+            item = diagnostic["summary"][event]["conditional"]
+            columns.append("--" if item["denominator"] == 0 else f"{item['numerator']}/{item['denominator']}")
+        columns.append(format(recorded["decision_coverage"], ".4f"))
+    else:
+        columns.extend(format(recorded[key], ".4f") for key in ("fa_u", "decision_coverage"))
     return " & ".join(columns) + r" \\"
 
 
@@ -105,12 +117,18 @@ def test_primary_keeps_all_three_candidates_and_adverse_sar(helpers) -> None:
     text = (helpers["output"] / "kbound_primary_accuracy_table.tex").read_text()
     recorded = helpers["canonical"]["panels"]["cifar10c"]["panel"]["candidates"]
     assert rendered_rows(text) == [
-        expected_row(label, recorded[candidate], primary=True)
+        expected_row(
+            label,
+            recorded[candidate],
+            primary=True,
+            diagnostic=helpers["current_policy_diagnostics"]["candidates"][candidate],
+        )
         for candidate, label in (("tent", "Tent"), ("eata", "EATA"), ("sar", "SAR"))
     ]
     assert recorded["sar"]["regret"]["kga"] > recorded["sar"]["regret"]["always_adapt"]
-    assert "SAR & 2160 & 0.0016 & 0.0003 & 0.1405 & 1446/0/714" in text
-    assert "Commitment rate" in text and "Coverage" not in text
+    assert "SAR & 2160 & 0.0018 & 0.0003 & 0.1405 & 1414/0/746" in text
+    assert "False A/A" in text and "False F/F" in text
+    assert "Commitment" in text and "Coverage" not in text
 
 
 def test_auxiliary_metric_membership_and_each_recorded_value_are_preserved(helpers) -> None:
@@ -131,12 +149,33 @@ def test_auxiliary_metric_membership_and_each_recorded_value_are_preserved(helpe
           for candidate, label in (("tent", "Tent"), ("eata", "EATA"), ("sar", "SAR"))],
         ("RxRx1 model seed 0", panel["rxrx1"]["primary_model_seed0"]["exact_rank_transfer_score"], False),
     ]
-    for filename, expected in (
-        ("kbound_auxiliary_accuracy_table.tex", accuracy_expected),
-        ("kbound_auxiliary_balanced_accuracy_table.tex", balanced_expected),
+    accuracy_statuses = {
+        "Office-Home primary": "retrospective retention",
+        "Office-Home stream seeds": "descriptive replication",
+        "ImageNet-C Tent": "candidate-specific",
+        "ImageNet-C EATA": "candidate-specific",
+        "ImageNet-C SAR": "candidate-specific",
+        "PACS (aggregate)": "partial diagnostic",
+        "CIFAR-10.1": "locked diagnostic",
+    }
+    balanced_statuses = {
+        "ImageNet-R backbones": "architecture panel",
+        "Camelyon17 OOD": "opened one-sided",
+        "Camelyon17 B--v2 Tent": "opened diagnostic",
+        "Camelyon17 B--v2 EATA": "opened diagnostic",
+        "Camelyon17 B--v2 SAR": "opened diagnostic",
+        "RxRx1 model seed 0": "retention diagnostic",
+    }
+    for filename, expected, statuses in (
+        ("kbound_auxiliary_accuracy_table.tex", accuracy_expected, accuracy_statuses),
+        ("kbound_auxiliary_balanced_accuracy_table.tex", balanced_expected, balanced_statuses),
     ):
         source = (helpers["output"] / filename).read_text()
-        assert rendered_rows(source) == [expected_row(label, recorded, aggregate=aggregate) for label, recorded, aggregate in expected]
+        assert rendered_rows(source) == [
+            expected_row(label, recorded, aggregate=aggregate, status=statuses[label])
+            for label, recorded, aggregate in expected
+        ]
+        assert "Protocol & Status" in source
     accuracy_labels = {label for label, _, _ in accuracy_expected}
     balanced_labels = {label for label, _, _ in balanced_expected}
     assert accuracy_labels.isdisjoint(balanced_labels)
@@ -232,8 +271,21 @@ def test_all_rows_are_validated_before_any_display_output_is_replaced(helpers) -
 def test_four_decimal_rendering_preserves_fields_and_all_actions(helpers) -> None:
     recorded = score()
     before = copy.deepcopy(recorded)
-    source = helpers["_render_metric_table"]([("Synthetic", recorded, False)], primary=True)
-    assert rendered_rows(source) == [r"Synthetic & 10 & 0.0123 & 0.2346 & 0.3457 & 4/3/3 & 0.0123 & 0.7000 \\"]
+    diagnostic = {
+        "synthetic": {
+            "summary": {
+                "n": 10,
+                "false_adapt": {"conditional": {"numerator": 0, "denominator": 4}},
+                "false_freeze": {"conditional": {"numerator": 0, "denominator": 3}},
+            }
+        }
+    }
+    source = helpers["_render_metric_table"](
+        [("Synthetic", recorded, False)], primary=True, primary_diagnostics=diagnostic
+    )
+    assert rendered_rows(source) == [
+        r"Synthetic & 10 & 0.0123 & 0.2346 & 0.3457 & 4/3/3 & 0/4 & 0/3 & 0.7000 \\",
+    ]
     assert recorded == before
 
 
