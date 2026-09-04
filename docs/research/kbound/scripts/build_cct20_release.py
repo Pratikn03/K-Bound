@@ -11,11 +11,14 @@ identities, and the frozen two-way inference analysis.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
 import os
+import stat
 import sys
+import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -1131,6 +1134,211 @@ def _check_existing_immutable_payload(path: Path, payload: bytes) -> bool:
 def _publish_exact_immutable(path: Path, payload: bytes) -> None:
     if not _check_existing_immutable_payload(path, payload):
         _exclusive_write(path, payload)
+        return
+
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise IntegrityError(f"cannot securely open existing release output {path}: {exc}") from exc
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise IntegrityError(f"release output is not a regular file: {path}")
+        with os.fdopen(os.dup(descriptor), "rb") as handle:
+            observed = handle.read()
+        if observed != payload:
+            raise IntegrityError(
+                f"existing release output differs from the requested bytes: {path}"
+            )
+        os.fchmod(descriptor, 0o444)
+        after = os.fstat(descriptor)
+        if stat.S_IMODE(after.st_mode) != 0o444:
+            raise IntegrityError(f"existing release output was not made immutable: {path}")
+        current = path.stat(follow_symlinks=False)
+        if (
+            not stat.S_ISREG(current.st_mode)
+            or current.st_dev != before.st_dev
+            or current.st_ino != before.st_ino
+        ):
+            raise IntegrityError(f"release output changed while being hardened: {path}")
+    except OSError as exc:
+        raise IntegrityError(f"cannot harden existing release output {path}: {exc}") from exc
+    finally:
+        os.close(descriptor)
+
+
+def _release_refresh_projection(document: Mapping[str, Any]) -> dict[str, Any]:
+    projection = copy.deepcopy(dict(document))
+    projection.pop("release_sha256", None)
+    projection.pop("generated_artifacts", None)
+    upstream = projection.get("upstream_artifacts")
+    if not isinstance(upstream, dict):
+        raise IntegrityError("release manifest lacks upstream_artifacts")
+    upstream.pop("release_generator", None)
+    return projection
+
+
+def _verified_existing_release_payloads(
+    *,
+    manifest_path: Path,
+    receipt_path: Path,
+    outputs: Mapping[str, Path],
+) -> tuple[dict[str, Any], dict[str, bytes]]:
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise IntegrityError(
+            f"existing release manifest is not a regular file: {manifest_path}"
+        )
+    if receipt_path.is_symlink() or not receipt_path.is_file():
+        raise IntegrityError(
+            f"existing release receipt is not a regular file: {receipt_path}"
+        )
+    verify_artifact_receipt(manifest_path)
+    manifest_payload = manifest_path.read_bytes()
+    old_document = _load_json_object(manifest_path)
+    unsigned = dict(old_document)
+    claimed_release_sha = unsigned.pop("release_sha256", None)
+    if claimed_release_sha != stable_sha256(unsigned):
+        raise IntegrityError("existing release manifest has an invalid release_sha256")
+    generated = old_document.get("generated_artifacts")
+    if not isinstance(generated, Mapping) or set(generated) != set(outputs):
+        raise IntegrityError("existing release manifest has an unexpected generated artifact set")
+
+    payloads = {
+        "release_manifest": manifest_payload,
+        "release_receipt": receipt_path.read_bytes(),
+    }
+    for name, expected_path in outputs.items():
+        record = generated.get(name)
+        if not isinstance(record, Mapping) or set(record) != {"path", "bytes", "sha256"}:
+            raise IntegrityError(f"existing generated artifact identity is malformed: {name}")
+        raw_recorded_path = Path(str(record["path"])).expanduser().absolute()
+        if raw_recorded_path.is_symlink():
+            raise IntegrityError(f"existing generated artifact is not a regular file: {name}")
+        recorded_path = raw_recorded_path.resolve()
+        if recorded_path != expected_path.resolve():
+            raise IntegrityError(f"existing generated artifact path drift: {name}")
+        if recorded_path.is_symlink() or not recorded_path.is_file():
+            raise IntegrityError(f"existing generated artifact is not a regular file: {name}")
+        payload = recorded_path.read_bytes()
+        if (
+            isinstance(record["bytes"], bool)
+            or not isinstance(record["bytes"], int)
+            or record["bytes"] != len(payload)
+            or not isinstance(record["sha256"], str)
+            or record["sha256"] != hashlib.sha256(payload).hexdigest()
+        ):
+            raise IntegrityError(f"existing generated artifact commitment mismatch: {name}")
+        payloads[name] = payload
+    return old_document, payloads
+
+
+def _archive_release_generation(
+    *,
+    history_dir: Path,
+    payloads: Mapping[str, bytes],
+) -> Path:
+    raw_history = history_dir.expanduser().absolute()
+    parts = raw_history.parts
+    if any(Path(*parts[:index]).is_symlink() for index in range(1, len(parts) + 1)):
+        raise IntegrityError(f"release history directory traverses a symlink: {history_dir}")
+    history = raw_history.resolve()
+    manifest_payload = payloads["release_manifest"]
+    generation_sha = hashlib.sha256(manifest_payload).hexdigest()
+    generation = history / generation_sha
+    archive_records: dict[str, dict[str, Any]] = {}
+    for role in sorted(payloads):
+        payload = payloads[role]
+        archived_name = f"{role}.bin"
+        _publish_exact_immutable(generation / archived_name, payload)
+        archive_records[role] = {
+            "bytes": len(payload),
+            "path": archived_name,
+            "sha256": hashlib.sha256(payload).hexdigest(),
+        }
+    archive_manifest = _immutable_json_payload(
+        {
+            "artifacts": archive_records,
+            "release_manifest_sha256": generation_sha,
+            "schema": "kbound_cct20_superseded_release_generation_v1",
+        }
+    )
+    _publish_exact_immutable(generation / "archive_manifest.json", archive_manifest)
+    return generation
+
+
+def _stage_replacement(path: Path, payload: bytes, *, tag: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_text = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.{tag}.",
+        suffix=".tmp",
+    )
+    temporary = Path(temporary_text)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            descriptor = -1
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+            os.fchmod(handle.fileno(), 0o444)
+        return temporary
+    except BaseException:
+        if descriptor >= 0:  # pragma: no cover - defensive descriptor cleanup
+            os.close(descriptor)
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def _replace_release_transaction(
+    *,
+    targets: Mapping[str, Path],
+    new_payloads: Mapping[str, bytes],
+    old_payloads: Mapping[str, bytes],
+) -> None:
+    order = [
+        "cct20_location_effects_tex",
+        "cct20_numbers_tex",
+        "cct20_primary_table_tex",
+        "release_manifest",
+        "release_receipt",
+    ]
+    staged_new: dict[str, Path] = {}
+    staged_old: dict[str, Path] = {}
+    replaced: list[str] = []
+    try:
+        for role in order:
+            staged_new[role] = _stage_replacement(
+                targets[role],
+                new_payloads[role],
+                tag="new",
+            )
+            staged_old[role] = _stage_replacement(
+                targets[role],
+                old_payloads[role],
+                tag="rollback",
+            )
+        for role in order:
+            os.replace(staged_new[role], targets[role])
+            replaced.append(role)
+    except BaseException as exc:
+        rollback_errors: list[str] = []
+        for role in reversed(replaced):
+            try:
+                os.replace(staged_old[role], targets[role])
+            except OSError as rollback_exc:  # pragma: no cover - catastrophic I/O
+                rollback_errors.append(f"{role}: {rollback_exc}")
+        if rollback_errors:
+            raise IntegrityError(
+                "release refresh failed and rollback was incomplete: "
+                + "; ".join(rollback_errors)
+            ) from exc
+        raise IntegrityError(f"release refresh transaction failed: {exc}") from exc
+    finally:
+        for staged in [*staged_new.values(), *staged_old.values()]:
+            staged.unlink(missing_ok=True)
 
 
 def emit_release(
@@ -1138,8 +1346,13 @@ def emit_release(
     *,
     release_manifest_path: str | Path,
     generated_dir: str | Path,
+    refresh_existing: bool = False,
+    history_dir: str | Path | None = None,
 ) -> dict[str, Any]:
-    manifest_path = Path(release_manifest_path).expanduser().resolve()
+    raw_manifest_path = Path(release_manifest_path).expanduser().absolute()
+    if raw_manifest_path.is_symlink():
+        raise IntegrityError(f"release output is not a regular file: {raw_manifest_path}")
+    manifest_path = raw_manifest_path.resolve()
     if manifest_path.name != "cct20_release_manifest.json":
         raise IntegrityError("release manifest must be named cct20_release_manifest.json")
     generated = Path(generated_dir).expanduser().resolve()
@@ -1154,10 +1367,14 @@ def emit_release(
         "cct20_location_effects_tex": render_location_effects_tex(release_core).encode("ascii"),
     }
     receipt_path = manifest_path.with_name(manifest_path.name + ".receipt.json")
-    if manifest_path.exists() and receipt_path.exists():
-        raise IntegrityError(f"release artifact/receipt pair already exists; refusing overwrite: {manifest_path}")
-    if receipt_path.exists() and not manifest_path.exists():
-        raise IntegrityError(f"release receipt exists without its artifact: {receipt_path}")
+    manifest_exists = manifest_path.exists() or manifest_path.is_symlink()
+    receipt_exists = receipt_path.exists() or receipt_path.is_symlink()
+    if manifest_exists != receipt_exists:
+        raise IntegrityError(
+            "incomplete release artifact/receipt pair; refusing recovery without "
+            f"both exact files: {manifest_path}"
+        )
+    complete_pair_exists = manifest_exists and receipt_exists
     document = {
         **dict(release_core),
         "generated_artifacts": {name: _rendered_identity(outputs[name], payloads[name]) for name in sorted(outputs)},
@@ -1172,15 +1389,72 @@ def emit_release(
         "canonical_document_sha256": stable_sha256(document),
     }
     receipt_payload = _immutable_json_payload(receipt)
+    targets = {
+        **outputs,
+        "release_manifest": manifest_path,
+        "release_receipt": receipt_path,
+    }
+    requested_payloads = {
+        **payloads,
+        "release_manifest": manifest_payload,
+        "release_receipt": receipt_payload,
+    }
 
-    # Preflight every existing path before creating anything.  Exact
-    # generated files or a manifest left by an interrupted attempt are safe to
-    # resume; differing files fail closed.  The receipt is written last and is
-    # the transaction's completion marker.
+    # Exact generated files left before the manifest/receipt transaction are
+    # safe to resume.  A complete exact pair is idempotently re-hardened, while
+    # a partial pair or any byte mismatch fails closed.
+    if complete_pair_exists:
+        exact_error: IntegrityError | None = None
+        try:
+            for role, target in targets.items():
+                if not _check_existing_immutable_payload(
+                    target,
+                    requested_payloads[role],
+                ):
+                    raise IntegrityError(
+                        f"complete release pair is missing a generated artifact: {target}"
+                    )
+        except IntegrityError as exc:
+            exact_error = exc
+        if exact_error is None:
+            for role, target in targets.items():
+                _publish_exact_immutable(target, requested_payloads[role])
+            verify_artifact_receipt(manifest_path)
+            return document
+        if not refresh_existing:
+            raise exact_error
+        if history_dir is None:
+            raise IntegrityError("release refresh requires an explicit history_dir")
+        old_document, old_payloads = _verified_existing_release_payloads(
+            manifest_path=manifest_path,
+            receipt_path=receipt_path,
+            outputs=outputs,
+        )
+        if _release_refresh_projection(old_document) != _release_refresh_projection(
+            document
+        ):
+            raise IntegrityError(
+                "release refresh would alter receipt-bound scientific content; "
+                "only the release-generator binding and rendered outputs may change"
+            )
+        _archive_release_generation(
+            history_dir=Path(history_dir),
+            payloads=old_payloads,
+        )
+        _replace_release_transaction(
+            targets=targets,
+            new_payloads=requested_payloads,
+            old_payloads=old_payloads,
+        )
+        for role, target in targets.items():
+            _publish_exact_immutable(target, requested_payloads[role])
+        verify_artifact_receipt(manifest_path)
+        return document
+
+    if refresh_existing:
+        raise IntegrityError("release refresh requires an existing complete artifact/receipt pair")
     for name in sorted(outputs):
         _check_existing_immutable_payload(outputs[name], payloads[name])
-    if manifest_path.exists():
-        _check_existing_immutable_payload(manifest_path, manifest_payload)
     for name in sorted(outputs):
         _publish_exact_immutable(outputs[name], payloads[name])
     _publish_exact_immutable(manifest_path, manifest_payload)
@@ -1202,6 +1476,8 @@ def build_release(
     inference_path: str | Path,
     release_manifest_path: str | Path,
     generated_dir: str | Path,
+    refresh_existing: bool = False,
+    history_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Verify the complete immutable chain and emit release-only artifacts."""
 
@@ -1388,6 +1664,131 @@ def build_release(
         core,
         release_manifest_path=release_manifest_path,
         generated_dir=generated_dir,
+        refresh_existing=refresh_existing,
+        history_dir=history_dir,
+    )
+
+
+_REFRESH_UPSTREAM_BINDINGS = {
+    "checkpoint_audit_path": "checkpoint_audit",
+    "development_gate_path": "development_gate",
+    "development_collection_path": "development_trace_collection",
+    "execution_seal_path": "execution_seal",
+    "prediction_collection_path": "prediction_collection",
+    "scoring_marker_path": "one_shot_scoring_marker",
+    "score_path": "one_shot_score",
+    "inference_path": "two_way_inference",
+}
+
+
+def _committed_release_path(
+    record: Any,
+    *,
+    field: str,
+) -> Path:
+    if not isinstance(record, Mapping):
+        raise IntegrityError(f"existing release manifest lacks {field} identity")
+    value = record.get("path")
+    if not isinstance(value, str) or not value or "\x00" in value:
+        raise IntegrityError(f"existing release manifest has an invalid {field} path")
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        raise IntegrityError(
+            f"existing release manifest {field} path is not canonical absolute"
+        )
+    canonical = path.resolve(strict=False)
+    if str(canonical) != value:
+        raise IntegrityError(
+            f"existing release manifest {field} path is not canonical absolute"
+        )
+    return canonical
+
+
+def refresh_release_from_existing(
+    *,
+    release_manifest_path: str | Path,
+    generated_dir: str | Path,
+    history_dir: str | Path,
+) -> dict[str, Any]:
+    """Replay only the upstream paths committed by a verified prior release.
+
+    The old manifest/receipt and three rendered outputs must be complete and
+    byte-valid before any upstream is opened.  ``build_release`` then replays
+    those exact committed paths and permits ``emit_release`` to replace only
+    the canonical five-file release set.
+    """
+
+    raw_manifest = Path(release_manifest_path).expanduser().absolute()
+    if raw_manifest.is_symlink():
+        raise IntegrityError(f"release output is not a regular file: {raw_manifest}")
+    manifest_path = raw_manifest.resolve()
+    if manifest_path.name != "cct20_release_manifest.json":
+        raise IntegrityError("release manifest must be named cct20_release_manifest.json")
+    generated = Path(generated_dir).expanduser().resolve()
+    outputs = {
+        "cct20_numbers_tex": generated / "cct20_numbers.tex",
+        "cct20_primary_table_tex": generated / "cct20_primary_table.tex",
+        "cct20_location_effects_tex": generated / "cct20_location_effects.tex",
+    }
+    receipt_path = manifest_path.with_name(manifest_path.name + ".receipt.json")
+    old_document, _ = _verified_existing_release_payloads(
+        manifest_path=manifest_path,
+        receipt_path=receipt_path,
+        outputs=outputs,
+    )
+    if (
+        old_document.get("schema") != RELEASE_SCHEMA
+        or old_document.get("status") != RELEASE_STATUS
+    ):
+        raise IntegrityError("existing release manifest has the wrong schema or status")
+    upstream = old_document.get("upstream_artifacts")
+    if not isinstance(upstream, Mapping):
+        raise IntegrityError("existing release manifest lacks upstream_artifacts")
+
+    replay_inputs = {
+        argument: _committed_release_path(
+            upstream.get(identity),
+            field=f"upstream_artifacts.{identity}",
+        )
+        for argument, identity in _REFRESH_UPSTREAM_BINDINGS.items()
+    }
+    cell_ledger = upstream.get("prediction_cells")
+    if not isinstance(cell_ledger, Mapping):
+        raise IntegrityError("existing release manifest lacks its prediction-cell ledger")
+    count = cell_ledger.get("count")
+    items = cell_ledger.get("items")
+    if (
+        isinstance(count, bool)
+        or count != CELL_COUNT
+        or not isinstance(items, list)
+        or len(items) != CELL_COUNT
+    ):
+        raise IntegrityError(
+            f"existing release prediction-cell ledger is not the exact {CELL_COUNT}-cell set"
+        )
+    require_sha256(
+        cell_ledger.get("aggregate_sha256"),
+        field="upstream_artifacts.prediction_cells.aggregate_sha256",
+    )
+    prediction_cell_paths = [
+        _committed_release_path(
+            item,
+            field=f"prediction-cell[{index}]",
+        )
+        for index, item in enumerate(items)
+    ]
+    if len(set(prediction_cell_paths)) != CELL_COUNT:
+        raise IntegrityError("existing release prediction-cell ledger has duplicate paths")
+    if prediction_cell_paths != sorted(prediction_cell_paths, key=str):
+        raise IntegrityError("existing release prediction-cell ledger is not canonically ordered")
+
+    return build_release(
+        **replay_inputs,
+        prediction_cell_paths=prediction_cell_paths,
+        release_manifest_path=manifest_path,
+        generated_dir=generated,
+        refresh_existing=True,
+        history_dir=Path(history_dir).expanduser().resolve(),
     )
 
 
@@ -1402,39 +1803,86 @@ def _prediction_paths(args: argparse.Namespace) -> list[Path]:
     return paths
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
+    raw_arguments = list(sys.argv[1:] if argv is None else argv)
+    refresh_requested = "--refresh-from-existing" in raw_arguments
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--checkpoint-audit", type=Path, required=True)
-    parser.add_argument("--development-gate", type=Path, required=True)
-    parser.add_argument("--development-collection", type=Path, required=True)
-    parser.add_argument("--execution-seal", type=Path, required=True)
-    parser.add_argument("--prediction-collection", type=Path, required=True)
-    cells = parser.add_mutually_exclusive_group(required=True)
+    parser.add_argument("--checkpoint-audit", type=Path, required=not refresh_requested)
+    parser.add_argument("--development-gate", type=Path, required=not refresh_requested)
+    parser.add_argument("--development-collection", type=Path, required=not refresh_requested)
+    parser.add_argument("--execution-seal", type=Path, required=not refresh_requested)
+    parser.add_argument("--prediction-collection", type=Path, required=not refresh_requested)
+    cells = parser.add_mutually_exclusive_group(required=not refresh_requested)
     cells.add_argument("--prediction-cells-dir", type=Path)
     cells.add_argument("--prediction-cell", type=Path, action="append")
-    parser.add_argument("--scoring-marker", type=Path, required=True)
-    parser.add_argument("--score", type=Path, required=True)
-    parser.add_argument("--inference", type=Path, required=True)
+    parser.add_argument("--scoring-marker", type=Path, required=not refresh_requested)
+    parser.add_argument("--score", type=Path, required=not refresh_requested)
+    parser.add_argument("--inference", type=Path, required=not refresh_requested)
     parser.add_argument("--release-manifest", type=Path, required=True)
     parser.add_argument(
         "--generated-dir",
         type=Path,
         default=Path(__file__).resolve().parents[1] / "paper" / "generated",
     )
-    args = parser.parse_args()
-    release = build_release(
-        checkpoint_audit_path=args.checkpoint_audit,
-        development_gate_path=args.development_gate,
-        development_collection_path=args.development_collection,
-        execution_seal_path=args.execution_seal,
-        prediction_collection_path=args.prediction_collection,
-        prediction_cell_paths=_prediction_paths(args),
-        scoring_marker_path=args.scoring_marker,
-        score_path=args.score,
-        inference_path=args.inference,
-        release_manifest_path=args.release_manifest,
-        generated_dir=args.generated_dir,
+    parser.add_argument(
+        "--refresh-from-existing",
+        action="store_true",
+        help=(
+            "derive every upstream path from a fully verified prior release and replace "
+            "only its canonical five generated outputs"
+        ),
     )
+    parser.add_argument(
+        "--history-dir",
+        type=Path,
+        help="required with --refresh-from-existing; preserves the exact prior release",
+    )
+    args = parser.parse_args(raw_arguments)
+    if args.refresh_from_existing:
+        overrides = [
+            name
+            for name in (
+                "checkpoint_audit",
+                "development_gate",
+                "development_collection",
+                "execution_seal",
+                "prediction_collection",
+                "prediction_cells_dir",
+                "prediction_cell",
+                "scoring_marker",
+                "score",
+                "inference",
+            )
+            if getattr(args, name) is not None
+        ]
+        if overrides:
+            parser.error(
+                "--refresh-from-existing does not accept upstream overrides: "
+                + ", ".join(f"--{name.replace('_', '-')}" for name in overrides)
+            )
+        if args.history_dir is None:
+            parser.error("--refresh-from-existing requires --history-dir")
+        release = refresh_release_from_existing(
+            release_manifest_path=args.release_manifest,
+            generated_dir=args.generated_dir,
+            history_dir=args.history_dir,
+        )
+    else:
+        if args.history_dir is not None:
+            parser.error("--history-dir requires --refresh-from-existing")
+        release = build_release(
+            checkpoint_audit_path=args.checkpoint_audit,
+            development_gate_path=args.development_gate,
+            development_collection_path=args.development_collection,
+            execution_seal_path=args.execution_seal,
+            prediction_collection_path=args.prediction_collection,
+            prediction_cell_paths=_prediction_paths(args),
+            scoring_marker_path=args.scoring_marker,
+            score_path=args.score,
+            inference_path=args.inference,
+            release_manifest_path=args.release_manifest,
+            generated_dir=args.generated_dir,
+        )
     print(
         f"CCT-20 release complete: verdict={release['verdict']['code']} "
         f"release_sha256={release['release_sha256']} -> {Path(args.release_manifest).resolve()}",
