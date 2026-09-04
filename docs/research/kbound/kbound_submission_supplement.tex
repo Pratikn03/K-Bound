@@ -740,7 +740,11 @@ endpoint. The nominal 97.5\% Bonferroni intervals in the strong-success audit in
 Table~\ref{tab:cct-strong-audit} belong to a separate, stricter two-comparison criterion; they are not
 alternate versions of the same interval.
 
+\ifdefined\KBoundFullReportLayout
+\begin{table}[H]
+\else
 \begin{table*}[t]
+\fi
 \centering
 \scriptsize
 \caption{Locked CCT-20 primary contrasts over 45 equal-weight checkpoint--location cells from five
@@ -752,7 +756,11 @@ sign flips of nine location means, with Holm adjustment. This cell-outcome-unope
 the locked calculation but does not establish a population guarantee.}
 \label{tab:cct-strong-audit}
 \resizebox{\textwidth}{!}{\input{paper/generated/cct20_primary_table_display.tex}}
+\ifdefined\KBoundFullReportLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 Finite-sample sign-flip validity requires the null joint law of the nine location gaps to satisfy
 \KBMainEqRef{eq:compact-signflip-null}{the main paper's coordinatewise sign-flip invariance condition}.
