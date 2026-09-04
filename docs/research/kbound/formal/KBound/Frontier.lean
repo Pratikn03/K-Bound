@@ -9,7 +9,7 @@ import Mathlib.Tactic.Ring
 /-!
 # Exact benefit-sign frontier (`thm:frontier`)
 
-Paper: `paper/sections/main_theory_5.tex`, Theorem `thm:frontier`.
+Paper: `paper/sections/theory_core_main.tex`, Theorem `thm:frontier`.
 -/
 
 namespace KBound

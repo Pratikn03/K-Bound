@@ -1,9 +1,10 @@
 import KBound.Basics
 
 /-!
-# Plug-in regret identity (`thm:gate`)
+# Plug-in regret identity
 
-Paper: `paper/sections/main_theory_5.tex`, Lemma `thm:gate`.
+Paper context: `kbound_submission_body.tex`, Section `sec:compact-kga`. This auxiliary
+plug-in identity is not separately stated as an active paper theorem.
 
 For a committal gate that commits to adapt on `{Δ̂ > 0}` and freeze otherwise,
 wrong-sign regret equals `|Δ|` on the error event. This is the algebraic spine

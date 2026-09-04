@@ -5,7 +5,7 @@ import Mathlib.Tactic.Linarith
 /-!
 # K-Bound certificate core (`thm:cert`)
 
-Paper: `manuscript/chapters/ch05_theory_certificates.tex`, Theorem `thm:cert`.
+Paper: `paper/sections/theory_certificate.tex`, Theorem `thm:cert`.
 -/
 
 namespace KBound
