@@ -875,7 +875,11 @@ Office-Home builder uses the analogous definitions with $10^{-12}$ log stabiliza
 constants are part of the recorded schema: changing one creates a new evidence variable even when
 the coordinate name and dimension remain unchanged.
 
+\ifdefined\KBoundSingleColumnLayout
+\begin{table}[H]
+\else
 \begin{table*}[!t]
+\fi
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3.5pt}
@@ -894,7 +898,11 @@ RxRx1 & 11 & names unrecovered; \hashtext{8444fd58264350b2379bff08f5ccc0259f3812
 CCT-20 & 11 & \path{kbound_cct20_label_free_trace_features_v1}; sealed gate document \hashtext{74db83cca3641c505735bcc9db4f76c588148f1ebb4d7d7c2b713bfbb6eda0e7} & fit-location mean and population-SD standardization before ridge & exact-schema, finiteness, or support failure returns ABSTAIN \\
 \bottomrule
 \end{tabular}
+\ifdefined\KBoundSingleColumnLayout
+\end{table}
+\else
 \end{table*}
+\fi
 
 Natural-shift artifacts do not all use the same schema. The Camelyon17 OOD record uses the common
 11 coordinates plus \path{disagreement_rate}, \path{entropy_gap}, \path{energy_shift},
