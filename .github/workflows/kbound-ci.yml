@@ -251,6 +251,18 @@ jobs:
             -q --tb=short
       - name: Repository collection gate
         run: pytest --collect-only -q
+      - name: Reference source and full input boundaries (executed, synthetic CPU)
+        run: |
+          pytest \
+            tests/test_reference_source_models.py \
+            tests/test_reference_source_population.py \
+            tests/test_reference_source_preflight.py \
+            tests/test_reference_rxrx1_training.py \
+            tests/test_reference_officehome_training.py \
+            tests/test_reference_cifar_population.py \
+            tests/test_reference_imagenet_archives.py \
+            tests/test_ci_reference_source_selectors.py \
+            -q --tb=short
       - name: Safe CI lock and README authority regressions (executed)
         run: |
           pytest \
