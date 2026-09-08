@@ -263,6 +263,23 @@ def test_required_frontier_release_artifact_is_not_gitignored() -> None:
     assert result.returncode == 1, f"{relative} is a required release artifact but is hidden by .gitignore"
 
 
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "experiments/kbound/frontier_sweep_v1/raw_prediction_rows.csv",
+        "experiments/kbound/frontier_sweep_v1/raw_scores.npy",
+        "experiments/kbound/frontier_sweep_v1/model_checkpoint.pt",
+    ],
+)
+def test_frontier_release_exception_keeps_neighboring_raw_data_ignored(relative: str) -> None:
+    result = subprocess.run(
+        ["git", "check-ignore", "--quiet", "--", relative],
+        cwd=seal.ROOT,
+        check=False,
+    )
+    assert result.returncode == 0, f"neighboring raw artifact escaped .gitignore: {relative}"
+
+
 def test_cct_release_products_are_outer_artifacts_not_source_inventory() -> None:
     generated = {
         "docs/research/kbound/paper/generated/cct20_release_manifest.json",
@@ -600,16 +617,12 @@ def test_source_seal_allows_and_outer_checksums_bind_only_current_release_pdfs()
     allowed_current_documents = {
         path
         for path in seal.GENERATED_OUTPUT_ALLOWLIST
-        if path.startswith("docs/research/kbound/release/current/")
-        and path.endswith((".pdf", ".docx"))
+        if path.startswith("docs/research/kbound/release/current/") and path.endswith((".pdf", ".docx"))
     }
 
     assert allowed_current_documents == expected
     assert expected <= set(checksums.REQUIRED_RELEASE_PATHS)
-    assert (
-        "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt"
-        in seal.GENERATED_OUTPUT_ALLOWLIST
-    )
+    assert "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt" in seal.GENERATED_OUTPUT_ALLOWLIST
     assert not any(path.endswith(".docx") for path in checksums.REQUIRED_RELEASE_PATHS)
 
     nonrelease_build_outputs = {
@@ -717,8 +730,16 @@ def test_external_release_toolchain_is_profile_bound_sealed_and_checksums_requir
     verifier = runbook.split("verify_release_toolchain_for_phase() {", 1)[1].split("\n}", 1)[0]
     assert "verify_release_toolchain_for_phase" in preflight
     assert "verify_release_toolchain.py" in verifier
-    assert profile_relative.removeprefix("docs/research/kbound/") in verifier
-    assert receipt_relative.removeprefix("docs/research/kbound/") in verifier
+    active_profile = "docs/research/kbound/release_toolchain_macos_arm64_v2.json"
+    active_receipt = "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json"
+    assert active_profile in explicit
+    assert active_receipt in explicit
+    assert active_receipt in checksums.REQUIRED_RELEASE_PATHS
+    assert {profile_relative, receipt_relative, active_profile, active_receipt}.isdisjoint(seal.GENERATED_OUTPUT_ALLOWLIST)
+    assert active_profile.removeprefix("docs/research/kbound/") in verifier
+    assert active_receipt.removeprefix("docs/research/kbound/") in verifier
+    assert 'cmp -s "$verified_receipt" "$maintained_receipt"' in verifier
+    assert '--output "$verified_receipt"' in verifier
     assert "--resolved-tools-output" in verifier
 
 
@@ -771,11 +792,20 @@ def test_generated_formal_receipt_is_output_not_source() -> None:
     assert "formal_foundations_2026_08_31.json" in runner
 
 
+@pytest.mark.parametrize("environment_ok", [True, False])
 def test_source_seal_cli_verifies_exact_python_content_before_source_semantics(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, environment_ok: bool
 ) -> None:
     calls: list[str] = []
-    monkeypatch.setattr(seal, "verify_release_python_content", lambda: calls.append("environment"))
+
+    def verify_selected_profile(lock: Path, profile: Path) -> None:
+        assert lock.name == "requirements-release-macos-arm64.lock.txt"
+        assert profile.name == "release_python_environment_macos_arm64_v2.json"
+        calls.append("environment")
+        if not environment_ok:
+            raise ValueError("synthetic Python content rejection")
+
+    monkeypatch.setattr(seal.verify_python_environment, "verify_exact_content_profile", verify_selected_profile)
 
     def fixture_payload(*_args: object, **_kwargs: object) -> dict[str, object]:
         calls.append("source")
@@ -802,8 +832,13 @@ def test_source_seal_cli_verifies_exact_python_content_before_source_semantics(
         ["build_release_source_seal.py", "--source-commit", "a" * 40, "--output", str(tmp_path / "seal.json")],
     )
 
-    assert seal.main() == 0
-    assert calls == ["environment", "source"]
+    if environment_ok:
+        assert seal.main() == 0
+        assert calls == ["environment", "source"]
+    else:
+        with pytest.raises(ValueError, match="synthetic Python content rejection"):
+            seal.main()
+        assert calls == ["environment"]
 
 
 @pytest.mark.parametrize("change", ["dirty_start", "source_during_run", "head_during_run"])
@@ -815,7 +850,11 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
     runbook = repo / "docs/research/kbound/runbooks/release_candidate.sh"
     runbook.parent.mkdir(parents=True)
     runbook.write_text((seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text())
-    _git(repo, "add", "docs/research/kbound/runbooks/release_candidate.sh")
+    receipt_relative = "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json"
+    receipt = repo / receipt_relative
+    receipt.parent.mkdir(parents=True)
+    receipt.write_text(json.dumps({"status": "verified"}, sort_keys=True) + "\n")
+    _git(repo, "add", "docs/research/kbound/runbooks/release_candidate.sh", receipt_relative)
     _git(repo, "commit", "-qm", "test runbook")
     event_log = tmp_path / "events.jsonl"
     fake_python = tmp_path / "test-python"
@@ -831,7 +870,7 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
         "    module.ROOT = pathlib.Path.cwd()\n"
         "    module.verify_release_python_content = lambda: None\n"
         "    module.EXPLICIT_FILES = {'source': ('maintained.txt',)}\n"
-        "    module.GENERATED_OUTPUT_ALLOWLIST = frozenset({'generated.json', 'release_seal.json', 'docs/research/kbound/audits/python_environment_2026_09_02.json', 'docs/research/kbound/audits/release_toolchain_2026_09_02.json'})\n"
+        "    module.GENERATED_OUTPUT_ALLOWLIST = frozenset({'generated.json', 'release_seal.json', 'docs/research/kbound/audits/python_environment_2026_09_02.json'})\n"
         "    sys.argv = args\n"
         "    raise SystemExit(module.main())\n"
         "if args and args[0].endswith('verify_python_environment.py'):\n"
@@ -896,3 +935,190 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
             or event[0].endswith("verify_release_toolchain.py")
             for event in events
         )
+
+
+# Exact newly maintained inputs, not a broader generated-output exemption.
+PUBLICATION_REVISION_INPUTS = {
+    "paper_source": (
+        "docs/research/kbound/kbound_main_with_appendix.tex",
+        "docs/research/kbound/paper/generated/empirical_evidence_numbers.tex",
+        "docs/research/kbound/paper/sections/officehome_mechanism_check.tex",
+        "docs/research/kbound/paper/sections/proof_traceability.tex",
+    ),
+    "release_code": (
+        "docs/research/kbound/scripts/audit_publication_package.py",
+        "docs/research/kbound/scripts/empirical_macros.py",
+        "docs/research/kbound/scripts/extract_macro_bundle.py",
+        "docs/research/kbound/scripts/word_export.py",
+        "docs/research/kbound/scripts/project_proof_receipts.py",
+    ),
+    "configuration": (
+        "docs/research/kbound/paper/release/publication_package_v1.json",
+        "docs/research/kbound/paper/release/manuscript_revision.json",
+        "docs/research/kbound/formal/actual_fibre_radius_verification_20260907.portable.json",
+        "docs/research/kbound/formal/actual_fibre_radius_followon_20260907.portable.json",
+        "docs/research/kbound/paper/release/empirical-evidence-values.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/manifest.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/entropy.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/bridge.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/officehome.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/smoke.json",
+    ),
+    "formal_source": tuple(
+        "docs/research/kbound/formal/" + name
+        for name in (
+            "ActualFibreRadiusExamples.lean",
+            "ActualWorldExamples.lean",
+            "EvidenceTransportExamples.lean",
+            "ExactConformalExamples.lean",
+            "FeatureRankExamples.lean",
+            "HeadlineEvidenceExamples.lean",
+            "JointKernelExamples.lean",
+            "PaperProofExamples.lean",
+            "PaperSubclassExamples.lean",
+            "RiskAlignmentExamples.lean",
+            "WeightedHelpfulExamples.lean",
+        )
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    ("category", "relative"),
+    [(category, path) for category, paths in PUBLICATION_REVISION_INPUTS.items() for path in paths],
+)
+def test_new_publication_input_binds_committed_bytes_and_rejects_source_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, category: str, relative: str
+) -> None:
+    """An omitted inventory entry must not silently pass as an empty seal."""
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.name", "Release Test")
+    _git(tmp_path, "config", "user.email", "release@example.invalid")
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"synthetic committed source\n")
+    _git(tmp_path, "add", relative)
+    _git(tmp_path, "commit", "-qm", "synthetic source")
+    head = _git(tmp_path, "rev-parse", "HEAD")
+    selected = tuple(path for path in seal.EXPLICIT_FILES.get(category, ()) if path == relative)
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {category: selected})
+    monkeypatch.setattr(seal, "SOURCE_PREFIX_RULES", ())
+    payload = seal.build_payload(tmp_path, head, require_clean=True)
+    assert payload["sealed_artifact_count"] == 1
+    assert payload["artifacts"][0]["path"] == relative
+    assert payload["artifacts"][0]["sha256"] == hashlib.sha256(b"synthetic committed source\n").hexdigest()
+    assert relative not in seal.GENERATED_OUTPUT_ALLOWLIST
+    target.write_bytes(b"uncommitted modification must invalidate source\n")
+    with pytest.raises(ValueError, match="maintained release-source paths are dirty"):
+        seal.build_payload(tmp_path, head)
+
+
+def test_new_revision_authority_is_required_at_the_pinned_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    relative = "docs/research/kbound/paper/release/manuscript_revision.json"
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.name", "Release Test")
+    _git(tmp_path, "config", "user.email", "release@example.invalid")
+    _git(tmp_path, "commit", "--allow-empty", "-qm", "synthetic empty source")
+    head = _git(tmp_path, "rev-parse", "HEAD")
+    selected = tuple(path for path in seal.EXPLICIT_FILES["configuration"] if path == relative)
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {"configuration": selected})
+    monkeypatch.setattr(seal, "SOURCE_PREFIX_RULES", ())
+    with pytest.raises(FileNotFoundError, match="required release-seal input is not tracked"):
+        seal.build_payload(tmp_path, head)
+
+
+def test_existing_prefixes_bind_new_tests_and_registered_proofs_without_raw_data(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    wanted = {
+        "tests/test_kbound_empirical_macros.py",
+        "tests/test_kbound_release_identity.py",
+        "tests/test_kbound_manuscript_reconciliation.py",
+        "docs/research/kbound/formal/KBound/Probability/ActualFibreRadius.lean",
+        "docs/research/kbound/formal/KBound/Probability/RiskAlignment.lean",
+        "docs/research/kbound/formal/KBound/WeightedHelpful.lean",
+        "docs/research/kbound/formal/KBound/FeatureRank.lean",
+    }
+    excluded = {
+        "docs/research/kbound/formal/.lake/packages/mathlib/NewProof.lean",
+        "docs/research/kbound/formal/KBound/build/Generated.lean",
+        "docs/research/kbound/formal/new_audit_receipt.json",
+        "tests/test_so2sat_outcome.py",
+        "experiments/kbound/results/private_outcomes.json",
+    }
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {})
+    monkeypatch.setattr(seal, "_tree_blobs", lambda *args: dict.fromkeys(wanted | excluded, "a" * 40))
+    inventory = {path for _, path in seal._inventory(tmp_path, "synthetic source")}
+    assert inventory == wanted
+
+
+PORTABLE_DEPENDENCY_INPUTS = {
+    "release_code": (
+        "docs/research/kbound/scripts/project_historical_diagnostic_receipt.py",
+        "docs/research/kbound/scripts/project_domainnet_stop.py",
+    ),
+    "configuration": (
+        "experiments/audit/historical_diagnostic_recovery_receipt.portable.json",
+        "experiments/audit/polarity_diagnostic_log.csv",
+        "experiments/audit/canonical_label_semantics.json",
+        "protocols/confirmatory_v2/DOMAINNET_DEV_PILOT_v1_STOP_PORTABLE.json",
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    ("category", "relative"),
+    [(category, path) for category, paths in PORTABLE_DEPENDENCY_INPUTS.items() for path in paths],
+)
+def test_portable_dependency_input_binds_committed_bytes_and_rejects_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, category: str, relative: str
+) -> None:
+    """Missing inventory entries or dirty-source exemptions must not pass."""
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.name", "Release Test")
+    _git(tmp_path, "config", "user.email", "release@example.invalid")
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"synthetic portable dependency\n")
+    _git(tmp_path, "add", relative)
+    _git(tmp_path, "commit", "-qm", "synthetic portable dependency")
+    head = _git(tmp_path, "rev-parse", "HEAD")
+    selected = tuple(path for path in seal.EXPLICIT_FILES.get(category, ()) if path == relative)
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {category: selected})
+    monkeypatch.setattr(seal, "SOURCE_PREFIX_RULES", ())
+    payload = seal.build_payload(tmp_path, head, require_clean=True)
+    assert payload["sealed_artifact_count"] == 1
+    assert payload["artifacts"][0]["path"] == relative
+    assert payload["artifacts"][0]["sha256"] == hashlib.sha256(b"synthetic portable dependency\n").hexdigest()
+    assert relative not in seal.GENERATED_OUTPUT_ALLOWLIST
+    target.write_bytes(b"mutated portable dependency\n")
+    with pytest.raises(ValueError, match="maintained release-source paths are dirty"):
+        seal.build_payload(tmp_path, head)
+
+
+def test_existing_test_prefix_binds_portable_dependency_consumers_and_guards(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    wanted = {
+        "tests/test_historical_diagnostic_recovery.py",
+        "tests/test_project_historical_diagnostic_receipt.py",
+        "tests/test_domainnet_pilot_data_v2.py",
+        "tests/test_project_domainnet_stop.py",
+        "tests/test_ci_portable_dependency_selectors.py",
+    }
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.name", "Release Test")
+    _git(tmp_path, "config", "user.email", "release@example.invalid")
+    for relative in wanted:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"# synthetic test source\n")
+    _git(tmp_path, "add", *sorted(wanted))
+    _git(tmp_path, "commit", "-qm", "synthetic portable dependency tests")
+    head = _git(tmp_path, "rev-parse", "HEAD")
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {})
+    payload = seal.build_payload(tmp_path, head, require_clean=True)
+    assert {row["path"] for row in payload["artifacts"]} == wanted
+    assert payload["sealed_artifact_count"] == 5

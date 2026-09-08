@@ -32,9 +32,11 @@ MAPPING = {
 
 
 def parse_macros(path: str) -> dict:
-    txt = open(path).read()
+    with open(path) as stream:
+        txt = stream.read()
     out = {}
-    for name, body in re.findall(r"\\newcommand\{\\([A-Za-z]+)\}\{([^}]*)\}", txt):
+    # Hex spelling denotes a literal TeX backslash, not a network path.
+    for name, body in re.findall(r"\x5cnewcommand\{\x5c([A-Za-z]+)\}\{([^}]*)\}", txt):
         m = re.search(r"-?\d+\.?\d*", body.replace("$", ""))
         if m:
             out[name] = float(m.group())
@@ -48,7 +50,8 @@ def main() -> None:
     args = ap.parse_args()
 
     macros = parse_macros(args.numbers_tex)
-    theirs = json.load(open(args.their_results))
+    with open(args.their_results) as stream:
+        theirs = json.load(stream)
 
     failures, checked = [], 0
     for key, value in sorted(theirs.items()):
@@ -68,6 +71,9 @@ def main() -> None:
             failures.append(key)
 
     print(f"\n[verify] {checked} metrics checked, {len(failures)} failures.")
+    if checked == 0:
+        print("[verify] NO METRICS CHECKED — provide at least one recognized metric; do not sign off.")
+        sys.exit(1)
     if failures:
         print("[verify] MISMATCH — do not sign off; investigate before any paper edit.")
         sys.exit(1)

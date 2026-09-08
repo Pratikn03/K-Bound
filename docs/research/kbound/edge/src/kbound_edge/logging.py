@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from kbound_edge import SCHEMA_VERSION
 
@@ -61,7 +61,7 @@ def assert_no_labels(payload: Any, where: str = "online payload") -> None:
             assert_no_labels(item, where)
 
 
-def config_hash(config: Dict[str, Any]) -> str:
+def config_hash(config: dict[str, Any]) -> str:
     """Stable short hash of a config dict (used as ``config_hash`` in records)."""
     import hashlib
 
@@ -90,18 +90,18 @@ class WindowLogger:
     def log(
         self,
         window_id: int,
-        decision: Dict[str, Any],
-        evidence: Dict[str, float],
+        decision: dict[str, Any],
+        evidence: dict[str, float],
         latency_ms: float,
-        frozen_pred: Optional[list] = None,
-        extra: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        frozen_pred: list | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Write one window record and return it.
 
         ``decision`` is :meth:`kbound_edge.policy.Decision.as_dict` (carries the
         ``decision`` string plus bhat/eps/lower/upper/reason).
         """
-        record: Dict[str, Any] = {
+        record: dict[str, Any] = {
             "schema_version": self.schema_version,
             "timestamp": time.time(),
             "window_id": int(window_id),
@@ -119,7 +119,7 @@ class WindowLogger:
         # Defence in depth: never persist a label, even via `extra`.
         assert_no_labels(record, where="log record")
 
-        self._fh.write(json.dumps(record) + "\n")
+        self._fh.write(json.dumps(record, allow_nan=False) + "\n")
         self._fh.flush()
         self._n += 1
         return record
@@ -137,7 +137,7 @@ class WindowLogger:
                 pass
             self._fh.close()
 
-    def __enter__(self) -> "WindowLogger":
+    def __enter__(self) -> WindowLogger:
         return self
 
     def __exit__(self, *exc) -> None:
@@ -147,7 +147,7 @@ class WindowLogger:
 def read_jsonl(path: str) -> list:
     """Read a JSONL window log back into a list of dicts."""
     out = []
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
             if line:

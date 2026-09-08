@@ -1,0 +1,51 @@
+schema_version: 2
+protocol_id: KBOUND-CONFIRMATORY-V2
+status: DRAFT_UNSEALED
+experiment_execution_enabled: false
+target_outcomes_accessed_by_this_work: false
+
+# Proposed criteria from the approved research specification. This file is not
+# a preregistration: data geometry, power, inference, and custody must be reviewed.
+proposed_error_target: 0.05
+proposed_familywise_error: 0.05
+primary:
+  utility_adapt:
+    endpoint: always_adapt_minus_kga_regret
+    alternative: positive
+    success: simultaneous_lower_confidence_bound_gt_zero
+  utility_freeze:
+    endpoint: always_freeze_minus_kga_regret
+    alternative: positive
+    success: simultaneous_lower_confidence_bound_gt_zero
+  false_adapt:
+    endpoint: false_adapt_rate_all
+    success: simultaneous_upper_confidence_bound_le_error_target
+  false_freeze:
+    endpoint: false_freeze_rate_all
+    success: simultaneous_upper_confidence_bound_le_error_target
+branch_exposure:
+  adapt_rate_minimum: 0.10
+  freeze_rate_minimum: 0.10
+  commitment_rate_minimum: 0.30
+interval_targets:
+  diagnostic_cell_inclusion_target: 0.90
+  population_radius: epsilon_plus_separately_justified_sampling_radius
+  population_error_budget_constraint: alpha_cell_plus_delta_sampling_le_alpha_population
+  cell_coverage_establishes_population_coverage: false
+strong_success_requires:
+  - complete_expected_record_grid
+  - verified_protocol_and_decision_identities
+  - independent_review_of_outcome_custody
+  - valid_predeclared_inference
+  - all_primary_endpoints
+  - all_branch_exposure_thresholds
+  - no_eligibility_or_stopping_rule_violation
+failure_policy: preserve_result_and_report_strong_success_false
+unresolved_before_lock:
+  - dataset_and_environment_sampling_population
+  - independent_checkpoint_training_manifests
+  - candidate_eligibility_and_frozen_calibration
+  - unit_weighting_and_crossed_dependence_model
+  - familywise_allocation_and_inferential_power
+  - external_outcome_custody
+  - complete_reviewed_resident_source_commit

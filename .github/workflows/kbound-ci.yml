@@ -111,6 +111,7 @@ jobs:
         run: |
           python -m pip --version
           python -m pip install --only-binary=:all: --require-hashes \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
             -r requirements-ci-py312-linux.lock.txt
       - name: Run unit tests with coverage
         run: |
@@ -227,6 +228,7 @@ jobs:
         run: |
           python -m pip --version
           python -m pip install --only-binary=:all: --require-hashes \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
             -r requirements-ci-py312-linux.lock.txt
       - name: Verify CPU-only Torch contract
         run: |
@@ -249,6 +251,69 @@ jobs:
             -q --tb=short
       - name: Repository collection gate
         run: pytest --collect-only -q
+      - name: Safe CI lock and README authority regressions (executed)
+        run: |
+          pytest \
+            tests/test_ci_cpu_index_contract.py \
+            tests/test_readme_quickstart_authority.py \
+            -q --tb=short
+      - name: Synthetic SAR and AETTA regressions (executed)
+        run: |
+          pytest \
+            tests/test_aetta_estimate_pair_validation.py \
+            tests/test_aetta_mc_image_cap_regression.py \
+            tests/test_sar_reliable_rollback_regression.py \
+            tests/test_ci_method_regression_selectors.py \
+            -q --tb=short
+      - name: Safe release provenance and CI scope regressions (executed)
+        run: |
+          pytest \
+            tests/test_release_provenance_integration.py \
+            tests/test_ci_release_scope.py \
+            -q --tb=short
+      - name: Portable manuscript numbers and publication guards (executed)
+        run: |
+          pytest \
+            tests/test_kbound_empirical_macros.py \
+            tests/test_kbound_current_pdf_publication.py \
+            tests/test_kbound_pdf_build_isolation.py \
+            tests/test_kbound_release_identity.py \
+            tests/test_kbound_manuscript_reconciliation.py \
+            tests/test_word_export.py \
+            tests/test_word_portability.py \
+            tests/test_build_docx_pipeline.py \
+            tests/test_project_proof_receipts.py \
+            tests/test_kbound_publication_package.py \
+            -q --tb=short
+      - name: Portable historical dependency regressions (executed)
+        run: |
+          pytest \
+            tests/test_historical_diagnostic_recovery.py \
+            tests/test_project_historical_diagnostic_receipt.py \
+            tests/test_domainnet_pilot_data_v2.py \
+            tests/test_project_domainnet_stop.py \
+            tests/test_ci_portable_dependency_selectors.py \
+            -q --tb=short
+      - name: Synthetic operator and build-tool regressions (executed)
+        run: |
+          pytest \
+            tests/test_operator_wrapper_guards.py \
+            tests/test_repository_bandit_compatibility.py \
+            tests/test_release_bandit_contract.py \
+            tests/test_release_build_dependencies.py \
+            tests/test_ci_operator_regression_selectors.py \
+            -q --tb=short -W error
+      - name: Safe launcher and output-isolation regressions (executed)
+        run: |
+          pytest \
+            tests/test_camelyon_results_root_isolation.py \
+            tests/test_cifar_imagenetc_grid_contract.py \
+            tests/test_cifar_percell_output_isolation.py \
+            tests/test_kbtrain_dispatch_safety.py \
+            tests/test_final_showcase_dispatch.py \
+            tests/test_rxrx1_9plus_launcher.py \
+            tests/test_ci_launcher_regression_selectors.py \
+            -q --tb=short
       - name: Current runtime and manuscript regressions (executed)
         run: |
           pytest \
@@ -269,6 +334,9 @@ jobs:
             tests/test_reconcile_no_implicit_cleanup.py \
             -q --tb=short
       - name: Prospective experiment-contract tests
+        # Automatic CI has no protected-study authorization. Real protected
+        # artifact readers remain available through the separately authorized
+        # local repository-verification profile; no such tests are deleted.
         run: |
           pytest \
             tests/test_kga_experiment_contract.py \
@@ -278,18 +346,17 @@ jobs:
             tests/test_official_baseline_provenance.py \
             tests/test_natural_target_provenance.py \
             tests/test_exact_confirmation_pipeline.py \
-            tests/test_canonical_release_data.py \
             tests/test_release_source_seal.py \
             tests/test_release_checksum_verifier.py \
             tests/test_so2sat_prospective_protocol.py \
             tests/test_so2sat_target_boundary.py \
-            tests/test_so2sat_numbers_builder.py \
             -q
       - name: Draft closure-protocol validation
+        # Broad natural-target provenance generation belongs to the separately
+        # authorized study workflow, not this default source/contract check.
         run: |
           python docs/research/kbound/scripts/validate_closure_protocol.py
           python docs/research/kbound/scripts/run_frontier_kga_bridge.py
-          python docs/research/kbound/scripts/audit_natural_target_provenance.py
           python docs/research/kbound/scripts/audit_official_baselines.py --repo .
       - name: Certificate drift guard
         run: pytest tests/test_certificate_drift_guard.py -q

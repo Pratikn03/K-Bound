@@ -179,6 +179,14 @@ TRACKED_VERIFICATION_PATHSPECS = (
     "docs/research/kbound/theory_v2",
     "docs/research/kbound/ttc_extension",
     "experiments/kbound/conj1_validator.py",
+    "experiments/kbound/domainnet/__init__.py",
+    "experiments/kbound/domainnet/source_data.py",
+    "experiments/kbound/domainnet/train_source.py",
+    "experiments/kbound/domainnet/pilot_data.py",
+    "experiments/kbound/domainnet/pilot_data_v2.py",
+    "experiments/kbound/domainnet/pilot_candidate.py",
+    "experiments/kbound/domainnet/pilot_analysis.py",
+    "experiments/kbound/domainnet/pilot_runner.py",
     "experiments/kbound/test_3dadam_bootstrap.py",
     "experiments/kbound/test_3dadam_namedcond.py",
     "experiments/kbound/theory_validation",
@@ -941,6 +949,19 @@ def run_private_path_scan(*, repo: Path) -> dict[str, Any]:
     }
 
 
+# Bandit 1.9.4 passes a deprecated no-op argument to pinned stevedore 5.9.1.
+# Keep _run's warnings-as-errors policy; allow only this warning in the Bandit
+# child. Python -W uses prefix matching, so use anchored filterwarnings regexes.
+BANDIT_COMPATIBILITY_BOOTSTRAP = (
+    "import runpy, warnings; "
+    "warnings.filterwarnings('ignore', "
+    "message=r'(?-i:\\AThe verify_requirements argument is now a no-op and is "
+    "deprecated for removal\\. Remove the argument from calls\\.\\Z)', "
+    "category=DeprecationWarning, module=r'\\Astevedore\\.extension\\Z'); "
+    "runpy.run_module('bandit', run_name='__main__', alter_sys=True)"
+)
+
+
 def _run_quality_gates(*, repo: Path, python: str) -> None:
     commands = (
         [
@@ -966,8 +987,8 @@ def _run_quality_gates(*, repo: Path, python: str) -> None:
         [python, "-m", "mypy", "kga", "--ignore-missing-imports"],
         [
             python,
-            "-m",
-            "bandit",
+            "-c",
+            BANDIT_COMPATIBILITY_BOOTSTRAP,
             "-q",
             "-r",
             "kga",

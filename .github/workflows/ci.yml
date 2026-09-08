@@ -49,6 +49,7 @@ jobs:
         run: |
           python -m pip --version
           python -m pip install --only-binary=:all: --require-hashes \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
             -r requirements-ci-py312-linux.lock.txt
       - name: Ruff + mypy on the typed kga core
         run: |

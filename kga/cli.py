@@ -16,7 +16,8 @@ Two subcommands, and neither of them fakes anything.
 
         # (1) label-free deployment using a pre-fitted, schema-bound estimator
         python -m kga decide --calib calib.npy --test test.npy \
-          --estimator-json benefit.json --protocol-sha256 "$PROTOCOL_SHA"
+          --estimator-json benefit.json --protocol-sha256 "$PROTOCOL_SHA" \
+          --estimator-payload-sha256 "$ESTIMATOR_PAYLOAD_SHA"
 
         # (2) labelled paired-benefit audit
         python -m kga decide --benefits benefits.npy --benefit-range 2.0
@@ -121,11 +122,19 @@ def _certificate_from_args(args: argparse.Namespace) -> Certificate:
     """Build a real certificate from whichever convention the user supplied."""
     has_benefits = args.benefits is not None
     has_point = args.delta_hat is not None or args.calib_residuals is not None
-    has_estimator = args.estimator_json is not None or args.protocol_sha256 is not None
+    has_estimator = any(
+        value is not None
+        for value in (
+            args.estimator_json,
+            args.protocol_sha256,
+            args.estimator_payload_sha256,
+        )
+    )
     if sum((has_benefits, has_point, has_estimator)) != 1:
         raise SystemExit(
             "kga decide: supply exactly one of these conventions:\n"
-            "  --estimator-json MODEL.json --protocol-sha256 SHA --calib CAL.npy --test TEST.npy\n"
+            "  --estimator-json MODEL.json --protocol-sha256 SHA "
+            "--estimator-payload-sha256 SHA --calib CAL.npy --test TEST.npy\n"
             "  --benefits BENEFITS.npy [--benefit-range R] [--method ebern|hoeffding|evalue]\n"
             "  --delta-hat D --calib-residuals RESID.npy\n"
             "Unlabelled scores require a pre-fitted benefit estimator; evidence alone "
@@ -140,7 +149,11 @@ def _certificate_from_args(args: argparse.Namespace) -> Certificate:
         estimator = FrozenLinearBenefitEstimator.load_json(args.estimator_json)
         gate = KGA(alpha=args.alpha)
         gate.evidence(_load_array(args.calib, "calib"), _load_array(args.test, "test"))
-        return gate.certify_evidence(estimator, protocol_sha256=args.protocol_sha256)
+        return gate.certify_evidence(
+            estimator,
+            protocol_sha256=args.protocol_sha256,
+            expected_estimator_payload_sha256=args.estimator_payload_sha256,
+        )
 
     if has_benefits:
         benefits = _load_array(args.benefits, "benefits").ravel()
@@ -302,6 +315,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--protocol-sha256",
         default=None,
         help="Active protocol digest; must match the frozen estimator artifact.",
+    )
+    p_decide.add_argument(
+        "--estimator-payload-sha256",
+        default=None,
+        help=(
+            "Estimator payload digest authorized by an external protocol or manifest. "
+            "Required for an available label-free decision; the estimator's embedded "
+            "self-check cannot authorize itself."
+        ),
     )
     p_decide.add_argument(
         "--calib-residuals",

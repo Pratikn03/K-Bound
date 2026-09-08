@@ -38,7 +38,9 @@ def test_label_free_facade_consumes_evidence_and_frozen_estimator():
     gate = KGA(alpha=0.1)
     gate.evidence(rng.normal(size=(100, 2)), rng.normal(size=(100, 2)))
     estimator = _estimator()
-    cert = gate.certify_evidence(estimator, protocol_sha256=HASH)
+    cert = gate.certify_evidence(
+        estimator, protocol_sha256=HASH, expected_estimator_payload_sha256=estimator.artifact_sha256
+    )
     assert cert.delta_hat == pytest.approx(0.2)
     assert cert.epsilon == pytest.approx(0.0)
     assert gate.decide(cert) is Decision.ADAPT
@@ -53,6 +55,7 @@ def test_label_free_facade_fails_closed_on_schema_or_protocol_drift():
         gate.certify_evidence(
             estimator,
             protocol_sha256="b" * 64,
+            expected_estimator_payload_sha256=estimator.artifact_sha256,
             features=features,
             evidence_schema_version=EVIDENCE_SCHEMA_VERSION,
         )
@@ -60,6 +63,7 @@ def test_label_free_facade_fails_closed_on_schema_or_protocol_drift():
         gate.certify_evidence(
             estimator,
             protocol_sha256=HASH,
+            expected_estimator_payload_sha256=estimator.artifact_sha256,
             features=features,
             evidence_schema_version="wrong-schema",
         )

@@ -833,7 +833,18 @@ def section_labels(tex: str) -> dict[str, str]:
 
 
 def resolve_cross_references(tex: str) -> str:
+    # Algorithm conversion materializes a numbered paragraph before the generic
+    # environment pass; preserve the original algorithm-label binding.
+    algorithm_labels = {}
+    for match in re.finditer(r"\\paragraph\{Algorithm (\d+)\.", tex):
+        end = find_brace_end(tex, tex.index("{", match.start()))
+        tail = tex[end + 1:]
+        label_block = re.match(r"(?:\s*\\label\{[^}]+\})+", tail)
+        if label_block:
+            for label in re.findall(r"\\label\{([^}]+)\}", label_block.group()):
+                algorithm_labels[label] = match.group(1)
     tex, labels = number_environments(tex)
+    labels.update(algorithm_labels)
     tex, heading_labels = number_section_headings(tex)
     labels.update(heading_labels)
 
@@ -1270,11 +1281,16 @@ def validate_docx(
     path: Path,
     reference_count: int,
     required_value_counts: Mapping[str, int] | None = None,
+    *,
+    expected_tables: int | None = None,
+    expected_figures: int = 3,
 ) -> None:
     doc = Document(path)
-    if len(doc.inline_shapes) != 3:
-        raise RuntimeError(f"expected 3 embedded figures, found {len(doc.inline_shapes)}")
-    if len(doc.tables) < 13:
+    if len(doc.inline_shapes) != expected_figures:
+        raise RuntimeError(f"expected {expected_figures} embedded figures, found {len(doc.inline_shapes)}")
+    if expected_tables is not None and len(doc.tables) != expected_tables:
+        raise RuntimeError(f"expected {expected_tables} source tables, found {len(doc.tables)}")
+    if expected_tables is None and len(doc.tables) < 13:
         raise RuntimeError(f"expected at least 13 manuscript tables, found {len(doc.tables)}")
     with ZipFile(path) as archive:
         xml = archive.read("word/document.xml").decode("utf-8")

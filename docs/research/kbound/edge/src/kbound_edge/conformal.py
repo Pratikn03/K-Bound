@@ -1,11 +1,11 @@
 """kbound_edge.conformal -- Split-conformal residual radius (alpha = 0.10).
 
-This module owns ONLY the finite-sample radius computation and the strict
-fit/conformal separation.  The three-way decision rule itself is NOT
+This module owns ONLY the finite-sample radius computation. Callers must
+establish fit/conformal separation. The three-way decision rule itself is NOT
 re-implemented here -- callers combine the radius with the reused
 :func:`kbound.certificate.decide`.
 
-Split-conformal protocol (enforced by the API shape)
+Required split-conformal protocol (not verified from arrays)
 ----------------------------------------------------
 1. The benefit estimator is fit on the calibration-FIT split only.
 2. Residuals are taken from the calibration-CONFORMAL split only:
@@ -21,12 +21,12 @@ alpha is fixed at 0.10 throughout the edge layer (``ALPHA``).
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 
 import numpy as np
 
-# population (1-alpha)-quantile radius from the paper, re-exported for comparison
+# Historical alias: the reproduction mirror uses the exact finite-sample rank.
+# This name does not establish population transfer or coverage.
 from kbound_edge._bridge import conformal_radius as population_conformal_radius
 
 #: Fixed miscoverage level for the entire edge layer.
@@ -50,17 +50,9 @@ def conservative_conformal_radius(residuals, alpha: float = ALPHA) -> float:
     eps : float
         The conservative radius (``math.inf`` if n is too small for the level).
     """
-    r = np.asarray(residuals, dtype=float)
-    if r.ndim != 1 or r.size == 0:
-        raise ValueError("residuals must be a non-empty 1-D array")
-    if not (0.0 < alpha < 1.0):
-        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
-    r = np.sort(r)
-    n = r.size
-    k = math.ceil((n + 1) * (1.0 - alpha))  # 1-indexed rank
-    if k > n:
-        return math.inf
-    return float(r[k - 1])
+    # Delegate validation and exact-rank infeasibility. Invalid residuals must
+    # not hide beyond the selected order statistic.
+    return float(population_conformal_radius(residuals, alpha=alpha))
 
 
 @dataclass
@@ -82,6 +74,14 @@ class ConformalRadius:
         }
 
 
+def _finite_array(value: object, name: str) -> np.ndarray:
+    """Reject unavailable observations before downstream coercion loses masks."""
+    array = np.asarray(np.ma.asarray(value, dtype=float).filled(np.nan), dtype=float)
+    if not np.isfinite(array).all():
+        raise ValueError(f"{name} must contain only finite, unmasked observations")
+    return array
+
+
 def calibrate_conformal(
     estimator,
     Z_conf: np.ndarray,
@@ -93,8 +93,9 @@ def calibrate_conformal(
 
     The estimator must already be fit (on the calibration-FIT split).  This
     function never sees the fit split: it calls ``estimator.predict`` on
-    ``Z_conf`` and forms residuals against ``B_conf`` only -- structurally
-    guaranteeing the split-conformal separation.
+    ``Z_conf`` and forms residuals against ``B_conf`` only. Callers must still
+    verify disjointness from fitting data and justify the coverage premise;
+    this function cannot infer that provenance from arrays.
 
     Parameters
     ----------
@@ -106,21 +107,24 @@ def calibrate_conformal(
         True benefits of the calibration-conformal split.
     alpha : float, default=0.10
     conservative : bool, default=True
-        If True use the finite-sample order-statistic radius; if False use the
-        paper's population (1-alpha)-quantile (:func:`kbound.certificate.conformal_radius`).
+        Both paths use the exact finite-sample order-statistic radius. False
+        retains the historical ``"population"`` method label for compatibility;
+        that label does not establish population transfer or coverage.
 
     Returns
     -------
     ConformalRadius
     """
-    Z_conf = np.asarray(Z_conf, dtype=float)
-    B_conf = np.asarray(B_conf, dtype=float)
+    Z_conf = _finite_array(Z_conf, "Z_conf")
+    B_conf = _finite_array(B_conf, "B_conf")
     if Z_conf.ndim != 2 or B_conf.ndim != 1 or len(Z_conf) != len(B_conf):
         raise ValueError("Z_conf must be (n,d) and B_conf must be (n,) with matching n")
     if len(B_conf) == 0:
         raise ValueError("conformal split must be non-empty")
 
-    B_pred = np.asarray(estimator.predict(Z_conf), dtype=float)
+    B_pred = _finite_array(estimator.predict(Z_conf), "predicted benefits")
+    if B_pred.shape != B_conf.shape:
+        raise ValueError("predicted benefits must have exactly the same 1-D shape as B_conf")
     residuals = np.abs(B_pred - B_conf)
 
     if conservative:
@@ -141,7 +145,10 @@ def calibrate_conformal(
 
 class RealCertificateResult:
     """Result object carrying fitted estimator, conformal radius, and split provenance."""
-    def __init__(self, fit_sessions, conformal_sessions, fit_source_hashes, conformal_source_hashes, estimator, conformal_radius):
+
+    def __init__(
+        self, fit_sessions, conformal_sessions, fit_source_hashes, conformal_source_hashes, estimator, conformal_radius
+    ):
         self.fit_sessions = fit_sessions
         self.conformal_sessions = conformal_sessions
         self.fit_source_hashes = fit_source_hashes
@@ -150,27 +157,28 @@ class RealCertificateResult:
         self.conformal_radius = conformal_radius
 
 
-def fit_real_certificate(bundle: dict, estimator_kwargs: dict = None, alpha: float = ALPHA, conservative: bool = True) -> RealCertificateResult:
+def fit_real_certificate(
+    bundle: dict, estimator_kwargs: dict = None, alpha: float = ALPHA, conservative: bool = True
+) -> RealCertificateResult:
     """Fit benefit estimator on fit split and calibrate radius on conformal split."""
     from kbound_edge.benefit_estimator import EdgeBenefitEstimator
-    
+
     fit_data = bundle["fit"]
     conf_data = bundle["conformal"]
-    
+
     if estimator_kwargs is None:
         estimator_kwargs = {"random_state": 0}
-        
+
     est = EdgeBenefitEstimator(**estimator_kwargs)
     est.fit(fit_data["Z"], fit_data["B"])
-    
+
     cr = calibrate_conformal(est, conf_data["Z"], conf_data["B"], alpha=alpha, conservative=conservative)
-    
+
     return RealCertificateResult(
         fit_sessions=fit_data["sessions"],
         conformal_sessions=conf_data["sessions"],
         fit_source_hashes=fit_data["source_hashes"],
         conformal_source_hashes=conf_data["source_hashes"],
         estimator=est,
-        conformal_radius=cr
+        conformal_radius=cr,
     )
-

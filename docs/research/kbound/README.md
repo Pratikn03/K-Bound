@@ -18,8 +18,11 @@ reproduced software failures, and the recoverable documentation cleanup.
   residual, not automatically distribution drift.
 - Empirical KGA uses `Delta_hat, epsilon`, not a numerical beta input. An interval-supported decision about a
   measured batch outcome does not automatically protect population risk or repeated deployment.
-- A fresh full Lean audit verified 238 authored theorem/lemma statements, including all 142
-  registered capstones. This is a proof inventory, not a count of novel contributions. Five
+- The historical full Lean audit verified 238 authored theorem/lemma statements, including the then-142
+  registered capstones. The 2026-09-05 audit-floor addition raises the current registry to 150;
+  a fresh direct pinned compile of all 44 local modules and an actual 165-declaration axiom
+  audit passed independent review. These inventories have different scopes, not additive counts.
+  This is not a standard Lake build or final release verification. Five
   foundational layers are mechanized under explicit assumptions; the historical sixth
   one-bit/H/ratio-rate extension is not closed.
 - Controlled CIFAR-10-C Tent/EATA point estimates favor routing against both fixed policies.

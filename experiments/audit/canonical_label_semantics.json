@@ -1,0 +1,624 @@
+{
+  "metric_function_audit": {
+    "metric_helpers_used": [
+      "roc_auc_score",
+      "average_precision_score",
+      "brier_score",
+      "expected_calibration_error",
+      "_compute_from_pred_and_prob"
+    ],
+    "metric_helper_notes": {
+      "roc_auc_score": "sklearn.metrics.roc_auc_score(y_true, y_prob); default pos_label=1; higher score = positive class.",
+      "average_precision_score": "sklearn.metrics.average_precision_score(y_true, y_prob); default pos_label=1; computes AP from PR curve.",
+      "brier_score": "src/uais/utils/metrics.py:brier_score = mean((y_prob - y_true)^2). pos_label-agnostic; uses raw labels.",
+      "expected_calibration_error": "src/uais/utils/metrics.py:expected_calibration_error \u2014 10 equal-width bins by default; reliability-vs-confidence weighted gap.",
+      "_compute_from_pred_and_prob": "All metrics in this helper share the same y_true and y_prob arrays; no pos_label override anywhere; threshold-dependent metrics use the supplied threshold."
+    },
+    "anomaly_probability_convention": "models output P(label=1) = P(anomaly); sklearn metrics use pos_label=1 by default; no inversion in the metric path.",
+    "polarity_flip_applied_in_metric_path": "yes for static_attention and craf_attention in src/scripts/run_breakthrough_experiment.py:2078-2082 when polarity_calibration.flip_required is true; NOT applied to rga_boosted_fusion, rga_meta_router, or baselines."
+  },
+  "cells": [
+    {
+      "benchmark": "MVTec 3D-AD",
+      "protocol": "PatchCore canonical one-class",
+      "label_definition": {
+        "benchmark": "MVTec 3D-AD",
+        "protocol": "PatchCore canonical one-class",
+        "inputs_csv": "experiments/fusion/mvtec3d_patchcore_inputs.csv",
+        "inputs_csv_exists": true,
+        "metadata_positive_fraction_actual": 0.22442653440793553,
+        "csv_columns": [
+          "sample_id",
+          "pairing_key",
+          "category",
+          "split",
+          "defect_type",
+          "domain",
+          "label",
+          "source_path",
+          "score_fit_split",
+          "score_fit_defect_type",
+          "score",
+          "confidence",
+          "embedding_0",
+          "embedding_1",
+          "embedding_2",
+          "embedding_3",
+          "embedding_4",
+          "embedding_5",
+          "embedding_6",
+          "embedding_7",
+          "embedding_8",
+          "embedding_9",
+          "embedding_10",
+          "embedding_11",
+          "embedding_12",
+          "embedding_13",
+          "embedding_14",
+          "embedding_15"
+        ],
+        "label_column": "label",
+        "split_column": "split",
+        "overall_prevalence_label_eq_1": 0.22442653440793553,
+        "sample_count_total": 3226,
+        "split_test_n_samples": 924,
+        "split_test_n_positives_label_eq_1": 724,
+        "split_test_prevalence_label_eq_1": 0.7835497835497836,
+        "split_train_n_samples": 2070,
+        "split_train_n_positives_label_eq_1": 0,
+        "split_train_prevalence_label_eq_1": 0.0,
+        "split_validation_n_samples": 232,
+        "split_validation_n_positives_label_eq_1": 0,
+        "split_validation_prevalence_label_eq_1": 0.0,
+        "inferred_label_semantics": "label_eq_1_means_anomaly (consistent with canonical one-class)",
+        "status": "ok"
+      },
+      "constant_baseline_replay": {
+        "test_fold_prevalence_label_eq_1": 0.7835497835497836,
+        "test_fold_n": 1848,
+        "constant_0.0_predictor": {
+          "constant_score": 0.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.7835497835497836,
+          "brier": 0.7835497835482165,
+          "ece": 0.7835497835497836,
+          "precision": NaN,
+          "recall": 0.0,
+          "accuracy": 0.21645021645021645,
+          "tp": 0,
+          "fp": 0,
+          "tn": 400,
+          "fn": 1448
+        },
+        "constant_1.0_predictor": {
+          "constant_score": 1.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.7835497835497836,
+          "brier": 0.21645021644978354,
+          "ece": 0.0,
+          "precision": 0.7835497835497836,
+          "recall": 1.0,
+          "accuracy": 0.7835497835497836,
+          "tp": 1448,
+          "fp": 400,
+          "tn": 0,
+          "fn": 0
+        },
+        "constant_0.5_predictor": {
+          "constant_score": 0.5,
+          "roc_auc": 0.5,
+          "pr_auc": 0.7835497835497836,
+          "brier": 0.25,
+          "ece": 0.28354978354978355,
+          "precision": 0.7835497835497836,
+          "recall": 1.0,
+          "accuracy": 0.7835497835497836,
+          "tp": 1448,
+          "fp": 400,
+          "tn": 0,
+          "fn": 0
+        },
+        "constant_0.7835_predictor": {
+          "constant_score": 0.7835,
+          "roc_auc": 0.5,
+          "pr_auc": 0.7835497835497836,
+          "brier": 0.16959952272727272,
+          "ece": 4.978354978357746e-05,
+          "precision": 0.7835497835497836,
+          "recall": 1.0,
+          "accuracy": 0.7835497835497836,
+          "tp": 1448,
+          "fp": 400,
+          "tn": 0,
+          "fn": 0
+        },
+        "random_uniform_seed_0": {
+          "seed": 0,
+          "inverted": false,
+          "roc_auc": 0.5278470303867403,
+          "pr_auc": 0.8020640447766824,
+          "brier": 0.32384087231805847,
+          "ece": 0.31348292944171346
+        },
+        "random_uniform_seed_42": {
+          "seed": 42,
+          "inverted": false,
+          "roc_auc": 0.4780628453038674,
+          "pr_auc": 0.7714018253151333,
+          "brier": 0.3404202692179492,
+          "ece": 0.3392701460013955
+        },
+        "random_uniform_inverted_seed_0": {
+          "seed": 0,
+          "inverted": true,
+          "roc_auc": 0.4721529696132597,
+          "pr_auc": 0.7713190228853123,
+          "brier": 0.3455260313783325,
+          "ece": 0.3356972825272775
+        },
+        "interpretation": "Under the canonical one-class protocol the TEST fold contains all anomalies. A constant-0 anomaly-probability predictor on a test fold with prevalence p produces Brier = p, ECE = p, PR-AUC = p (degenerate AP equals prevalence). If the JSON's reported Brier/ECE/PR-AUC numerically match the test-fold prevalence, the predictor is a degenerate constant near 0 (or after polarity flipping, near 1) and the metric values are mathematically correct but trivially reflect prevalence \u2014 not discrimination ability."
+      },
+      "artifact_reproduction": {
+        "results_json": "experiments/fusion/mvtec3d_patchcore_results.json",
+        "results_json_exists": true,
+        "reported_clean_metric_summary": {
+          "static_attention": {
+            "roc_auc": 0.49087845303867395,
+            "pr_auc": 0.7714792926846943,
+            "ece": 0.37597398213493877,
+            "brier": 0.44329001307487487
+          },
+          "craf_attention": {
+            "roc_auc": 0.5143031767955801,
+            "pr_auc": 0.7856811626869512,
+            "ece": 0.39999995231628416,
+            "brier": 0.4432900071144104
+          },
+          "rga_meta_router": {
+            "roc_auc": 0.5143031767955801,
+            "pr_auc": 0.7856811626869512,
+            "ece": 0.4432899897946925,
+            "brier": 0.44328998984796064
+          },
+          "rga_boosted_fusion": {
+            "roc_auc": 0.5,
+            "pr_auc": 0.7835497835497836,
+            "ece": 0.7835497856140137,
+            "brier": 0.7835497856140137
+          }
+        },
+        "per_seed_n": 5,
+        "test_fold_prevalence": 0.7835497835497836,
+        "per_method_pr_auc_vs_test_prevalence": {
+          "static_attention": {
+            "reported_pr_auc": 0.7714792926846943,
+            "test_fold_prevalence": 0.7835497835497836,
+            "absolute_delta": 0.012070490865089267,
+            "matches_prevalence_within_0_005": false
+          },
+          "craf_attention": {
+            "reported_pr_auc": 0.7856811626869512,
+            "test_fold_prevalence": 0.7835497835497836,
+            "absolute_delta": 0.002131379137167655,
+            "matches_prevalence_within_0_005": true
+          },
+          "rga_meta_router": {
+            "reported_pr_auc": 0.7856811626869512,
+            "test_fold_prevalence": 0.7835497835497836,
+            "absolute_delta": 0.002131379137167655,
+            "matches_prevalence_within_0_005": true
+          },
+          "rga_boosted_fusion": {
+            "reported_pr_auc": 0.7835497835497836,
+            "test_fold_prevalence": 0.7835497835497836,
+            "absolute_delta": 0.0,
+            "matches_prevalence_within_0_005": true
+          }
+        },
+        "status": "ok"
+      }
+    },
+    {
+      "benchmark": "MVTec LOCO-AD",
+      "protocol": "PatchCore canonical one-class",
+      "label_definition": {
+        "benchmark": "MVTec LOCO-AD",
+        "protocol": "PatchCore canonical one-class",
+        "inputs_csv": "experiments/fusion/mvtec_loco_patchcore_inputs.csv",
+        "inputs_csv_exists": true,
+        "metadata_positive_fraction_actual": 0.27198027937551356,
+        "csv_columns": [
+          "sample_id",
+          "pairing_key",
+          "category",
+          "split",
+          "defect_type",
+          "domain",
+          "label",
+          "source_path",
+          "score_fit_split",
+          "score_fit_defect_type",
+          "score",
+          "confidence",
+          "embedding_0",
+          "embedding_1",
+          "embedding_2",
+          "embedding_3",
+          "embedding_4",
+          "embedding_5",
+          "embedding_6",
+          "embedding_7",
+          "embedding_8",
+          "embedding_9",
+          "embedding_10",
+          "embedding_11",
+          "embedding_12",
+          "embedding_13",
+          "embedding_14",
+          "embedding_15"
+        ],
+        "label_column": "label",
+        "split_column": "split",
+        "overall_prevalence_label_eq_1": 0.27198027937551356,
+        "sample_count_total": 3651,
+        "split_test_n_samples": 1568,
+        "split_test_n_positives_label_eq_1": 993,
+        "split_test_prevalence_label_eq_1": 0.6332908163265306,
+        "split_train_n_samples": 1778,
+        "split_train_n_positives_label_eq_1": 0,
+        "split_train_prevalence_label_eq_1": 0.0,
+        "split_validation_n_samples": 305,
+        "split_validation_n_positives_label_eq_1": 0,
+        "split_validation_prevalence_label_eq_1": 0.0,
+        "inferred_label_semantics": "label_eq_1_means_anomaly (consistent with canonical one-class)",
+        "status": "ok"
+      },
+      "constant_baseline_replay": {
+        "test_fold_prevalence_label_eq_1": 0.6332908163265306,
+        "test_fold_n": 3136,
+        "constant_0.0_predictor": {
+          "constant_score": 0.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.6332908163265306,
+          "brier": 0.6332908163252641,
+          "ece": 0.6332908163265306,
+          "precision": NaN,
+          "recall": 0.0,
+          "accuracy": 0.3667091836734694,
+          "tp": 0,
+          "fp": 0,
+          "tn": 1150,
+          "fn": 1986
+        },
+        "constant_1.0_predictor": {
+          "constant_score": 1.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.6332908163265306,
+          "brier": 0.3667091836727359,
+          "ece": 0.0,
+          "precision": 0.6332908163265306,
+          "recall": 1.0,
+          "accuracy": 0.6332908163265306,
+          "tp": 1986,
+          "fp": 1150,
+          "tn": 0,
+          "fn": 0
+        },
+        "constant_0.5_predictor": {
+          "constant_score": 0.5,
+          "roc_auc": 0.5,
+          "pr_auc": 0.6332908163265306,
+          "brier": 0.25,
+          "ece": 0.13329081632653061,
+          "precision": 0.6332908163265306,
+          "recall": 1.0,
+          "accuracy": 0.6332908163265306,
+          "tp": 1986,
+          "fp": 1150,
+          "tn": 0,
+          "fn": 0
+        },
+        "constant_0.7835_predictor": {
+          "constant_score": 0.7835,
+          "roc_auc": 0.5,
+          "pr_auc": 0.6332908163265306,
+          "brier": 0.25479635714285714,
+          "ece": 0.15020918367346925,
+          "precision": 0.6332908163265306,
+          "recall": 1.0,
+          "accuracy": 0.6332908163265306,
+          "tp": 1986,
+          "fp": 1150,
+          "tn": 0,
+          "fn": 0
+        },
+        "random_uniform_seed_0": {
+          "seed": 0,
+          "inverted": false,
+          "roc_auc": 0.5125434563684924,
+          "pr_auc": 0.6361336879480566,
+          "brier": 0.3281841305688343,
+          "ece": 0.25865105548349643
+        },
+        "random_uniform_seed_42": {
+          "seed": 42,
+          "inverted": false,
+          "roc_auc": 0.4992801786417969,
+          "pr_auc": 0.6335575084977887,
+          "brier": 0.33432848831950185,
+          "ece": 0.2619275932252776
+        },
+        "random_uniform_inverted_seed_0": {
+          "seed": 0,
+          "inverted": true,
+          "roc_auc": 0.4874565436315076,
+          "pr_auc": 0.6242137367231506,
+          "brier": 0.3383559065286565,
+          "ece": 0.272944400479449
+        },
+        "interpretation": "Under the canonical one-class protocol the TEST fold contains all anomalies. A constant-0 anomaly-probability predictor on a test fold with prevalence p produces Brier = p, ECE = p, PR-AUC = p (degenerate AP equals prevalence). If the JSON's reported Brier/ECE/PR-AUC numerically match the test-fold prevalence, the predictor is a degenerate constant near 0 (or after polarity flipping, near 1) and the metric values are mathematically correct but trivially reflect prevalence \u2014 not discrimination ability."
+      },
+      "artifact_reproduction": {
+        "results_json": "experiments/fusion/mvtec_loco_patchcore_results.json",
+        "results_json_exists": true,
+        "reported_clean_metric_summary": {
+          "static_attention": {
+            "roc_auc": 0.5209667673716012,
+            "pr_auc": 0.6318635779535489,
+            "ece": 0.5571428275534085,
+            "brier": 0.5799744844436645
+          },
+          "craf_attention": {
+            "roc_auc": 0.5060316125924953,
+            "pr_auc": 0.6547811994652278,
+            "ece": 0.506632661819458,
+            "brier": 0.5799744963645935
+          },
+          "rga_meta_router": {
+            "roc_auc": 0.5060316125924953,
+            "pr_auc": 0.6547811994652278,
+            "ece": 0.5799744862517286,
+            "brier": 0.5799744769618315
+          },
+          "rga_boosted_fusion": {
+            "roc_auc": 0.5,
+            "pr_auc": 0.6332908163265306,
+            "ece": 0.6332908272743225,
+            "brier": 0.6332908272743225
+          }
+        },
+        "per_seed_n": 5,
+        "test_fold_prevalence": 0.6332908163265306,
+        "per_method_pr_auc_vs_test_prevalence": {
+          "static_attention": {
+            "reported_pr_auc": 0.6318635779535489,
+            "test_fold_prevalence": 0.6332908163265306,
+            "absolute_delta": 0.001427238372981754,
+            "matches_prevalence_within_0_005": true
+          },
+          "craf_attention": {
+            "reported_pr_auc": 0.6547811994652278,
+            "test_fold_prevalence": 0.6332908163265306,
+            "absolute_delta": 0.021490383138697222,
+            "matches_prevalence_within_0_005": false
+          },
+          "rga_meta_router": {
+            "reported_pr_auc": 0.6547811994652278,
+            "test_fold_prevalence": 0.6332908163265306,
+            "absolute_delta": 0.021490383138697222,
+            "matches_prevalence_within_0_005": false
+          },
+          "rga_boosted_fusion": {
+            "reported_pr_auc": 0.6332908163265306,
+            "test_fold_prevalence": 0.6332908163265306,
+            "absolute_delta": 0.0,
+            "matches_prevalence_within_0_005": true
+          }
+        },
+        "status": "ok"
+      }
+    },
+    {
+      "benchmark": "VisA",
+      "protocol": "RGB+edge canonical one-class",
+      "label_definition": {
+        "benchmark": "VisA",
+        "protocol": "RGB+edge canonical one-class",
+        "inputs_csv": "experiments/fusion/visa_fusion_inputs.csv",
+        "inputs_csv_exists": true,
+        "metadata_positive_fraction_actual": 0.11089548100914888,
+        "csv_columns": [
+          "sample_id",
+          "pairing_key",
+          "category",
+          "split",
+          "defect_type",
+          "domain",
+          "label",
+          "source_path",
+          "score_fit_split",
+          "score_fit_defect_type",
+          "score",
+          "confidence",
+          "embedding_0",
+          "embedding_1",
+          "embedding_2",
+          "embedding_3",
+          "embedding_4",
+          "embedding_5",
+          "embedding_6",
+          "embedding_7",
+          "embedding_8",
+          "embedding_9",
+          "embedding_10",
+          "embedding_11",
+          "embedding_12",
+          "embedding_13",
+          "embedding_14",
+          "embedding_15"
+        ],
+        "label_column": "label",
+        "split_column": "split",
+        "overall_prevalence_label_eq_1": 0.11089548100914888,
+        "sample_count_total": 10821,
+        "split_train_n_samples": 7360,
+        "split_train_n_positives_label_eq_1": 0,
+        "split_train_prevalence_label_eq_1": 0.0,
+        "split_validation_n_samples": 1299,
+        "split_validation_n_positives_label_eq_1": 0,
+        "split_validation_prevalence_label_eq_1": 0.0,
+        "split_test_n_samples": 2162,
+        "split_test_n_positives_label_eq_1": 1200,
+        "split_test_prevalence_label_eq_1": 0.5550416281221091,
+        "inferred_label_semantics": "label_eq_1_means_anomaly (consistent with canonical one-class)",
+        "status": "ok"
+      },
+      "constant_baseline_replay": {
+        "test_fold_prevalence_label_eq_1": 0.5550416281221091,
+        "test_fold_n": 4324,
+        "constant_0.0_predictor": {
+          "constant_score": 0.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.5550416281221091,
+          "brier": 0.555041628120999,
+          "ece": 0.5550416281221091,
+          "precision": NaN,
+          "recall": 0.0,
+          "accuracy": 0.44495837187789083,
+          "tp": 0,
+          "fp": 0,
+          "tn": 1924,
+          "fn": 2400
+        },
+        "constant_1.0_predictor": {
+          "constant_score": 1.0,
+          "roc_auc": 0.5,
+          "pr_auc": 0.5550416281221091,
+          "brier": 0.44495837187700094,
+          "ece": 0.0,
+          "precision": 0.5550416281221091,
+          "recall": 1.0,
+          "accuracy": 0.5550416281221091,
+          "tp": 2400,
+          "fp": 1924,
+          "tn": 0,
+          "fn": 0
+        },
+        "constant_0.5_predictor": {
+          "constant_score": 0.5,
+          "roc_auc": 0.5,
+          "pr_auc": 0.5550416281221091,
+          "brier": 0.25,
+          "ece": 0.05504162812210911,
+          "precision": 0.5550416281221091,
+          "recall": 1.0,
+          "accuracy": 0.5550416281221091,
+          "tp": 2400,
+          "fp": 1924,
+          "tn": 0,
+          "fn": 0
+        },
+        "constant_0.7835_predictor": {
+          "constant_score": 0.7835,
+          "roc_auc": 0.5,
+          "pr_auc": 0.5550416281221091,
+          "brier": 0.29916364685476404,
+          "ece": 0.22845837187789098,
+          "precision": 0.5550416281221091,
+          "recall": 1.0,
+          "accuracy": 0.5550416281221091,
+          "tp": 2400,
+          "fp": 1924,
+          "tn": 0,
+          "fn": 0
+        },
+        "random_uniform_seed_0": {
+          "seed": 0,
+          "inverted": false,
+          "roc_auc": 0.4972771569646569,
+          "pr_auc": 0.5523886906428503,
+          "brier": 0.33500441898789,
+          "ece": 0.2512431556416709
+        },
+        "random_uniform_seed_42": {
+          "seed": 42,
+          "inverted": false,
+          "roc_auc": 0.5032772435897436,
+          "pr_auc": 0.5612098120049113,
+          "brier": 0.33243608309149225,
+          "ece": 0.25393293219186985
+        },
+        "random_uniform_inverted_seed_0": {
+          "seed": 0,
+          "inverted": true,
+          "roc_auc": 0.502722843035343,
+          "pr_auc": 0.55679202449999,
+          "brier": 0.331805730625699,
+          "ece": 0.24939301688126386
+        },
+        "interpretation": "Under the canonical one-class protocol the TEST fold contains all anomalies. A constant-0 anomaly-probability predictor on a test fold with prevalence p produces Brier = p, ECE = p, PR-AUC = p (degenerate AP equals prevalence). If the JSON's reported Brier/ECE/PR-AUC numerically match the test-fold prevalence, the predictor is a degenerate constant near 0 (or after polarity flipping, near 1) and the metric values are mathematically correct but trivially reflect prevalence \u2014 not discrimination ability."
+      },
+      "artifact_reproduction": {
+        "results_json": "experiments/fusion/visa_fusion_results.json",
+        "results_json_exists": true,
+        "reported_clean_metric_summary": {
+          "static_attention": {
+            "roc_auc": 0.48395668745668746,
+            "pr_auc": 0.540771781302811,
+            "ece": 0.28408875742739376,
+            "brier": 0.4669749975204468
+          },
+          "craf_attention": {
+            "roc_auc": 0.47906860706860704,
+            "pr_auc": 0.5393089768933245,
+            "ece": 0.28899163007736206,
+            "brier": 0.4669749975204468
+          },
+          "rga_meta_router": {
+            "roc_auc": 0.47906860706860704,
+            "pr_auc": 0.5393089768933245,
+            "ece": 0.46697500912034906,
+            "brier": 0.46697500156622185
+          },
+          "rga_boosted_fusion": {
+            "roc_auc": 0.5,
+            "pr_auc": 0.5550416281221091,
+            "ece": 0.5550416111946106,
+            "brier": 0.5550416111946106
+          }
+        },
+        "per_seed_n": 5,
+        "test_fold_prevalence": 0.5550416281221091,
+        "per_method_pr_auc_vs_test_prevalence": {
+          "static_attention": {
+            "reported_pr_auc": 0.540771781302811,
+            "test_fold_prevalence": 0.5550416281221091,
+            "absolute_delta": 0.014269846819298104,
+            "matches_prevalence_within_0_005": false
+          },
+          "craf_attention": {
+            "reported_pr_auc": 0.5393089768933245,
+            "test_fold_prevalence": 0.5550416281221091,
+            "absolute_delta": 0.015732651228784644,
+            "matches_prevalence_within_0_005": false
+          },
+          "rga_meta_router": {
+            "reported_pr_auc": 0.5393089768933245,
+            "test_fold_prevalence": 0.5550416281221091,
+            "absolute_delta": 0.015732651228784644,
+            "matches_prevalence_within_0_005": false
+          },
+          "rga_boosted_fusion": {
+            "reported_pr_auc": 0.5550416281221091,
+            "test_fold_prevalence": 0.5550416281221091,
+            "absolute_delta": 0.0,
+            "matches_prevalence_within_0_005": true
+          }
+        },
+        "status": "ok"
+      }
+    }
+  ],
+  "verdict": "METRICS_VALID_BUT_MISINTERPRETED",
+  "verdict_narrative": "The canonical PR-AUC / ECE / Brier numbers are mathematically correct given (a) the canonical one-class protocol concentrates all anomalies in the test fold (test-fold prevalence ~0.7-0.8 vs overall ~0.22), and (b) the supervised heads collapse to degenerate constant predictors (rga_boosted_fusion's `selected_candidate = 'constant'` fallback when val has one class). The 0.7835 numbers ARE the test-fold prevalence reflected through the metrics. There is NO label inversion, score-orientation bug, or metric implementation bug. ACTION: do not promote canonical PR-AUC / ECE / Brier as quality signals in the paper. Mark canonical cells as protocol-diagnostic; report ROC-AUC at chance level (the only useful signal) and explicitly label PR-AUC = test-fold prevalence for degenerate predictors."
+}

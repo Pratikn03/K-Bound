@@ -3,6 +3,9 @@
 This module deliberately contains no training code.  It validates the boundary
 between a sealed experimental design, label-free live decisions, and the later
 offline label join used for evaluation.
+
+This is the legacy structural schema validator.  It does not by itself establish
+confirmatory-v2 protocol validity or complete scientific binding.
 """
 
 from __future__ import annotations
@@ -91,13 +94,11 @@ class ContractError(ValueError):
 
 
 def _is_sha256(value: Any) -> bool:
-    if not isinstance(value, str) or len(value) != 64:
-        return False
-    try:
-        int(value, 16)
-    except ValueError:
-        return False
-    return True
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdefABCDEF" for character in value)
+    )
 
 
 def _require_fields(record: Mapping[str, Any], fields: Iterable[str], *, context: str) -> list[str]:
@@ -105,7 +106,12 @@ def _require_fields(record: Mapping[str, Any], fields: Iterable[str], *, context
 
 
 def _finite_number(value: Any) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(float(value))
+    except OverflowError:
+        return False
 
 
 def _nonempty_string(value: Any) -> bool:
@@ -113,13 +119,27 @@ def _nonempty_string(value: Any) -> bool:
 
 
 def _is_git_sha(value: Any) -> bool:
-    if not isinstance(value, str) or not 7 <= len(value) <= 40:
-        return False
+    return (
+        isinstance(value, str)
+        and 7 <= len(value) <= 40
+        and all(character in "0123456789abcdefABCDEF" for character in value)
+    )
+
+
+def _safe_repr(value: Any) -> str:
+    """Represent malformed values without letting huge integers break validation."""
+
     try:
-        int(value, 16)
-    except ValueError:
-        return False
-    return True
+        return repr(value)
+    except (OverflowError, ValueError):
+        return f"<{type(value).__name__}>"
+
+
+def _safe_sorted_repr(values: Iterable[Any]) -> str:
+    """Represent a collection deterministically without unsafe nested repr calls."""
+
+    ordered = sorted(values, key=_safe_repr)
+    return "[" + ", ".join(_safe_repr(value) for value in ordered) + "]"
 
 
 def _parse_utc(value: Any) -> datetime | None:
@@ -159,6 +179,9 @@ def load_protocol(path: str | Path) -> dict[str, Any]:
 def validate_protocol(document: Mapping[str, Any], *, require_sealed: bool = False) -> list[str]:
     """Return every structural or confirmatory-readiness violation."""
 
+    if not isinstance(document, Mapping):
+        return ["protocol: record must be a mapping"]
+
     errors = _require_fields(
         document,
         (
@@ -179,19 +202,24 @@ def validate_protocol(document: Mapping[str, Any], *, require_sealed: bool = Fal
     if errors:
         return errors
 
-    if document["schema_version"] != SCHEMA_VERSION:
-        errors.append(f"protocol: schema_version must be {SCHEMA_VERSION}, got {document['schema_version']!r}")
+    schema_version = document["schema_version"]
+    if not isinstance(schema_version, int) or isinstance(schema_version, bool) or schema_version != SCHEMA_VERSION:
+        errors.append(f"protocol: schema_version must be integer {SCHEMA_VERSION}, got {_safe_repr(schema_version)}")
     if not isinstance(document["protocol_id"], str) or not document["protocol_id"].strip():
         errors.append("protocol: protocol_id must be a non-empty string")
     status = document["status"]
-    if status not in PROTOCOL_STATUSES:
-        errors.append(f"protocol: status must be one of {sorted(PROTOCOL_STATUSES)}, got {status!r}")
+    if not isinstance(status, str) or status not in PROTOCOL_STATUSES:
+        errors.append(f"protocol: status must be one of {sorted(PROTOCOL_STATUSES)}, got {_safe_repr(status)}")
     alpha = document["alpha"]
     if not _finite_number(alpha) or not 0.0 < float(alpha) < 1.0:
-        errors.append(f"protocol: alpha must be finite and in (0, 1), got {alpha!r}")
+        errors.append(f"protocol: alpha must be finite and in (0, 1), got {_safe_repr(alpha)}")
 
     seeds = document["model_seeds"]
-    if not isinstance(seeds, list) or not seeds or any(not isinstance(s, int) or s < 0 for s in seeds):
+    if (
+        not isinstance(seeds, list)
+        or not seeds
+        or any(not isinstance(seed, int) or isinstance(seed, bool) or seed < 0 for seed in seeds)
+    ):
         errors.append("protocol: model_seeds must be a non-empty list of non-negative integers")
     elif len(seeds) != len(set(seeds)):
         errors.append("protocol: model_seeds contains duplicates")
@@ -229,7 +257,7 @@ def validate_protocol(document: Mapping[str, Any], *, require_sealed: bool = Fal
         else:
             unknown = set(splits) - set(SPLIT_ROLES)
             if unknown:
-                errors.append(f"protocol: unknown split roles: {sorted(unknown)}")
+                errors.append(f"protocol: unknown split roles: {_safe_sorted_repr(unknown)}")
             seen: dict[str, str] = {}
             for role in SPLIT_ROLES:
                 ids = splits.get(role, [])
@@ -248,10 +276,11 @@ def validate_protocol(document: Mapping[str, Any], *, require_sealed: bool = Fal
                 errors.append("sealed protocol: primary natural dataset is not selected")
             if primary.get("provenance_status") != "UNOPENED_VERIFIED":
                 errors.append("sealed protocol: natural test provenance must be UNOPENED_VERIFIED")
-            if not primary.get("splits", {}).get("test"):
+            sealed_splits = splits if isinstance(splits, Mapping) else {}
+            if not sealed_splits.get("test"):
                 errors.append("sealed protocol: primary natural test split is empty")
             for role in ("estimator_fit", "residual_calibration"):
-                if not primary.get("splits", {}).get(role):
+                if not sealed_splits.get(role):
                     errors.append(f"sealed protocol: primary natural {role} split is empty")
 
     replications = document["replication_tracks"]
@@ -262,9 +291,9 @@ def validate_protocol(document: Mapping[str, Any], *, require_sealed: bool = Fal
     if not isinstance(compatibility, Mapping):
         errors.append("protocol: launcher_compatibility must be a mapping")
     elif require_sealed:
-        unverified = sorted(name for name, state in compatibility.items() if state != "VERIFIED")
+        unverified = [name for name, state in compatibility.items() if state != "VERIFIED"]
         if unverified:
-            errors.append(f"sealed protocol: launchers are not VERIFIED: {unverified}")
+            errors.append(f"sealed protocol: launchers are not VERIFIED: {_safe_sorted_repr(unverified)}")
 
     execution = document["execution"]
     if not isinstance(execution, Mapping):
@@ -291,12 +320,15 @@ def validate_protocol(document: Mapping[str, Any], *, require_sealed: bool = Fal
                     errors.append(f"sealed protocol: execution.{stage} has no commands")
 
     if require_sealed and status != "SEALED":
-        errors.append(f"sealed protocol required, current status is {status!r}")
+        errors.append(f"sealed protocol required, current status is {_safe_repr(status)}")
     return errors
 
 
 def validate_decision_record(record: Mapping[str, Any]) -> list[str]:
     """Validate one label-free decision record and its canonical action."""
+
+    if not isinstance(record, Mapping):
+        return ["decision: record must be a mapping"]
 
     errors = _require_fields(record, DECISION_FIELDS, context="decision")
     forbidden = sorted(LABEL_BEARING_FIELDS.intersection(record))
@@ -305,7 +337,7 @@ def validate_decision_record(record: Mapping[str, Any]) -> list[str]:
     if errors:
         return errors
 
-    if record["split_role"] not in {"test", "replication"}:
+    if not isinstance(record["split_role"], str) or record["split_role"] not in {"test", "replication"}:
         errors.append("decision: split_role must be 'test' or 'replication'")
     for field in (
         "run_id",
@@ -339,9 +371,15 @@ def validate_decision_record(record: Mapping[str, Any]) -> list[str]:
     if not _finite_number(record["delta_hat"]):
         errors.append("decision: delta_hat must be finite")
     epsilon = record["epsilon"]
-    if not isinstance(epsilon, (int, float)) or isinstance(epsilon, bool) or math.isnan(float(epsilon)):
+    try:
+        numeric_epsilon = (
+            float(epsilon) if isinstance(epsilon, (int, float)) and not isinstance(epsilon, bool) else None
+        )
+    except OverflowError:
+        numeric_epsilon = None
+    if numeric_epsilon is None or math.isnan(numeric_epsilon):
         errors.append("decision: epsilon must be a non-negative number or +inf")
-    elif float(epsilon) < 0.0:
+    elif numeric_epsilon < 0.0:
         errors.append("decision: epsilon must be non-negative")
     if not _finite_number(record["alpha"]) or not 0.0 < float(record["alpha"]) < 1.0:
         errors.append("decision: alpha must be finite and in (0, 1)")
@@ -359,12 +397,15 @@ def validate_decision_record(record: Mapping[str, Any]) -> list[str]:
     else:
         expected = Decision.ABSTAIN.value
     if record["action"] != expected:
-        errors.append(f"decision: action {record['action']!r} disagrees with canonical action {expected!r}")
+        errors.append(f"decision: action {_safe_repr(record['action'])} disagrees with canonical action {expected!r}")
     return errors
 
 
 def validate_offline_record(record: Mapping[str, Any]) -> list[str]:
     """Validate an offline record after target labels are revealed."""
+
+    if not isinstance(record, Mapping):
+        return ["offline: record must be a mapping"]
 
     errors = _require_fields(record, OFFLINE_FIELDS, context="offline")
     if errors:
@@ -382,7 +423,10 @@ def validate_offline_record(record: Mapping[str, Any]) -> list[str]:
     for field in ("run_id", "protocol_id", "unit_id"):
         if not _nonempty_string(record[field]):
             errors.append(f"offline: {field} must be a non-empty string")
-    if record["oracle_action"] not in {Decision.ADAPT.value, Decision.FREEZE.value}:
+    if not isinstance(record["oracle_action"], str) or record["oracle_action"] not in {
+        Decision.ADAPT.value,
+        Decision.FREEZE.value,
+    }:
         errors.append("offline: oracle_action must be ADAPT or FREEZE")
     if not isinstance(record["false_adapt"], bool):
         errors.append("offline: false_adapt must be boolean")
@@ -424,20 +468,44 @@ def validate_joined_records(
     decision_index: dict[tuple[Any, Any, Any], Mapping[str, Any]] = {}
     offline_index: dict[tuple[Any, Any, Any], Mapping[str, Any]] = {}
 
-    for index, row in enumerate(decisions):
+    decision_count = 0
+    offline_count = 0
+    try:
+        decision_rows = iter(decisions)
+    except TypeError:
+        errors.append("join: decisions must be an iterable of mappings")
+        decision_rows = iter(())
+    try:
+        offline_rows = iter(offline)
+    except TypeError:
+        errors.append("join: offline records must be an iterable of mappings")
+        offline_rows = iter(())
+
+    for index, row in enumerate(decision_rows):
+        decision_count += 1
         row_errors = validate_decision_record(row)
         errors.extend(f"decision[{index}]: {error}" for error in row_errors)
+        if row_errors or not isinstance(row, Mapping):
+            continue
         key = (row.get("run_id"), row.get("protocol_id"), row.get("unit_id"))
         if key in decision_index:
             errors.append(f"decision: duplicate join key {key!r}")
         decision_index[key] = row
-    for index, row in enumerate(offline):
+    for index, row in enumerate(offline_rows):
+        offline_count += 1
         row_errors = validate_offline_record(row)
         errors.extend(f"offline[{index}]: {error}" for error in row_errors)
+        if row_errors or not isinstance(row, Mapping):
+            continue
         key = (row.get("run_id"), row.get("protocol_id"), row.get("unit_id"))
         if key in offline_index:
             errors.append(f"offline: duplicate join key {key!r}")
         offline_index[key] = row
+
+    if decision_count == 0:
+        errors.append("join: decisions must contain at least one row")
+    if offline_count == 0:
+        errors.append("join: offline records must contain at least one row")
 
     missing_offline = sorted(set(decision_index) - set(offline_index), key=repr)
     missing_decisions = sorted(set(offline_index) - set(decision_index), key=repr)

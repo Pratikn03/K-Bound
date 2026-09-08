@@ -10,15 +10,16 @@ numerically identical to ``kga.certificate.empirical_bernstein``
 
 Theorem thm:cert (K-Bound paper):
     Given calibration residuals r_i = |Bhat_i - B_i|, the split-conformal
-    radius eps = r_(k), k=ceil((n+1)(1-alpha)), guarantees that a new prediction
-    Bhat deviates from the true B by at most eps with probability >= 1 - alpha
-    over the random calibration split.  If k > n, no finite order statistic can
+    radius eps = r_(k), k=ceil((n+1)(1-alpha)), has marginal coverage >= 1 - alpha
+    when calibration and fresh residuals are exchangeable under the declared
+    split protocol. This function does not validate that premise or establish
+    cell-to-population transfer. If k > n, no finite order statistic can
     attain that level, so the maintained rule returns +inf (forced ABSTAIN) or
     raises instead of silently clamping the rank.
 
 Decision rule (Proposition):
-    ADAPT   if  Bhat - eps > 0   (certified beneficial)
-    FREEZE  if  Bhat + eps < 0   (certified harmful)
+    ADAPT   if  Bhat - eps > 0   (positive under interval coverage)
+    FREEZE  if  Bhat + eps < 0   (negative under interval coverage)
     ABSTAIN otherwise            (uncertainty too large)
 """
 
@@ -26,6 +27,7 @@ from __future__ import annotations
 
 import math
 import warnings
+from numbers import Real
 
 import numpy as np
 
@@ -34,12 +36,26 @@ class InsufficientCalibrationError(ValueError):
     """Raised when no finite conformal radius can attain ``1 - alpha``."""
 
 
+def _real_scalar(value: object, name: str, *, allow_positive_infinity: bool = False) -> float:
+    """Validate before coercion so masks, booleans, and text cannot disappear."""
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a real scalar, not boolean, text, or masked data")
+    try:
+        number = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError(f"{name} must be representable as a real scalar") from exc
+    if not math.isfinite(number) and not (allow_positive_infinity and number == math.inf):
+        raise ValueError(f"{name} must be finite")
+    return number
+
+
 def min_calibration_size(alpha: float) -> int:
     """Return the smallest pool size permitting a finite exact-rank radius.
 
     The feasibility condition is ``ceil((n + 1) * (1 - alpha)) <= n``, or
     equivalently ``n >= ceil(1 / alpha) - 1``.
     """
+    alpha = _real_scalar(alpha, "alpha")
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
     return int(math.ceil(1.0 / alpha)) - 1
@@ -54,8 +70,10 @@ def conformal_radius(
     """Split-conformal radius from calibration residuals.
 
     Implements Thm thm:cert using the exact finite-sample residual rank.
-    The resulting interval [Bhat - eps, Bhat + eps] covers the true B with
-    probability >= 1 - alpha over the random calibration split.
+    Under exchangeability of calibration and fresh residuals for a fixed fitted
+    predictor, [Bhat - eps, Bhat + eps] has marginal coverage >= 1 - alpha.
+    Numeric validation here does not establish that premise, conditional or
+    groupwise coverage, or a population-benefit target.
 
     Parameters
     ----------
@@ -81,15 +99,16 @@ def conformal_radius(
     >>> eps = conformal_radius(r, alpha=0.10)
     >>> assert eps > 0
     """
-    r = np.asarray(residuals, dtype=float)
+    # Preserve masked observations until finite validation; never expose their
+    # backing values or silently drop them from the calibration pool.
+    r = np.asarray(np.ma.asarray(residuals, dtype=float).filled(np.nan), dtype=float)
     if r.ndim != 1 or len(r) == 0:
         raise ValueError("residuals must be a non-empty 1-D array")
+    alpha = _real_scalar(alpha, "alpha")
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
     if on_infeasible not in ("inf", "raise"):
-        raise ValueError(
-            f"on_infeasible must be 'inf' or 'raise', got {on_infeasible!r}"
-        )
+        raise ValueError(f"on_infeasible must be 'inf' or 'raise', got {on_infeasible!r}")
     if not np.all(np.isfinite(r)):
         raise ValueError("residuals must contain only finite values")
     if np.any(r < 0.0):
@@ -155,9 +174,10 @@ def empirical_bernstein_lcb(x: np.ndarray, alpha: float = 0.1) -> float:
 
 
 def decide(Bhat: float, eps: float) -> str:
-    """Certificate decision from predicted benefit and conformal radius.
+    """Conditional action from a supplied benefit interval, not its validation.
 
-    Implements the three-way split decision (Proposition, K-Bound paper):
+    The caller must establish coverage for the declared target. This arithmetic
+    function does not verify calibration or artifact identity; it applies:
 
         ADAPT   if  Bhat - eps > 0
         FREEZE  if  Bhat + eps < 0
@@ -175,6 +195,13 @@ def decide(Bhat: float, eps: float) -> str:
     decision : str
         One of ``'adapt'``, ``'freeze'``, ``'abstain'``.
 
+    Raises
+    ------
+    ValueError
+        For non-real, boolean, masked, or nonfinite predictions, or a radius
+        other than a nonnegative finite real scalar or positive infinity.
+        Positive infinity is a valid unavailable radius and forces ABSTAIN.
+
     Examples
     --------
     >>> decide(0.15, 0.05)
@@ -184,6 +211,10 @@ def decide(Bhat: float, eps: float) -> str:
     >>> decide(0.03, 0.10)
     'abstain'
     """
+    Bhat = _real_scalar(Bhat, "Bhat")
+    eps = _real_scalar(eps, "eps", allow_positive_infinity=True)
+    if eps < 0:
+        raise ValueError("eps must be nonnegative")
     if Bhat - eps > 0:
         return "adapt"
     if Bhat + eps < 0:

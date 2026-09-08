@@ -9,19 +9,16 @@ PROTOCOL="${KBOUND_CLOSURE_PROTOCOL:-$ROOT/research_lock/KBOUND_PROSPECTIVE_CLOS
 LOCK="${KBOUND_CLOSURE_LOCK:-$ROOT/experiments/kbound/results/prospective_closure_v1/protocol_lock.json}"
 MODE="${1:-preflight}"
 
-select_python() {
-  if [[ -n "${KBOUND_PYTHON:-}" ]]; then
-    printf '%s\n' "$KBOUND_PYTHON"
-  elif [[ -x "$HOME/.venv_wilds/bin/python" ]]; then
-    printf '%s\n' "$HOME/.venv_wilds/bin/python"
-  elif [[ -x "$ROOT/.venv/bin/python" ]]; then
-    printf '%s\n' "$ROOT/.venv/bin/python"
-  else
-    command -v python3
-  fi
-}
-
-PY="$(select_python)"
+# Set KBOUND_PYTHON to an absolute Python 3.12 executable; never probe runtimes.
+PY="${KBOUND_PYTHON:?Set KBOUND_PYTHON to the selected Python 3.12 executable}"
+[[ "$PY" == /* && -f "$PY" && -x "$PY" ]] || { echo "Invalid KBOUND_PYTHON: $PY" >&2; exit 2; }
+[[ -f "$PROTOCOL" ]] || { echo "Missing KBOUND_CLOSURE_PROTOCOL: $PROTOCOL" >&2; exit 2; }
+# Existing data must be explicitly selected for data-bearing modes, not release.
+case "$MODE" in
+  preflight|smoke|train|evaluate)
+    : "${KBOUND_DATA_ROOT:?Set KBOUND_DATA_ROOT to the existing dataset root}"
+    [[ "$KBOUND_DATA_ROOT" == /* && -d "$KBOUND_DATA_ROOT" ]] || { echo "Invalid KBOUND_DATA_ROOT: $KBOUND_DATA_ROOT" >&2; exit 2; } ;;
+esac
 export PYTHONPATH="$ROOT:$ROOT/docs/research/kbound/kbound_pkg:$ROOT/docs/research/kbound/edge/src${PYTHONPATH:+:$PYTHONPATH}"
 
 require_python_312() {
@@ -67,6 +64,7 @@ smoke() {
 
 sealed_stage() {
   local stage="$1"
+  [[ -f "$LOCK" ]] || { echo "Missing KBOUND_CLOSURE_LOCK: $LOCK" >&2; exit 2; }
   require_python_312
   if [[ "${KBOUND_EXECUTE:-0}" == "1" ]]; then
     "$PY" docs/research/kbound/scripts/run_closure_stage.py "$stage" \

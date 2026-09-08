@@ -1,0 +1,53 @@
+{
+  "activity": "PATH_ONLY_PROJECTION_NO_METRIC_RECOMPUTATION_OR_KBOUND_CONFIRMATION",
+  "historical_receipt": {
+    "artifacts": [
+      {
+        "blank_fields_preserved": true,
+        "bytes": 1744,
+        "destination_path": "experiments/audit/polarity_diagnostic_log.csv",
+        "sha256": "65d6ffba90ff7ac418b5233a9ee50bea33064dd219390807469f99aa918408ee",
+        "source_path": "experiments/audit/polarity_diagnostic_log.csv",
+        "source_sha256": "65d6ffba90ff7ac418b5233a9ee50bea33064dd219390807469f99aa918408ee"
+      },
+      {
+        "bytes": 23650,
+        "destination_path": "experiments/audit/canonical_label_semantics.json",
+        "sha256": "d52a8d83f905c59c3068fb7105b7ddedea0aec23dad3f6ede7d0b6d73bea30c7",
+        "source_path": "experiments/audit/canonical_label_semantics.json",
+        "source_sha256": "d52a8d83f905c59c3068fb7105b7ddedea0aec23dad3f6ede7d0b6d73bea30c7"
+      }
+    ],
+    "classification": "recovered_historical_assertions",
+    "kbound_confirmation": false,
+    "metric_recomputation_performed": false,
+    "recovery_method": "byte-for-byte recovery from the same historical checkout path",
+    "schema_version": 1,
+    "scope": "non-K-Bound MVTec/VisA diagnostics",
+    "source_checkout": "private-workspace/recovered-historical-checkout"
+  },
+  "interpretation": "This companion preserves recovered historical assertions; it does not recompute or endorse diagnostics. The redacted workspace locator does not identify a delivered directory. The CSV and label-semantics artifacts retain their original exact bytes, including blank fields and historical NaN tokens.",
+  "kbound_confirmation": false,
+  "metric_recomputation_performed": false,
+  "original_receipt": {
+    "bytes": 1122,
+    "logical_path": "experiments/audit/historical_diagnostic_recovery_receipt.json",
+    "original_bytes_included": false,
+    "sha256": "3e53221320370bb6e62f7e1955e2ecdb37822a2d9613f28960b8cf09d44a27c8"
+  },
+  "original_receipt_modified": false,
+  "preservation": "All original fields and values are preserved except the explicitly listed private source_checkout location. Artifact hashes, byte counts, blank-field assertions, historical classification, scope and negative claims are unchanged.",
+  "projected_payload_sha256": "c9d6ee61e51780364c5aed21527120ba8e4cddfb325430a6cba8a37eac067a09",
+  "projection_version": 1,
+  "redaction_count": 1,
+  "redactions": [
+    {
+      "json_pointer": "/source_checkout",
+      "kind": "string_value",
+      "reason": "Private checkout path relabeled; no claim that the checkout is distributed.",
+      "redacted_utf8_sha256": "311e66e719d01c32daf2a6426f814a3eab236d84d8fb7c593f2ec851fabda574",
+      "replacement_value": "private-workspace/recovered-historical-checkout"
+    }
+  ],
+  "schema": "portable-historical-diagnostic-recovery-receipt-v1"
+}

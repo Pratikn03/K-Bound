@@ -679,9 +679,7 @@ def test_emit_rejects_partial_or_tampered_complete_pair(tmp_path: Path, strong_b
         )
 
 
-def test_refresh_archives_and_atomically_replaces_only_the_exact_release_set(
-    tmp_path: Path, strong_bundle
-) -> None:
+def test_refresh_archives_and_atomically_replaces_only_the_exact_release_set(tmp_path: Path, strong_bundle) -> None:
     score, inference = strong_bundle
     upstream = _upstream()
     upstream["release_generator"] = {
@@ -705,10 +703,7 @@ def test_refresh_archives_and_atomically_replaces_only_the_exact_release_set(
     paths = {
         "release_manifest": manifest_path,
         "release_receipt": receipt_path,
-        **{
-            name: Path(record["path"])
-            for name, record in first["generated_artifacts"].items()
-        },
+        **{name: Path(record["path"]) for name, record in first["generated_artifacts"].items()},
     }
     old_payloads = {name: path.read_bytes() for name, path in paths.items()}
     old_manifest_sha = hashlib.sha256(old_payloads["release_manifest"]).hexdigest()
@@ -741,11 +736,7 @@ def test_refresh_archives_and_atomically_replaces_only_the_exact_release_set(
         archived_path = archived / f"{name}.bin"
         assert archived_path.read_bytes() == payload
         assert archived_path.stat().st_mode & 0o777 == 0o444
-    history_snapshot = {
-        path.relative_to(history): path.read_bytes()
-        for path in history.rglob("*")
-        if path.is_file()
-    }
+    history_snapshot = {path.relative_to(history): path.read_bytes() for path in history.rglob("*") if path.is_file()}
 
     repeated = release.emit_release(
         changed,
@@ -756,17 +747,13 @@ def test_refresh_archives_and_atomically_replaces_only_the_exact_release_set(
     )
     assert repeated == refreshed
     assert history_snapshot == {
-        path.relative_to(history): path.read_bytes()
-        for path in history.rglob("*")
-        if path.is_file()
+        path.relative_to(history): path.read_bytes() for path in history.rglob("*") if path.is_file()
     }
     for path in paths.values():
         assert path.stat().st_mode & 0o777 == 0o444
 
 
-def test_refresh_rejects_tampering_or_non_generator_scientific_change(
-    tmp_path: Path, strong_bundle
-) -> None:
+def test_refresh_rejects_tampering_or_non_generator_scientific_change(tmp_path: Path, strong_bundle) -> None:
     score, inference = strong_bundle
     upstream = _upstream()
     upstream["release_generator"] = {
@@ -872,9 +859,7 @@ def test_refresh_from_existing_derives_every_input_from_the_verified_manifest(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    manifest_path, generated_dir, bindings, cell_paths = _write_refresh_source_manifest(
-        tmp_path
-    )
+    manifest_path, generated_dir, bindings, cell_paths = _write_refresh_source_manifest(tmp_path)
     history_dir = tmp_path / "history"
     captured: dict = {}
 
@@ -1174,16 +1159,15 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
     from docs.research.kbound.scripts import run_repository_verification
     from docs.research.kbound.scripts.verify_release_checksums import REQUIRED_RELEASE_PATHS
 
-    runbook = (
-        release.REPOSITORY_ROOT
-        / "docs/research/kbound/runbooks/release_candidate.sh"
-    ).read_text(encoding="utf-8")
-    renderer = (
-        release.REPOSITORY_ROOT
-        / "docs/research/kbound/scripts/render_pdf_pages.py"
-    ).read_text(encoding="utf-8")
+    runbook = (release.REPOSITORY_ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text(
+        encoding="utf-8"
+    )
+    renderer = (release.REPOSITORY_ROOT / "docs/research/kbound/scripts/render_pdf_pages.py").read_text(
+        encoding="utf-8"
+    )
 
-    assert 'BUILD_LONG_TMLR=1 PYTHON="$PY"' in runbook
+    # Actual four-role invocation and fail-before-render behavior are exercised
+    # by the relocated real-shell tests, not inferred from source text here.
     assert '"$KB/scripts/run_repository_verification.py"' in runbook
     discovered = run_repository_verification.classify_test_paths(
         [
@@ -1200,15 +1184,13 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
     # The runbook and verifier share one exact-path inventory. Do not require
     # a duplicated filename list in the shell producer.
     assert '"$KB/scripts/verify_release_checksums.py" --list-required' in runbook
-    for name in (
+    for relative in (
         "cct20_release_manifest.json.receipt.json",
         "cct20_numbers.tex",
         "cct20_primary_table.tex",
         "cct20_location_effects.tex",
-        "kbound_short_final_draft.docx",
     ):
-        prefix = "docs/research/kbound/" if name.endswith(".docx") else "docs/research/kbound/paper/generated/"
-        assert prefix + name in REQUIRED_RELEASE_PATHS
+        assert "docs/research/kbound/paper/generated/" + relative in REQUIRED_RELEASE_PATHS
     for current_name in (
         "kbound_short_main.pdf",
         "kbound_short_supplement.pdf",
@@ -1216,4 +1198,5 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
         "kbound_full_report.pdf",
     ):
         assert current_name in renderer
+        assert f"docs/research/kbound/release/current/{current_name}" in REQUIRED_RELEASE_PATHS
     assert "kbound_short_final_draft.pdf" not in renderer

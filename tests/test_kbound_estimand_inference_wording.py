@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.kbound_tex_helpers import live_tex
+
 ROOT = Path(__file__).resolve().parents[1]
 KBOUND = ROOT / "docs/research/kbound"
 TABLE_SCRIPT = KBOUND / "scripts/make_tables.py"
@@ -40,17 +42,10 @@ LOCKED_ROWS = (
 )
 SEALED_FIXTURE = (
     "% Historical generator comment, retained only in the sealed source.\n"
-    r"\begin{tabular}{@{}lrrrrc@{}}" "\n"
-    r"\toprule" "\n"
-    + OLD_HEADER
-    + "\n"
-    + r"\midrule"
-    + "\n"
-    + LOCKED_ROWS
-    + r"\bottomrule"
-    + "\n"
-    + r"\end{tabular}"
-    + "\n"
+    r"\begin{tabular}{@{}lrrrrc@{}}"
+    "\n"
+    r"\toprule"
+    "\n" + OLD_HEADER + "\n" + r"\midrule" + "\n" + LOCKED_ROWS + r"\bottomrule" + "\n" + r"\end{tabular}" + "\n"
 ).encode("ascii")
 
 
@@ -58,9 +53,7 @@ def _load_renderer() -> Callable[[], None]:
     """Extract function definitions without running any module-level code."""
     tree = ast.parse(TABLE_SCRIPT.read_text(encoding="utf-8"), filename=str(TABLE_SCRIPT))
     names = {"_load_json", "_write_cct20_primary_display_table"}
-    functions = [
-        node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names
-    ]
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
     assert {node.name for node in functions} == names
     assert len(functions) == len(names), "Renderer helpers must have unique definitions"
     module = ast.fix_missing_locations(ast.Module(body=functions, type_ignores=[]))
@@ -99,9 +92,40 @@ def _result_body(table: bytes) -> bytes:
 
 
 def _normalized_tex(path: Path) -> str:
-    # Commented-out caveats must not satisfy the manuscript wording contract.
-    source = re.sub(r"(?<!\\)%[^\n]*", "", path.read_text(encoding="utf-8"))
+    # Commented-out and disabled caveats must not satisfy manuscript contracts.
+    source = live_tex(path.read_text(encoding="utf-8"))
     return " ".join(source.split())
+
+
+def _tex_region(path: Path, start: str, end: str) -> str:
+    source = _normalized_tex(path)
+    assert start in source and end in source
+    return source.split(start, 1)[1].split(end, 1)[0]
+
+
+def test_normalized_tex_excludes_disabled_and_commented_claims(tmp_path: Path) -> None:
+    source = tmp_path / "claims.tex"
+    source.write_text(
+        r"visible 100\% safeguard"
+        "\n"
+        "\\iffalse\ndisabled outer claim\n"
+        "% \\fi commented terminator\n"
+        "\\ifdefined\\Hidden\ndisabled inner claim\n\\fi\n"
+        "disabled after inner terminator\n\\fi\n"
+        "% commented scientific claim\n"
+        "visible trailing safeguard\n",
+        encoding="utf-8",
+    )
+
+    assert _normalized_tex(source) == r"visible 100\% safeguard visible trailing safeguard"
+
+
+def test_normalized_tex_fails_closed_on_unterminated_disabled_block(tmp_path: Path) -> None:
+    source = tmp_path / "malformed.tex"
+    source.write_text("visible\n\\iffalse\nhidden without terminator\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unterminated TeX conditional"):
+        _normalized_tex(source)
 
 
 def test_primary_display_changes_only_headings_and_preserves_locked_rows(tmp_path: Path) -> None:
@@ -140,9 +164,7 @@ def test_primary_display_preserves_current_release_authorities(tmp_path: Path) -
 
 
 @pytest.mark.parametrize("mutation", ["same_size_numeric_change", "different_byte_count"])
-def test_primary_display_rejects_changed_source_without_overwriting_output(
-    tmp_path: Path, mutation: str
-) -> None:
+def test_primary_display_rejects_changed_source_without_overwriting_output(tmp_path: Path, mutation: str) -> None:
     render, source_path, _, display_path = _prepare_renderer(tmp_path)
     if mutation == "same_size_numeric_change":
         changed = SEALED_FIXTURE.replace(b"0.18190227", b"0.28190227")
@@ -180,9 +202,7 @@ def test_primary_display_rejects_incorrect_manifest_identity(tmp_path: Path, fie
             id="changed-header",
         ),
         pytest.param(
-            SEALED_FIXTURE.replace(
-                OLD_HEADER.encode("ascii"), (OLD_HEADER + "\n" + OLD_HEADER).encode("ascii")
-            ),
+            SEALED_FIXTURE.replace(OLD_HEADER.encode("ascii"), (OLD_HEADER + "\n" + OLD_HEADER).encode("ascii")),
             id="duplicate-header",
         ),
         pytest.param(SEALED_FIXTURE.replace(b"\\midrule", b""), id="missing-midrule"),
@@ -192,9 +212,7 @@ def test_primary_display_rejects_incorrect_manifest_identity(tmp_path: Path, fie
         ),
     ],
 )
-def test_primary_display_rejects_changed_schema_even_with_matching_hash(
-    tmp_path: Path, source: bytes
-) -> None:
+def test_primary_display_rejects_changed_schema_even_with_matching_hash(tmp_path: Path, source: bytes) -> None:
     # Recompute the fixture seal so this exercises layout validation, not hashing.
     render, source_path, _, display_path = _prepare_renderer(tmp_path, source)
     sentinel = b"previous display must survive schema failure\n"
@@ -208,9 +226,7 @@ def test_primary_display_rejects_changed_schema_even_with_matching_hash(
 
 
 def test_primary_display_rejects_result_body_normalization(tmp_path: Path) -> None:
-    source = SEALED_FIXTURE.replace(
-        b"\\midrule\n", b"\\midrule\n% A comment inside the sealed result body.\n"
-    )
+    source = SEALED_FIXTURE.replace(b"\\midrule\n", b"\\midrule\n% A comment inside the sealed result body.\n")
     render, _, _, display_path = _prepare_renderer(tmp_path, source)
 
     with pytest.raises(ValueError, match="changed a result row"):
@@ -225,7 +241,6 @@ def test_primary_display_rejects_result_body_normalization(tmp_path: Path) -> No
         r"\Delta_j^{\mathrm{cell}} =S(f_a;\mathcal E_j)-S(f_0;\mathcal E_j).",
         "Regret is the policy's score shortfall from that oracle",
         r"|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon",
-        "A population application would instead require coverage of",
         "No such sampling-error bound is established for the reported panels",
     ],
 )
@@ -234,29 +249,78 @@ def test_shared_body_distinguishes_measured_cell_and_population_targets(fragment
     assert "".join(fragment.split()) in "".join(_normalized_tex(BODY).split())
 
 
-@pytest.mark.parametrize(
-    "fragment",
-    [
-        "Bootstrap levels are nominal throughout",
-        "valid marginal coverage of their constituent intervals",
-        r"G\overset{d}{=}s\odot G",
-        r"\quad\text{for every }",
-        r"s\in\{-1,+1\}^{m}",
-        "Exchangeability, marginal symmetry, or a single global sign symmetry alone is not sufficient",
-        "Enumeration removes Monte Carlo error but does not verify this null model",
-        r"Holm adjustment requires valid input $p$-values",
-    ],
-)
-def test_shared_body_requires_nominal_bootstrap_and_coordinatewise_null(fragment: str) -> None:
-    assert fragment in _normalized_tex(BODY)
+def test_population_transfer_requires_both_errors_and_the_combined_budget() -> None:
+    transfer = _tex_region(
+        BODY,
+        r"\label{prop:cell-population-transfer}",
+        r"\subsection{Evidence, Calibration, and the Action Rule}",
+    )
+    compact = "".join(transfer.split())
+    for required in (
+        r"|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon",
+        r"|\Delta^{\mathrm{cell}}-\Delta|\le b",
+        r"\varepsilon+b",
+        r"\alpha_{\mathrm{cell}}+\delta",
+        r"\{g_{\mathrm{pop}}=\adapt,\ \Delta\le0\}",
+        r"\{g_{\mathrm{pop}}=\freeze,\ \Delta\ge0\}",
+    ):
+        assert "".join(required.split()) in compact
+    assert "No such sampling-error bound is established for the reported panels" in transfer
+
+
+def test_main_inference_names_nominal_levels_units_and_appendix_audit() -> None:
+    inference = _tex_region(
+        BODY,
+        r"\paragraph{Scoring and inference.}",
+        r"\section{Primary Results}",
+    )
+    assert "CCT-20 uses a paired product bootstrap over checkpoint rows and location columns" in inference
+    assert "All reported levels are nominal." in inference
+    assert r"{app:compact-inference}" in inference
+
+
+def test_supplement_keeps_the_coordinatewise_sign_flip_null_and_caveats() -> None:
+    inference = _tex_region(
+        SUPPLEMENT,
+        "For a vector of cluster gaps",
+        r"\subsection{Current-Policy Corruption-Family Sensitivity}",
+    )
+    compact = "".join(inference.split())
+    equation = r"G\overset{d}{=}s\odot G\quad\text{for every }s\in\{-1,+1\}^{m}."
+    assert "".join(equation.split()) in compact
+    assert r"\label{eq:compact-signflip-null}" in inference
+    assert "Exchangeability, marginal symmetry, or one global sign symmetry alone is not sufficient." in inference
+    assert "Enumeration removes Monte Carlo error but does not establish this null condition." in inference
+
+
+def test_cct_inference_keeps_family_level_validity_and_holm_premises() -> None:
+    inference = _tex_region(
+        SUPPLEMENT,
+        r"\section{Inference Discipline}",
+        r"\section{Track-Level Provenance and CCT Ledger}",
+    )
+    cct = _tex_region(
+        SUPPLEMENT,
+        r"\subsection{CCT-20 Inference, Location, and Release Ledger}",
+        r"\section{Extended KGA Implementation Contract}",
+    )
+    assert "Multiplicity adjustments do not repair invalid marginal intervals or tests." in inference
+    assert (
+        "Two nominal 97.5\\% intervals target a nominal 95\\% Bonferroni family level; "
+        "actual family coverage still requires valid marginals." in cct
+    )
+    assert "Reference $p$-values enumerate one-sided sign flips of nine location means, with Holm adjustment." in cct
+    assert "Finite-sample sign-flip validity requires the null joint law" in cct
+    assert "that assumption is unverified here" in cct
 
 
 @pytest.mark.parametrize(
     "fragment",
     [
-        "observed evaluation-cell benefit",
+        "measured evaluation-cell benefit",
         "empirical companion, not an implementation of this frontier",
-        "labeled historical outcomes",
+        "Using labeled development and residual-calibration cells",
+        "the scored cell contributes label-free evidence only",
         "do not establish interval coverage",
         "population-risk protection on unseen natural shifts",
     ],
@@ -266,13 +330,25 @@ def test_shared_abstract_keeps_estimand_and_inference_caveats(fragment: str) -> 
 
 
 def test_cct20_manuscript_uses_display_without_reinterpreting_locked_pass() -> None:
-    body = _normalized_tex(BODY) + " " + _normalized_tex(SUPPLEMENT)
-    assert r"\input{paper/generated/cct20_primary_table_display.tex}" in body
-    assert r"\input{paper/generated/cct20_primary_table.tex}" not in body
-    assert r"nominal pointwise 95\% bootstrap lower endpoints" in body
+    body = _normalized_tex(BODY)
+    supplement = _normalized_tex(SUPPLEMENT)
+    combined = body + " " + supplement
+    assert r"\input{paper/generated/cct20_primary_table_display.tex}" in combined
+    assert r"\input{paper/generated/cct20_primary_table.tex}" not in combined
+    assert r"The limited, predeclared utility check uses nominal pointwise 95\% intervals" in body
+    assert "passes when their lower endpoints satisfy" in body
+    assert "CCT-20 uses a paired product bootstrap over checkpoint rows and location columns" in body
     assert "The unchanged locked rule therefore returns pass on the stored cells" in body
     assert "not a finite-sample population-safety guarantee" in body
-    assert r"The recorded verdict remains \CCTVerdict" in body
+    assert r"The archived verdict token remains \CCTVerdict" in body
+
+
+def test_supplement_local_sign_flip_equation_uses_only_local_references() -> None:
+    supplement = _normalized_tex(SUPPLEMENT)
+    label = "eq:compact-signflip-null"
+    assert rf"\label{{{label}}}" in supplement
+    assert rf"\KBMainEqRef{{{label}}}" not in supplement
+    assert supplement.count(rf"Eq.~\eqref{{{label}}}") == 3
 
 
 def test_interval_figure_is_an_explicitly_illustrative_static_rule() -> None:
@@ -321,9 +397,7 @@ def test_operational_fallback_is_not_a_certified_freeze() -> None:
 def test_population_frontier_stays_inside_feasible_margin_range() -> None:
     source = (KBOUND / "scripts/make_submission_figures.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
-    frontier = next(
-        node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "frontier"
-    )
+    frontier = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "frontier")
     parameters = frontier.body[0]
     assert isinstance(parameters, ast.Assign)
     assert isinstance(parameters.targets[0], ast.Tuple)
@@ -331,14 +405,13 @@ def test_population_frontier_stays_inside_feasible_margin_range() -> None:
     beta, limit = ast.literal_eval(parameters.value)
     assert 0 < beta < limit <= 0.5
     ticks = next(
-        node for node in ast.walk(frontier)
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and node.func.attr == "set_xticks"
+        node
+        for node in ast.walk(frontier)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "set_xticks"
     )
     assert all(abs(value) <= limit for value in ast.literal_eval(ticks.args[0]))
     assert r"illustration: $\beta=0.1$" in source
-    assert 'if args.frontier_only:\n        frontier()\n    else:' in source
+    assert "if args.frontier_only:\n        frontier()\n    else:" in source
     build = (KBOUND / "scripts/build_pdfs.sh").read_text(encoding="utf-8")
     assert '"$PY" scripts/make_submission_figures.py --frontier-only' in build
 
@@ -348,12 +421,17 @@ def _load_verdict_checker() -> dict:
     path = ROOT / "src/scripts/validate_manuscript_claims.py"
     tree = ast.parse(path.read_text(encoding="utf-8"))
     functions = {
-        "_strip_tex_comments_for_claims", "_normalize_claim_text", "_claim_clause",
-        "_has_unsafe_match", "_is_finite_number", "_validate_cct20_verdict_usage",
+        "_strip_tex_comments_for_claims",
+        "_normalize_claim_text",
+        "_claim_clause",
+        "_has_unsafe_match",
+        "_is_finite_number",
+        "_validate_cct20_verdict_usage",
     }
     constants = {"CCT20_VERDICT_CLAIMS", "REQUIRED_CCT20_NUMBER_MACROS"}
     selected = [
-        node for node in tree.body
+        node
+        for node in tree.body
         if (isinstance(node, ast.FunctionDef) and node.name in functions)
         or (
             isinstance(node, ast.Assign)
@@ -374,16 +452,22 @@ def test_prose_may_qualify_the_sealed_claim_without_expanding_it() -> None:
     # The historical macro is still required in sealed generated metadata.
     assert "CCTManuscriptClaim" in namespace["REQUIRED_CCT20_NUMBER_MACROS"]
     release = json.loads(RELEASE_PATH.read_text(encoding="utf-8"))
-    assert namespace["_validate_cct20_verdict_usage"](
-        body, namespace["_normalize_claim_text"](body), release,
-    ) == []
+    assert (
+        namespace["_validate_cct20_verdict_usage"](
+            body,
+            namespace["_normalize_claim_text"](body),
+            release,
+        )
+        == []
+    )
 
 
 @pytest.mark.parametrize("context", ["CCT-20 retains its verdict.", "% " + r"\CCTVerdict"])
 def test_completed_prose_still_requires_an_active_verdict_macro(context: str) -> None:
     namespace = _load_verdict_checker()
     problems = namespace["_validate_cct20_verdict_usage"](
-        context, namespace["_normalize_claim_text"](context),
+        context,
+        namespace["_normalize_claim_text"](context),
         {"verdict": {"code": "SAFE_UTILITY_ONLY"}},
     )
     assert "completed CCT-20 manuscript must consume generated " + r"\CCTVerdict" in problems
@@ -401,6 +485,8 @@ def test_scoped_prose_change_does_not_disable_exposure_or_comparator_guards(over
     context = r"\CCTVerdict. " + overclaim
     release = json.loads(RELEASE_PATH.read_text(encoding="utf-8"))
     problems = namespace["_validate_cct20_verdict_usage"](
-        context, namespace["_normalize_claim_text"](context), release,
+        context,
+        namespace["_normalize_claim_text"](context),
+        release,
     )
     assert problems, "Overclaims about the unchanged all-freeze result must still fail"

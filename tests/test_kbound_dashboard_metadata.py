@@ -1,12 +1,14 @@
 """Presentation metadata must come from built/current inputs, never old literals."""
+
 from __future__ import annotations
 
 import copy
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -102,7 +104,10 @@ def test_theory_counts_ignore_comments_definitions_remarks_and_starred_forms(mon
     )
     monkeypatch.setattr(dashboard, "THEORY_SOURCES", (source,))
     assert dashboard.theory_statement_counts() == {
-        "theorem": 1, "lemma": 1, "proposition": 1, "corollary": 1,
+        "theorem": 1,
+        "lemma": 1,
+        "proposition": 1,
+        "corollary": 1,
     }
 
 
@@ -114,18 +119,30 @@ def test_missing_theory_source_does_not_use_historical_counts(monkeypatch, tmp_p
 
 def test_current_theory_statement_scope_is_explicit():
     assert [path.name for path in dashboard.THEORY_SOURCES] == [
-        "kbound_submission_body.tex", "theory_core_main.tex", "theory_certificate.tex",
+        "kbound_submission_body.tex",
+        "theory_core_main.tex",
+        "theory_certificate.tex",
     ]
     assert dashboard.theory_statement_counts() == {
-        "theorem": 3, "lemma": 2, "proposition": 2, "corollary": 1,
+        "theorem": 3,
+        "lemma": 2,
+        "proposition": 3,
+        "corollary": 1,
     }
 
 
 def test_theory_strip_does_not_claim_full_formalization(monkeypatch):
     monkeypatch.setattr(dashboard, "pdf_page_count", lambda path: 34)
-    monkeypatch.setattr(dashboard, "theory_statement_counts", lambda: {
-        "theorem": 4, "lemma": 2, "proposition": 1, "corollary": 1,
-    })
+    monkeypatch.setattr(
+        dashboard,
+        "theory_statement_counts",
+        lambda: {
+            "theorem": 4,
+            "lemma": 2,
+            "proposition": 1,
+            "corollary": 1,
+        },
+    )
     pages, strip = dashboard.presentation_metadata()
     assert pages == 34
     assert strip == {
@@ -147,9 +164,17 @@ def test_metadata_only_mode_preserves_every_other_field_and_never_reads_edge(mon
     }
     path.write_text(json.dumps(original), encoding="utf-8")
     monkeypatch.setattr(dashboard, "OUT", path)
-    monkeypatch.setattr(dashboard, "presentation_metadata", lambda: (34, {
-        "value": "4 theorems", "sub": "8 numbered statements; stated assumptions apply",
-    }))
+    monkeypatch.setattr(
+        dashboard,
+        "presentation_metadata",
+        lambda: (
+            34,
+            {
+                "value": "4 theorems",
+                "sub": "8 numbered statements; stated assumptions apply",
+            },
+        ),
+    )
 
     def prohibited(*args, **kwargs):
         raise AssertionError("metadata-only refresh must not inspect data or rebuild evidence")
@@ -161,17 +186,20 @@ def test_metadata_only_mode_preserves_every_other_field_and_never_reads_edge(mon
     expected = copy.deepcopy(original)
     expected["meta"]["paper_pages"] = 34
     expected["evidence_strip"]["proven_theorems"] = {
-        "value": "4 theorems", "sub": "8 numbered statements; stated assumptions apply",
+        "value": "4 theorems",
+        "sub": "8 numbered statements; stated assumptions apply",
     }
     assert actual == expected
 
 
 def test_failed_metadata_refresh_does_not_overwrite_snapshot(monkeypatch, tmp_path):
     path = tmp_path / "snapshot.json"
-    original = json.dumps({
-        "meta": {"paper": dashboard.rel(dashboard.SHORT_PDF), "paper_pages": 22},
-        "evidence_strip": {"proven_theorems": {"value": "old"}},
-    }).encode()
+    original = json.dumps(
+        {
+            "meta": {"paper": dashboard.rel(dashboard.SHORT_PDF), "paper_pages": 22},
+            "evidence_strip": {"proven_theorems": {"value": "old"}},
+        }
+    ).encode()
     path.write_bytes(original)
     monkeypatch.setattr(dashboard, "OUT", path)
 
@@ -184,26 +212,151 @@ def test_failed_metadata_refresh_does_not_overwrite_snapshot(monkeypatch, tmp_pa
     assert path.read_bytes() == original
 
 
-def test_pdf_build_refreshes_only_presentation_metadata_after_compilation():
-    script = (dashboard.KBOUND / "scripts" / "build_pdfs.sh").read_text(encoding="utf-8")
-    prerequisite = script.index("need pdfinfo\n")
-    build = script.index("build_pdf kbound_submission.tex")
-    refresh = script.index('"$PY" scripts/build_dashboard_snapshot.py --metadata-only')
-    assert prerequisite < build < refresh
-    assert script.count('"$PY" scripts/build_dashboard_snapshot.py') == 1
+@pytest.fixture
+def dashboard_build_replica(tmp_path):
+    """Real shell control flow with synthetic, explicitly pinned external tools."""
+    repo = tmp_path / "synthetic repository"
+    paper = repo / "docs/research/kbound"
+    scripts = paper / "scripts"
+    scripts.mkdir(parents=True)
+    script = scripts / "build_pdfs.sh"
+    script.write_bytes((dashboard.KBOUND / "scripts/build_pdfs.sh").read_bytes())
+    scratch = tmp_path / "build scratch"
+    scratch.mkdir()
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    events = tmp_path / "events.jsonl"
+    tool_source = r"""
+import json, os, pathlib, sys
+role = pathlib.Path(sys.argv[0]).name
+paper = pathlib.Path(os.environ["DASHBOARD_BUILD_PAPER"])
+with open(os.environ["DASHBOARD_BUILD_EVENTS"], "a", encoding="utf-8") as log:
+    log.write(json.dumps({"role": role, "args": sys.argv[1:]}) + "\n")
+if role == "python":
+    if pathlib.Path(sys.argv[1]).name == "build_dashboard_snapshot.py":
+        assert (paper / "kbound_short_final_draft.pdf").read_bytes() == b"%PDF-1.7\nsynthetic fresh PDF\n"
+elif role == "perl":
+    assert pathlib.Path(sys.argv[1]).name == "latexmk"
+    output = pathlib.Path(next(arg.split("=", 1)[1] for arg in sys.argv if arg.startswith("-outdir=")))
+    assert pathlib.Path(os.environ["TMPDIR"]) in output.parents
+    job = next(arg.split("=", 1)[1] for arg in sys.argv if arg.startswith("-jobname="))
+    (output / (job + ".pdf")).write_bytes(b"%PDF-1.7\nsynthetic fresh PDF\n")
+    (output / (job + ".log")).write_text("synthetic TeX log\n")
+    print("synthetic compiler diagnostics")
+    if os.environ.get("DASHBOARD_BUILD_FAIL") == "compile":
+        raise SystemExit(17)
+elif role == "pdfinfo":
+    source = pathlib.Path(sys.argv[-1])
+    assert pathlib.Path(os.environ["TMPDIR"]) in source.parents
+    assert source.read_bytes() == b"%PDF-1.7\nsynthetic fresh PDF\n"
+    if os.environ.get("DASHBOARD_BUILD_FAIL") == "validate":
+        raise SystemExit(19)
+    print("Pages: 2")
+else:
+    raise AssertionError("Unexpected external executable: " + role)
+"""
+    for name in ("python", "perl", "latexmk", "pdflatex", "pdfinfo"):
+        tool = tools / name
+        tool.write_text(f"#!{sys.executable}\n" + tool_source, encoding="utf-8")
+        tool.chmod(0o755)
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith(("BUILD_", "KBOUND_TOOL_", "DASHBOARD_BUILD_"))
+    }
+    env.update(
+        {
+            "PYTHON": str(tools / "python"),
+            "TMPDIR": str(scratch),
+            "SOURCE_SNAPSHOT_COMMIT": "0" * 12,
+            "KBOUND_AUTHORIZE_PROTECTED_SO2SAT": "0",
+            "DASHBOARD_BUILD_EVENTS": str(events),
+            "DASHBOARD_BUILD_PAPER": str(paper),
+            **{f"KBOUND_TOOL_{name.upper()}": str(tools / name) for name in ("perl", "latexmk", "pdflatex", "pdfinfo")},
+        }
+    )
+    return SimpleNamespace(repo=repo, paper=paper, script=script, env=env, events=events)
+
+
+def _run_dashboard_build(replica, **overrides):
+    result = subprocess.run(
+        ["/bin/bash", str(replica.script)],
+        cwd=replica.repo,
+        env={**replica.env, **overrides},
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    events = [json.loads(line) for line in replica.events.read_text().splitlines()] if replica.events.exists() else []
+    return result, events
+
+
+def test_pdf_build_refreshes_only_presentation_metadata_after_compilation(dashboard_build_replica):
+    result, events = _run_dashboard_build(dashboard_build_replica)
+    assert result.returncode == 0, result.stdout + result.stderr
+    compilation = [i for i, event in enumerate(events) if event["role"] == "perl"]
+    validation = [i for i, event in enumerate(events) if event["role"] == "pdfinfo"]
+    refresh = [
+        i
+        for i, event in enumerate(events)
+        if event["role"] == "python" and Path(event["args"][0]).name == "build_dashboard_snapshot.py"
+    ]
+    assert len(compilation) == len(validation) == len(refresh) == 1
+    assert compilation[0] < validation[0] < refresh[0] == len(events) - 1
+    assert events[refresh[0]]["args"] == ["scripts/build_dashboard_snapshot.py", "--metadata-only"]
+    assert not any("so2sat" in str(event).lower() for event in events)
+
+
+def test_missing_pdfinfo_stops_build_before_scientific_or_publication_activity(dashboard_build_replica):
+    replica = dashboard_build_replica
+    output = replica.paper / "kbound_short_final_draft.pdf"
+    output.write_bytes(b"preserve old synthetic PDF\n")
+    result, events = _run_dashboard_build(replica, KBOUND_TOOL_PDFINFO=str(replica.repo / "absent-pdfinfo"))
+    assert result.returncode != 0
+    assert "KBOUND_TOOL_PDFINFO" in result.stderr
+    assert events == []
+    assert output.read_bytes() == b"preserve old synthetic PDF\n"
+
+
+@pytest.mark.parametrize("failure", ["compile", "validate"])
+def test_failed_pdf_build_never_refreshes_dashboard_or_replaces_pdf(dashboard_build_replica, failure):
+    replica = dashboard_build_replica
+    output = replica.paper / "kbound_short_final_draft.pdf"
+    output.write_bytes(b"preserve old synthetic PDF\n")
+    result, events = _run_dashboard_build(replica, DASHBOARD_BUILD_FAIL=failure)
+    assert result.returncode != 0
+    assert sum(event["role"] == "perl" for event in events) == 1
+    assert sum(event["role"] == "pdfinfo" for event in events) == (failure == "validate")
+    assert not any(
+        event["role"] == "python" and Path(event["args"][0]).name == "build_dashboard_snapshot.py" for event in events
+    )
+    assert output.read_bytes() == b"preserve old synthetic PDF\n"
 
 
 def _saved_edge() -> dict:
     return {
         "study_status": "pending",
         "study_label": "Saved physical-study status",
-        "phases": [{"id": "protocol", "label": "Protocol", "status": "pending", "detail": "Saved only", "artifact": "edge/protocol.json"}],
-        "session_progress": [{"session": "S01", "expected_clips": 10, "captured_clips": 0, "complete": False}],
+        # Synthetic IDs fixed independently from the production validator.
+        "phases": [
+            {"id": phase, "label": label, "status": "pending", "detail": "Saved only", "artifact": f"edge/{phase}.json"}
+            for phase, label in (
+                ("protocol", "Protocol"),
+                ("capture", "Capture"),
+                ("source", "Source"),
+                ("heldout", "Held-out"),
+                ("replication", "Replication"),
+            )
+        ],
+        "session_progress": [
+            {"session": session, "expected_clips": 10, "captured_clips": 0, "complete": False}
+            for session in ("S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10")
+        ],
         "development_metrics": None,
         "unblock": {
             "all_pass": False,
             "gate_thresholds": {"balanced_acc": 0.8, "macro_f1": 0.8},
-            "current": {key: False for key in ("sessions_complete", "physical_only", "source_gate", "audit_pass")},
+            "current": dict.fromkeys(("sessions_complete", "physical_only", "source_gate", "audit_pass"), False),
             "gaps": [{"check": "Saved gate", "passed": False, "detail": "No fresh inspection"}],
             "commands": {"refresh_dashboard": "full physical-check command"},
         },
@@ -211,6 +364,50 @@ def _saved_edge() -> dict:
         "audit_pass": False,
         "extra_preserved_field": {"old_recorded_at": "2020-01-01", "numbers": [0.0, 17], "missing": None},
     }
+
+
+def test_complete_saved_pending_fixture_is_valid_without_inspecting_edge(monkeypatch):
+    snapshot = {
+        "meta": {"paper": dashboard.rel(dashboard.SHORT_PDF)},
+        "edge_validation": _saved_edge(),
+    }
+    original = copy.deepcopy(snapshot)
+
+    def prohibited(*args, **kwargs):
+        raise AssertionError("cached-edge validation must not inspect physical inputs")
+
+    monkeypatch.setattr(dashboard, "edge_status", prohibited)
+    monkeypatch.setattr(dashboard, "session_progress", prohibited)
+    monkeypatch.setattr(dashboard, "load", prohibited)
+    assert dashboard.validated_saved_edge(snapshot) == original["edge_validation"]
+    assert snapshot == original
+
+
+@pytest.mark.parametrize("identity_kind", ["phase", "session"])
+@pytest.mark.parametrize("problem", ["missing", "duplicate", "unexpected"])
+def test_incomplete_or_ambiguous_saved_identity_fails_before_paper_rebuild(monkeypatch, identity_kind, problem):
+    snapshot = {
+        "meta": {"paper": dashboard.rel(dashboard.SHORT_PDF)},
+        "edge_validation": _saved_edge(),
+    }
+    field, identity = ("phases", "id") if identity_kind == "phase" else ("session_progress", "session")
+    rows = snapshot["edge_validation"][field]
+    if problem == "missing":
+        rows.pop()
+    elif problem == "duplicate":
+        rows[-1][identity] = rows[0][identity]
+    else:
+        rows[-1][identity] = "unexpected"
+    original = copy.deepcopy(snapshot)
+
+    def prohibited(*args, **kwargs):
+        raise AssertionError("invalid saved identities must fail before paper/edge inspection")
+
+    monkeypatch.setattr(dashboard, "build_paper_projection", prohibited)
+    monkeypatch.setattr(dashboard, "edge_status", prohibited)
+    with pytest.raises(ValueError, match=f"invalid {identity_kind} identities"):
+        dashboard.refresh_paper_snapshot(snapshot)
+    assert snapshot == original
 
 
 def _write_json(path: Path, value: dict) -> str:
@@ -253,47 +450,116 @@ def paper_refresh_inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Sim
     )
     paths["FORMAL_REGISTRY"].write_text(registry, encoding="utf-8")
     monkeypatch.setattr(dashboard.shutil, "which", lambda name: "/synthetic/pdfinfo")
-    monkeypatch.setattr(dashboard.subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 0, "Pages: 9\n", ""))
+    monkeypatch.setattr(
+        dashboard.subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 0, "Pages: 9\n", "")
+    )
 
     backbones = {f"backbone_{i}": {} for i in range(10)}
-    canonical = {"panels": {
-        "imagenet_r": {"panel": {"seeds": [0, 1, 2, 3], "candidate_count": 10, "candidates": backbones}},
-        "pacs": {"seeds": [0, 1, 2], "aggregate_matches_seed_files": True, "decision_replay_available": False, "decision_replay_blocker": "Saved cells lack predictions and calibration residuals."},
-    }}
+    canonical = {
+        "panels": {
+            "imagenet_r": {"panel": {"seeds": [0, 1, 2, 3], "candidate_count": 10, "candidates": backbones}},
+            "pacs": {
+                "seeds": [0, 1, 2],
+                "aggregate_matches_seed_files": True,
+                "decision_replay_available": False,
+                "decision_replay_blocker": "Saved cells lack predictions and calibration residuals.",
+            },
+        }
+    }
     canonical_sha = _write_json(paths["CANONICAL_PANEL"], canonical)
-    policy_sha = _write_json(paths["CURRENT_POLICY"], {"schema": "synthetic-current-policy-authority", "diagnostic": True})
-    track_names = (
-        "cifar10c_tent", "cifar10c_eata", "imagenetc_sar", "three_source_oof",
-        "officehome_M_v2", "rxrx1_J", "cifar10_1_K", "camelyon17_ood",
+    policy_sha = _write_json(
+        paths["CURRENT_POLICY"], {"schema": "synthetic-current-policy-authority", "diagnostic": True}
     )
-    tracks = {name: {
-        "regret": [0.1, 0.2, 0.3], "false_adapt_unconditional": 0.0,
-        "point_beats_both": True, "ci_robust_beats_both": False,
-    } for name in track_names}
+    track_names = (
+        "cifar10c_tent",
+        "cifar10c_eata",
+        "imagenetc_sar",
+        "three_source_oof",
+        "officehome_M_v2",
+        "rxrx1_J",
+        "cifar10_1_K",
+        "camelyon17_ood",
+    )
+    tracks = {
+        name: {
+            "regret": [0.1, 0.2, 0.3],
+            "false_adapt_unconditional": 0.0,
+            "point_beats_both": True,
+            "ci_robust_beats_both": False,
+        }
+        for name in track_names
+    }
+    tracks["imagenetc_sar"]["verdict"] = "Synthetic opened SAR diagnostic; no prospective claim."
+    tracks["three_source_oof"].update(
+        {
+            "claim_id": "KB-CLAIM-024",
+            "claim_status": "diagnostic",
+            "status": "historical_policy_only",
+            "verdict": (
+                "Historical researcher-constructed routing aggregate; "
+                "rerun required under reconciled per-track decisions."
+            ),
+            "policy_synchronized": False,
+            "current_policy_authority": False,
+            "numeric_release_eligible": False,
+            "headline_promotion_eligible": False,
+            "release_eligible_win": False,
+            "point_beats_both": False,
+            "ci_robust_beats_both": False,
+        }
+    )
     tracks["imagenet_r_D"] = {"completed_seeds": [0, 1, 2, 3], "per_backbone": copy.deepcopy(backbones)}
     tracks["pacs"] = {"completed_seeds": 3, "decision_replay_available": False}
     manifest = {
-        "regenerated_utc": "2026-08-31", "tracks": tracks,
+        "regenerated_utc": "2026-08-31",
+        "tracks": tracks,
+        "current_policy_family_sensitivity": {
+            "candidates": {
+                "tent": {
+                    "comparisons": {
+                        "always_adapt": {"p_value_retrospective_holm_six_prospectively_named_contrasts": 0.25},
+                        "always_freeze": {"p_value_retrospective_holm_six_prospectively_named_contrasts": 0.5},
+                    }
+                }
+            }
+        },
         "reconciliation_source": {
             "canonical_panel": dashboard.rel(paths["CANONICAL_PANEL"]),
             "canonical_panel_sha256": canonical_sha,
-            "current_policy_family_sensitivity": {"artifact": dashboard.rel(paths["CURRENT_POLICY"]), "artifact_sha256": policy_sha},
+            "current_policy_family_sensitivity": {
+                "artifact": dashboard.rel(paths["CURRENT_POLICY"]),
+                "artifact_sha256": policy_sha,
+            },
         },
     }
     _write_json(paths["MANIFEST"], manifest)
     original = {
-        "meta": {"paper": dashboard.rel(paths["SHORT_PDF"]), "paper_pages": 2, "generated_at": "2020-01-01T00:00:00Z", "canonical_panel_sha256": "stale", "current_policy_sha256": "stale"},
+        "meta": {
+            "paper": dashboard.rel(paths["SHORT_PDF"]),
+            "paper_pages": 2,
+            "generated_at": "2020-01-01T00:00:00Z",
+            "canonical_panel_sha256": "stale",
+            "current_policy_sha256": "stale",
+        },
         "evidence_strip": {"proven_theorems": {"value": "stale", "sub": "stale"}},
         "evidence_board": {"stale_values": True},
         "edge_validation": _saved_edge(),
         "provenance": {"legacy_marker": "not a fresh edge check"},
     }
     _write_json(paths["OUT"], original)
-    return SimpleNamespace(paths=paths, theory=theory, manifest=manifest, canonical=canonical, original=original, allowed_reads={*paths.values(), theory})
+    return SimpleNamespace(
+        paths=paths,
+        theory=theory,
+        manifest=manifest,
+        canonical=canonical,
+        original=original,
+        allowed_reads={*paths.values(), theory},
+    )
 
 
 def test_paper_only_rebuilds_current_paper_authorities_and_preserves_edge_without_reads(
-    paper_refresh_inputs, monkeypatch,
+    paper_refresh_inputs,
+    monkeypatch,
 ):
     fixture = paper_refresh_inputs
     read_paths = []
@@ -327,8 +593,14 @@ def test_paper_only_rebuilds_current_paper_authorities_and_preserves_edge_withou
     assert actual["edge_validation"] == fixture.original["edge_validation"]
     assert fixture.original["meta"]["canonical_panel_sha256"] == "stale"
     assert actual["meta"]["paper_pages"] == 9
-    assert actual["meta"]["canonical_panel_sha256"] == hashlib.sha256(fixture.paths["CANONICAL_PANEL"].read_bytes()).hexdigest()
-    assert actual["meta"]["current_policy_sha256"] == hashlib.sha256(fixture.paths["CURRENT_POLICY"].read_bytes()).hexdigest()
+    assert (
+        actual["meta"]["canonical_panel_sha256"]
+        == hashlib.sha256(fixture.paths["CANONICAL_PANEL"].read_bytes()).hexdigest()
+    )
+    assert (
+        actual["meta"]["current_policy_sha256"]
+        == hashlib.sha256(fixture.paths["CURRENT_POLICY"].read_bytes()).hexdigest()
+    )
     assert actual["provenance"]["manifest_sha256"] == hashlib.sha256(fixture.paths["MANIFEST"].read_bytes()).hexdigest()
     assert actual["research_status"]["edge_study"] == "pending"
     for key in ("meta", "provenance"):
@@ -337,9 +609,12 @@ def test_paper_only_rebuilds_current_paper_authorities_and_preserves_edge_withou
     assert edge_refresh["checked_this_run"] is False
     assert edge_refresh["mode"] == "preserved_not_rechecked"
     assert edge_refresh["source_snapshot_generated_at"] == "2020-01-01T00:00:00Z"
-    assert edge_refresh["preserved_edge_canonical_json_sha256"] == hashlib.sha256(
-        json.dumps(fixture.original["edge_validation"], sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    assert (
+        edge_refresh["preserved_edge_canonical_json_sha256"]
+        == hashlib.sha256(
+            json.dumps(fixture.original["edge_validation"], sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+    )
     assert fixture.paths["MANIFEST"] in read_paths and fixture.paths["CANONICAL_PANEL"] in read_paths
     assert fixture.paths["CURRENT_POLICY"] in read_paths and fixture.paths["FORMAL_REGISTRY"] in read_paths
     boundary = {row["name"]: row for row in actual["evidence_board"]["boundary_negative"]}
@@ -381,14 +656,18 @@ def test_paper_only_does_not_follow_manifest_paths_to_edge_or_raw_inputs(paper_r
     if binding == "canonical":
         manifest["reconciliation_source"]["canonical_panel"] = dashboard.rel(dashboard.EDGE / "raw/forbidden.json")
     else:
-        manifest["reconciliation_source"]["current_policy_family_sensitivity"]["artifact"] = dashboard.rel(dashboard.EDGE_RESULTS / "forbidden.json")
+        manifest["reconciliation_source"]["current_policy_family_sensitivity"]["artifact"] = dashboard.rel(
+            dashboard.EDGE_RESULTS / "forbidden.json"
+        )
     _write_json(fixture.paths["MANIFEST"], manifest)
     with pytest.raises(ValueError, match="unexpected"):
         dashboard.main(["--paper-only"])
     assert fixture.paths["OUT"].read_bytes() == original
 
 
-@pytest.mark.parametrize("name", ["OUT", "MANIFEST", "CANONICAL_PANEL", "CURRENT_POLICY", "FORMAL_REGISTRY", "SHORT_PDF"])
+@pytest.mark.parametrize(
+    "name", ["OUT", "MANIFEST", "CANONICAL_PANEL", "CURRENT_POLICY", "FORMAL_REGISTRY", "SHORT_PDF"]
+)
 def test_paper_only_rejects_dataless_input_before_content_read(paper_refresh_inputs, monkeypatch, name):
     fixture = paper_refresh_inputs
     target = fixture.paths[name]
@@ -414,20 +693,48 @@ def test_paper_only_rejects_dataless_input_before_content_read(paper_refresh_inp
     assert fixture.paths["OUT"].read_bytes() == original_snapshot
 
 
-@pytest.mark.parametrize("problem", ["missing-meta", "wrong-paper", "missing-edge", "empty-edge", "status-list", "status-dict", "phase-shape", "progress-shape", "gate-shape", "contradictory-status", "nonfinite"])
-def test_paper_only_rejects_invalid_saved_identity_or_edge_before_rebuilding(paper_refresh_inputs, monkeypatch, problem):
+@pytest.mark.parametrize(
+    "problem",
+    [
+        "missing-meta",
+        "wrong-paper",
+        "missing-edge",
+        "empty-edge",
+        "status-list",
+        "status-dict",
+        "phase-shape",
+        "progress-shape",
+        "gate-shape",
+        "contradictory-status",
+        "nonfinite",
+    ],
+)
+def test_paper_only_rejects_invalid_saved_identity_or_edge_before_rebuilding(
+    paper_refresh_inputs, monkeypatch, problem
+):
     snapshot = copy.deepcopy(paper_refresh_inputs.original)
-    if problem == "missing-meta": snapshot.pop("meta")
-    elif problem == "wrong-paper": snapshot["meta"]["paper"] = "another.pdf"
-    elif problem == "missing-edge": snapshot.pop("edge_validation")
-    elif problem == "empty-edge": snapshot["edge_validation"] = {}
-    elif problem == "status-list": snapshot["edge_validation"]["study_status"] = ["pending"]
-    elif problem == "status-dict": snapshot["edge_validation"]["study_status"] = {"value": "pending"}
-    elif problem == "phase-shape": snapshot["edge_validation"]["phases"] = "unknown"
-    elif problem == "progress-shape": snapshot["edge_validation"]["session_progress"] = {}
-    elif problem == "gate-shape": snapshot["edge_validation"]["unblock"]["all_pass"] = "true"
-    elif problem == "contradictory-status": snapshot["edge_validation"]["study_status"] = "verified"
-    elif problem == "nonfinite": snapshot["edge_validation"]["development_metrics"] = {"latency": float("nan")}
+    if problem == "missing-meta":
+        snapshot.pop("meta")
+    elif problem == "wrong-paper":
+        snapshot["meta"]["paper"] = "another.pdf"
+    elif problem == "missing-edge":
+        snapshot.pop("edge_validation")
+    elif problem == "empty-edge":
+        snapshot["edge_validation"] = {}
+    elif problem == "status-list":
+        snapshot["edge_validation"]["study_status"] = ["pending"]
+    elif problem == "status-dict":
+        snapshot["edge_validation"]["study_status"] = {"value": "pending"}
+    elif problem == "phase-shape":
+        snapshot["edge_validation"]["phases"] = "unknown"
+    elif problem == "progress-shape":
+        snapshot["edge_validation"]["session_progress"] = {}
+    elif problem == "gate-shape":
+        snapshot["edge_validation"]["unblock"]["all_pass"] = "true"
+    elif problem == "contradictory-status":
+        snapshot["edge_validation"]["study_status"] = "verified"
+    elif problem == "nonfinite":
+        snapshot["edge_validation"]["development_metrics"] = {"latency": float("nan")}
 
     def prohibited():
         raise AssertionError("invalid existing snapshot must fail before paper/edge reads")
@@ -437,18 +744,27 @@ def test_paper_only_rejects_invalid_saved_identity_or_edge_before_rebuilding(pap
         dashboard.refresh_paper_snapshot(snapshot)
 
 
-@pytest.mark.parametrize("problem", ["imagenet-seeds", "imagenet-backbones", "pacs-seeds", "pacs-replay", "pacs-aggregate"])
+@pytest.mark.parametrize(
+    "problem", ["imagenet-seeds", "imagenet-backbones", "pacs-seeds", "pacs-replay", "pacs-aggregate"]
+)
 def test_paper_only_rejects_manifest_canonical_scope_conflicts(paper_refresh_inputs, problem):
     fixture = paper_refresh_inputs
     original_snapshot = fixture.paths["OUT"].read_bytes()
     manifest = copy.deepcopy(fixture.manifest)
     canonical = copy.deepcopy(fixture.canonical)
-    if problem == "imagenet-seeds": manifest["tracks"]["imagenet_r_D"]["completed_seeds"] = [0, 1, 2]
-    elif problem == "imagenet-backbones": canonical["panels"]["imagenet_r"]["panel"]["candidate_count"] = 9
-    elif problem == "pacs-seeds": manifest["tracks"]["pacs"]["completed_seeds"] = 1
-    elif problem == "pacs-replay": manifest["tracks"]["pacs"]["decision_replay_available"] = True
-    elif problem == "pacs-aggregate": canonical["panels"]["pacs"]["aggregate_matches_seed_files"] = False
-    manifest["reconciliation_source"]["canonical_panel_sha256"] = _write_json(fixture.paths["CANONICAL_PANEL"], canonical)
+    if problem == "imagenet-seeds":
+        manifest["tracks"]["imagenet_r_D"]["completed_seeds"] = [0, 1, 2]
+    elif problem == "imagenet-backbones":
+        canonical["panels"]["imagenet_r"]["panel"]["candidate_count"] = 9
+    elif problem == "pacs-seeds":
+        manifest["tracks"]["pacs"]["completed_seeds"] = 1
+    elif problem == "pacs-replay":
+        manifest["tracks"]["pacs"]["decision_replay_available"] = True
+    elif problem == "pacs-aggregate":
+        canonical["panels"]["pacs"]["aggregate_matches_seed_files"] = False
+    manifest["reconciliation_source"]["canonical_panel_sha256"] = _write_json(
+        fixture.paths["CANONICAL_PANEL"], canonical
+    )
     _write_json(fixture.paths["MANIFEST"], manifest)
     with pytest.raises(ValueError, match="inconsistent"):
         dashboard.main(["--paper-only"])
@@ -456,8 +772,62 @@ def test_paper_only_rejects_manifest_canonical_scope_conflicts(paper_refresh_inp
 
 
 def test_default_full_snapshot_still_reads_edge_authorities_and_sessions(paper_refresh_inputs, monkeypatch):
+    # A full refresh now requires an authenticated lock, even while capture is
+    # pending. Keep this synthetic fixture independent of validator helpers.
+    lock_path = dashboard.EDGE / "artifacts_real/protocol_lock.json"
+    sidecar_path = dashboard.EDGE / "artifacts_real/protocol_lock.sha256"
+    lock = {
+        "protocol": "edge_real_phone_v1",
+        "schema_version": "kbound-edge-v1",
+        "seed": 0,
+        "num_classes": 4,
+        "classes": ["ok", "missing_label", "misaligned_label", "damaged_label"],
+        "image_size": 224,
+        "window_size": 32,
+        "alpha": 0.10,
+        "objects": {
+            "source_train_calib": ["P01", "P02", "P03", "P04", "P05", "P06"],
+            "source_val_calib": ["P07", "P08"],
+            "held_out_replication": ["P09", "P10"],
+        },
+        "phones": {"phone_a": {}, "phone_b": {}},
+        "shifts": {
+            "A_sessions": ["mild_light", "side_shadow", "new_background", "glare"],
+            "B_sessions": ["motion_blur", "viewpoint_45", "distance_scale", "batch_composition"],
+        },
+        "sessions": {
+            session: {"split": split, "phone_id": phone, "objects": objects, "windows": windows}
+            for session, split, phone, objects, windows in (
+                ("S01", "source_train", "phone_a", ["P01", "P02", "P03", "P04", "P05", "P06"], 120),
+                ("S02", "source_val", "phone_a", ["P07", "P08"], 40),
+                ("S03", "calibration_fit_a", "phone_a", ["P01", "P02", "P03", "P04"], 64),
+                ("S04", "calibration_fit_b", "phone_a", ["P01", "P02", "P03", "P04"], 80),
+                ("S05", "calibration_conformal_a", "phone_a", ["P01", "P02", "P03", "P04"], 64),
+                ("S06", "calibration_conformal_b", "phone_a", ["P01", "P02", "P03", "P04"], 80),
+                ("S07", "heldout_a", "phone_a", ["P09", "P10"], 64),
+                ("S08", "heldout_b", "phone_a", ["P09", "P10"], 80),
+                ("S09", "replication_a", "phone_b", ["P09", "P10"], 64),
+                ("S10", "replication_b", "phone_b", ["P09", "P10"], 80),
+            )
+        },
+        "paths": {
+            "artifacts": "artifacts_real",
+            "protocol_lock": "artifacts_real/protocol_lock.json",
+            "protocol_lock_sha": "artifacts_real/protocol_lock.sha256",
+        },
+    }
+    _write_json(lock_path, lock)
+    lock_hash = hashlib.sha256(json.dumps(lock, sort_keys=True).encode()).hexdigest()
+    sidecar_path.write_text(lock_hash + "\n", encoding="ascii")
     edge_reads = []
     session_calls = []
+    lock_reads = []
+    original_open = Path.open
+
+    def record_open(path, *args, **kwargs):
+        if path in {lock_path, sidecar_path}:
+            lock_reads.append(path)
+        return original_open(path, *args, **kwargs)
 
     def edge_load(path):
         assert dashboard.EDGE in path.parents or dashboard.EDGE_RESULTS in path.parents
@@ -470,12 +840,27 @@ def test_default_full_snapshot_still_reads_edge_authorities_and_sessions(paper_r
 
     monkeypatch.setattr(dashboard, "load", edge_load)
     monkeypatch.setattr(dashboard, "session_progress", sessions)
+    monkeypatch.setattr(Path, "open", record_open)
     assert dashboard.main([]) == 0
     actual = json.loads(paper_refresh_inputs.paths["OUT"].read_text())
-    assert len(edge_reads) == 7 and len(session_calls) == 1
+    assert lock_reads == [lock_path, sidecar_path]
+    assert edge_reads == [
+        dashboard.EDGE_RESULTS / name
+        for name in (
+            "model_card.json",
+            "heldout_metrics.json",
+            "replication_metrics.json",
+            "anti_leakage_audit.json",
+            "recording_inventory.json",
+            "publication_gate.json",
+        )
+    ]
+    assert len(session_calls) == 1
     assert actual["provenance"]["refresh_mode"] == "full"
     assert actual["provenance"]["edge_validation_refresh"]["checked_this_run"] is True
     assert actual["edge_validation"]["study_status"] == "pending"
+    assert actual["edge_validation"]["protocol_hash"] == lock_hash
+    assert actual["edge_validation"]["phases"][0]["status"] == "verified"
 
 
 def test_refresh_modes_are_exclusive_and_do_not_write(paper_refresh_inputs):
@@ -506,7 +891,9 @@ def test_repeated_paper_refresh_keeps_edge_unchecked_and_identical(paper_refresh
 
 def test_current_registered_formal_scope_is_not_a_full_six_layer_proof():
     scope = dashboard.registered_formal_scope()
-    assert scope["registered_lean_checks"] == 142
-    assert scope["legacy_core_checks"] == 65 and scope["foundational_checks"] == 77
+    # Eight reviewed audit-floor capstones extend the registered inventory;
+    # this remains a source inventory, not proof of the empirical premises.
+    assert scope["registered_lean_checks"] == 150
+    assert scope["legacy_core_checks"] == 65 and scope["foundational_checks"] == 85
     assert scope["positive_foundational_layers"] == 5 and scope["counterexample_layers"] == 1
     assert scope["full_foundations_proof"] is False

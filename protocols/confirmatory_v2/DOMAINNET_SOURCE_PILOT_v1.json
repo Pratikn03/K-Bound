@@ -1,0 +1,22 @@
+{
+  "schema": "kbound-domainnet-source-pilot/1",
+  "status": "SOURCE_ONLY_DEVELOPMENT_PILOT",
+  "dataset": "DomainNet-126",
+  "domain": "clipart",
+  "model": {"name": "resnet18", "weights": null, "outputs": 126, "optimize": "all_parameters"},
+  "preprocessing": {"rgb": true, "crop_size": 224, "resize_monitor": 256, "mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225], "source_fit": ["RandomResizedCrop224", "RandomHorizontalFlip"], "source_monitor": ["Resize256", "CenterCrop224"]},
+  "optimizer": {"name": "SGD", "lr": 0.05, "momentum": 0.9, "weight_decay": 0.0001},
+  "scheduler": {"name": "CosineAnnealingLR", "eta_min": 0.0},
+  "epochs": 20,
+  "physical_batch_size": 32,
+  "drop_last": false,
+  "num_workers": 0,
+  "seeds": [0],
+  "seed_stream_rule": "initialization=100+3*seed; minibatch=101+3*seed; augmentation=102+3*seed",
+  "candidate": "final_epoch_only",
+  "required_runtime": {"python": "3.12", "numpy": "2.4.4"},
+  "source_policy": {
+    "policy_id": "DOMAINNET_SOURCE_RETAIN_OFFICIAL_LABELS_GROUPED_V2",
+    "sha256": "007f2bfb12e8d74f99332d28f675006c493813119275fe47e4f6631d20663e53"
+  }
+}

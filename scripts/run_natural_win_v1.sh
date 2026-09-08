@@ -11,15 +11,24 @@ ROOT="$PWD"
 export PYTHONWARNINGS=ignore
 export PYTHONPATH="$ROOT:$ROOT/src:$ROOT/experiments/kbound/wilds${PYTHONPATH:+:$PYTHONPATH}"
 
-# ---- interpreters (house convention, matches run_remaining_gpu_experiments.sh)
-PY="${PY:-$ROOT/.venv/bin/python}"          # repo venv: numpy/torch/sklearn
-[ -x "$PY" ] || PY="$(command -v python3)"  # fallback: system python3
-CPY="$PY"                                   # Camelyon needs torch + wilds
-if [ -x "$HOME/.venv_wilds/bin/python" ]; then CPY="$HOME/.venv_wilds/bin/python"; fi
+# Explicit absolute runtime/data paths; CPY may select a separate WILDS runtime.
+# With SKIP_CAM=1, neither CPY nor WILDS_DATA_ROOT is needed or inspected.
+PY="${PY:?Set PY to the selected Python executable}"
+[[ "$PY" == /* && -f "$PY" && -x "$PY" ]] || { echo "Invalid PY: $PY" >&2; exit 3; }
+IMAGENETR_DIR="${IMAGENETR_DIR:?Set IMAGENETR_DIR to existing ImageNet-R data}"
+[[ "$IMAGENETR_DIR" == /* && -d "$IMAGENETR_DIR" ]] || { echo "Invalid IMAGENETR_DIR: $IMAGENETR_DIR" >&2; exit 3; }
+if [ "${SKIP_CAM:-0}" != "1" ]; then
+  CPY="${CPY:-$PY}"
+  [[ "$CPY" == /* && -f "$CPY" && -x "$CPY" ]] || { echo "Invalid CPY: $CPY" >&2; exit 3; }
+  WILDS_DATA_ROOT="${WILDS_DATA_ROOT:?Set WILDS_DATA_ROOT to existing WILDS data}"
+  [[ "$WILDS_DATA_ROOT" == /* && -d "$WILDS_DATA_ROOT/camelyon17_v1.0" ]] || { echo "Missing camelyon17_v1.0 under WILDS_DATA_ROOT: $WILDS_DATA_ROOT" >&2; exit 3; }
+fi
 echo "PY=$PY"
-echo "CPY=$CPY (Camelyon arm)"
 "$PY" -c "import numpy, sklearn" || { echo "ERROR: $PY lacks numpy/sklearn. Set PY=/path/to/python"; exit 3; }
-"$CPY" -c "import wilds" 2>/dev/null || echo "WARN: $CPY has no 'wilds' — Camelyon arm will fail. pip install wilds, or set up ~/.venv_wilds"
+if [ "${SKIP_CAM:-0}" != "1" ]; then
+  echo "CPY=$CPY (Camelyon arm)"
+  "$CPY" -c "import wilds" 2>/dev/null || { echo "ERROR: CPY lacks wilds; select a prepared runtime" >&2; exit 3; }
+fi
 
 echo "== [0/4] wiring self-check (no GPU work)"
 "$PY" - <<'EOF'
@@ -39,21 +48,8 @@ RESULTS=experiments/kbound/results
 CAM_RUN=natural_win_v1_camelyon
 INR_RUN=natural_win_v1_imagenetr
 
-# ---- data roots (house convention, matches run_remaining_gpu_experiments.sh;
-#      the runners' built-in defaults are stale)
-WILDS_DATA_ROOT="${WILDS_DATA_ROOT:-$HOME/datasets/wilds}"
-IMAGENETR_DIR="${IMAGENETR_DIR:-$ROOT/experiments/kbound/data/imagenet-r}"
-echo "WILDS_DATA_ROOT=$WILDS_DATA_ROOT"
+echo "WILDS_DATA_ROOT=${WILDS_DATA_ROOT:-<not requested>}"
 echo "IMAGENETR_DIR=$IMAGENETR_DIR"
-if [ ! -d "$WILDS_DATA_ROOT/camelyon17_v1.0" ]; then
-  echo "ERROR: camelyon17_v1.0 not found under $WILDS_DATA_ROOT"
-  echo "  Either point at your existing copy:   WILDS_DATA_ROOT=/path/to/wilds bash scripts/run_natural_win_v1.sh"
-  echo "  Or download it (~10 GB) with:"
-  echo "    $CPY -c \"from wilds import get_dataset; get_dataset(dataset='camelyon17', download=True, root_dir='$WILDS_DATA_ROOT')\""
-  echo "  Skipping the Camelyon arm is possible with: SKIP_CAM=1 bash scripts/run_natural_win_v1.sh"
-  [ "${SKIP_CAM:-0}" = "1" ] || exit 3
-fi
-[ -d "$IMAGENETR_DIR" ] || { echo "ERROR: ImageNet-R data not found at $IMAGENETR_DIR"; exit 3; }
 
 if [ "${SKIP_CAM:-0}" != "1" ]; then
   echo "== [1/4] PRIMARY ARM: Camelyon17, seeds 0-3, rich evidence"
@@ -79,8 +75,24 @@ echo "== [2/4] SECONDARY ARM: ImageNet-R diverse 10-backbone panel, seeds 0-2"
   --serialize-per-condition
 
 echo "== [3/4] locate per_condition outputs"
-CAM_DIR=$(dirname "$(ls -t "$RESULTS/$CAM_RUN"/per_condition_camelyon17_*_seed0.json 2>/dev/null | head -1 || true)")
-INR_DIR=$(dirname "$(ls -t "$RESULTS/$INR_RUN"/per_condition_imagenet-r_*_seed0.json 2>/dev/null | head -1 || true)")
+require_analysis_dir() {
+  local selected="$1" directory
+  if [[ -z "$selected" || ! -f "$selected" ]]; then
+    echo "ERROR: expected per_condition output is missing; refusing analysis" >&2
+    return 3
+  fi
+  directory="$(cd "$(dirname "$selected")" && pwd -P)" || return 3
+  if [[ "$directory" == "$(cd "$ROOT" && pwd -P)" ]]; then
+    echo "ERROR: analysis output resolves to the repository root" >&2
+    return 3
+  fi
+  printf '%s\n' "$directory"
+}
+CAM_DIR=""
+if [ "${SKIP_CAM:-0}" != "1" ]; then
+  CAM_DIR=$(require_analysis_dir "$(ls -t "$RESULTS/$CAM_RUN"/per_condition_camelyon17_*_seed0.json 2>/dev/null | head -1 || true)")
+fi
+INR_DIR=$(require_analysis_dir "$(ls -t "$RESULTS/$INR_RUN"/per_condition_imagenet-r_*_seed0.json 2>/dev/null | head -1 || true)")
 echo "camelyon: ${CAM_DIR:-<missing>}"; echo "imagenetr: ${INR_DIR:-<missing>}"
 
 echo "== [4/4] pre-committed analysis (held-out scoring, ONCE)"

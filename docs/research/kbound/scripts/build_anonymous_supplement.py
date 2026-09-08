@@ -1377,12 +1377,12 @@ def verify_anonymous_release_bindings(
 
 
 def verify_release_python_content() -> None:
-    """Require the sealed release Python content before archive processing."""
+    """Require portable locked-distribution content before archive processing."""
 
     root = Path(__file__).resolve().parents[4]
     verify_python_environment.verify_exact_content_profile(
         root / "requirements-release-macos-arm64.lock.txt",
-        root / "docs/research/kbound/release_python_environment_macos_arm64.json",
+        root / "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
     )
 
 

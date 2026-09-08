@@ -525,7 +525,26 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pdf-dir", type=Path, default=KBOUND_ROOT)
     parser.add_argument("--require-exact-inventory", action="store_true")
+    parser.add_argument("--publication-dir", type=Path, help="Read-only five-artifact publication package mode; excludes legacy Markdown scans.")
+    parser.add_argument("--publication-contract", type=Path, default=KBOUND_ROOT / "paper/release/publication_package_v1.json")
+    parser.add_argument("--publication-repo-root", type=Path, default=REPO_ROOT)
     args = parser.parse_args()
+    if args.publication_dir is not None:
+        from audit_publication_package import audit_package, audit_numerical_authorities
+
+        report = audit_package(args.publication_dir, args.publication_repo_root, args.publication_contract)
+        if report["status"] == "PASS":
+            try:
+                problems = audit_numerical_authorities(args.publication_repo_root, audit_authorities)
+                report["historical_numerical_authorities"] = "FAIL" if problems else "PASS"
+                if problems:
+                    report["status"] = "FAIL"
+                    report["problems"].append("Historical numerical authority checks failed.")
+            except (OSError, ValueError, TypeError, KeyError, RuntimeError, AssertionError, IndexError):
+                report["status"] = "FAIL"
+                report["problems"].append("Historical numerical authorities malformed, missing or aliased.")
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0 if report["status"] == "PASS" else 1
     problems = run_audit(args.pdf_dir.resolve(), require_exact_inventory=args.require_exact_inventory)
     if problems:
         print("K-Bound current release audit: FAIL")

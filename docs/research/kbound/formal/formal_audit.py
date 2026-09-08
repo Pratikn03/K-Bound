@@ -178,10 +178,209 @@ FOUNDATION_THEOREMS = {
         "OrbitFibreCounterexample.no_evidence_decoder",
         "bool_decoder_iff_constant_on_fibres",
     ],
+    "AuditFloor": [
+        "measurable_audit_floor",
+        "fibrewise_randomized_audit_floor",
+        "constant_fibreRadius_valid",
+        "constant_fibreRadius_audit_valid",
+        "audit_floor_frontier_inert",
+        "fibreRadius_eq_of_bound_and_witness",
+    ],
+    "AuditFloorCorrectness": [
+        "correctness_fibreRadius_eq_beta",
+        "correctness_target_fibreRadius_eq_beta",
+    ],
+    "RandomizedActionLaw": [
+        "RandomizedActionLaw.abstention_lower_bound",
+        "RandomizedActionLaw.common_law_forces_abstention",
+        "RandomizedActionLaw.randomized_rules_force_abstention",
+        "RandomizedActionLaw.zero_errors_full_abstention",
+    ],
+    "ExtendedRadiusCertificate": [
+        "ExtendedRadiusCertificate.action_top",
+        "ExtendedRadiusCertificate.action_finite",
+        "ExtendedRadiusCertificate.action_ofReal",
+        "ExtendedRadiusCertificate.measurableSet_coverage",
+        "ExtendedRadiusCertificate.false_direction_subset_failure",
+        "ExtendedRadiusCertificate.directional_error_probability",
+        "ExtendedRadiusCertificate.measurableSet_falseDirection",
+    ],
 }
-VERIFIED_THEOREMS = LEGACY_CORE_THEOREMS + [
-    name for names in FOUNDATION_THEOREMS.values() for name in names
+FOUNDATION_THEOREMS.update({
+    "JointTargetReduction": [
+        "JointTargetReduction.measurableSet_disagreementEvent",
+        "JointTargetReduction.measurableSet_correctOnDisagreement",
+        "JointTargetReduction.zeroOneBenefit_eq_indicator_sub",
+        "JointTargetReduction.population_benefit_event_difference",
+        "JointTargetReduction.multiclass_population_reduction",
+        "JointTargetReduction.binary_benefit_eq_indicators",
+        "JointTargetReduction.binary_population_event_reduction",
+        "JointTargetReduction.binary_population_reduction",
+        "JointTargetReduction.conditional_score_residual_identity",
+    ],
+    "PaperCounterexamples": [
+        "PaperCounterexamples.calibration_correct_probability",
+        "PaperCounterexamples.calibration_score_calibrated",
+        "PaperCounterexamples.calibration_top_label_calibrated",
+        "PaperCounterexamples.calibration_disagreement_accuracy",
+        "PaperCounterexamples.calibration_actual_score_margin",
+        "PaperCounterexamples.calibration_margin_residual",
+        "PaperCounterexamples.calibration_population_benefit",
+        "PaperCounterexamples.calibration_witness_exists",
+        "PaperCounterexamples.cellEstimate_label_free",
+        "PaperCounterexamples.cell_population_benefit",
+        "PaperCounterexamples.cell_coverage_probability",
+        "PaperCounterexamples.cell_adapt_probability",
+        "PaperCounterexamples.cell_false_adapt_probability",
+        "PaperCounterexamples.cell_conditional_false_adapt_one",
+        "PaperCounterexamples.no_adaptation_no_false_adaptation",
+        "PaperCounterexamples.cell_population_witness_exists",
+        "PaperCounterexamples.multiclass_neither_correct",
+    ],
+    "DependentSignFlip": [
+        "DependentSignFlip.coordinate_exchangeable",
+        "DependentSignFlip.positive_coordinate_probability",
+        "DependentSignFlip.exchangeable_fair_witness",
+        "DependentSignFlip.fair_map",
+        "DependentSignFlip.measurable_globalFlip",
+        "DependentSignFlip.global_sign_symmetric",
+        "DependentSignFlip.marginal_sign_symmetric",
+        "DependentSignFlip.measurable_flipFirst",
+        "DependentSignFlip.equal_coordinates_probability",
+        "DependentSignFlip.flipped_equal_coordinates_probability",
+        "DependentSignFlip.not_coordinate_sign_symmetric",
+        "DependentSignFlip.sign_le_one",
+        "DependentSignFlip.all_positive_iff",
+        "DependentSignFlip.mean_comparison_iff",
+        "DependentSignFlip.sign_vector_count",
+        "DependentSignFlip.positive_upper_tail_count",
+        "DependentSignFlip.negative_upper_tail_count",
+        "DependentSignFlip.positive_reference_value",
+        "DependentSignFlip.negative_reference_value",
+        "DependentSignFlip.small_reference_probability",
+    ],
+    "IndependentSignFlip": [
+        "IndependentSignFlip.independent_symmetric_coordinates",
+    ],
+    "PaperDecisionAlgebra": [
+        "PaperDecisionAlgebra.frozen_oracle_regret",
+        "PaperDecisionAlgebra.adapted_oracle_regret",
+        "PaperDecisionAlgebra.abstain_regret_eq_frozen",
+        "PaperDecisionAlgebra.equal_score_zero_regret",
+        "PaperDecisionAlgebra.adapt_iff",
+        "PaperDecisionAlgebra.freeze_iff",
+        "PaperDecisionAlgebra.larger_radius_adapt_subset",
+        "PaperDecisionAlgebra.larger_radius_freeze_subset",
+        "PaperDecisionAlgebra.larger_radius_commit_subset",
+        "PaperDecisionAlgebra.helpful_only_no_score_improvement",
+        "PaperDecisionAlgebra.radius_expansion_can_increase_regret",
+        "PaperDecisionAlgebra.printed_numeric_branches",
+        "PaperDecisionAlgebra.universal_unit_residual_bound",
+    ],
+})
+FOUNDATION_THEOREMS["ExactConformal"] = [
+    "ExactConformal.orderRadius_le_iff",
+    "ExactConformal.orderRadius_eq_top",
+    "ExactConformal.orderRadius_real_characterization",
+    "ExactConformal.orderRadius_ignores_heldout",
+    "ExactConformal.orderRadius_at_full_rank",
+    "ExactConformal.orderRadius_lt_top",
+    "ExactConformal.finite_orderRadius_threshold",
+    "ExactConformal.measurable_orderRadius",
+    "ExactConformal.rank_positive",
+    "ExactConformal.rank_le_total",
+    "ExactConformal.ceiling_rank_budget",
+    "ExactConformal.no_calibration_radius",
+    "ExactConformal.orderRadius_attained",
+    "ExactConformal.real_order_statistic_attained",
+    "ExactConformal.coverage",
+    "ExactConformal.residual_directional_error",
+    "ExactConformal.literal_residual_certificate",
 ]
+FOUNDATION_THEOREMS["EvidenceTransport"] = [
+    "EvidenceTransport.common_observable_pushforward",
+    "EvidenceTransport.iid_input_batch_law",
+    "EvidenceTransport.iid_batch_observable_law",
+    "EvidenceTransport.independent_seed_joint_law",
+    "EvidenceTransport.independent_seed_action_law",
+    "EvidenceTransport.kernel_action_law",
+    "EvidenceTransport.kernel_randomized_abstention",
+    "EvidenceTransport.independent_seed_randomized_abstention",
+]
+FOUNDATION_THEOREMS["JointKernelScore"] = [
+    "JointKernelScore.joint_disagreement_mass",
+    "JointKernelScore.kernel_correctness_event",
+    "JointKernelScore.joint_correctness_event",
+    "JointKernelScore.joint_conditional_accuracy",
+    "JointKernelScore.joint_score_identity",
+    "JointKernelScore.joint_score_benefit",
+    "JointKernelScore.scoreMargin_bounds",
+    "JointKernelScore.joint_score_sign",
+]
+FOUNDATION_THEOREMS["ActualWorldFrontier"] = [
+    "ActualWorldFrontier.fieldWorld_fst",
+    "ActualWorldFrontier.fieldWorld_residual",
+    "ActualWorldFrontier.actual_frontier_adapt_iff",
+    "ActualWorldFrontier.actual_frontier_freeze_iff",
+    "ActualWorldFrontier.actual_identified_interval",
+    "ActualWorldFrontier.actual_class_nonempty",
+    "ActualWorldFrontier.actual_closed_band_zero_target",
+    "ActualWorldFrontier.actual_zero_margin_budget",
+    "ActualWorldFrontier.actual_strict_direction_iff",
+    "ActualWorldFrontier.actual_pointwise_maximal_rule",
+]
+FOUNDATION_THEOREMS["ActualWorldEvidence"] = [
+    "ActualWorldEvidence.augmentedLaw_eq",
+    "ActualWorldEvidence.iidObservation_realization",
+    "ActualWorldEvidence.augmentedLaw_iid",
+    "ActualWorldEvidence.actual_open_band_field_witnesses",
+    "ActualWorldEvidence.actual_open_band_matched_targets",
+    "ActualWorldEvidence.actual_closed_band_matched_zero",
+    "ActualWorldEvidence.actual_augmented_fibre_strict_direction_iff",
+    "ActualWorldEvidence.actual_closed_band_abstention",
+]
+FOUNDATION_THEOREMS["ActualWorldSubclass"] = [
+    "ActualWorldSubclass.zeroWorld_residual",
+    "ActualWorldSubclass.zeroWorld_benefit",
+    "ActualWorldSubclass.zeroWorld_admissible_iff",
+    "ActualWorldSubclass.tiltWorld_residual",
+    "ActualWorldSubclass.tiltWorld_benefit",
+    "ActualWorldSubclass.tiltWorld_admissible",
+    "ActualWorldSubclass.full_class_tilt_witnesses",
+    "ActualWorldSubclass.subclass_closed_band_obstructions",
+    "ActualWorldSubclass.subclass_strict_direction_iff",
+    "ActualWorldSubclass.subclass_adapt_iff_of_nonempty",
+    "ActualWorldSubclass.subclass_freeze_iff_of_nonempty",
+    "ActualWorldSubclass.subclass_pointwise_maximal_rule",
+    "ActualWorldSubclass.subclass_augmented_fibre_strict_direction_iff",
+    "ActualWorldSubclass.subclass_closed_band_abstention",
+]
+FOUNDATION_THEOREMS["WeightedHelpful"] = [
+    "WeightedHelpful.helpful_weighted_sum",
+    "WeightedHelpful.helpful_weighted_mean",
+    "WeightedHelpful.helpful_weighted_regret_mean",
+]
+FOUNDATION_THEOREMS["RiskAlignment"] = [
+    "RiskAlignment.strict_implies_aligned",
+    "RiskAlignment.aligned_of_nonnegative",
+    "RiskAlignment.not_strict_of_zero",
+    "RiskAlignment.actual_positive_boundary_nonnegative",
+    "RiskAlignment.actual_boundary_risk_aligned_not_strict",
+]
+FOUNDATION_THEOREMS["FeatureRank"] = [
+    "FeatureRank.encode_relations",
+    "FeatureRank.encode_injective",
+    "FeatureRank.mem_range_iff",
+    "FeatureRank.schema_finrank",
+    "FeatureRank.rowspan_finrank_le",
+]
+FOUNDATION_THEOREMS["ActualFibreRadius"] = [
+    "ActualFibreRadius.actual_abs_residual_attained",
+    "ActualFibreRadius.actual_class_radius",
+    "ActualFibreRadius.actual_augmented_fibre_eq_class",
+    "ActualFibreRadius.actual_augmented_fibre_radius",
+]
+VERIFIED_THEOREMS = LEGACY_CORE_THEOREMS + [name for names in FOUNDATION_THEOREMS.values() for name in names]
 ALLOWED_AXIOMS = frozenset({"propext", "Classical.choice", "Quot.sound"})
 
 # Status is a statement of encoded scope, not a claim that empirical assumptions
@@ -190,7 +389,7 @@ FOUNDATION_LAYERS: list[dict[str, str]] = [
     {
         "item": "measure-theoretic split-conformal exchangeability",
         "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
-        "scope": "measurable exchangeable score laws, ties, calibration thresholds, and one-shot residual coverage/error bounds",
+        "scope": "measurable exchangeable score laws, ties, literal ceiling/order-statistic/infinity radii, and one-shot absolute-residual coverage/error bounds",
         "limits": "does not establish benchmark exchangeability, batch-to-population transfer, or simultaneous repeated-use coverage",
     },
     {
@@ -238,25 +437,61 @@ OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = [
 ]
 
 CLOSURE_RECORD = {
-    "revision": "measurable-foundations-2026-08-31",
-    "date": "2026-08-31",
+    "revision": "actual-fibre-radius-2026-09-07",
+    "date": "2026-09-07",
     "scope": (
         "Legacy finite/algebraic spine plus general exchangeable residual coverage, "
         "filtered Ville/predictable betting, KL/TV finite-product testing, concentration, "
-        "and measurable target-law frontier. The historical full one-bit/H extension "
+        "measurable target-law frontier, common randomized action-law abstention, "
+        "coverage-to-directional error with measurable finite/infinite radii, arbitrary-joint-law "
+        "disagreement reductions, actual calibration/cell counterexample laws, dependent "
+        "and independent sign-flip clauses, decision/regret algebra, and the literal "
+        "measurable conformal ceiling/order-statistic/infinity residual construction, "
+        "finite iid batch-evidence pushforwards and fixed Markov-policy or independent-seed "
+        "action-law/abstention transport, and arbitrary-joint binary conditional-kernel "
+        "correctness/event/score-residual/benefit/sign identities, and the full actual "
+        "score-defined joint-law class strict frontiers, clipped interval, boundary/zero "
+        "witnesses and pointwise rule semantics; actual interior/zero target witnesses, "
+        "fixed augmented-evidence-law strict-direction iff and randomized abstention "
+        "composition under an explicit fixed marginal-based observation experiment, "
+        "including its concrete finite iid joint-sample realization; restricted actual "
+        "classes with legal interior opposite-pair and boundary-only zero construction "
+        "membership, their strict-direction existence iff, realized individual directional "
+        "iff, maximal commitment and augmented-law/error-to-abstention composition; finite common nonnegative-weight helpful-only score/regret composition, and fixed-fibre strict-to-aligned implication with actual zero/positive joint-law nonconverse witnesses; literal eleven-coordinate schema relations, schema dimension nine and satisfying-row rank upper bound nine; actual scoreResidual-class and fixed-augmented-law-fibre supremum radius equality under the full class and small-budget premises. "
+        "The historical full one-bit/H extension "
         "is not closed and is not claimed by the compact paper."
     ),
     "new_mechanized_modules": [
-        f"KBound/Probability/{module}.lean" for module in FOUNDATION_THEOREMS
+        f"KBound/{'' if module in {'PaperDecisionAlgebra', 'WeightedHelpful', 'FeatureRank'} else 'Probability/'}{module}.lean"
+        for module in FOUNDATION_THEOREMS
+    ],
+    "paper_wide_closure": False,
+    "remaining_current_paper_obligations": [
+        "Restricted-class construction and probability assembly are proved; reconcile the paper's uniqueness wording with the explicit realized/nonempty premise for individual directional iff. Minimal pair/zero membership is a consequence, not an equivalence, of full construction closure.",
+        "Maintain the fixed observation/policy experiment: equal one-input marginals alone do not determine arbitrary world-dependent batch/seed couplings. The actual finite iid realization and full-class augmented-law assembly are proved.",
+        "The feature-rank upper bound, weighted helpful-only composition and actual risk-alignment nonconverse are proved under explicit premises. Observed exact rank, ambiguous prose disposition and final semantic completeness remain separate. The actual joint-law radius and fixed-augmented-fibre assembly are proved; literal paper sampling interpretation remains linked to the explicit observation model.",
+        "Independent31-row/23-source semantic census found no omitted named statement/display; its A02 assembly gap is now proved. Targeted review and binding of future author corrections remain required.",
     ],
     "foundation_layers": FOUNDATION_LAYERS,
     "open_research_frontier": OPEN_RESEARCH_FRONTIER,
+    "probability_interface_claims": [
+        {
+            "paper_labels": ["cor:matched-abstain", "prop:closed-band"],
+            "module": "RandomizedActionLaw",
+            "scope": "measurable world-specific decision rules with a common action pushforward and explicit directional-error bounds imply abstention probability at least one minus two alpha",
+            "limits": "common action laws are explicit; equal seed marginals alone do not establish the needed joint law; no empirical assumptions are certified",
+        },
+        {
+            "paper_labels": ["thm:certificate", "thm:cert"],
+            "module": "ExtendedRadiusCertificate",
+            "scope": "measurable real estimate/truth and ENNReal radius; infinity abstains; marginal coverage bounds the measurable union of both directional errors by alpha",
+            "limits": "coverage for the declared target remains a premise; no independence, conditional coverage, or almost-sure finiteness is imposed or inferred",
+        },
+    ],
 }
 
 
-def run(
-    cmd: list[str], *, check: bool = True, input_text: str | None = None
-) -> subprocess.CompletedProcess[str]:
+def run(cmd: list[str], *, check: bool = True, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         cmd,
         cwd=ROOT,
@@ -402,9 +637,7 @@ def parse_axiom_audit(output: str, names: list[str]) -> dict[str, object]:
         name = match.group(1)
         if name in dependencies:
             duplicates.append(name)
-        dependencies[name] = sorted(
-            part.strip() for part in (match.group(2) or "").split(",") if part.strip()
-        )
+        dependencies[name] = sorted(part.strip() for part in (match.group(2) or "").split(",") if part.strip())
     expected = {f"KBound.{name}" for name in names}
     missing = sorted(expected - dependencies.keys())
     unexpected_names = sorted(dependencies.keys() - expected)
@@ -425,9 +658,7 @@ def parse_axiom_audit(output: str, names: list[str]) -> dict[str, object]:
 
 
 def inspect_kernel_axioms() -> dict[str, object]:
-    source = "import KBound\n" + "".join(
-        f"#print axioms KBound.{name}\n" for name in VERIFIED_THEOREMS
-    )
+    source = "import KBound\n" + "".join(f"#print axioms KBound.{name}\n" for name in VERIFIED_THEOREMS)
     proc = run(["lake", "env", "lean", "--stdin"], check=False, input_text=source)
     result = parse_axiom_audit(proc.stdout, VERIFIED_THEOREMS)
     result["returncode"] = proc.returncode
@@ -474,8 +705,7 @@ def main() -> int:
             # Also reject Lean's own proof-hole warnings, including declarations
             # outside the capstone registry and warnings replayed from the cache.
             proof_hole_warnings = [
-                line for line in proc.stdout.splitlines()
-                if re.search(r"declaration uses ['‘`]sorry['’`]", line)
+                line for line in proc.stdout.splitlines() if re.search(r"declaration uses ['‘`]sorry['’`]", line)
             ]
             if build_ok:
                 axioms = inspect_kernel_axioms()

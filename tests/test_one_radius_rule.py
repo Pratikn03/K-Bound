@@ -332,7 +332,6 @@ INTERPOLATED_RADIUS_ALLOWLIST: dict[str, str] = {
     "experiments/kbound/wilds/analyze_camelyon_kbound.py": "route_b baseline tau threshold, not a K-Bound radius",
     "experiments/kbound/wilds/analyze_iwildcam_kbound.py": "route_b baseline tau threshold, not a K-Bound radius",
     "docs/research/kbound/panel_review_2026-07-25/recompute/kb_common.py": "archived panel-review recompute helper script",
-    "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py": "archived real-data frontier theory validation script",
 }
 
 _RADIUS_NAMES = frozenset(

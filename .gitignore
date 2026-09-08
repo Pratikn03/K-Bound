@@ -48,6 +48,12 @@ models/
 # experiments/ is ignored, EXCEPT the curated ELARA-U results + Real-IAD-D3 score
 # cache (verified evidence). Re-include via the exclude-then-re-include pattern.
 experiments/*
+!experiments/audit/
+experiments/audit/*
+!experiments/audit/polarity_diagnostic_log.csv
+!experiments/audit/canonical_label_semantics.json
+!experiments/audit/historical_diagnostic_recovery_receipt.json
+!experiments/audit/historical_diagnostic_recovery_receipt.portable.json
 !experiments/elara_u/
 experiments/elara_u/*
 !experiments/elara_u/*.json
@@ -89,8 +95,22 @@ src/experiments/fusion/attention_fusion/fusion_inputs.csv
 # Re-include curated K-Bound experiment artifacts (lightweight) despite experiments/* ignore
 !experiments/kbound/
 experiments/kbound/*
+!experiments/kbound/frontier_sweep_v1/
+experiments/kbound/frontier_sweep_v1/*
+!experiments/kbound/frontier_sweep_v1/decision_value_results.json
 !experiments/kbound/poem_aetta/
 !experiments/kbound/poem_aetta/**
+# Only explicit maintained DomainNet code is included; this is not release acceptance.
+!experiments/kbound/domainnet/
+experiments/kbound/domainnet/*
+!experiments/kbound/domainnet/__init__.py
+!experiments/kbound/domainnet/source_data.py
+!experiments/kbound/domainnet/train_source.py
+!experiments/kbound/domainnet/pilot_data.py
+!experiments/kbound/domainnet/pilot_data_v2.py
+!experiments/kbound/domainnet/pilot_candidate.py
+!experiments/kbound/domainnet/pilot_analysis.py
+!experiments/kbound/domainnet/pilot_runner.py
 !experiments/kbound/wilds/
 !experiments/kbound/wilds/**
 # The recursive source exception above must never re-include raw datasets,
@@ -249,3 +269,7 @@ docs/research/kbound/**/*.render.png
 
 # kbound_repro toolkit: keep source/schemas/tests, drop its local caches
 docs/research/kbound/kbound_repro/**/__pycache__/
+
+# Machine-local reference-source bindings include absolute data/checkpoint paths.
+# Keep the public plan and validator, but do not publish this local configuration.
+/protocols/confirmatory_v2/REFERENCE_SOURCE_KGA_BINDINGS.json

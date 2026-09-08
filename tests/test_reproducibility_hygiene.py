@@ -82,6 +82,10 @@ def _iter_authored_files(root: Path, suffixes: tuple[str, ...]):
                 name in skipped_directories
                 or name.startswith(".lake__icloud")
                 or relative == "audits/integrity_2026-06-20"
+                # Ignored task receipts preserve actual historical commands;
+                # they are not shipped executables. A separate guard below
+                # rejects tracking anything in this exact scratch subtree.
+                or relative == ".superpowers/sdd"
             ):
                 continue
             retained.append(name)
@@ -90,6 +94,7 @@ def _iter_authored_files(root: Path, suffixes: tuple[str, ...]):
             path = base / name
             if path.suffix in suffixes:
                 yield path
+
 
 #: Machine-local roots that must never appear in tracked source.
 BANNED_PATH_FRAGMENTS = ("AutoML_Flagship_V8", "/Volumes/T9", "/Users/pratik", "/sessions/")
@@ -111,32 +116,6 @@ MACHINE_LOCAL_ALLOWLIST: dict[str, str] = {
     "docs/research/kbound/scrub_submission.py": "the anonymiser; the fragment is a substitution pattern",
     "docs/research/kbound/scripts/code_audit_uav.py": "one prose line recording the volume's historical name",
     "scripts/migrate_repo_name_to_kbound.sh": "record of the completed rename; the old name is its subject",
-    # -----------------------------------------------------------------------
-    # SURFACED 2026-07-26 BY THE iCLOUD MATERIALISATION.  All eight files below
-    # were NUL-filled placeholders when the "94 files down to 9" census was
-    # taken, so this scanner could not read them and counted them as clean.
-    # That census was complete over the READABLE tree, not over the tree.  Every
-    # entry is a real violation, newly visible; none is in a promoted code path.
-    # -----------------------------------------------------------------------
-    "experiments/kbound/results/gpu_queue_camelyon_then_iwildcam.sh":
-        "a saved GPU submission QUEUE, i.e. a record of the exact command that was "
-        "run on the author's machine. Rewriting it would falsify the run record; it "
-        "is not a reproduction entry point",
-    "experiments/kbound/results/gpu_queue_iwildcam_after_camelyon.sh":
-        "second saved GPU submission queue; same rationale",
-    "experiments/kbound/theory_validation/frontier_decisive/camelyon_recal/camelyon_recal.py":
-        "superseded theory probe (GAP_AUDIT.md / INTEGRITY_FIXES.md both SUPERSEDED); "
-        "the path is an ephemeral Cowork session-sandbox mount, already dead",
-    "experiments/kbound/theory_validation/frontier_decisive/kga_elara/kga_elara_convergence.py":
-        "superseded theory probe; same dead session-sandbox mount",
-    "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py":
-        "superseded theory probe; same dead session-sandbox mount",
-    # -----------------------------------------------------------------------
-    # FILES THAT DOCUMENT OR ASSERT THE ABSENCE OF MACHINE PATHS
-    # -----------------------------------------------------------------------
-    "tests/test_reconciled_panels.py":
-        "asserts that /Volumes/T9 does NOT appear in the canonical panel JSON; "
-        "the path fragment is its own subject, not a dependency",
 }
 
 
@@ -196,10 +175,14 @@ class TestStableSeedIsProcessStable:
                 f"{CIFAR10C_SUITE} defines no stable_seed(); per-cell seeding must "
                 "come from a fixed digest, not from Python's salted hash()"
             )
-        src = "import hashlib\n" + textwrap.dedent(fn) + (
-            "\nprint([stable_seed('cifar10c_suite', c, s)"
-            " for c in ('gaussian_noise', 'snow', 'jpeg_compression')"
-            " for s in (1, 3, 5)])\n"
+        src = (
+            "import hashlib\n"
+            + textwrap.dedent(fn)
+            + (
+                "\nprint([stable_seed('cifar10c_suite', c, s)"
+                " for c in ('gaussian_noise', 'snow', 'jpeg_compression')"
+                " for s in (1, 3, 5)])\n"
+            )
         )
         assert self._run(src, "0") == self._run(src, "12345")
 
@@ -245,12 +228,13 @@ class TestNoMachineLocalPaths:
           author's machine. Same rationale as the archive entries above.
         """
         _SKIP_PARTS = {
-            ".venv", ".venv_wilds", "venv", "__pypackages__",
+            ".venv",
+            ".venv_wilds",
+            "venv",
+            "__pypackages__",
             "archive",
         }
-        _SKIP_PREFIXES = (
-            "audits/integrity_2026-06-20",
-        )
+        _SKIP_PREFIXES = ("audits/integrity_2026-06-20",)
 
         bad: dict[str, list[str]] = {}
         for path in _iter_authored_files(root, (".py", ".sh")):
@@ -281,6 +265,24 @@ class TestNoMachineLocalPaths:
             "(documented in docs/research/kbound/kbound_repro/paths.py, and an error "
             "when unset). EXTERNAL_STORAGE_POLICY.md:18 bans these strings."
         )
+
+    def test_task_scratch_must_not_enter_tracked_source(self):
+        tracked = subprocess.check_output(["git", "ls-files", "-z", "--", ".superpowers/sdd"], cwd=REPO)
+        assert tracked == b"", "local task receipts must not become shipped source"
+
+    def test_task_scratch_exclusion_is_exact(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(sys.modules[__name__], "REPO", tmp_path)
+        paths = {
+            ".superpowers/sdd/receipt.py",
+            ".superpowers/maintained/operator.py",
+            "kga/sdd/runtime.py",
+        }
+        for name in paths:
+            path = tmp_path / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("pass\n", encoding="utf-8")
+        scanned = {path.relative_to(tmp_path).as_posix() for path in _iter_authored_files(tmp_path, (".py",))}
+        assert scanned == paths - {".superpowers/sdd/receipt.py"}
 
     def test_the_allowlist_has_no_stale_entries(self):
         """An allowlist that outlives its violations stops meaning anything."""

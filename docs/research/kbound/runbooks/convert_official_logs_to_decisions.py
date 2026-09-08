@@ -12,27 +12,31 @@ Pre-registered decision mappings (CAMERA_READY_RUNBOOK.md, Item 11):
 
 Input --logs formats:
   poem : JSON {condition: {"fired": bool}}  or  {condition: "adapt"|"freeze"}
-  aetta: directory of the vendored repo's eval_results logs, or a JSON
-         {condition: {"est_acc_adapted": float, "est_acc_frozen": float}}
-Output: JSON {condition: "adapt"|"freeze"|"abstain"} over the exact locked stream order.
+  aetta: exported JSON {condition: {"est_acc_adapted": number, "est_acc_frozen": number}}.
+         Both estimates must be finite numeric scalars in the same units; native
+         percentage and fraction inputs preserve the same comparison rule. Direct
+         directory parsing is unsupported and never silently approximated.
+Output: schema-3 wrapper containing exact-stream decisions and current-byte bindings.
+--stage emits explicitly unverified decisions; official promotion requires the
+separate strict audit plus current environment/toolchain receipts. Historical
+schema-2 audits cannot authorize official labels.
 """
 import argparse
 import hashlib
-import json
 import os
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+from official_decision_artifact import (
+    SCHEMA_VERSION, OFFICIAL_LABEL, UNVERIFIED_LABEL, STAGED, VALIDATED,
+    atomic_json, convert_native_decisions, stream_conditions, validate_official_decisions,
+)
 
 
 def load_stream_conditions(stream_path: str) -> list[str]:
-    with open(stream_path) as f:
-        recs = json.load(f)["records"]
-    conditions = [r.get("condition", "") for r in recs]
-    if not conditions or any(not condition for condition in conditions):
-        sys.exit("[convert] stream contains no conditions or an empty condition identifier")
-    if len(conditions) != len(set(conditions)):
-        sys.exit("[convert] stream condition identifiers are not unique")
-    return conditions
+    return stream_conditions(stream_path)
 
 
 def sha256_file(path: str) -> str:
@@ -44,17 +48,7 @@ def sha256_file(path: str) -> str:
 
 
 def parse_poem(path: str) -> dict:
-    with open(path) as f:
-        raw = json.load(f)
-    out = {}
-    for cond, v in raw.items():
-        if isinstance(v, str):
-            out[cond] = v
-        elif isinstance(v, dict) and "fired" in v:
-            out[cond] = "freeze" if v["fired"] else "adapt"
-        else:
-            sys.exit(f"[convert] unrecognized POEM record for condition {cond!r}: {v!r}")
-    return out
+    return convert_native_decisions('poem', path)
 
 
 def parse_aetta(path: str) -> dict:
@@ -65,15 +59,7 @@ def parse_aetta(path: str) -> dict:
             '{condition: {"est_acc_adapted": x, "est_acc_frozen": y}} from those logs '
             "(see AETTA/print_est.py) and pass it to --logs instead."
         )
-    with open(path) as f:
-        raw = json.load(f)
-    out = {}
-    for cond, v in raw.items():
-        if isinstance(v, str):
-            out[cond] = v
-        else:
-            out[cond] = "adapt" if float(v["est_acc_adapted"]) > float(v["est_acc_frozen"]) else "freeze"
-    return out
+    return convert_native_decisions('aetta', path)
 
 
 def main() -> None:
@@ -87,7 +73,12 @@ def main() -> None:
         help="OFFICIAL_BASELINE_AUDIT.json; required when --require-official-label is set",
     )
     ap.add_argument("--require-official-label", action="store_true")
+    ap.add_argument("--environment-receipt")
+    ap.add_argument("--toolchain-receipt")
+    ap.add_argument("--stage", action="store_true", help="write explicitly unverified staged decisions; no promotion")
     args = ap.parse_args()
+    if args.stage and (args.provenance_audit or args.require_official_label):
+        ap.error('--stage cannot be combined with provenance/promotion arguments')
 
     conditions = load_stream_conditions(args.stream)
     decisions = parse_poem(args.logs) if args.method == "poem" else parse_aetta(args.logs)
@@ -111,13 +102,18 @@ def main() -> None:
 
     official_allowed = False
     audit_sha = None
+    bindings = {}
     if args.provenance_audit:
-        with open(args.provenance_audit) as handle:
-            audit = json.load(handle)
-        audit_sha = sha256_file(args.provenance_audit)
-        official_allowed = bool(
-            audit.get("methods", {}).get(args.method, {}).get("official_label_allowed", False)
-        )
+        try:
+            bindings = validate_official_decisions(
+                audit=args.provenance_audit, method=args.method, decisions=decisions,
+                source_log=args.logs, locked_stream=args.stream,
+                environment_receipt=args.environment_receipt, toolchain_receipt=args.toolchain_receipt,
+            )
+        except (OSError, ValueError) as exc:
+            sys.exit(f'[convert] official provenance rejected: {exc}')
+        audit_sha = bindings['provenance_audit_sha256']
+        official_allowed = True
     if args.require_official_label and not official_allowed:
         sys.exit(
             f"[convert] {args.method} provenance gate is not promotable; retain the "
@@ -126,12 +122,13 @@ def main() -> None:
 
     ordered = {c: decisions[c] for c in conditions}
     output = {
-        "schema_version": 2,
+        "schema_version": SCHEMA_VERSION,
+        "status": VALIDATED if official_allowed else STAGED,
         "method": args.method,
         "label": (
-            "official_implementation_under_protocol_adapter"
+            OFFICIAL_LABEL
             if official_allowed
-            else "external_protocol_adapter_unverified"
+            else UNVERIFIED_LABEL
         ),
         "conversion_rule": (
             "protector fired => freeze; otherwise adapt"
@@ -144,11 +141,9 @@ def main() -> None:
         "official_label_allowed": official_allowed,
         "converted_utc": datetime.now(timezone.utc).isoformat(),
         "decisions": ordered,
+        **bindings,
     }
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w") as f:
-        json.dump(output, f, indent=2, sort_keys=True)
-        f.write("\n")
+    atomic_json(args.out, output)
     n_adapt = sum(1 for d in ordered.values() if d == "adapt")
     print(f"[convert] wrote {args.out}: {len(ordered)} conditions, adapt-rate {n_adapt/len(ordered):.3f}")
 

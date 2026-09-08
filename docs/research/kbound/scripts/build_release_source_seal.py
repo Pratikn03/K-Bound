@@ -79,11 +79,11 @@ NONRELEASE_BUILD_OUTPUT_ALLOWLIST = frozenset(
 
 
 def verify_release_python_content() -> None:
-    """Require the sealed release interpreter before source-seal semantics."""
+    """Require portable locked-distribution content before source-seal semantics."""
 
     verify_python_environment.verify_exact_content_profile(
         ROOT / "requirements-release-macos-arm64.lock.txt",
-        ROOT / "docs/research/kbound/release_python_environment_macos_arm64.json",
+        ROOT / "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
     )
 
 
@@ -142,6 +142,17 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
     "formal_source": (
         "docs/research/kbound/formal/KBound.lean",
+        "docs/research/kbound/formal/ActualFibreRadiusExamples.lean",
+        "docs/research/kbound/formal/ActualWorldExamples.lean",
+        "docs/research/kbound/formal/EvidenceTransportExamples.lean",
+        "docs/research/kbound/formal/ExactConformalExamples.lean",
+        "docs/research/kbound/formal/FeatureRankExamples.lean",
+        "docs/research/kbound/formal/HeadlineEvidenceExamples.lean",
+        "docs/research/kbound/formal/JointKernelExamples.lean",
+        "docs/research/kbound/formal/PaperProofExamples.lean",
+        "docs/research/kbound/formal/PaperSubclassExamples.lean",
+        "docs/research/kbound/formal/RiskAlignmentExamples.lean",
+        "docs/research/kbound/formal/WeightedHelpfulExamples.lean",
         "docs/research/kbound/formal/README.md",
         "docs/research/kbound/formal/build.sh",
         "docs/research/kbound/formal/formal_audit.py",
@@ -185,6 +196,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "tests/test_manuscript_claim_consistency.py",
         "tests/test_natural_target_provenance.py",
         "tests/test_official_baseline_provenance.py",
+        "tests/test_release_provenance_integration.py",
         "tests/test_pacs_replay_artifact.py",
         "tests/test_python_environment_lock.py",
         "tests/test_reconcile_no_implicit_cleanup.py",
@@ -199,6 +211,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
     "paper_source": (
         "docs/research/kbound/kbound_submission.tex",
         "docs/research/kbound/kbound_short_main.tex",
+        "docs/research/kbound/kbound_main_with_appendix.tex",
         "docs/research/kbound/kbound_short_supplement.tex",
         "docs/research/kbound/kbound_tmlr.tex",
         "docs/research/kbound/kbound_full_report.tex",
@@ -214,11 +227,14 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/paper/full_report/formal_reproducibility_atlas.tex",
         "docs/research/kbound/paper/full_report/theory_exposition.tex",
         "docs/research/kbound/paper/generated/cct20_reporting_numbers.tex",
+        "docs/research/kbound/paper/generated/empirical_evidence_numbers.tex",
         "docs/research/kbound/paper/references_kbound_expanded.tex",
         "docs/research/kbound/paper/references_kbound_context_archive.tex",
         "docs/research/kbound/paper/references/refs.bib",
         "docs/research/kbound/paper/sections/theory_certificate.tex",
         "docs/research/kbound/paper/sections/theory_core_main.tex",
+        "docs/research/kbound/paper/sections/officehome_mechanism_check.tex",
+        "docs/research/kbound/paper/sections/proof_traceability.tex",
         "docs/research/kbound/paper/generated/cct20_primary_table_display.tex",
         "docs/research/kbound/paper/generated/cct20_location_effects_display.tex",
         "docs/research/kbound/paper/vendor/tmlr/LICENSE",
@@ -237,6 +253,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/runbooks/run_item11_official_baselines.sh",
         "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "docs/research/kbound/scripts/audit_current_kbound_release.py",
+        "docs/research/kbound/scripts/audit_publication_package.py",
         "docs/research/kbound/scripts/audit_tmlr_anonymity.py",
         "docs/research/kbound/scripts/audit_empirical_data_quality_2026_08_27.py",
         "docs/research/kbound/scripts/audit_natural_target_provenance.py",
@@ -247,6 +264,12 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/scripts/build_current_policy_interval_diagnostics.py",
         "docs/research/kbound/scripts/compare_pdf_renders.py",
         "docs/research/kbound/scripts/empirical_closure.py",
+        "docs/research/kbound/scripts/empirical_macros.py",
+        "docs/research/kbound/scripts/extract_macro_bundle.py",
+        "docs/research/kbound/scripts/word_export.py",
+        "docs/research/kbound/scripts/project_proof_receipts.py",
+        "docs/research/kbound/scripts/project_historical_diagnostic_receipt.py",
+        "docs/research/kbound/scripts/project_domainnet_stop.py",
         "docs/research/kbound/scripts/build_dashboard_snapshot.py",
         "docs/research/kbound/scripts/build_docx.py",
         "docs/research/kbound/scripts/build_empirical_data_quality_report_artifact.py",
@@ -257,6 +280,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/scripts/generate_release_identity.py",
         "docs/research/kbound/scripts/make_tables.py",
         "docs/research/kbound/scripts/official_baseline_provenance.py",
+        "docs/research/kbound/scripts/official_decision_artifact.py",
         "docs/research/kbound/scripts/official_baselines_headtohead.py",
         "docs/research/kbound/scripts/make_submission_figures.py",
         "docs/research/kbound/scripts/plot_canonical_decision_frontier.py",
@@ -288,6 +312,20 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "deploy/api/kga_service.py",
     ),
     "configuration": (
+        "experiments/audit/historical_diagnostic_recovery_receipt.portable.json",
+        "experiments/audit/polarity_diagnostic_log.csv",
+        "experiments/audit/canonical_label_semantics.json",
+        "protocols/confirmatory_v2/DOMAINNET_DEV_PILOT_v1_STOP_PORTABLE.json",
+        "docs/research/kbound/paper/release/manuscript_revision.json",
+        "docs/research/kbound/paper/release/publication_package_v1.json",
+        "docs/research/kbound/formal/actual_fibre_radius_verification_20260907.portable.json",
+        "docs/research/kbound/formal/actual_fibre_radius_followon_20260907.portable.json",
+        "docs/research/kbound/paper/release/empirical-evidence-values.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/manifest.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/entropy.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/bridge.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/officehome.json",
+        "docs/research/kbound/paper/release/empirical_macro_inputs/smoke.json",
         ".dockerignore",
         ".pre-commit-config.yaml",
         ".python-version",
@@ -326,7 +364,9 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "requirements-release.txt",
         "requirements-release-macos-arm64.lock.txt",
         "docs/research/kbound/release_python_environment_macos_arm64.json",
+        "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
         "docs/research/kbound/release_toolchain_macos_arm64.json",
+        "docs/research/kbound/release_toolchain_macos_arm64_v2.json",
         "requirements-paper.txt",
         "requirements-paper.lock.txt",
         "docs/research/kbound/kbound_pkg/pyproject.toml",
@@ -342,6 +382,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
     "verified_release_environment": (
         "docs/research/kbound/audits/python_environment_2026_09_02.json",
         "docs/research/kbound/audits/release_toolchain_2026_09_02.json",
+        "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json",
     ),
     "immutable_release_locks": (
         "research_lock/KBOUND_PROSPECTIVE_CLOSURE_v1.yaml",

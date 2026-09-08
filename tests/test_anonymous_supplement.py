@@ -479,11 +479,20 @@ def test_release_checksum_and_runbook_order_avoid_anonymous_hash_cycle() -> None
     assert '"$KB/scripts/run_repository_verification.py"' in runbook
 
 
+@pytest.mark.parametrize("environment_ok", [True, False])
 def test_anonymous_cli_verifies_exact_python_content_before_archive_semantics(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, environment_ok: bool
 ) -> None:
     calls: list[str] = []
-    monkeypatch.setattr(supplement, "verify_release_python_content", lambda: calls.append("environment"))
+
+    def verify_selected_profile(lock: Path, profile: Path) -> None:
+        assert lock.name == "requirements-release-macos-arm64.lock.txt"
+        assert profile.name == "release_python_environment_macos_arm64_v2.json"
+        calls.append("environment")
+        if not environment_ok:
+            raise ValueError("synthetic Python content rejection")
+
+    monkeypatch.setattr(supplement.verify_python_environment, "verify_exact_content_profile", verify_selected_profile)
     monkeypatch.setattr(
         supplement,
         "verify_anonymous_supplement",
@@ -495,8 +504,13 @@ def test_anonymous_cli_verifies_exact_python_content_before_archive_semantics(
         ["build_anonymous_supplement.py", "--check", "--output", str(tmp_path / "anonymous.zip")],
     )
 
-    assert supplement.main() == 0
-    assert calls == ["environment", "anonymous"]
+    if environment_ok:
+        assert supplement.main() == 0
+        assert calls == ["environment", "anonymous"]
+    else:
+        with pytest.raises(ValueError, match="synthetic Python content rejection"):
+            supplement.main()
+        assert calls == ["environment"]
 
 
 def test_anonymous_portable_check_runs_full_archive_semantics_without_release_runtime(
@@ -565,6 +579,9 @@ def test_standalone_post_checksums_uses_portable_external_verification_before_ha
         encoding="utf-8",
     )
     (repo / "pyproject.toml").write_text("[project]\nname = 'release-fixture'\n", encoding="utf-8")
+    toolchain_receipt = repo / "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json"
+    toolchain_receipt.parent.mkdir(parents=True)
+    toolchain_receipt.write_text('{"status": "verified"}\n', encoding="utf-8")
     release = repo / "docs/research/kbound/release"
     release.mkdir(parents=True)
     (release / "kbound_anonymous_supplement.zip").write_bytes(b"not a semantically valid ZIP")
@@ -615,6 +632,9 @@ def test_standalone_post_checksums_uses_portable_external_verification_before_ha
     events = [json.loads(line) for line in event_log.read_text(encoding="utf-8").splitlines()]
     assert events[0][0].endswith("verify_python_environment.py")
     assert "--content-profile" in events[0]
+    assert events[0][events[0].index("--content-profile") + 1] == (
+        "docs/research/kbound/release_python_environment_macos_arm64_v2.json"
+    )
     assert events[1][0].endswith("verify_release_toolchain.py")
     assert events[2][0].endswith("build_anonymous_supplement.py")
     assert "--portable-check" in events[2]
@@ -667,9 +687,8 @@ def test_default_anonymous_inventory_is_exact_tmlr_dependency_closure() -> None:
         "docs/research/kbound/paper/vendor/tmlr/LICENSE",
         "docs/research/kbound/paper/references_kbound_expanded.tex",
         "docs/research/kbound/paper/references/refs.bib",
-        "docs/research/kbound/figures/fig_decision_flow.png",
         "docs/research/kbound/figures/fig_frontier_schematic.png",
-        "docs/research/kbound/figures/fig_certificate.png",
+        "docs/research/kbound/paper/figures/decision_flow.tex",
     } <= set(inventory)
     assert {
         "docs/research/kbound/kbound_short_final_draft.pdf",
@@ -678,6 +697,8 @@ def test_default_anonymous_inventory_is_exact_tmlr_dependency_closure() -> None:
         "CITATION.cff",
         "README.md",
         "docs/research/kbound/paper/generated/cct20_release_manifest.json",
+        "docs/research/kbound/figures/fig_decision_flow.png",
+        "docs/research/kbound/figures/fig_certificate.png",
     }.isdisjoint(inventory)
     assert all((root / relative).is_file() for relative in inventory)
 

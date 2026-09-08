@@ -52,6 +52,22 @@ DEFAULT_FLOOR = 20.0    # (D1a) official AETTA hard-reset floor, on the 0-100 ac
 DEFAULT_MARGIN = 0.0    # (D1b) strict no-degradation-vs-source gate
 
 
+def validated_estimate_pair(record):
+    """Require both finite scalar accuracy estimates before making a decision."""
+    estimates = []
+    for key in ("aetta_acc_est", "aetta_acc_est_frozen"):
+        if key not in record:
+            raise ValueError(f"missing required AETTA estimate: {key}")
+        value = np.asarray(record[key])
+        if value.ndim != 0 or value.dtype.kind not in "iuf":
+            raise ValueError(f"AETTA estimate must be a numeric scalar: {key}")
+        estimate = float(value)
+        if not np.isfinite(estimate) or not 0.0 <= estimate <= 1.0:
+            raise ValueError(f"AETTA estimate must be finite and in [0, 1]: {key}")
+        estimates.append(estimate)
+    return tuple(estimates)
+
+
 def aetta_dropout_decision(records, floor=DEFAULT_FLOOR, margin=DEFAULT_MARGIN,
                            return_detail=False):
     """Per-condition ADAPT/FREEZE from the logged AETTA MC-dropout estimates (D1,D2).
@@ -63,12 +79,13 @@ def aetta_dropout_decision(records, floor=DEFAULT_FLOOR, margin=DEFAULT_MARGIN,
       floor:  absolute recovery floor on the 0-100 accuracy scale (paper's 20).
       margin: allowed degradation vs source before recovering (0 = strict).
     Returns: np.array(dtype=object) of {"ADAPT","FREEZE"}; optional per-condition detail.
+    Raises: ValueError if either required estimate is missing, non-scalar,
+            nonnumeric, nonfinite, or outside [0, 1]. No fallback decision is made.
     """
     dec, detail = [], []
     for r in records:
-        est_ad = float(r["aetta_acc_est"])
-        est_fr = float(r.get("aetta_acc_est_frozen", np.nan))
-        no_degrade = (np.isnan(est_fr)) or (est_ad >= est_fr - margin)   # D1b (if no source est, don't block on it)
+        est_ad, est_fr = validated_estimate_pair(r)
+        no_degrade = est_ad >= est_fr - margin                          # D1b
         above_floor = (100.0 * est_ad) >= floor                          # D1a
         adapt = bool(no_degrade and above_floor)
         dec.append("ADAPT" if adapt else "FREEZE")

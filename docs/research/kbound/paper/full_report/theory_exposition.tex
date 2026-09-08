@@ -119,9 +119,11 @@ candidate correctness on $D$ can depart from that score margin.
 Treating $M$ as fixed also deserves care.  In the population theorem, $M$ is part of the augmented
 observable.  If a practical system estimates $M$ from a finite batch, then estimation error creates
 another uncertainty term.  The exact frontier does not make that term vanish.  A valid practical
-analysis would either condition on the realized augmented object, enlarge the class to cover the
-estimation error, or prove a separate sampling statement.  None of those steps is obtained merely
-by reusing the symbol $M$ for a sample average.
+analysis must account for that estimation error, for example by enlarging the class or proving a
+separate sampling statement.  Conditioning is an alternative only under an explicitly justified
+conditional observation and model law; conditioning on a model pair adapted on the same batch is
+not justified by the fixed-pair theorem.  None of those steps is obtained merely by reusing the
+symbol $M$ for a sample average.
 
 \subsection{A disciplined order for reading a claim}
 \label{fr:subsec-claim-order}
@@ -271,8 +273,9 @@ upper endpoint equal to zero does not justify the claim that every compatible be
 For $|M|<\beta$, the interval contains values on both sides of zero.  One may select a small
 $r>0$ satisfying $r<\min\{\beta-|M|,\tfrac12\}$ and use the two constant kernels
 $\eta_+(x)=\tfrac12+r$ and $\eta_-(x)=\tfrac12-r$.  Their residuals are $r-M$ and $-r-M$; both have
-absolute value below $\beta$.  They preserve all label-free evidence and yield benefits $2dr$ and
-$-2dr$.  The ambiguity is exact: no additional sample from the same label-free evidence law can
+absolute value below $\beta$.  Under the fixed observation experiment in
+Section~\ref{fr:subsec-kernel-construction}, they preserve the label-free evidence law and yield
+benefits $2dr$ and $-2dr$.  The ambiguity is exact: no additional sample from the same label-free evidence law can
 distinguish these two target worlds.
 
 For $|M|=\beta>0$, opposite nonzero signs need not both be available, but zero is.  Taking
@@ -317,9 +320,9 @@ arbitrarily complicated statistics, but it cannot tell apart two laws in the sam
 Let $W$ contain the audit's full information set.  It may include the unlabeled target batch,
 predictions from both models, logits, features derived from those outputs, the fixed score, and
 source or development data whose law is unaffected by the deployment label kernel.  Let an audit
-also use an independent random seed $U$ and return
+also use an independent random seed $U$ and return the measurable real-valued output
 \begin{equation}
-  \widehat\beta=g(W,U)\in[0,\infty].
+  \widehat\beta=g(W,U)\in[0,\infty).
   \label{fr:eq-randomized-audit}
 \end{equation}
 Including $U$ makes the argument cover randomized procedures.  It gives the audit no additional
@@ -351,11 +354,12 @@ Fix the target input marginal, source information, predictors, score, and the la
 $D$.  On $D$, choose any measurable $\eta:D\to[0,1]$ and define the conditional label law by
 assigning probability $\eta(x)$ to $Y=f_a(x)$ and probability $1-\eta(x)$ to $Y=f_0(x)$.  This is a
 complete binary conditional distribution because the two predictions are distinct on $D$.
+Use one fixed marginal-based observation experiment for all target laws, including a fixed joint
+law for any source information; finite iid target sampling is one realization.
 
 Changing $\eta$ in this construction changes target labels but changes neither the distribution of
-$X$ nor either model's output at a given $X$.  Consequently, it preserves every label-free target
-statistic formed from inputs and the fixed model pair.  It also preserves any source or development
-sample whose law has been fixed independently of the deployment label kernel.  At the same time,
+$X$ nor either model's output at a given $X$.  Under this common observation experiment, changing
+the target label kernel preserves the law of all recorded label-free evidence.  At the same time,
 the residual becomes
 \begin{equation}
   \gamma(\eta)
@@ -373,7 +377,8 @@ label kernel was paired with it.  The obstacle is identification, not a slow con
 \subsection{Deriving the audit floor line by line}
 \label{fr:subsec-audit-proof}
 
-Suppose the audit is required to cover the true absolute residual throughout one nonempty fibre:
+Suppose the audit is required to cover the true absolute residual throughout one nonempty fibre
+whose residual set is bounded (as it is for the stated binary score):
 \begin{equation}
   \Pr_P\{\widehat\beta\ge|\gamma(P)|\}\ge1-\delta
   \qquad\text{for every }P\in\mathcal C(z),
@@ -424,8 +429,8 @@ numerical substitute.
 
 Now add a labeled source or calibration sample $L_S$ to the observable object, so
 $W=(W_0,L_S)$.  If the declared class places no restriction linking the law of $L_S$ to the target
-label kernel on $D$, hold the law of $L_S$ fixed while applying the target kernel construction.
-Both worlds then induce the same joint law of $(W_0,L_S)$ and can still have different values of
+label kernel on $D$, hold the full joint observation law of $(W_0,L_S)$ fixed while applying the
+target kernel construction.  These worlds then have the same recorded evidence law and can still have different values of
 $\gamma$.  The labeled sample may estimate source correctness extremely well; it does not identify
 target correctness on a region whose label law is allowed to change independently.
 

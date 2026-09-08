@@ -88,13 +88,13 @@ def _index_sample_npzs(run_dir, dataset, method, seed):
         try:
             with np.load(path, allow_pickle=True) as d:
                 cond = _npz_scalar_str(d["condition"])
+                est_ad, est_fr = AETTA.validated_estimate_pair(d)
                 out[cond] = {
                     "condition": cond,
                     "frozen_entropy": np.asarray(d["frozen_entropy"], float),
                     "adapted_entropy": np.asarray(d["adapted_entropy"], float),
-                    "aetta_acc_est": float(d["aetta_acc_est"]),
-                    "aetta_acc_est_frozen": float(d["aetta_acc_est_frozen"])
-                    if "aetta_acc_est_frozen" in d.files else float("nan"),
+                    "aetta_acc_est": est_ad,
+                    "aetta_acc_est_frozen": est_fr,
                     "a0": float(d["a0"]) if "a0" in d.files else float("nan"),
                     "a_adapted": float(d["a_adapted"]) if "a_adapted" in d.files else float("nan"),
                 }

@@ -1,18 +1,17 @@
 """Tests for kbound.kga (KGA).
 
 Covers the no-torch path:
-  - KGA.decide() returning adapt/freeze/abstain based on heuristic certificate
+  - KGA.decide() abstaining without an authorized benefit interval
   - KGA.evidence() returning the evidence vector
-  - KGA.decide_from_batch() raising ImportError when torch absent
+  - KGA.decide_from_batch() abstaining without requiring torch or model access
   - KGA constructor with/without router
 """
 
 import numpy as np
 import pytest
-
+from kbound.evidence import EVIDENCE_NAMES
 from kbound.kga import KGA
 from kbound.router import BenefitRouter
-from kbound.evidence import EVIDENCE_NAMES
 
 
 def make_probs(n=64, C=10, seed=0, concentration=1.0):
@@ -24,6 +23,7 @@ def make_probs(n=64, C=10, seed=0, concentration=1.0):
 # ---------------------------------------------------------------------------
 # Constructor
 # ---------------------------------------------------------------------------
+
 
 class TestKGAConstructor:
     def test_default_constructor(self):
@@ -53,6 +53,7 @@ class TestKGAConstructor:
 # evidence() method
 # ---------------------------------------------------------------------------
 
+
 class TestKGAEvidence:
     def test_evidence_shape(self):
         kga = KGA()
@@ -71,8 +72,9 @@ class TestKGAEvidence:
 
 
 # ---------------------------------------------------------------------------
-# decide() — heuristic certificate (no-torch)
+# decide() — unavailable benefit authority (no-torch)
 # ---------------------------------------------------------------------------
+
 
 class TestKGADecide:
     def test_returns_valid_string(self):
@@ -80,20 +82,20 @@ class TestKGADecide:
         p0 = make_probs(seed=10)
         pa = make_probs(seed=11)
         d = kga.decide(p0, pa)
-        assert d in ("adapt", "freeze", "abstain")
+        assert d == "abstain"
 
-    def test_freeze_on_collapse(self):
-        """Collapse: pa assigns near-unit mass to one class -> FREEZE."""
+    def test_collapse_does_not_certify_negative_benefit(self):
+        """Collapse alone supports no certified direction."""
         n, C = 64, 10
         pa = np.full((n, C), 1e-4)
         pa[:, 0] = 1.0 - (C - 1) * 1e-4
         p0 = make_probs(n=n, C=C, seed=20)
         kga = KGA()
         d = kga.decide(p0, pa)
-        assert d == "freeze", f"Expected freeze on collapse, got {d}"
+        assert d == "abstain", f"Uncalibrated collapse must abstain, got {d}"
 
-    def test_freeze_on_high_marginal_kl(self):
-        """Very large marginal KL (adapted distribution completely different) -> FREEZE."""
+    def test_high_marginal_kl_does_not_certify_negative_benefit(self):
+        """Large marginal KL alone supports no certified direction."""
         n, C = 64, 10
         # p0: uniform-ish
         p0 = np.full((n, C), 1.0 / C)
@@ -102,10 +104,10 @@ class TestKGADecide:
         pa[:, 0] = 1.0 - (C - 1) * 1e-6
         kga = KGA()
         d = kga.decide(p0, pa)
-        assert d == "freeze", f"Expected freeze on extreme KL shift, got {d}"
+        assert d == "abstain", f"Uncalibrated KL shift must abstain, got {d}"
 
-    def test_adapt_on_entropy_drop(self):
-        """Strong entropy reduction without collapse -> ADAPT."""
+    def test_entropy_drop_does_not_certify_positive_benefit(self):
+        """Entropy reduction without a calibrated estimator still abstains."""
         rng = np.random.default_rng(30)
         n, C = 64, 10
         # p0: diffuse (high entropy)
@@ -119,9 +121,7 @@ class TestKGADecide:
         pa = pa_raw / pa_raw.sum(axis=1, keepdims=True)
         kga = KGA()
         d = kga.decide(p0, pa)
-        assert d in ("adapt", "abstain"), (
-            f"Expected adapt or abstain for entropy-reducing pa, got {d}"
-        )
+        assert d == "abstain"
 
     def test_abstain_when_uncertain(self):
         """Near-identical p0 and pa with small changes -> ABSTAIN."""
@@ -134,27 +134,23 @@ class TestKGADecide:
         pa /= pa.sum(axis=1, keepdims=True)
         kga = KGA()
         d = kga.decide(base, pa)
-        assert d in ("abstain", "adapt", "freeze"), f"Invalid decision: {d}"
+        assert d == "abstain"
 
     def test_decide_with_upd_norm(self):
         kga = KGA()
         p0 = make_probs(seed=50)
         pa = make_probs(seed=51)
         d = kga.decide(p0, pa, upd_norm=1.5)
-        assert d in ("adapt", "freeze", "abstain")
+        assert d == "abstain"
 
 
 # ---------------------------------------------------------------------------
-# decide_from_batch() — torch path (torch absent -> ImportError)
+# decide_from_batch() — authority is unavailable, so no inference is attempted
 # ---------------------------------------------------------------------------
+
 
 class TestKGADecideFromBatch:
-    def test_raises_importerror_without_torch(self):
-        """decide_from_batch must raise ImportError when torch is not installed."""
-        import sys
-        # Confirm torch is genuinely absent in this environment
-        if "torch" in sys.modules:
-            pytest.skip("torch is installed; cannot test torch-absent path here")
+    def test_without_models_remains_unavailable(self):
+        """Missing models/authority do not justify inference or strict actions."""
         kga = KGA()
-        with pytest.raises(ImportError, match="torch"):
-            kga.decide_from_batch(None)
+        assert kga.decide_from_batch(None) == "abstain"

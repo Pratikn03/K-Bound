@@ -1,0 +1,88 @@
+{
+  "protocol_id": "KBOUND-CONFIRMATORY-V2",
+  "status": "DRAFT_UNSEALED",
+  "execution_authorized": false,
+  "new_target_access_performed_by_this_work": false,
+  "baseline_id": "KBOUND_PRE_CONFIRMATORY_R1",
+  "branch": "kbound/confirmatory-v2",
+  "manuscript_rewriting_allowed_before_new_evidence": false,
+  "population_beta_is_not_kga_epsilon": true,
+  "decision_windows": {
+    "U": "unlabeled candidate construction; freeze the candidate afterward",
+    "V": "unlabeled decision evidence; no residual fitting with target outcomes",
+    "E": "fresh evaluation inputs are used for frozen predictions; evaluation outcomes are joined only after the entire predeclared action and prediction sets are sealed",
+    "C": "historical labeled calibration environments, separate from U/V/E target episodes"
+  },
+  "environment_splits": {"development": [], "calibration": [], "test": []},
+  "dataset": null,
+  "dataset_version": null,
+  "target_estimand": null,
+  "metric_contract": null,
+  "checkpoint_manifest": null,
+  "independent_source_training_runs_minimum": 5,
+  "candidate_eligibility_rule": null,
+  "comparator_versions_and_information_contracts": null,
+  "outcome_custody_receipt": null,
+  "outcome_custody": {
+    "mode": "SELF_MANAGED_PROCESS_ISOLATION",
+    "status": "DESIGN_ONLY_ENFORCEMENT_UNVERIFIED",
+    "user_request": "Assistant manages labels outside the repository and uses them only at the authorized scoring stage; no manual collaborator custody required.",
+    "vault_location": null,
+    "vault_requirements": "Dedicated owner-enforcing filesystem outside the repository and scientific worker allowlists; no reliance on ExFAT chmod semantics.",
+    "access_contract": "A fixed ingestion broker may parse label-bearing input privately and export only allowlisted opaque metadata. Restricted source/development, decision and prediction workers receive only their authorized views. The fixed offline scorer validates the complete lock, action set, prediction set, metric and run state before opening target labels.",
+    "scoring_contract": "All predeclared actions and predictions must be sealed before any target score. One complete join, no interactive subset scoring, no adapter/plugin execution in the label-capable scorer, and no return channel to later decisions.",
+    "failure_contract": "Failed sandbox preflight stops execution. Any failure after a target label read permanently records opened/incomplete status; it must not reset the study to unopened.",
+    "threat_model": "Protect the configured scientific workers against accidental or unauthorized label reads. Does not prevent the broadly authorized host assistant, account owner or administrator from deliberately bypassing the workflow.",
+    "independent_custody_claim": false,
+    "vault_ingested_target_label_content": false,
+    "decision_worker_target_label_access_observed": false,
+    "assistant_visible_target_labels": false,
+    "synthetic_enforcement_receipt": null
+  },
+  "sampling_frame_and_independence_argument": null,
+  "error_budget": {
+    "status": "PROPOSED_NOT_LOCKED",
+    "population_directional_budget": 0.05,
+    "cell_miscoverage": null,
+    "sampling_failure_probability": null,
+    "constraint": "cell_miscoverage + sampling_failure_probability <= population_directional_budget",
+    "example_only": {
+      "cell_miscoverage": 0.025,
+      "sampling_failure_probability": 0.025,
+      "minimum_exchangeable_calibration_units_for_finite_exact_rank": 39
+    },
+    "warning": "A 0.90 cell inclusion target cannot by itself justify 0.05 population directional error."
+  },
+  "proposed_success_criteria": {
+    "status": "REQUIRES_PRE_OUTCOME_POWER_AND_DESIGN_REVIEW",
+    "adapt_rate_minimum": 0.10,
+    "freeze_rate_minimum": 0.10,
+    "commitment_rate_minimum": 0.30,
+    "false_adapt": "predeclared one-sided upper confidence bound <= error target",
+    "false_freeze": "predeclared one-sided upper confidence bound <= error target",
+    "regret_gap_sign": "baseline regret minus KGA regret; positive favors KGA",
+    "utility": "both fixed-policy improvements supported by declared simultaneous inference",
+    "complete_valid_protocol_required": true,
+    "failed_or_low_exposure_result_preserved": true
+  },
+  "inference": {
+    "environment_and_checkpoint_axes_are_crossed": true,
+    "generalization_scope": null,
+    "primary_resampling_unit": null,
+    "multiplicity_family": null,
+    "power_design_receipt": null,
+    "bootstrap_intervals_are_nominal": true
+  },
+  "blockers": [
+    "Review and freeze the integrated source changes; complete committed baseline recovery is verified at b1899ea20567fbd1978521759aa602678b1fdab5",
+    "Finish manuscript-to-proof scope mapping after the reviewed Proposition 3 addition to the confirmed 43-page baseline; the new 45-page preview is unsealed and broader rewriting remains deferred until new evidence",
+    "Choose an eligible dataset using development information only; document prior target access",
+    "Bind disjoint environments and underlying U/V/E sample identities",
+    "Define target population, score, sampling frame, and dependence model",
+    "Allocate cell/sampling error budgets and ensure enough independent calibration units",
+    "Power analysis for error bounds, exposure, paired utility, and crossed replication",
+    "Pin official comparator implementations and legitimate information/candidate comparability",
+    "Implement and adversarially verify action sealing, label custody, offline scoring, and success evaluator",
+    "Resolve repository and release failures; the full local formal corpus and 156-name axiom check now pass, but the final source seal and independent whole-release verification remain pending"
+  ]
+}

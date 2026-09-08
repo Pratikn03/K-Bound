@@ -11,9 +11,9 @@ import numpy as np
 import pytest
 
 from deploy.api.kga_service import assess_kga_decision
-from kga import Decision, FrozenLinearBenefitEstimator, KGA, decide_batch, decide_kga
+from kga import KGA, Decision, FrozenLinearBenefitEstimator, decide_batch, decide_kga
 from kga._validation import as_float_array
-from kga.benefit import fit_frozen_linear_benefit_estimator
+from kga.benefit import BenefitArtifactFormatError, fit_frozen_linear_benefit_estimator
 from kga.certificate import (
     conformal_radii_loo,
     conformal_split,
@@ -25,8 +25,10 @@ from kga.certificate import (
 )
 from kga.routing import AnytimeMulticandidatePanel, bonferroni_multicandidate_route, route_panel
 
-
 SCORES = np.linspace(0.1, 0.9, 20)
+# Synthetic authorization fixed separately from the custom predictors under test.
+AUTHORIZED_MASKED_FIXTURE_PAYLOAD_SHA256 = "a060fa2909cfefcc145c4a1c9ceb913533df54c5b567282aa621fdc1eb0bf418"
+AUTHORIZED_CUSTOM_RESIDUAL_PAYLOAD_SHA256 = "b" * 64
 
 
 def _masked(values, *, all_missing: bool = False) -> np.ma.MaskedArray:
@@ -54,8 +56,12 @@ def _estimator() -> FrozenLinearBenefitEstimator:
 def _assert_invalidated(gate: KGA) -> None:
     report = gate.explain()
     for name in (
-        "evidence", "certificate", "decision", "estimator_artifact_sha256",
-        "protocol_sha256", "evidence_schema_version",
+        "evidence",
+        "certificate",
+        "decision",
+        "estimator_artifact_sha256",
+        "protocol_sha256",
+        "evidence_schema_version",
     ):
         assert report[name] is None, name
     with pytest.raises(ValueError, match="No certificate available"):
@@ -139,6 +145,7 @@ def test_masked_feature_cannot_reach_even_a_permissive_custom_predictor(delta: f
     with pytest.raises(ValueError, match="finite"):
         gate.certify_evidence(
             estimator,
+            expected_estimator_payload_sha256=AUTHORIZED_MASKED_FIXTURE_PAYLOAD_SHA256,
             protocol_sha256=estimator.protocol_sha256,
             evidence_schema_version=estimator.evidence_schema_version,
             features={"x": np.ma.array(delta, mask=True)},
@@ -163,6 +170,7 @@ def test_custom_estimator_residual_mask_survives_the_facade_boundary(delta: floa
     with pytest.raises(ValueError, match="finite"):
         gate.certify_evidence(
             estimator,
+            expected_estimator_payload_sha256=AUTHORIZED_CUSTOM_RESIDUAL_PAYLOAD_SHA256,
             protocol_sha256=estimator.protocol_sha256,
             evidence_schema_version=estimator.evidence_schema_version,
             features={"x": delta},
@@ -178,7 +186,9 @@ def test_frozen_estimator_construction_and_dict_loading_do_not_erase_masks(field
         replace(estimator, **{field: masked})
     payload = estimator.to_dict()
     payload[field] = masked
-    with pytest.raises(ValueError, match="finite"):
+    with pytest.raises(
+        BenefitArtifactFormatError, match=f"{field} must be a non-empty one-dimensional JSON number array"
+    ):
         FrozenLinearBenefitEstimator.from_dict(payload)
 
 
@@ -283,14 +293,17 @@ def test_masked_anytime_step_is_rejected_before_any_candidate_advances() -> None
 @pytest.mark.parametrize("delta", [-0.4, 0.4])
 @pytest.mark.parametrize("all_missing", [False, True])
 @pytest.mark.parametrize("field", ["calib_scores", "test_scores", "benefit_scores", "calib_residuals"])
-def test_service_missing_masked_evidence_abstains_and_retains_frozen(delta: float, all_missing: bool, field: str) -> None:
+def test_service_missing_masked_evidence_abstains_and_retains_frozen(
+    delta: float, all_missing: bool, field: str
+) -> None:
     inputs = {"calib_scores": SCORES, "test_scores": SCORES}
     kwargs = {"cert_mode": "full", "delta_hat": delta, "calib_residuals": np.zeros(19)}
     if field in inputs:
         inputs[field] = _masked(inputs[field], all_missing=all_missing)
     elif field == "benefit_scores":
         kwargs = {
-            "cert_mode": "full", "benefit_scores": _masked(np.full(200, delta), all_missing=all_missing),
+            "cert_mode": "full",
+            "benefit_scores": _masked(np.full(200, delta), all_missing=all_missing),
             "benefit_range": 2.0,
         }
     else:
@@ -310,7 +323,11 @@ def test_inactive_masks_preserve_plain_array_results(delta: float) -> None:
     masked_residuals = np.ma.array(np.zeros(19), mask=False)
     plain = assess_kga_decision(SCORES, SCORES, cert_mode="full", delta_hat=delta, calib_residuals=np.zeros(19))
     masked = assess_kga_decision(
-        masked_scores, masked_scores, cert_mode="full", delta_hat=delta, calib_residuals=masked_residuals,
+        masked_scores,
+        masked_scores,
+        cert_mode="full",
+        delta_hat=delta,
+        calib_residuals=masked_residuals,
     )
     assert masked == plain
     benefits = np.full(200, delta)

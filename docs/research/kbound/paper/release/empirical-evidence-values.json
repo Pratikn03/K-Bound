@@ -1,0 +1,117 @@
+{
+  "schema": "kbound-portable-six-macro-reproduction-v1",
+  "status": "INTEGRATED_AND_SCOPED_REVIEWED_NOT_A_RELEASE_SEAL",
+  "bundle": "docs/research/kbound/paper/release/empirical_macro_inputs",
+  "manifest_sha256": "e4c2cff245871a2d2e8ebe626e7c197b59faa4194f921e15eff84a3903e6c3b4",
+  "macro_file": "docs/research/kbound/paper/generated/empirical_evidence_numbers.tex",
+  "macro_file_sha256": "4480e31365e5b45dfbf24fd534f2f9c8594fdcc1475b3ed1f5aa28c97627bbfd",
+  "macro_values": {
+    "KBDNBridgeAdaptPP": "8.299520",
+    "KBDNBridgeGatePP": "0.065104",
+    "KBDNEntropyAdaptPP": "1.074219",
+    "KBDNEntropyGatePP": "0.390625",
+    "KBOHSmokeWallSeconds": "20.43",
+    "KBOHZeroRegret": "0.00035613"
+  },
+  "units": {
+    "KBDNEntropyGatePP": "equal-cell regret percentage points",
+    "KBDNEntropyAdaptPP": "equal-cell regret percentage points",
+    "KBDNBridgeGatePP": "equal-cell regret percentage points",
+    "KBDNBridgeAdaptPP": "equal-cell regret percentage points",
+    "KBOHZeroRegret": "equal-cell accuracy-fraction regret, not percentage points",
+    "KBOHSmokeWallSeconds": "whole-run runner elapsed seconds, not per-arm or end-to-end latency"
+  },
+  "original_source_bindings": {
+    "bridge": {
+      "extracted_sha256": "d3512c931941e63bf320ac6d2746e93d47f3cee308691036399a5f61350d3f89",
+      "row_count": 24,
+      "sha256": "741605359bde9f79cc616f34d6d70e2c2c6c4110fe75da226e8837060378946c",
+      "source_id": "domainnet_adacontrast_development/result.json"
+    },
+    "entropy": {
+      "extracted_sha256": "690ed7906c0711143490784f93ee3261906cd47a0b065f2698257835f33828f4",
+      "row_count": 24,
+      "sha256": "a48d8011e26fe3991342cb4118e33dafa36134dd4ae6b3b32431c6facf3619b9",
+      "source_id": "domainnet_entropy_development/result.json"
+    },
+    "officehome": {
+      "extracted_sha256": "2b123ec977eab9627c2281d8dc455732f3279c3f8620697231a6bda958a60bbe",
+      "row_count": 54,
+      "sha256": "a184f085bb19af055eefe3a3b5209eb2e82047c1c8f82860a70c0a358e2f31da",
+      "source_id": "officehome_opened_archive/test_seed234.json"
+    },
+    "smoke": {
+      "extracted_sha256": "b84ef62da0ee1d2b2d91b56bfa6ddc600d13218dbfc6c9e520cc8710be854ede",
+      "row_count": 1,
+      "sha256": "2e0cfcbaf7561a3e76ee1bf98e1d9bd1085784b404e22bfb982aa87b1c786258",
+      "source_id": "officehome_mechanics_smoke/completion.json"
+    }
+  },
+  "scripts_sha256": {
+    "empirical_macros.py": "b5cef4b2450d2665f3f270721dd93d4835393e53377139dae0ead4ca1bc8b404",
+    "extract_macro_bundle.py": "e370c1c0e450e5e21e7527a4655e49c2246877cab4951e68f0dce8cd63f7b8ff"
+  },
+  "bundle_files": {
+    "bridge.json": {
+      "bytes": 5886,
+      "sha256": "d3512c931941e63bf320ac6d2746e93d47f3cee308691036399a5f61350d3f89"
+    },
+    "entropy.json": {
+      "bytes": 5887,
+      "sha256": "690ed7906c0711143490784f93ee3261906cd47a0b065f2698257835f33828f4"
+    },
+    "manifest.json": {
+      "bytes": 8085,
+      "sha256": "e4c2cff245871a2d2e8ebe626e7c197b59faa4194f921e15eff84a3903e6c3b4"
+    },
+    "officehome.json": {
+      "bytes": 15151,
+      "sha256": "2b123ec977eab9627c2281d8dc455732f3279c3f8620697231a6bda958a60bbe"
+    },
+    "smoke.json": {
+      "bytes": 259,
+      "sha256": "b84ef62da0ee1d2b2d91b56bfa6ddc600d13218dbfc6c9e520cc8710be854ede"
+    }
+  },
+  "check_command": [
+    "python",
+    "docs/research/kbound/scripts/empirical_macros.py",
+    "--bundle",
+    "docs/research/kbound/paper/release/empirical_macro_inputs",
+    "--manifest-sha256",
+    "e4c2cff245871a2d2e8ebe626e7c197b59faa4194f921e15eff84a3903e6c3b4",
+    "--check",
+    "docs/research/kbound/paper/generated/empirical_evidence_numbers.tex"
+  ],
+  "generation": "Use the check command with --output NEW_FILE.tex in place of --check EXISTING_FILE.tex. Existing output paths are refused.",
+  "extraction": "Optional extract_macro_bundle.py accepts only the four exact original source hashes bound above. Ordinary reproduction needs only the committed bundle, not original outcome files.",
+  "test_command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_kbound_empirical_macros.py"
+  ],
+  "verification": {
+    "parent_integrated_tests": 126,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "independent_delta_tests": 45,
+    "tests_overlap": true,
+    "projection": "All original rows preserved: 24 entropy, 24 bridge, 54 OfficeHome, plus one explicitly selected whole-run scalar. Independent rational arithmetic and source projection review passed.",
+    "projection_review_sha256": "5c2c10f7068c53e5701c03a3cc4860b54ef9671fd2454aa31d2375b0e298f8d5",
+    "integration_review_sha256": "f1cd4e560371eb1d9d57848d8cac9403f5e43fa7828d17601b60bf4d01963d51",
+    "review_receipt_scope": "Review identifiers bind separately retained local audit receipts, not public signatures or independently proved scoring."
+  },
+  "interpretation": "DomainNet development and OfficeHome retrospective archive retain original status; smoke is whole-run mechanics timing only, not per-arm speed or performance efficacy.",
+  "boundaries": [
+    "This closes reproduction of six saved scalar values only, not all manuscript tables or original scoring.",
+    "Source hashes identify bytes; they do not authenticate official checkpoints or prove correct labels, predictions, sampling, calibration, or scientific claims.",
+    "OfficeHome exact-zero selection is a retrospective archive diagnostic, not a predeclared or independently confirmed KGA rule.",
+    "The smoke did not calibrate or evaluate KGA. Its timing does not establish speed, sustained throughput, or peak-memory usage.",
+    "No raw labels, images, prediction arrays, or checkpoints are distributed in this bundle.",
+    "The macro check is read-only and stops downstream figures, LaTeX, and publication on failure. Earlier identity generation in the existing build may already have written a derived identity.",
+    "Local tests and independent review do not establish exact-commit GitHub CI or final release sealing."
+  ]
+}

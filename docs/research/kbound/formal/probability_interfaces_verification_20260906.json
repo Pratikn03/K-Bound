@@ -1,0 +1,168 @@
+{
+  "schema": "kbound-probability-interface-verification-v1",
+  "date": "2026-09-06",
+  "status": "PINNED_INTEGRATED_STRICT_AUDIT_PASS",
+  "working_tree_candidate": true,
+  "release_attestation": false,
+  "empirical_assumptions_verified": false,
+  "standard_lake_build_performed": true,
+  "incremental_build_with_cached_dependencies": true,
+  "cold_dependency_rebuild": false,
+  "registered_declarations": 161,
+  "legacy_core_declarations": 65,
+  "probability_capstones": 96,
+  "prior_registered_declarations": 150,
+  "historical_receipts_modified": false,
+  "new_registered_declarations": [
+    "KBound.RandomizedActionLaw.abstention_lower_bound",
+    "KBound.RandomizedActionLaw.common_law_forces_abstention",
+    "KBound.RandomizedActionLaw.randomized_rules_force_abstention",
+    "KBound.RandomizedActionLaw.zero_errors_full_abstention",
+    "KBound.ExtendedRadiusCertificate.action_top",
+    "KBound.ExtendedRadiusCertificate.action_finite",
+    "KBound.ExtendedRadiusCertificate.action_ofReal",
+    "KBound.ExtendedRadiusCertificate.measurableSet_coverage",
+    "KBound.ExtendedRadiusCertificate.false_direction_subset_failure",
+    "KBound.ExtendedRadiusCertificate.directional_error_probability",
+    "KBound.ExtendedRadiusCertificate.measurableSet_falseDirection"
+  ],
+  "supporting_interface_examples": {
+    "module": "KBound.Probability.InterfaceExamples",
+    "named_theorems": [
+      "KBound.ProbabilityInterfaceExamples.tenth_error_bound",
+      "KBound.ProbabilityInterfaceExamples.zero_benefit_boundary",
+      "KBound.ProbabilityInterfaceExamples.mixed_radius_zero_error"
+    ],
+    "pointwise_examples": 5,
+    "included_in_lake_build": true,
+    "included_in_registered_count": false
+  },
+  "lean": {
+    "version": "4.29.1",
+    "commit": "f72c35b3f637c8c6571d353742168ab66cc22c00",
+    "threads": 1
+  },
+  "audit_python": "3.12.13",
+  "allowed_observed_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "claims": [
+    {
+      "paper_labels": [
+        "cor:matched-abstain",
+        "prop:closed-band"
+      ],
+      "module": "RandomizedActionLaw",
+      "scope": "measurable world-specific decision rules with a common action pushforward and explicit directional-error bounds imply abstention probability at least one minus two alpha",
+      "limits": "common action laws are explicit; equal seed marginals alone do not establish the needed joint law; no empirical assumptions are certified"
+    },
+    {
+      "paper_labels": [
+        "thm:certificate",
+        "thm:cert"
+      ],
+      "module": "ExtendedRadiusCertificate",
+      "scope": "measurable real estimate/truth and ENNReal radius; infinity abstains; marginal coverage bounds the measurable union of both directional errors by alpha",
+      "limits": "coverage for the declared target remains a premise; no independence, conditional coverage, or almost-sure finiteness is imposed or inferred"
+    }
+  ],
+  "open_research_frontier": [
+    {
+      "item": "full historical one-bit channel sufficiency and H/ratio-rate extension",
+      "current": "measurable swap/impossibility proved; orbit-selection sufficiency has an evidence-fibre counterexample",
+      "needed": "a corrected fibre-consistent orientation theorem and separately justified nondegenerate H/ratio-rate model; excluded from the compact paper"
+    }
+  ],
+  "source_matches_compiled_snapshot": true,
+  "formal_source_sha256": {
+    "docs/research/kbound/formal/KBound/Basics.lean": "a3042bb266f225f4e7e4af282c90e2da4d3c3d62ad518cca2903394ccf38b405",
+    "docs/research/kbound/formal/KBound/Certificate.lean": "b09b7026c9ee9139b899f0a76873831c7c5fbe3891dcc4dffaa1e907569ba3e8",
+    "docs/research/kbound/formal/KBound/Conformal.lean": "183933fbd64b4b0b7dac984c39c1f38a0e032c36afadc6e59760b3363688117d",
+    "docs/research/kbound/formal/KBound/Corollaries.lean": "d4690154237431f0fc823e63d0ea7faa8fd6101460ba4f933e135a973d96438c",
+    "docs/research/kbound/formal/KBound/Dichotomy.lean": "e6c03cb1c35e63ed5cb09ae4460295f72685d6fe655d95d70d1020bacb4e7139",
+    "docs/research/kbound/formal/KBound/Disagreement.lean": "5a00f370687f4db223fc3c170e5684cfc49932e291da439a7cd17f7e0314a6c4",
+    "docs/research/kbound/formal/KBound/FiniteTesting.lean": "8b5d668871bfd84238ce042ada32b5a92dae168c5fc182250a58de4279f4dde0",
+    "docs/research/kbound/formal/KBound/Frontier.lean": "22d96d01bd18ed454c1e341ed28e4c350e88a351f7f74f001edc9915c28122cd",
+    "docs/research/kbound/formal/KBound/Gate.lean": "ee8c9c5a8458257f9868d56a0f476e05f1f1543bbfdf48e1d160ad7643a89efb",
+    "docs/research/kbound/formal/KBound/Impossibility.lean": "fd32094ea4bd15dfe3fd885ee88bb893d6efedbe7e52d7d89ea68d16951284be",
+    "docs/research/kbound/formal/KBound/JackknifePlus.lean": "252513721ca9d665cdf2dbec088b024390c85901bc9c60bcb7abebee279c9f32",
+    "docs/research/kbound/formal/KBound/LeCam.lean": "cbf58de738bdeac56a23d0eed8e1772516a8a529cd4b3fd2d95bd8fb37ba7e36",
+    "docs/research/kbound/formal/KBound/Multicandidate.lean": "80fdd49cc32098a1ea41e95f234ad35438e7e30649b682c0e965fbb9513fb4e6",
+    "docs/research/kbound/formal/KBound/NonFinite.lean": "d682afa972bc37ff5a3c3a60e3ab3537d27b29db42c06af1730749c939152690",
+    "docs/research/kbound/formal/KBound/Probability/AuditFloor.lean": "f959cafd5f17f87fc947be5328be29071e67f1adc270dce293397e181d330e54",
+    "docs/research/kbound/formal/KBound/Probability/AuditFloorCorrectness.lean": "8077f782fd7532a05fcdcf98541556616ef8cb3a3a97fbbcd0807a49d501cd9d",
+    "docs/research/kbound/formal/KBound/Probability/AuditFloorExamples.lean": "83dbf0a27dcba4bc017fac98ee2f1812986829737850a3adf82fbb241c1b2bf7",
+    "docs/research/kbound/formal/KBound/Probability/ChannelCounterexample.lean": "4f47b0fe3dc1e4d5e0912d3e0181c745b12746a990f3cc0ef822131b8d809b16",
+    "docs/research/kbound/formal/KBound/Probability/Concentration.lean": "ad299053e1c3d15131a276d3666b858f4a85355218959a99c8ebaed0cba8b725",
+    "docs/research/kbound/formal/KBound/Probability/ConformalExchangeability.lean": "928d6011b989166cb89ffbd0fb446a0ef082ad28c940496003dbafc59893e127",
+    "docs/research/kbound/formal/KBound/Probability/EProcess.lean": "72f24ccaea288e9ec94a93ec9de496ec68f7d38f8d11106e8e02f57ff5b7aed5",
+    "docs/research/kbound/formal/KBound/Probability/Exchangeable.lean": "027cd43ac2b785f5c3588399c4b22490e66530e3f9622ca692ad555b482ea0e8",
+    "docs/research/kbound/formal/KBound/Probability/ExtendedRadiusCertificate.lean": "9598741e5061663b6887e613acaeffe0dc90d513c21a89f76fa86d8638aeb17e",
+    "docs/research/kbound/formal/KBound/Probability/FilteredVille.lean": "f987ea27f4828b3f33d105e9e4f3bcfde69c26dd7c98c612623b1d4cf60cadc0",
+    "docs/research/kbound/formal/KBound/Probability/GeneralLeCam.lean": "0b3e38519696a25b7d78b5562afda5345444e28305505a4608ef85dd96178128",
+    "docs/research/kbound/formal/KBound/Probability/InformationBound.lean": "f6342bc914b6c689fd6ffdbe6229e133449ec9fd54d59b041cbf269bec0a6146",
+    "docs/research/kbound/formal/KBound/Probability/InterfaceExamples.lean": "fb8da4c09e8504b134a856deac349388d541890fbcb31cb28a83c696f4ff7a94",
+    "docs/research/kbound/formal/KBound/Probability/LeCam.lean": "fcb3aca515aae45db4a8cfdd1636d39daf4723e77e435efc143db95141f6d3ba",
+    "docs/research/kbound/formal/KBound/Probability/LeCamMeasure.lean": "9962c72f1df0ec1eb9517021b8f4b2fdb7107cce6a957cfca67796d5c5c65880",
+    "docs/research/kbound/formal/KBound/Probability/MeasureCertificate.lean": "084a2b2d841c5dad9e3377e8aa7aa7f1727d0247298524ae3ba5d0d4e45ef54c",
+    "docs/research/kbound/formal/KBound/Probability/MeasureConformal.lean": "0411f3e8fe642320c6cff7e54c1c2c1967fd3806def29bad7bae46ddf6bc770e",
+    "docs/research/kbound/formal/KBound/Probability/MeasureFrontier.lean": "3308e421d577729b66ce4285565a24e209a4a1fbd22891eddf5c200b004e5c2e",
+    "docs/research/kbound/formal/KBound/Probability/MeasureSwap.lean": "5e046502ee53afd37a017b0f76cfc1ead1bbfbaaba041bd47ef681ec688e14b9",
+    "docs/research/kbound/formal/KBound/Probability/MeasureTarget.lean": "72ce5841f348654be6a499291e385b1ff56d75f8912ab6b3539134a030c3a8cc",
+    "docs/research/kbound/formal/KBound/Probability/PopulationTransfer.lean": "217b837b1f39be0f40a3b025f427ec865372149ed002562ad5a99dabf5b2db32",
+    "docs/research/kbound/formal/KBound/Probability/PopulationTransferExamples.lean": "725dd70c044c25ea953d54933505c2c43964e0aefdbe39a458757804a7bbde77",
+    "docs/research/kbound/formal/KBound/Probability/RandomizedActionLaw.lean": "e9276a660a5b1047d0d93b04d2f363e1595c1ee95ffdf0794bc41703c3deb2b2",
+    "docs/research/kbound/formal/KBound/Probability/RankCounting.lean": "ddd5221d88639dd94156026ed89dcd127ce0ce7892108ef4e6138a0c2b0014cc",
+    "docs/research/kbound/formal/KBound/Probability/Rates.lean": "9bf8d494cc6345245a5fc0c9b902fc3ac9c1e53f973e1f4a2987112f9fa8a0b9",
+    "docs/research/kbound/formal/KBound/Probability/UniformConformal.lean": "e29b17865ebd97d0ed8ce00053cd60996b2f4b5106d076f445debdbcc1493972",
+    "docs/research/kbound/formal/KBound/Probability/Ville.lean": "fa3a47084bb4d4e52e8c493d1a712029d859d428e5db95db841a890108463c29",
+    "docs/research/kbound/formal/KBound/Stability.lean": "abc70a5aed1de81693ba7adaccfe7f60d2aa3f3ae6195b8bd8ca9540e8760df7",
+    "docs/research/kbound/formal/KBound/TargetLaw.lean": "f064ef1d067460ad85e6775c9e998668b28fff155d275678ae0abdbcb9219b9f",
+    "docs/research/kbound/formal/KBound/TheoremMap.lean": "47339650697a705013338048cae907bffaf57e35ad872fd8132adf45219e88d4",
+    "docs/research/kbound/formal/KBound/ThreeWorld.lean": "bc40c7c6b6b7d5554585cb367bc00188bf50cc72cb9a1c0727c40e2e043c6025",
+    "docs/research/kbound/formal/KBound/UnitMismatch.lean": "c935919963c99d8282077c08451b49b144181663f9a588918a109740e9dd87d1",
+    "docs/research/kbound/formal/KBound.lean": "6838819547069819f65779a3152e6e5bf296c4f79b3ecd44c4605aa843e19572",
+    "docs/research/kbound/formal/lakefile.lean": "87dda9fc6864be64026283b19a1c430b92e57b3f4ca49eb3fbd3b3c7a3124ae0",
+    "docs/research/kbound/formal/lean-toolchain": "7dc000621e0046d1aada809e2b7177e64454645cf4c741e9daaf79c99ec2e7a2",
+    "docs/research/kbound/formal/lake-manifest.json": "81dd58617a17b036b6572aad8640105b861ea33d83757d7b2bd9e0fdb8735526",
+    "docs/research/kbound/formal/formal_audit.py": "47d0d385b193b998103c91466e1788d96249cccc7ca72bfe72a67ea3430217c4"
+  },
+  "current_claim_mapping_sha256": {
+    "docs/research/kbound/formal/README.md": "e33a65d5a90ea77d43f3a13e0f3beabdb3c442d9e7a59fc467ad98c517266837",
+    "docs/research/kbound/paper/full_report/formal_reproducibility_atlas.tex": "f0783b6300dd2d444b836e81dfc216f4094de2d302cca3aa51393b1c53e98563",
+    "docs/research/kbound/kbound_submission_supplement.tex": "ce32addd7d9cf0b80e012b21281a4ffcdd3f52e19b499492674d3c65403773c3",
+    "docs/research/kbound/paper/sections/theory_core_main.tex": "13f0e2d40d0e67ed47decbe3062ecc8833b3d57448cdd3fdf2a0ebab127e7e65",
+    "docs/research/kbound/paper/sections/theory_certificate.tex": "ea1a70eb651a786ae3eb16cafca3df390c6d6b35ec6c57a8871c59545c962672"
+  },
+  "combined_audit_receipt": "formal_interfaces_audit_2026_09_06.json",
+  "combined_audit_receipt_sha256": "ee74fef94cad7e43d5c207f3c999d849d3190286cf37df1e1613dcdcffe426ba",
+  "focused_tests": {
+    "files": [
+      "tests/test_kbound_formal_audit.py",
+      "tests/test_population_transfer_receipt_link.py"
+    ],
+    "passed": 27,
+    "exit_code": 0,
+    "log_sha256": "a82a0b51cd86fa0131904e08c34ef556963104f0e3677f688117e093ebf2d3fe"
+  },
+  "integration_scope_tests": {
+    "files": [
+      "tests/test_kbound_formal_audit.py",
+      "tests/test_population_transfer_receipt_link.py",
+      "tests/test_kbound_theory_scope.py",
+      "tests/test_kbound_narrative_revision.py"
+    ],
+    "source_sha256": {
+      "tests/test_kbound_formal_audit.py": "233470ed9c778cfde12c9a66b802ee84f54cd9ec96d0e7ca0c40d6e1ebc94686",
+      "tests/test_population_transfer_receipt_link.py": "a006351067e7c89c90b0d6272cc3b903759c71fd8191f09bd035875aa03b941a",
+      "tests/test_kbound_theory_scope.py": "407c7b2acc2515ddc25971ff7d294c57720e84b82e7a640efebcfb1f8438a2d8",
+      "tests/test_kbound_narrative_revision.py": "d03d9d52342a9036a9b01639ed3d5421bbb4baf47470726242d2a8a5aeca3707"
+    },
+    "passed": 488,
+    "exit_code": 0,
+    "log_sha256": "8f43b534dd825c7127af3ed236511dc0bf3518388e2780d2401f99002dff9c45"
+  },
+  "verification_scope": "Current formal sources match the isolated standard Lake build; all registered declarations pass the transitive axiom audit. Cached pinned dependencies were reused. This is not a release seal, a cold toolchain build, proof of label custody or risk alignment, or validation of empirical coverage."
+}

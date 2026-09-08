@@ -16,15 +16,16 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from kbound_edge.dataset import frames_to_tensor
+from kbound_edge.deployment import decide_estimator, diagnostic_number, safe_evidence_vector
 from kbound_edge.evidence import EDGE_EVIDENCE_NAMES, edge_evidence_vector
 from kbound_edge.logging import assert_no_labels
 from kbound_edge.model import predict_proba
-from kbound_edge.policy import POLICIES, Decision, PolicyContext, apply_policy, kga_decide
+from kbound_edge.policy import POLICIES, Decision, PolicyContext, apply_policy
 
 
 @dataclass
@@ -36,16 +37,16 @@ class WindowOutcome:
     evidence: dict[str, float]
     p0: np.ndarray  # frozen softmax (N,C) -- OFFICIAL model output
     pa: np.ndarray  # adapted-candidate softmax (N,C) -- shadow only
-    upd_norm: float
+    upd_norm: float | None
     latency_ms: float
 
     @property
     def frozen_pred(self) -> list[int]:
-        return self.p0.argmax(1).tolist()
+        return cast(list[int], self.p0.argmax(1).tolist())
 
     @property
     def candidate_pred(self) -> list[int]:
-        return self.pa.argmax(1).tolist()
+        return cast(list[int], self.pa.argmax(1).tolist())
 
 
 def _to_tensor(window: Any, image_size: int):
@@ -69,7 +70,7 @@ def run_window(
     f0,
     adapter,
     estimator,
-    eps: float,
+    eps: float | None,
     image_size: int = 64,
 ) -> WindowOutcome:
     """Run the online decision chain for ONE window.  No labels permitted.
@@ -83,25 +84,24 @@ def run_window(
     p0 = predict_proba(f0, x)  # frozen model = official output
     res = adapter.adapt(x)  # isolated candidate (f0 untouched)
     pa = predict_proba(res.model, x)  # candidate output (shadow)
-    z = edge_evidence_vector(p0, pa, res.upd_norm)
-    bhat = estimator.predict_one(z)
-    decision = kga_decide(bhat, eps)
+    z = safe_evidence_vector(edge_evidence_vector, p0, pa, res.upd_norm)
+    decision = decide_estimator(estimator, z, eps)
     latency_ms = (perf_counter() - t0) * 1000.0
 
-    evidence = {name: float(v) for name, v in zip(EDGE_EVIDENCE_NAMES, z)}
+    evidence = {name: float(v) for name, v in zip(EDGE_EVIDENCE_NAMES, z)} if z is not None else {}
     return WindowOutcome(
         window_id=window_id,
         decision=decision,
         evidence=evidence,
         p0=p0,
         pa=pa,
-        upd_norm=float(res.upd_norm),
+        upd_norm=diagnostic_number(res.upd_norm),
         latency_ms=latency_ms,
     )
 
 
 def policy_decisions_for(
-    outcome: WindowOutcome, eps: float, conf_tau: float = 0.5, entropy_tau: float = 0.05
+    outcome: WindowOutcome, eps: float | None, conf_tau: float = 0.5, entropy_tau: float = 0.05
 ) -> dict[str, str]:
     """Decisions of EVERY comparison policy for one window (for the ablation table)."""
     ctx = PolicyContext(
@@ -119,7 +119,7 @@ def replay_windows(
     f0,
     adapter,
     estimator,
-    eps: float,
+    eps: float | None,
     logger=None,
     image_size: int = 64,
     collect_policies: bool = True,
@@ -163,4 +163,6 @@ def replay_windows(
         "decisions": decisions,
         "latencies_ms": latencies,
         "policy_decisions": policy_decisions if collect_policies else None,
+        "unavailable_windows": sum(o.decision.availability == "unavailable" for o in outcomes),
+        "gate_records": [o.decision.as_dict() for o in outcomes],
     }

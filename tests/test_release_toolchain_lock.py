@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -113,6 +114,44 @@ def test_repository_release_toolchain_profile_is_canonical_and_complete() -> Non
         "runtime": "1.2.12",
     }
     assert PROFILE_PATH.read_bytes() == verifier.canonical_json_bytes(profile)
+
+
+def test_poppler_v2_changes_only_four_reviewed_executable_identities() -> None:
+    verifier = _verifier()
+    historical = verifier.load_profile(PROFILE_PATH)
+    new_path = PROFILE_PATH.with_name("release_toolchain_macos_arm64_v2.json")
+    assert new_path.is_file(), "separate v2 authority is required"
+    current = verifier.load_profile(new_path)
+    expected = {
+        "pdfdetach": "d4374729e7ab492697e1ef61b8a567da21b972ef02522c36295f975b979918ab",
+        "pdfinfo": "23cc8f9bbe0a10109967b5811cb9a94d194b11380b43a40eac7089e676a98d83",
+        "pdftoppm": "ab4c415cb29a229b039221de9af5a4ba539acc1aebd3a3a0a6dd677d11093c8e",
+        "pdftotext": "e8fb86921c589674ee6ba880594e9dd3dba4d471d2b7c7fdb00eac55975db25a",
+    }
+    assert {k: v for k, v in current.items() if k != "tools"} == {
+        k: v for k, v in historical.items() if k != "tools"
+    }
+    assert set(current["tools"]) == EXPECTED_TOOLS
+    for name, old_record in historical["tools"].items():
+        new_record = current["tools"][name]
+        if name in expected:
+            assert new_record == {**old_record, "sha256": expected[name], "version_line": f"{name} version 26.08.0"}
+        else:
+            assert new_record == old_record
+    assert hashlib.sha256(PROFILE_PATH.read_bytes()).hexdigest() == "c38388b86f5591bc101b4eb36b615774dfdabbb4a56d5ab13ca72acce5a04035"
+    receipt = PROFILE_PATH.parent / "audits/release_toolchain_2026_09_02.json"
+    assert hashlib.sha256(receipt.read_bytes()).hexdigest() == "aa28c196e4888f9d66180403b062c909e52b7826e99575b1e574eb68d8de185b"
+
+
+def test_receipt_binds_explicit_v2_profile_name_and_bytes(tmp_path, monkeypatch):
+    verifier = _verifier()
+    old_path, profile = _profile(tmp_path)
+    new_path = tmp_path / "release_toolchain_macos_arm64_v2.json"
+    new_path.write_bytes(old_path.read_bytes())
+    monkeypatch.setattr(verifier.shutil, "which", lambda command: str(tmp_path / "tools/probe"))
+    receipt = verifier.build_receipt(profile, profile_path=new_path, runtime_platform="macos-arm64",
+                                     zlib_compile="1.2.12", zlib_runtime="1.2.12")
+    assert receipt["profile"] == {"path": new_path.name, "sha256": hashlib.sha256(new_path.read_bytes()).hexdigest()}
 
 
 def test_toolchain_verification_rejects_a_one_tool_profile(tmp_path: Path) -> None:
@@ -313,7 +352,6 @@ def test_toolchain_verification_rejects_missing_wrong_or_changed_tools(
 ) -> None:
     verifier = _verifier()
     profile_path, profile = _profile(tmp_path)
-    executable = tmp_path / "tools/probe"
 
     monkeypatch.setattr(verifier.shutil, "which", lambda command: None)
     with pytest.raises(ValueError, match="required tool.*probe"):

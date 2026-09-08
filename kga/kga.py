@@ -34,6 +34,8 @@ paired 0/1 losses it is ``2.0``.
 
 from __future__ import annotations
 
+import hmac
+import re
 from typing import cast
 
 import numpy as np
@@ -161,6 +163,7 @@ class KGA:
         estimator: BenefitEstimator,
         *,
         protocol_sha256: str,
+        expected_estimator_payload_sha256: str | None = None,
         features: dict[str, float] | None = None,
         evidence_schema_version: str | None = None,
     ) -> Certificate:
@@ -178,6 +181,12 @@ class KGA:
             Frozen model and disjoint absolute calibration residuals.
         protocol_sha256 : str
             Digest of the active checkpoint/adapter/split/feature protocol.
+        expected_estimator_payload_sha256 : str
+            Required digest from the externally authorized protocol/manifest.
+            The estimator's embedded checksum cannot authorize itself. This is
+            a canonical payload digest, not the JSON file's byte digest. Custom
+            estimators remain trusted code and must truthfully bind their full
+            predictor and calibration state to ``artifact_sha256``.
         features : mapping, optional
             Protocol-specific label-free feature map.  If omitted, the most
             recent generic :class:`Evidence` from :meth:`evidence` is used.
@@ -199,6 +208,11 @@ class KGA:
         """
 
         previous_evidence = self._invalidate_attempt()
+        if (
+            not isinstance(expected_estimator_payload_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", expected_estimator_payload_sha256) is None
+        ):
+            raise ValueError("externally authorized estimator payload SHA-256 is required (64 lowercase hex digits)")
         if features is None:
             if previous_evidence is None:
                 raise ValueError("No evidence available; call evidence(...) or pass features.")
@@ -211,6 +225,11 @@ class KGA:
                 raise ValueError("evidence_schema_version is required with custom features")
         if not isinstance(estimator, BenefitEstimator):
             raise TypeError("estimator must implement the frozen BenefitEstimator protocol")
+        identity_before = estimator.artifact_sha256
+        if not isinstance(identity_before, str) or not hmac.compare_digest(
+            identity_before, expected_estimator_payload_sha256
+        ):
+            raise ValueError("estimator payload SHA-256 mismatch with the externally authorized identity")
         # Enforce the public contract here as well as in the reference linear
         # estimator. A custom predictor must not silently impute missing inputs.
         if protocol_sha256 != estimator.protocol_sha256:
@@ -232,6 +251,10 @@ class KGA:
         # Resolve the final identity before restoring any cached authority: a
         # failing artifact property must also leave the attempt unavailable.
         artifact_sha256 = estimator.artifact_sha256
+        if not isinstance(artifact_sha256, str) or not hmac.compare_digest(
+            artifact_sha256, expected_estimator_payload_sha256
+        ):
+            raise ValueError("estimator payload SHA-256 mismatch after prediction/calibration")
         self.last_estimator_artifact_sha256 = artifact_sha256
         self.last_protocol_sha256 = protocol_sha256
         self.last_evidence_schema_version = str(evidence_schema_version)

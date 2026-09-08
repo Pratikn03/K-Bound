@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the shared TeX release-identity block for all four manuscripts."""
+"""Generate historical-release or current manuscript-revision identity blocks."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 EXPECTED_SCHEMA = "kbound_current_release_identity_v1"
+REVISION_SCHEMA = "kbound_manuscript_revision_v1"
 EXPECTED_ROLES = {
     "short_main": "Named compact main paper",
     "short_supplement": "Named standalone supplement",
@@ -21,6 +22,7 @@ ROLE_MACROS = {
     "tmlr": "KBoundRoleTMLR",
     "full_report": "KBoundRoleFullReport",
 }
+REVISION_ROLE = {"main_with_appendix": "Main paper with integrated appendices"}
 
 
 def _require_text(document: dict[str, object], key: str) -> str:
@@ -45,12 +47,16 @@ def _tex_escape(value: str) -> str:
 
 
 def render(authority: dict[str, object], source_commit: str) -> str:
-    if authority.get("schema") != EXPECTED_SCHEMA:
+    schema = authority.get("schema")
+    if schema not in (EXPECTED_SCHEMA, REVISION_SCHEMA):
         raise ValueError("unexpected current-release identity schema")
-    release_id = _require_text(authority, "release_id")
-    source_closure = _require_text(authority, "source_closure")
+    is_revision = schema == REVISION_SCHEMA
+    release_id = _require_text(authority, "revision_id" if is_revision else "release_id")
+    source_closure = _require_text(authority, "revision_date" if is_revision else "source_closure")
     panel_sha = _require_text(authority, "canonical_panel_sha256")
-    manifest_sha = _require_text(authority, "source_manifest_sha256")
+    manifest_sha = _require_text(
+        authority, "historical_evidence_manifest_sha256" if is_revision else "source_manifest_sha256"
+    )
     if not re.fullmatch(r"[0-9a-f]{64}", panel_sha):
         raise ValueError("canonical panel SHA-256 must be 64 lowercase hex characters")
     if not re.fullmatch(r"[0-9a-f]{64}", manifest_sha):
@@ -58,9 +64,10 @@ def render(authority: dict[str, object], source_commit: str) -> str:
     if not re.fullmatch(r"[0-9a-f]{12}", source_commit):
         raise ValueError("source snapshot commit must be exactly 12 lowercase hex characters")
     documents = authority.get("documents")
-    if not isinstance(documents, dict) or set(documents) != set(EXPECTED_ROLES):
-        raise ValueError("release identity must define exactly the four current document roles")
-    for key, expected_role in EXPECTED_ROLES.items():
+    expected_roles = {**EXPECTED_ROLES, **(REVISION_ROLE if is_revision else {})}
+    if not isinstance(documents, dict) or set(documents) != set(expected_roles):
+        raise ValueError(f"release identity must define exactly these document roles: {sorted(expected_roles)}")
+    for key, expected_role in expected_roles.items():
         document = documents[key]
         if not isinstance(document, dict) or document.get("role") != expected_role:
             raise ValueError(f"release role mismatch for {key}")
@@ -75,21 +82,26 @@ def render(authority: dict[str, object], source_commit: str) -> str:
         rf"\newcommand{{\KBoundSourceManifestSHA}}{{{manifest_sha}}}",
         rf"\newcommand{{\KBoundSourceSnapshotCommit}}{{{source_commit}}}",
     ]
-    for key, macro in ROLE_MACROS.items():
-        role = EXPECTED_ROLES[key]
+    role_macros = {**ROLE_MACROS, **({"main_with_appendix": "KBoundRoleMainWithAppendix"} if is_revision else {})}
+    for key, macro in role_macros.items():
+        role = expected_roles[key]
         lines.append(rf"\newcommand{{\{macro}}}{{{_tex_escape(role)}}}")
+    id_label = "Revision ID:" if is_revision else "Release ID:"
+    date_label = "Revision date:" if is_revision else "Source closure:"
+    manifest_label = "Historical evidence-manifest SHA-256:" if is_revision else "Source-manifest SHA-256:"
+    commit_label = "Base commit (with subsequent manuscript edits):" if is_revision else "Source snapshot commit:"
     lines.extend(
         [
             r"\newcommand{\KBoundReleaseRule}{\par\smallskip\hrule\smallskip}",
             r"\newcommand{\KBoundNamedReleaseBlock}[1]{%",
             r"  \begin{center}\begin{minipage}{0.98\linewidth}\scriptsize",
             r"  \KBoundReleaseRule",
-            r"  \textbf{Release ID:} \KBoundReleaseID\quad",
-            r"  \textbf{Source closure:} \KBoundSourceClosure\\",
+            rf"  \textbf{{{id_label}}} \KBoundReleaseID\quad",
+            rf"  \textbf{{{date_label}}} \KBoundSourceClosure\\",
             r"  \textbf{Document role:} #1\\",
             r"  \textbf{Canonical panel SHA-256:} \hashtext{\KBoundCanonicalPanelSHA}\\",
-            r"  \textbf{Source-manifest SHA-256:} \hashtext{\KBoundSourceManifestSHA}\\",
-            r"  \textbf{Source snapshot commit:} \texttt{\KBoundSourceSnapshotCommit}",
+            rf"  \textbf{{{manifest_label}}} \hashtext{{\KBoundSourceManifestSHA}}\\",
+            rf"  \textbf{{{commit_label}}} \texttt{{\KBoundSourceSnapshotCommit}}",
             r"  \KBoundReleaseRule",
             r"  \end{minipage}\end{center}%",
             r"}",
@@ -99,7 +111,7 @@ def render(authority: dict[str, object], source_commit: str) -> str:
             r"  \textbf{Anonymous build ID:} \KBoundReleaseID\\",
             r"  \textbf{Document role:} \KBoundRoleTMLR\\",
             r"  \textbf{Canonical panel SHA-256:} \hashtext{\KBoundCanonicalPanelSHA}\\",
-            r"  \textbf{Source-manifest SHA-256:} \hashtext{\KBoundSourceManifestSHA}",
+            rf"  \textbf{{{manifest_label}}} \hashtext{{\KBoundSourceManifestSHA}}",
             r"  \KBoundReleaseRule",
             r"  \end{minipage}\end{center}%",
             r"}",
@@ -115,7 +127,7 @@ def main() -> int:
     parser.add_argument(
         "--authority",
         type=Path,
-        default=kbound_root / "paper/release/current_release.json",
+        default=kbound_root / "paper/release/manuscript_revision.json",
     )
     parser.add_argument(
         "--output",
@@ -128,7 +140,7 @@ def main() -> int:
     if not isinstance(authority, dict):
         raise ValueError("release identity authority must be a JSON object")
     source_commit = arguments.source_snapshot_commit or _require_text(
-        authority, "source_snapshot_commit"
+        authority, "base_commit" if authority.get("schema") == REVISION_SCHEMA else "source_snapshot_commit"
     )
     output = render(authority, source_commit)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)

@@ -30,6 +30,7 @@ USAGE:
       --estimator ppi_debias --conformal mondrian \\
       --dev-seeds 0 1 --test-seeds 2 3 4
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,11 +39,10 @@ import os
 import sys
 
 import numpy as np
+from kbound_decide import conformal_radius as _canonical_conformal_radius
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import QuantileRegressor
 from sklearn.preprocessing import StandardScaler
-
-from kbound_decide import conformal_radius as _canonical_conformal_radius
 
 ALPHA = 0.10  # FIXED — never tuned
 
@@ -53,6 +53,7 @@ def conformal_rank_radius(residuals, alpha=ALPHA):
 
 
 # ─── record loading ──────────────────────────────────────────────────────────
+
 
 def _one_record(r, candidate=None):
     aa = r.get("aa", r.get("a_adapted"))
@@ -74,11 +75,11 @@ def load_records(path, candidate=None):
     Each record carries Z (the FULL rich Z), B, a0, aa, seed, method (cell).
     Also accepts CIFAR-10.1 per_condition JSON (a_adapted field).
     If candidate is set, keep only records with that adapter name (e.g. eata_online)."""
-    d = json.load(open(path))
+    with open(path, encoding="utf-8") as stream:
+        d = json.load(stream)
     recs = []
     if d.get("records"):
-        panel = d.get("evidence_panel", d.get("config", {}).get("evidence_panel",
-                d.get("benchmark", "unknown")))
+        panel = d.get("evidence_panel", d.get("config", {}).get("evidence_panel", d.get("benchmark", "unknown")))
         for r in d.get("records", []):
             recs.append(_one_record(r, candidate=candidate))
         if candidate:
@@ -86,14 +87,16 @@ def load_records(path, candidate=None):
         return recs, panel
     for method, entry in d.get("methods", {}).items():
         for r in entry.get("records", []):
-            recs.append({
-                "seed": int(r["seed"]),
-                "Z": list(r["Z"]),
-                "B": float(r["B"]),
-                "a0": float(r["a0"]),
-                "aa": float(r["aa"]),
-                "comp": r.get("cell", r.get("method", method)),
-            })
+            recs.append(
+                {
+                    "seed": int(r["seed"]),
+                    "Z": list(r["Z"]),
+                    "B": float(r["B"]),
+                    "a0": float(r["a0"]),
+                    "aa": float(r["aa"]),
+                    "comp": r.get("cell", r.get("method", method)),
+                }
+            )
     if candidate:
         recs = [r for r in recs if r.get("candidate") == candidate]
     return recs, d.get("evidence_panel", "unknown")
@@ -111,9 +114,9 @@ def arrays(records):
 
 # ─── decision + metrics (decision rule UNCHANGED) ─────────────────────────────
 
+
 def decide_global(Bhat_t, eps):
-    return np.where(Bhat_t - eps > 0, "ADAPT",
-           np.where(Bhat_t + eps < 0, "FREEZE", "ABSTAIN"))
+    return np.where(Bhat_t - eps > 0, "ADAPT", np.where(Bhat_t + eps < 0, "FREEZE", "ABSTAIN"))
 
 
 def metrics(dec, Bt, a0t, aat):
@@ -138,25 +141,28 @@ def metrics(dec, Bt, a0t, aat):
 
 # ─── estimator: PPI / doubly-robust debias + conditional conformal ────────────
 
+
 def fit_point(Zc, Bc):
     """Base point estimator B_hat(Z): GBR identical-spec to decide_kga's learner."""
-    return GradientBoostingRegressor(n_estimators=250, max_depth=2, learning_rate=0.05,
-                                     subsample=0.8, random_state=0).fit(Zc, Bc)
+    return GradientBoostingRegressor(
+        n_estimators=250, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=0
+    ).fit(Zc, Bc)
 
 
 def ppi_debias(Bhat_c, Bc, Zc, Zt, Bhat_t):
     """PPI / doubly-robust rectifier: regress CAL residual (B - Bhat) on Z and
     subtract predicted residual from both CAL and TEST predictions. arXiv:2301.09633."""
     resid = Bc - Bhat_c
-    db = GradientBoostingRegressor(n_estimators=150, max_depth=2, learning_rate=0.05,
-                                   subsample=0.8, random_state=1).fit(Zc, resid)
+    db = GradientBoostingRegressor(
+        n_estimators=150, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=1
+    ).fit(Zc, resid)
     return Bhat_c + db.predict(Zc), Bhat_t + db.predict(Zt)
 
 
-def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal="mondrian",
-              frozen_eps=None):
+def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal="mondrian", frozen_eps=None):
     Z, B, a0, aa, sd, comp = arrays(records)
-    cal = np.isin(sd, cal_seeds); tst = np.isin(sd, test_seeds)
+    cal = np.isin(sd, cal_seeds)
+    tst = np.isin(sd, test_seeds)
     if cal.sum() < 2 or tst.sum() == 0:
         return None
     Zc, Bc = Z[cal], B[cal]
@@ -165,20 +171,24 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
 
     # ── CQR: conditional conformal via conformalized quantile regression on Z ──
     if conformal == "cqr":
-        sc = StandardScaler().fit(Zc); Zcs = sc.transform(Zc); Zts = sc.transform(Zt)
+        sc = StandardScaler().fit(Zc)
+        Zcs = sc.transform(Zc)
+        Zts = sc.transform(Zt)
         qlo = QuantileRegressor(quantile=ALPHA, alpha=1e-3, solver="highs").fit(Zcs, Bc)
         qhi = QuantileRegressor(quantile=1 - ALPHA, alpha=1e-3, solver="highs").fit(Zcs, Bc)
         # conformity score E = max(qlo - B, B - qhi) on CAL; widen by its (1-alpha) quantile
         e = np.maximum(qlo.predict(Zcs) - Bc, Bc - qhi.predict(Zcs))
         q = conformal_rank_radius(e, ALPHA)
-        Blo_t = qlo.predict(Zts) - q; Bhi_t = qhi.predict(Zts) + q
+        Blo_t = qlo.predict(Zts) - q
+        Bhi_t = qhi.predict(Zts) + q
         # decision rule UNCHANGED in spirit: adapt if lower bound > 0; freeze if upper < 0
         dec = np.where(Blo_t > 0, "ADAPT", np.where(Bhi_t < 0, "FREEZE", "ABSTAIN"))
         return metrics(dec, Bt, a0t, aat)
 
     # ── point estimator (+ optional PPI debias) + conformal eps ──
     m = fit_point(Zc, Bc)
-    Bhat_c = m.predict(Zc); Bhat_t = m.predict(Zt)
+    Bhat_c = m.predict(Zc)
+    Bhat_t = m.predict(Zt)
     if estimator == "ppi_debias":
         Bhat_c, Bhat_t = ppi_debias(Bhat_c, Bc, Zc, Zt, Bhat_t)
     elif estimator != "gbr":
@@ -191,7 +201,7 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
         _loo = np.empty(len(Bc))
         for _i in range(len(Bc)):
             _tr = np.arange(len(Bc)) != _i
-            _loo[_i] = fit_point(Zc[_tr], Bc[_tr]).predict(Zc[_i:_i + 1])[0]
+            _loo[_i] = fit_point(Zc[_tr], Bc[_tr]).predict(Zc[_i : _i + 1])[0]
         resid_c = np.abs(_loo - Bc)
     else:
         resid_c = np.abs(Bhat_c - Bc)  # ppi_debias variant (non-headline)
@@ -206,8 +216,7 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
         groups = set(compc.tolist())
         for g in groups:
             mc = compc == g
-            epsg = (conformal_rank_radius(resid_c[mc], ALPHA)
-                    if mc.sum() >= 5 else eps_glob)
+            epsg = conformal_rank_radius(resid_c[mc], ALPHA) if mc.sum() >= 5 else eps_glob
             mt = compt == g
             dec[mt] = decide_global(Bhat_t[mt], epsg)
         unseen = ~np.isin(compt, list(groups))
@@ -224,6 +233,7 @@ def run_split(records, cal_seeds, test_seeds, estimator="ppi_debias", conformal=
 
 # ─── self-test (torch-free, tiny synthetic records) ───────────────────────────
 
+
 def self_test():
     rng = np.random.default_rng(0)
     recs = []
@@ -231,63 +241,91 @@ def self_test():
         for c in ("tent", "eata"):
             z = rng.normal(size=16).tolist()
             b = float(rng.normal(0.02, 0.05))
-            recs.append({"seed": s, "Z": z, "B": b,
-                         "a0": float(rng.uniform(.6, .8)),
-                         "aa": float(rng.uniform(.6, .8)), "comp": c})
+            recs.append(
+                {
+                    "seed": s,
+                    "Z": z,
+                    "B": b,
+                    "a0": float(rng.uniform(0.6, 0.8)),
+                    "aa": float(rng.uniform(0.6, 0.8)),
+                    "comp": c,
+                }
+            )
     for est, con in [("gbr", "global"), ("ppi_debias", "mondrian"), ("ppi_debias", "cqr")]:
         m = run_split(recs, [0, 1], [2, 3, 4], estimator=est, conformal=con)
         assert m is not None and "false_adapt" in m, (est, con)
-        print(f"  self-test [{est:11s}+{con:8s}]: OK  "
-              f"FA={m['false_adapt']} commit={round(m['commit_rate'],3)} n={m['n_test']}")
+        print(
+            f"  self-test [{est:11s}+{con:8s}]: OK  "
+            f"FA={m['false_adapt']} commit={round(m['commit_rate'], 3)} n={m['n_test']}"
+        )
     print("analyze_F self-test PASSED")
 
 
 # ─── main ─────────────────────────────────────────────────────────────────────
 
+
 def parse_args():
     p = argparse.ArgumentParser(description="Protocol F post-hoc estimator/analysis")
     p.add_argument("--records", nargs="+", help="One or more record JSON paths (wilds or per_condition)")
-    p.add_argument("--candidate", default=None,
-                   help="Optional adapter filter (e.g. eata_online for Protocol G)")
+    p.add_argument("--candidate", default=None, help="Optional adapter filter (e.g. eata_online for Protocol G)")
     p.add_argument("--output-dir", default=None)
     p.add_argument("--estimator", choices=["gbr", "ppi_debias"], default="ppi_debias")
     p.add_argument("--conformal", choices=["global", "mondrian", "cqr", "frozen"], default="mondrian")
-    p.add_argument("--frozen-eps", type=float, default=None, dest="frozen_eps",
-                   help="When --conformal frozen: globally fixed eps (e.g. synthetic-grid transplant)")
+    p.add_argument(
+        "--frozen-eps",
+        type=float,
+        default=None,
+        dest="frozen_eps",
+        help="When --conformal frozen: globally fixed eps (e.g. synthetic-grid transplant)",
+    )
     p.add_argument("--dev-seeds", type=int, nargs="+", default=[0, 1])
     p.add_argument("--test-seeds", type=int, nargs="+", default=[2, 3, 4])
-    p.add_argument("--self-test", action="store_true",
-                   help="Run torch-free self-test on synthetic records (no real data needed)")
+    p.add_argument(
+        "--self-test", action="store_true", help="Run torch-free self-test on synthetic records (no real data needed)"
+    )
     return p.parse_args()
 
 
 def main():
     args = parse_args()
     if args.self_test:
-        self_test(); return
+        self_test()
+        return
     if not args.records:
-        print("ERROR: --records required (or use --self-test)"); sys.exit(2)
+        print("ERROR: --records required (or use --self-test)")
+        sys.exit(2)
 
     recs, panel = [], "unknown"
     for rp in args.records:
         part, panel = load_records(rp, candidate=args.candidate)
         recs.extend(part)
-    seeds = sorted(set(r["seed"] for r in recs))
-    out = {"alpha": ALPHA, "evidence_panel": panel,
-           "candidate": args.candidate,
-           "estimator": args.estimator, "conformal": args.conformal,
-           "dev_seeds": args.dev_seeds, "test_seeds": args.test_seeds,
-           "n_records": len(recs), "seeds_present": seeds,
-           "Z_dim": (len(recs[0]["Z"]) if recs else None)}
+    seeds = sorted({r["seed"] for r in recs})
+    out = {
+        "alpha": ALPHA,
+        "evidence_panel": panel,
+        "candidate": args.candidate,
+        "estimator": args.estimator,
+        "conformal": args.conformal,
+        "dev_seeds": args.dev_seeds,
+        "test_seeds": args.test_seeds,
+        "n_records": len(recs),
+        "seeds_present": seeds,
+        "Z_dim": (len(recs[0]["Z"]) if recs else None),
+    }
 
     # held-out TEST (evaluated ONCE): fit on DEV, evaluate on TEST.
-    out["test_locked"] = run_split(recs, args.dev_seeds, args.test_seeds,
-                                   estimator=args.estimator, conformal=args.conformal,
-                                   frozen_eps=args.frozen_eps)
+    out["test_locked"] = run_split(
+        recs,
+        args.dev_seeds,
+        args.test_seeds,
+        estimator=args.estimator,
+        conformal=args.conformal,
+        frozen_eps=args.frozen_eps,
+    )
     # reference: legacy global-eps GBR on the SAME split (context, not the locked choice)
-    out["test_baseline_gbr_global"] = run_split(recs, args.dev_seeds, args.test_seeds,
-                                                estimator="gbr", conformal="global",
-                                                frozen_eps=args.frozen_eps)
+    out["test_baseline_gbr_global"] = run_split(
+        recs, args.dev_seeds, args.test_seeds, estimator="gbr", conformal="global", frozen_eps=args.frozen_eps
+    )
     if args.conformal == "frozen":
         out["frozen_eps"] = args.frozen_eps
 
@@ -298,7 +336,7 @@ def main():
     print(f"  baseline : {out['test_baseline_gbr_global']}")
     tl = out["test_locked"]
     if tl:
-        bb = (tl["regret_kga"] < tl["regret_adapt"] and tl["regret_kga"] < tl["regret_freeze"])
+        bb = tl["regret_kga"] < tl["regret_adapt"] and tl["regret_kga"] < tl["regret_freeze"]
         out["beats_both"] = bool(bb)
         fa_ok = tl["false_adapt"] is not None and tl["false_adapt"] <= ALPHA
         win = bool(fa_ok and bb)

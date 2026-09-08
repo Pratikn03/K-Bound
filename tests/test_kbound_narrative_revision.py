@@ -10,14 +10,14 @@ import pytest
 from docs.research.kbound.scripts import build_release_source_seal as seal
 from docs.research.kbound.scripts import run_repository_verification as repository_verification
 from docs.research.kbound.scripts import verify_release_checksums as checksums
+from tests.kbound_tex_helpers import live_tex
 
 ROOT = Path(__file__).resolve().parents[1]
 PAPER = ROOT / "docs/research/kbound"
 
 
 def live(path: Path) -> str:
-    text = re.sub(r"\\iffalse.*?\\fi", "", path.read_text(encoding="utf-8"), flags=re.S)
-    return re.sub(r"(?<!\\)%[^\n]*", "", text)
+    return live_tex(path.read_text(encoding="utf-8"))
 
 
 def words(path: Path) -> str:
@@ -29,7 +29,7 @@ def test_abstract_is_concise_and_keeps_empirical_and_population_targets_separate
     assert 180 <= len(abstract.split()) <= 250
     for required in (
         "empirical companion, not an implementation",
-        "observed evaluation-cell benefit",
+        "measured evaluation-cell benefit",
         "labeled development and residual-calibration cells",
         "SAR favors always-adapt",
         "\\CCTAdaptCount{}/\\CCTFreezeCount{}/\\CCTAbstainCount{} ADAPT/FREEZE/ABSTAIN decisions",
@@ -109,29 +109,25 @@ def test_main_story_has_ten_scientific_sections_and_three_contributions():
 
 
 def test_six_symbol_bridge_precedes_theory_and_frames_the_two_decision_questions():
-    """Readers should understand both inferential boxes before dense population notation."""
+    """Readers should understand both target families before dense notation."""
     body = live(PAPER / "kbound_submission_body.tex")
     theory_start = body.index(r"\section{Population Partial-Identification Frontier}")
-    pre_theory = body[:theory_start]
+    pre_theory = " ".join(body[:theory_start].split())
 
     required = (
-        "Before turning to the formal results, it is useful to keep six quantities in view.",
-        r"\boxed{(M,\gamma,\beta)\longrightarrow\Delta}",
-        "Across all allowed target worlds, can the sign of benefit change?",
-        r"Z\longrightarrow\widehat\Delta\mathbin{\pm}\varepsilon",
-        r"\{\adapt,\freeze,\abstain\}",
-        "For this deployment unit, is estimated benefit sufficiently separated from zero?",
-        "The conceptual bridge between the two boxes is benefit, not an equality of estimands:",
-        r"\Delta\ \text{(population)}",
-        r"\Delta^{\mathrm{cell}}\ \text{(deployment unit)}",
+        r"\noindent\textbf{Six-symbol guide.}",
+        "$M$ is the observable population-side disagreement margin",
+        r"$\gamma$ is the hidden target calibration residual",
+        r"$\beta$ is an externally declared bound on $|\gamma|$",
+        r"$\Delta^{\mathrm{cell}}$ is the measured cell benefit",
+        r"$\widehat\Delta$ is its prediction",
+        r"$\varepsilon$ is the calibrated prediction-error radius",
+        r"$(M,\gamma,\beta)$ supports population reasoning",
+        r"$(\widehat\Delta,\varepsilon)$ brackets $\Delta^{\mathrm{cell}}$",
+        "the two uncertainty objects are not interchangeable",
     )
     for phrase in required:
         assert phrase in pre_theory
-
-    assert pre_theory.index("Population box") < pre_theory.index("Deployment box")
-    assert pre_theory.index("Deployment box") < pre_theory.index(
-        "The conceptual bridge between the two boxes is benefit, not an equality of estimands:"
-    )
 
 
 def test_dense_theory_sections_follow_question_intuition_result_consequence_rhythm():
@@ -195,7 +191,7 @@ def test_audits_move_to_supplement_without_discarding_adverse_records():
         "ImageNet-R",
         "no target natural-shift",
         "Historical Protocol-Matched POEM and AETTA",
-        "142 declarations",
+        "303 declarations",
         "--full-foundations",
     ):
         assert token in supplement
@@ -228,8 +224,7 @@ def test_interval_audit_cannot_be_promoted_to_fresh_group_validation():
     ):
         assert token in body
     assert (
-        "in-sample cross-fit diagnostics on opened, dependent cells, not independent estimates "
-        "for new environments"
+        "in-sample cross-fit diagnostics on opened, dependent cells, not independent estimates for new environments"
     ) in supplement
     assert "measured outcome was absent from both estimator fitting and residual calibration" in supplement
     assert "order-statistic rule" in body
@@ -241,7 +236,9 @@ def test_interval_audit_cannot_be_promoted_to_fresh_group_validation():
 def test_fallback_semantics_and_development_labels_are_explicit():
     body = words(PAPER / "kbound_submission_body.tex")
     assert "label-free at the scored decision, not during development and calibration" in body
-    assert "must be logged as ABSTAIN, not as a certified FREEZE" in body
+    assert "must be logged as ABSTAIN when the interface returns an unresolved assessment" in body
+    assert "integrity failure may instead raise an exception" in body
+    assert "preserve the frozen service and record the failure, not a certified FREEZE" in body
     assert "not those additional interventions" in body
     assert "requires complete data for all 45 cells" in body
     assert "improvement over both fixed policies" in body

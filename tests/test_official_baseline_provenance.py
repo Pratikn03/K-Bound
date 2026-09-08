@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -109,7 +110,20 @@ def test_saved_audit_uses_only_repo_relative_provenance_paths() -> None:
         / "experiments/kbound/results/official_repro_v1/OFFICIAL_BASELINE_AUDIT.json"
     )
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-    assert artifact["schema_version"] == 2
+    schema = artifact["schema_version"]
+    assert type(schema) is int and schema in (2, 3)
+    # Historical schema-2 flags remain readable metadata, never promotion
+    # authority: the unchanged strict validator rejects schema 2 outright.
+    if schema == 3:
+        # A current release audit is generated with all three binding inputs.
+        # This is a metadata/portability check, not a substitute for the strict
+        # native-witness validator exercised by the integration suite.
+        binding = artifact["promotion_binding"]
+        hash_fields = {"locked_stream_sha256", "environment_receipt_sha256", "toolchain_receipt_sha256"}
+        assert set(binding) == hash_fields | {"condition_count"}
+        assert type(binding["condition_count"]) is int and binding["condition_count"] == 432
+        assert all(isinstance(binding[key], str) and re.fullmatch(r"[0-9a-f]{64}", binding[key])
+                   for key in hash_fields)
     assert artifact["provenance_path_binding"] == {
         "schema": "git-repository-relative-posix-v1",
         "root": ".",

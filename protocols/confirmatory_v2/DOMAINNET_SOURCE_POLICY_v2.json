@@ -1,0 +1,27 @@
+{
+  "schema": "kbound-domainnet-source-policy/2",
+  "policy_id": "DOMAINNET_SOURCE_RETAIN_OFFICIAL_LABELS_GROUPED_V2",
+  "status": "SOURCE_INFORMED_PREPROCESSING_AMENDMENT_NOT_CONFIRMATORY_LOCK",
+  "dataset": "DomainNet-126",
+  "domain": "clipart",
+  "role": "source",
+  "conflicting_label_policy": "retain_every_official_row_and_label_group_identical_images_together",
+  "row_weighting": "one_per_official_list_row_within_source_fit",
+  "split_salt": "kbound-domainnet-source-v1:decoded-group:20260905:",
+  "monitor_assignment": "sha256(salt + decoded_group_hex) < floor(2^256 / 10)",
+  "relabel": false,
+  "exclude_conflicting_rows": false,
+  "deduplicate_rows": false,
+  "require_complete_conflict_manifest": true,
+  "all_other_v1_integrity_checks_retained": true,
+  "amendment_basis": {
+    "stage": "after source-only image integrity census; before any source training, development/calibration/test acquisition or target outcome access by this work",
+    "diagnostic_sha256": "bf96ec9b3efda95a0a6d71b9b4f11ca1d852f51ea08aba52a9936e72d234c9a6",
+    "observed_listed_images": 18703,
+    "observed_decode_failures": 0,
+    "observed_conflicting_groups": 54,
+    "observed_conflicting_rows": 120,
+    "rationale": "Retain the exact official source multiset and its conflicting annotations. Cross-entropy does not require deterministic labels given an image. Keep identical decoded images in one source-fit/monitor group to avoid exact-duplicate leakage. Annotation correctness, semantic ambiguity, near-duplicate independence and target exchangeability are not established."
+  },
+  "v1_disposition": "strict rejection remains available and its failed validation is preserved; V2 is explicit and never an automatic fallback"
+}

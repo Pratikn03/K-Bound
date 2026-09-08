@@ -60,7 +60,7 @@ def compile_latex_macros(
 ) -> dict[str, str]:
     """Compute and format all 193 LaTeX macro values for the physical camera tables."""
     # Compute per-window true benefit B and accuracies
-    B_held = []
+    benefit_values = []
     accuracy_frozen = []
     accuracy_candidate = []
     for labels, r in zip(true_labels, records):
@@ -69,18 +69,21 @@ def compile_latex_macros(
             pa = np.array(r["shadow_candidate_pred"])
         else:
             pa = np.array(r["extra"]["shadow_candidate_pred"])
-        froz_acc = float((p0 == labels).mean())
-        cand_acc = float((pa == labels).mean())
-        B_held.append(cand_acc - froz_acc)
-        accuracy_frozen.append(froz_acc)
-        accuracy_candidate.append(cand_acc)
-    B_held = np.asarray(B_held)
+        frozen_accuracy = float((p0 == labels).mean())
+        candidate_accuracy = float((pa == labels).mean())
+        benefit_values.append(candidate_accuracy - frozen_accuracy)
+        accuracy_frozen.append(frozen_accuracy)
+        accuracy_candidate.append(candidate_accuracy)
+    B_held = np.asarray(benefit_values)
 
     # Sort NPZ file names or loop keys to map record index back to shift metadata
     sorted_manifest_wids = sorted(win_meta_map.keys())
     record_metadata = [win_meta_map[wid] for wid in sorted_manifest_wids]
 
     macros = {}
+    unavailable_windows = sum(r.get("availability") == "unavailable" for r in records)
+    if any("availability" in r for r in records):
+        macros["CameraGateUnavailableWindows"] = str(unavailable_windows)
 
     # --- TABLE R1 ---
     macros["CameraROneFitSessions"] = "S03, S04"
@@ -171,6 +174,8 @@ def compile_latex_macros(
             macros[f"CameraRThreeDecisionPattern{group_name}"] = "0/0/0"
 
         macros[f"CameraRThreeInterpretation{group_name}"] = interpretations[group_name]
+        if any(records[i].get("availability") == "unavailable" for i in group_indices):
+            macros[f"CameraRThreeInterpretation{group_name}"] = "unavailable / retain frozen; certificate not issued"
 
     # --- TABLE S1 ---
     macros.update(protocol_inventory_macros(cfg))
@@ -215,6 +220,9 @@ def compile_latex_macros(
                 else "No"
             )
             macros[f"CameraSThree{h_macro}Regret"] = f"{regret.mean():.4f}"
+            if any(records[i].get("availability") == "unavailable" for i in indices):
+                macros[f"CameraSThree{h_macro}Kga"] = "unavailable / retain frozen"
+                macros[f"CameraSThree{h_macro}Correct"] = "certificate not issued"
         else:
             macros[f"CameraSThree{h_macro}Delta"] = "\\CamPending"
             macros[f"CameraSThree{h_macro}Oracle"] = "\\CamPending"
@@ -237,8 +245,12 @@ def compile_latex_macros(
 
     for macro_suffix, stage_key in stage_map.items():
         stats = runtime_profile[stage_key]
-        macros[f"CameraSFourMean{macro_suffix}"] = f"{stats['mean_ms']:.1f}"
-        macros[f"CameraSFourPNinetyFive{macro_suffix}"] = f"{stats['p95_ms']:.1f}"
+        macros[f"CameraSFourMean{macro_suffix}"] = (
+            "unavailable / retain frozen" if stats["mean_ms"] is None else f"{stats['mean_ms']:.1f}"
+        )
+        macros[f"CameraSFourPNinetyFive{macro_suffix}"] = (
+            "unavailable / retain frozen" if stats["p95_ms"] is None else f"{stats['p95_ms']:.1f}"
+        )
         mem_mb = runtime_profile["metadata"]["rss_mem_before_mb"]
         macros[f"CameraSFourMemory{macro_suffix}"] = f"{mem_mb:.1f}"
 

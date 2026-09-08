@@ -12,8 +12,16 @@ import math
 import numpy as np
 import pytest
 
-from kga import Certificate, Decision, FrozenLinearBenefitEstimator, KGA, decide, decide_batch, decide_kga
-from kga import cli
+from kga import (
+    KGA,
+    Certificate,
+    Decision,
+    FrozenLinearBenefitEstimator,
+    cli,
+    decide,
+    decide_batch,
+    decide_kga,
+)
 from kga.certificate import conformal_split, evalue_anytime, split_conformal_rank_radius
 from kga.routing import (
     AnytimeMulticandidatePanel,
@@ -21,6 +29,9 @@ from kga.routing import (
     bonferroni_multicandidate_route,
     route_panel,
 )
+
+# Synthetic authorization fixed separately from any estimator under test.
+AUTHORIZED_RUNTIME_PAYLOAD_SHA256 = "3bd0fc11e51d87971998ee938f3e34e24545a2bde854f7ef476f6cb29e564db6"
 
 
 def _estimator() -> FrozenLinearBenefitEstimator:
@@ -101,6 +112,7 @@ def test_failed_frozen_estimator_attempt_clears_identity(failure: str) -> None:
     gate = KGA()
     estimator = _estimator()
     kwargs = {
+        "expected_estimator_payload_sha256": AUTHORIZED_RUNTIME_PAYLOAD_SHA256,
         "features": {"x": -0.4},
         "evidence_schema_version": estimator.evidence_schema_version,
         "protocol_sha256": estimator.protocol_sha256,
@@ -142,6 +154,7 @@ def test_valid_cached_estimator_identity_survives_successful_decision() -> None:
     estimator = _estimator()
     certificate = gate.certify_evidence(
         estimator,
+        expected_estimator_payload_sha256=AUTHORIZED_RUNTIME_PAYLOAD_SHA256,
         protocol_sha256=estimator.protocol_sha256,
         features={"x": 0.4},
         evidence_schema_version=estimator.evidence_schema_version,
@@ -153,10 +166,19 @@ def test_valid_cached_estimator_identity_survives_successful_decision() -> None:
 
 
 def test_final_estimator_identity_failure_does_not_restore_partial_certificate() -> None:
+    predictions = []
+
     class BrokenIdentity(FrozenLinearBenefitEstimator):
         @property
         def artifact_sha256(self) -> str:
-            raise ValueError("artifact identity unavailable")
+            if predictions:
+                raise ValueError("artifact identity unavailable")
+            return super().artifact_sha256
+
+        def predict(self, features, **kwargs) -> float:
+            prediction = super().predict(features, **kwargs)
+            predictions.append(prediction)
+            return prediction
 
     estimator = BrokenIdentity(**vars(_estimator()))
     gate = KGA()
@@ -165,10 +187,12 @@ def test_final_estimator_identity_failure_does_not_restore_partial_certificate()
     with pytest.raises(ValueError, match="identity unavailable"):
         gate.certify_evidence(
             estimator,
+            expected_estimator_payload_sha256=AUTHORIZED_RUNTIME_PAYLOAD_SHA256,
             protocol_sha256=estimator.protocol_sha256,
             features={"x": 0.4},
             evidence_schema_version=estimator.evidence_schema_version,
         )
+    assert predictions == [0.4]
     _assert_no_cached_authority(gate)
 
 
@@ -183,10 +207,29 @@ def test_custom_estimator_cannot_bypass_missing_feature_validation(features: dic
     with pytest.raises(ValueError, match="feature"):
         gate.certify_evidence(
             estimator,
+            expected_estimator_payload_sha256=AUTHORIZED_RUNTIME_PAYLOAD_SHA256,
             protocol_sha256=estimator.protocol_sha256,
             features=features,
             evidence_schema_version=estimator.evidence_schema_version,
         )
+    _assert_no_cached_authority(gate)
+
+
+@pytest.mark.parametrize("authority", [None, "malformed", "f" * 64])
+def test_missing_or_wrong_external_authority_clears_cached_estimator_identity(authority) -> None:
+    estimator = _estimator()
+    gate = KGA()
+    kwargs = {
+        "protocol_sha256": estimator.protocol_sha256,
+        "features": {"x": 0.4},
+        "evidence_schema_version": estimator.evidence_schema_version,
+    }
+    gate.certify_evidence(estimator, expected_estimator_payload_sha256=AUTHORIZED_RUNTIME_PAYLOAD_SHA256, **kwargs)
+    assert gate.decide() is Decision.ADAPT
+    if authority is not None:
+        kwargs["expected_estimator_payload_sha256"] = authority
+    with pytest.raises(ValueError, match="externally authorized"):
+        gate.certify_evidence(estimator, **kwargs)
     _assert_no_cached_authority(gate)
 
 

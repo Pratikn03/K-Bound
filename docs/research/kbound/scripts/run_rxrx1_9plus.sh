@@ -172,6 +172,7 @@ for model_seed in "${MODEL_SEEDS[@]}"; do
     python "$RUNNER"
     --data-root "$DATA_ROOT"
     --ckpt "$ckpt"
+    --model-seed "$model_seed"
     --split "$SPLIT"
     --seeds "${CONDITION_SEEDS[@]}"
     --compositions "${COMPOSITIONS[@]}"

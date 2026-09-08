@@ -263,7 +263,12 @@ def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None, re
                     if p.grad is not None: p.add_(p.grad * scale)
             opt.zero_grad()
             ent2 = _entropy(m(xb).softmax(1))[keep1]; keep2 = ent2 < margin_e0
-            loss2 = ent2[keep2].mean() if keep2.any() else ent2.mean()
+            if not keep2.any():
+                with torch.no_grad():
+                    for p, q in zip(ps, old_p): p.copy_(q)
+                opt.zero_grad(set_to_none=True)
+                continue  # No reliable second-pass loss: no SGD or EMA update.
+            loss2 = ent2[keep2].mean()
             if not math.isnan(loss2.item()):
                 ema = loss2.item() if ema is None else 0.9 * ema + 0.1 * loss2.item()
             loss2.backward()

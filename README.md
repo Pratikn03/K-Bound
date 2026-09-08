@@ -81,11 +81,19 @@ estimator = fit_frozen_linear_benefit_estimator(
     protocol_sha256=protocol_sha,
 )
 
+# Demo-only development approval: record the reviewed estimator identity before
+# deployment. In production, load this value from an independently authorized,
+# immutable protocol/manifest; never trust a received estimator to authorize itself.
+approved_payload_sha = estimator.payload_sha256
+
 # Deployment: build label-free evidence Z and enforce the locked schema/protocol.
 calib_scores = rng.normal(size=(500, 3))
 target_scores = rng.normal(size=(500, 3))
 kga.evidence(calib_scores, target_scores)
-certificate = kga.certify_evidence(estimator, protocol_sha256=protocol_sha)
+certificate = kga.certify_evidence(
+    estimator, protocol_sha256=protocol_sha,
+    expected_estimator_payload_sha256=approved_payload_sha,
+)
 print(kga.decide(certificate))
 ```
 

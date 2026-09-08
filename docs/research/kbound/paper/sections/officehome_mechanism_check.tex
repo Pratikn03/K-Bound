@@ -1,0 +1,54 @@
+\subsection{Office-Home mechanism check}
+\label{app:opened-recipe-smoke}
+
+\paragraph{Office-Home: archival selection and changed-recipe smoke.}
+On the opened 54-cell stream-seed archive, the post-hoc rule ``serve SAR iff its
+recorded affine update norm equals zero exactly'' selects 35 candidates and freezes
+19 cells. Its accuracy regret is $\KBOHZeroRegret$, versus $0.04579772$ for
+always-adapt and $0.02172365$ for always-freeze. This rule is not the calibrated
+KGA gate, and choosing it after inspecting the archive does not constitute a
+new held-out result. A zero affine norm also does not imply frozen predictions:
+candidate inference can replace source BatchNorm statistics with current-batch statistics.
+
+A separate MPS execution smoke used one class-balanced validation episode in each
+of Art, Clipart and Product: 65 evaluation images and 16 disjoint adaptation images
+per domain. All three arms used the same 65-image evaluation batch. They were
+frozen source statistics, batch statistics without parameter updates, and the local
+SAR helper with one pass over two batches of eight, learning rate $10^{-3}$,
+$\rho=0.05$, entropy threshold $0.4\log(65)$ and reset threshold $0.2$.
+This deliberately smaller recipe differs from the archived aggressive SAR recipe.
+The checkpoint is identified by observed local bytes and metadata; its published
+training recipe was not authenticated.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Three-arm Office-Home execution smoke: correct predictions out of 65 per
+domain. These are three development episodes, not independent confirmatory trials.}
+\label{tab:officehome-three-arm-smoke}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Domain & Frozen & Batch stats & SAR & SAR steps \\
+\midrule
+Art & 37 & 34 & 34 & 0 \\
+Clipart & 26 & 30 & 30 & 0 \\
+Product & 41 & 43 & 43 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Batch-statistics-only and SAR predictions agree on all 195 evaluation images,
+including Product, where one optimizer step was accepted and the affine update norm
+was nonzero. Their totals are both 107/195, versus 104/195 for frozen inference.
+The archival exact-zero rule applied descriptively to this smoke yields 105/195,
+below always-SAR. The smoke therefore does not reproduce the archival selector's
+advantage. Source tensors and buffers were preserved, and all prediction receipts
+were written before scoring. No KGA predictor or radius was fitted, calibrated or
+evaluated. Passing the smoke establishes execution of the three arms and one SAR
+update branch; it does not establish statistical efficacy or the cause of historical gains.
+
+The runner-recorded interval was $\KBOHSmokeWallSeconds$ seconds, beginning after
+argument parsing and output-directory creation and excluding process startup and
+module imports. It includes subsequent setup and integrity work as well as execution
+of all three arms. Per-arm latency,
+tail latency, sustained throughput and peak memory were not measured; the saved
+before/after allocator readings are snapshots, not a peak-memory estimate.

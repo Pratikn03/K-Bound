@@ -1,0 +1,37 @@
+{
+  "schema": "kbound-domainnet-source-selection/1",
+  "recorded_date": "2026-09-05",
+  "status": "SOURCE_ONLY_SELECTION_NOT_SCIENTIFIC_PROTOCOL_LOCK",
+  "dataset": "DomainNet-126",
+  "subset_definition": "Pinned official SSDA_MME source-list identity; not the custom PyTorch-Adapt 80/20 split",
+  "subset_repository": "https://github.com/VisionLearningGroup/SSDA_MME",
+  "subset_commit": "ee04dddc846eec12eff1cbf2b0fa746945c2b173",
+  "source_list_git_blob": "a1aeea574d7a93b2bf54b05e3c61a8f6b6be6953",
+  "source_list_url": "https://raw.githubusercontent.com/VisionLearningGroup/SSDA_MME/ee04dddc846eec12eff1cbf2b0fa746945c2b173/data/txt/multi/labeled_source_images_clipart.txt",
+  "source_archive_url": "https://csr.bu.edu/ftp/visda/2019/multi-source/groundtruth/clipart.zip",
+  "source_archive_advertised_bytes": 1270909081,
+  "dataset_documentation": "https://ai.bu.edu/M3SDA/",
+  "declared_domain_roles": {
+    "source": "clipart",
+    "development": "painting",
+    "calibration": "sketch",
+    "test": "real"
+  },
+  "selection_rationale": "Chosen before this work downloads any dataset lists/images or evaluates models: retain the real-photo domain for a fixed art-to-photo test, use the smallest remaining source archive, assign painting/sketch to development/calibration in alphabetical order. No benchmark performance used.",
+  "authorized_current_acquisition": ["clipart source archive", "pinned clipart source list"],
+  "not_authorized_by_this_record": ["development acquisition", "calibration acquisition", "test acquisition", "target scoring", "scientific claim promotion"],
+  "source_membership_gate": "Validate the pinned source-list Git blob and new SHA256; decode only listed clipart source images; check all list paths/classes against the downloaded archive. Any incompatibility stops preparation; no archive/list substitution.",
+  "source_class_count_expected": 126,
+  "license_scope": "Official dataset page provides material for non-commercial research/education with a third-party copyright/fair-use notice, not a blanket redistribution license. Raw images stay outside the release.",
+  "claims": {
+    "fixed_domain_art_to_photo_benchmark": true,
+    "independent_environment_population_guarantee": false,
+    "sketch_to_real_exchangeability_established": false,
+    "population_sampling_radius_established": false,
+    "strong_success_criteria_relaxed": false,
+    "new_target_outcomes_accessed_by_this_work_at_selection": false,
+    "historical_nonaccess_proved": false
+  },
+  "required_before_source_training": ["source artifact receipt and complete decoding", "reviewed source-only runner and synthetic tests", "frozen source training configuration and code identities", "local timing/memory preflight"],
+  "required_before_target_execution": ["reviewed complete scientific lock", "enforced custody and one-way scoring", "source and development eligibility", "independent checkpoint records", "pinned official comparator contracts", "valid inference and power scope"]
+}

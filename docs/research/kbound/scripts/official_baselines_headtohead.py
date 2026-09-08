@@ -11,15 +11,27 @@ pass the native logs through the fail-closed provenance audit and converter, and
 the resulting per-condition decisions here:
 
     python3 official_baselines_headtohead.py \
-        --decisions poem=/path/poem_decisions.json aetta=/path/aetta_decisions.json
+        --decisions aetta=/path/aetta_decisions.json \
+        --source-logs aetta=/path/native-decisions.json \
+        --provenance-audit /path/audit.json --locked-stream /path/stream.json \
+        --environment-receipt /path/environment.json --toolchain-receipt /path/toolchain.json
 
-where each version-2 JSON carries a ``decisions`` map over the SAME 432 conditions and the
-provenance-gate verdict. Legacy flat maps are accepted but are labelled unverified. Without
+where each validated schema-3 JSON carries a ``decisions`` map over the SAME 432 conditions
+and its current-file provenance bindings. Legacy flat maps are accepted but are labelled unverified. Without
 --decisions, the harness falls back to protocol-matched *ports* (clearly labelled).
+The pinned official POEM implementation is ImageNet-C-only and cannot be promoted
+by this CIFAR scorer. Unverified decision maps do not establish compatibility.
 
 No fabrication: if an external decisions file is missing a condition, it errors out.
 """
-import argparse, json, os, hashlib
+import argparse, json, os, hashlib, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from official_baseline_provenance import load_json_strict
+from official_decision_artifact import (
+    SCHEMA_VERSION, OFFICIAL_LABEL, UNVERIFIED_LABEL, VALIDATED,
+    atomic_json, validate_decisions, validate_official_decisions,
+)
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold
@@ -31,14 +43,18 @@ STRESS = os.path.join(RES, "stress_persample_v1")
 GBR = dict(n_estimators=250, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=0)
 Zi = dict(pre_entropy=0, pre_conf=1, post_entropy=3, post_conf=4, entropy_drop=7)
 
-def load(cand):
+def load(cand, *, expected_sha256=None):
     f = os.path.join(STRESS, f"per_condition_cifar10c_{cand}_seed0.json")
-    recs = json.load(open(f))["records"]
+    raw = Path(f).read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    if expected_sha256 is not None and digest != expected_sha256:
+        raise ValueError('official provenance binding differs from the exact scoring bytes')
+    recs = json.loads(raw)["records"]
     cond = [r.get("condition","") for r in recs]
     Z  = np.array([r["Z"] for r in recs], float); B = np.array([r["B"] for r in recs], float)
     a0 = np.array([r["a0"] for r in recs], float); aa = np.array([r["a_adapted"] for r in recs], float)
     ao = np.array([r["a_oracle"] for r in recs], float)
-    sha = hashlib.sha256(open(f,'rb').read()).hexdigest()[:12]
+    sha = digest[:12]
     return cond, Z, B, a0, aa, ao, sha
 
 # ---- policies: return a per-condition array of 'adapt'/'freeze'/'abstain' ----
@@ -58,20 +74,43 @@ def poem_port(Z):   # POEM-style committal gate (port): commit while adaptation 
 def aetta_port(Z):  # AETTA-style accuracy-proxy gate (port): adapt if adapted confidence rose
     d = np.where(Z[:,Zi["post_conf"]] > Z[:,Zi["pre_conf"]], "adapt", "freeze"); return d.astype(object)
 
-def load_external(path, cond):
-    raw = json.load(open(path))
+def load_external(path, cond, *, method=None, provenance_audit=None, source_log=None,
+                  locked_stream=None, environment_receipt=None, toolchain_receipt=None):
+    raw = load_json_strict(path)
     if not isinstance(raw, dict):
         raise SystemExit(f"external decisions must be a JSON object: {path}")
     if "decisions" in raw:
         m = raw["decisions"]
-        official = bool(raw.get("official_label_allowed", False))
-        label = raw.get("label", "external_protocol_adapter_unverified")
+        claim = raw.get("official_label_allowed", False)
+        if type(claim) is not bool:
+            raise ValueError('official provenance claim must be a boolean')
+        official = claim
+        label = UNVERIFIED_LABEL
+        if official or raw.get('label') == OFFICIAL_LABEL:
+            if method == 'poem':
+                raise ValueError('official POEM is ImageNet-C-only; no compatible CIFAR protocol adapter exists')
+            if (not official or raw.get('schema_version') != SCHEMA_VERSION
+                    or raw.get('status') != VALIDATED or raw.get('label') != OFFICIAL_LABEL):
+                raise ValueError('official provenance requires a validated schema-3 decision artifact')
+            if method is None or raw.get('method') != method:
+                raise ValueError('official provenance method identity mismatch')
+            bindings = validate_official_decisions(
+                audit=provenance_audit, method=method, decisions=m,
+                source_log=source_log, locked_stream=locked_stream,
+                environment_receipt=environment_receipt, toolchain_receipt=toolchain_receipt,
+            )
+            if any(raw.get(key) != value for key,value in bindings.items()):
+                raise ValueError('official provenance decision wrapper binding mismatch')
+            label = OFFICIAL_LABEL
     else:
         m = raw
         official = False
         label = "legacy_external_decisions_unverified"
     if not isinstance(m, dict):
         raise SystemExit(f"external decisions payload is not an object: {path}")
+    validate_decisions(m, cond)
+    if cond is None:
+        cond = list(m)
     miss = [c for c in cond if c not in m]
     if miss: raise SystemExit(f"external decisions missing {len(miss)} conditions e.g. {miss[:2]} in {path}")
     extra = sorted(set(m) - set(cond))
@@ -109,10 +148,38 @@ def main():
     ap.add_argument("--candidate", default="tent")
     ap.add_argument("--alpha", type=float, default=0.10)
     ap.add_argument("--decisions", nargs="*", default=[], help="name=path.json for OFFICIAL baseline decisions")
+    ap.add_argument('--provenance-audit')
+    ap.add_argument('--locked-stream')
+    ap.add_argument('--environment-receipt')
+    ap.add_argument('--toolchain-receipt')
+    ap.add_argument('--source-logs', nargs='*', default=[], help='method=current-native-log.json for official revalidation')
     ap.add_argument("--out", default=os.path.join(RES,"official_headtohead.json"))
     a=ap.parse_args()
-    cond,Z,B,a0,aa,ao,sha = load(a.candidate); n=len(B)
-    ext = {kv.split("=",1)[0]: load_external(kv.split("=",1)[1], cond) for kv in a.decisions}
+    def named_paths(items):
+        result = {}
+        for item in items:
+            name, separator, path = item.partition('=')
+            if not separator or name not in ('aetta','poem') or not path or name in result:
+                raise ValueError('provenance inputs require unique supported method=path pairs')
+            result[name] = path
+        return result
+    decision_paths = named_paths(a.decisions)
+    source_logs = named_paths(a.source_logs)
+    def external(name, path, conditions):
+        return load_external(path, conditions, method=name, provenance_audit=a.provenance_audit,
+            source_log=source_logs.get(name), locked_stream=a.locked_stream,
+            environment_receipt=a.environment_receipt, toolchain_receipt=a.toolchain_receipt)
+    # Authenticate every official artifact before the first outcome-loader call.
+    preflight = {name: external(name,path,None) for name,path in decision_paths.items()}
+    expected_sha256 = None
+    if any(value[1] for value in preflight.values()):
+        scoring_stream = Path(STRESS) / f'per_condition_cifar10c_{a.candidate}_seed0.json'
+        from official_baseline_provenance import sha256_file
+        expected_sha256 = sha256_file(a.locked_stream)
+        if sha256_file(scoring_stream) != expected_sha256:
+            raise ValueError('official provenance locked stream differs from the actual scoring stream')
+    cond,Z,B,a0,aa,ao,sha = load(a.candidate, expected_sha256=expected_sha256); n=len(B)
+    ext = {name: external(name,path,cond) for name,path in decision_paths.items()}
 
     kga = kga_exact_rank(Z,B,a.alpha); rk = regret_pc(kga,a0,aa,ao)
     policies = {"always_adapt":always("adapt",n), "always_freeze":always("freeze",n),
@@ -144,7 +211,7 @@ def main():
              note=("POEM/AETTA are protocol-matched ports unless a converted decision artifact "
                    "carries a passing fail-closed provenance audit."),
              rows=rows)
-    json.dump(out, open(a.out,"w"), indent=2); print("wrote", a.out)
+    atomic_json(a.out, out); print("wrote", a.out)
     print(f"\n{'policy':16s} {'regret':>8s} {'FA_u':>6s} {'decisive':>8s} {'gap[CI]':>22s} holm")
     for k,s in rows.items():
         g=s["gap_vs_KGA"]

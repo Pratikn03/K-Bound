@@ -15,6 +15,7 @@ regressor under the same conceptual contract; callers may implement
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -25,17 +26,41 @@ import numpy as np
 
 from kga._validation import as_float_array
 
-LINEAR_ARTIFACT_SCHEMA = "kga-frozen-linear-benefit/1"
+LINEAR_ARTIFACT_SCHEMA_V1 = "kga-frozen-linear-benefit/1"
+LINEAR_ARTIFACT_SCHEMA = "kga-frozen-linear-benefit/2"
+
+_LINEAR_ARTIFACT_FIELDS = frozenset(
+    {
+        "schema",
+        "feature_names",
+        "weights",
+        "intercept",
+        "feature_center",
+        "feature_scale",
+        "residuals",
+        "evidence_schema_version",
+        "protocol_sha256",
+        "fit_unit",
+        "calibration_unit",
+        "payload_sha256",
+    }
+)
 
 
-def _is_sha256(value: str) -> bool:
-    if len(value) != 64:
-        return False
-    try:
-        int(value, 16)
-    except ValueError:
-        return False
-    return True
+class BenefitArtifactError(ValueError):
+    """Base class for malformed or unverifiable benefit artifacts."""
+
+
+class BenefitArtifactFormatError(BenefitArtifactError):
+    """Raised when a serialized benefit artifact violates its exact schema."""
+
+
+class BenefitArtifactIntegrityError(BenefitArtifactError):
+    """Raised when a benefit payload lacks or violates an integrity binding."""
+
+
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def _as_finite_vector(value: Sequence[float] | np.ndarray, name: str) -> np.ndarray:
@@ -49,6 +74,49 @@ def _as_finite_vector(value: Sequence[float] | np.ndarray, name: str) -> np.ndar
 
 def _canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+
+def _strict_string(value: object, name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise BenefitArtifactFormatError(f"{name} must be a non-empty JSON string")
+    return value
+
+
+def _strict_number(value: object, name: str) -> float:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise BenefitArtifactFormatError(f"{name} must be a JSON number, not a boolean or string")
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise BenefitArtifactFormatError(f"{name} must be finite") from exc
+    if not np.isfinite(number):
+        raise BenefitArtifactFormatError(f"{name} must be finite")
+    return number
+
+
+def _strict_number_list(value: object, name: str) -> np.ndarray:
+    if not isinstance(value, list) or not value:
+        raise BenefitArtifactFormatError(f"{name} must be a non-empty one-dimensional JSON number array")
+    numbers = [_strict_number(item, f"{name}[{index}]") for index, item in enumerate(value)]
+    return np.asarray(numbers, dtype=float)
+
+
+def _strict_feature_names(value: object) -> tuple[str, ...]:
+    if not isinstance(value, list) or not value:
+        raise BenefitArtifactFormatError("feature_names must be a non-empty JSON string array")
+    names = tuple(_strict_string(item, f"feature_names[{index}]") for index, item in enumerate(value))
+    if len(names) != len(set(names)):
+        raise BenefitArtifactFormatError("feature_names must be unique")
+    return names
+
+
+def _reject_duplicate_object_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    document: dict[str, Any] = {}
+    for name, value in pairs:
+        if name in document:
+            raise BenefitArtifactFormatError(f"duplicate JSON object member: {name!r}")
+        document[name] = value
+    return document
 
 
 @runtime_checkable
@@ -73,7 +141,7 @@ class BenefitEstimator(Protocol):
 
     @property
     def artifact_sha256(self) -> str:
-        """Digest of the fitted estimator and calibration payload."""
+        """Compatibility name for the canonical payload digest, not file bytes."""
 
     def predict(
         self,
@@ -94,6 +162,10 @@ class FrozenLinearBenefitEstimator:
     method, and prediction requires the caller to supply the current protocol
     and evidence-schema identities.  This prevents an estimator calibrated for
     one candidate, split, or feature order from being reused accidentally.
+
+    Direct construction and fitting produce an identifiable payload, not a
+    deployment attestation. Deployment code must separately compare
+    :attr:`payload_sha256` with an identity fixed by an external protocol seal.
     """
 
     feature_names: tuple[str, ...]
@@ -155,10 +227,37 @@ class FrozenLinearBenefitEstimator:
         }
 
     @property
-    def artifact_sha256(self) -> str:
-        """SHA-256 of all model, schema, protocol, and residual fields."""
+    def payload_sha256(self) -> str:
+        """Canonical SHA-256 of all model, protocol, and residual fields."""
 
         return hashlib.sha256(_canonical_json_bytes(self._payload())).hexdigest()
+
+    @property
+    def artifact_sha256(self) -> str:
+        """Deprecated compatibility alias for :attr:`payload_sha256`.
+
+        The value identifies the canonical JSON payload. It is not the digest
+        of the pretty-printed JSON file bytes and is not self-authentication.
+        """
+
+        return self.payload_sha256
+
+    def require_payload_identity(self, expected_payload_sha256: str) -> None:
+        """Require the payload identity fixed by an external deployment seal.
+
+        A payload can carry a correct self-check after being replaced and
+        rehashed. This separate comparison is therefore the authorization
+        boundary that deployment callers must use.
+        """
+
+        if not _is_sha256(expected_payload_sha256):
+            raise BenefitArtifactIntegrityError(
+                "externally expected payload_sha256 must be a lowercase 64-character SHA-256 digest"
+            )
+        if not hmac.compare_digest(expected_payload_sha256, self.payload_sha256):
+            raise BenefitArtifactIntegrityError(
+                "benefit estimator payload does not match the externally expected payload_sha256"
+            )
 
     def predict(
         self,
@@ -186,43 +285,97 @@ class FrozenLinearBenefitEstimator:
         return float(self.intercept + standardized @ self.weights)
 
     def to_dict(self) -> dict[str, Any]:
-        """Return a JSON-safe artifact including its self-check digest."""
+        """Return a strict schema-v2 payload with its canonical self-check."""
 
         payload = self._payload()
-        payload["artifact_sha256"] = self.artifact_sha256
+        payload["payload_sha256"] = self.payload_sha256
         return payload
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> FrozenLinearBenefitEstimator:
-        """Load and verify a serialized estimator artifact."""
+        """Load and verify one exact schema-v2 serialized estimator payload.
 
-        if value.get("schema") != LINEAR_ARTIFACT_SCHEMA:
-            raise ValueError(f"unsupported benefit artifact schema: {value.get('schema')!r}")
-        estimator = cls(
-            feature_names=tuple(value["feature_names"]),
-            weights=as_float_array(value["weights"]),
-            intercept=float(value["intercept"]),
-            feature_center=as_float_array(value["feature_center"]),
-            feature_scale=as_float_array(value["feature_scale"]),
-            residuals=as_float_array(value["residuals"]),
-            evidence_schema_version=str(value["evidence_schema_version"]),
-            protocol_sha256=str(value["protocol_sha256"]),
-            fit_unit=str(value["fit_unit"]),
-            calibration_unit=str(value["calibration_unit"]),
-        )
-        recorded = value.get("artifact_sha256")
-        if recorded is not None and recorded != estimator.artifact_sha256:
-            raise ValueError("benefit estimator artifact SHA-256 mismatch")
+        Schema v1 is deliberately rejected. In particular, this method never
+        treats its optional ``artifact_sha256`` field as an authorization and
+        never silently upgrades a legacy or digestless payload.
+        """
+
+        if not isinstance(value, Mapping):
+            raise BenefitArtifactFormatError("benefit estimator artifact root must be a JSON object")
+        schema = value.get("schema")
+        if schema == LINEAR_ARTIFACT_SCHEMA_V1:
+            raise BenefitArtifactFormatError(
+                "benefit artifact schema v1 requires explicit reviewed migration and is rejected by the v2 loader"
+            )
+        if schema != LINEAR_ARTIFACT_SCHEMA:
+            raise BenefitArtifactFormatError(f"unsupported benefit artifact schema: {schema!r}")
+
+        supplied = set(value)
+        missing = sorted(_LINEAR_ARTIFACT_FIELDS - supplied)
+        unexpected = sorted(supplied - _LINEAR_ARTIFACT_FIELDS)
+        if missing == ["payload_sha256"] and not unexpected:
+            raise BenefitArtifactIntegrityError("payload_sha256 is required by benefit artifact schema v2")
+        if missing or unexpected:
+            raise BenefitArtifactFormatError(
+                f"benefit artifact fields do not match schema v2: missing={missing}, unexpected={unexpected}"
+            )
+
+        recorded = value["payload_sha256"]
+        if not _is_sha256(recorded):
+            raise BenefitArtifactIntegrityError("payload_sha256 must be a lowercase 64-character SHA-256 digest")
+        protocol_sha256 = value["protocol_sha256"]
+        if not _is_sha256(protocol_sha256):
+            raise BenefitArtifactFormatError("protocol_sha256 must be a lowercase 64-character SHA-256 digest")
+        try:
+            estimator = cls(
+                feature_names=_strict_feature_names(value["feature_names"]),
+                weights=_strict_number_list(value["weights"], "weights"),
+                intercept=_strict_number(value["intercept"], "intercept"),
+                feature_center=_strict_number_list(value["feature_center"], "feature_center"),
+                feature_scale=_strict_number_list(value["feature_scale"], "feature_scale"),
+                residuals=_strict_number_list(value["residuals"], "residuals"),
+                evidence_schema_version=_strict_string(value["evidence_schema_version"], "evidence_schema_version"),
+                protocol_sha256=protocol_sha256,
+                fit_unit=_strict_string(value["fit_unit"], "fit_unit"),
+                calibration_unit=_strict_string(value["calibration_unit"], "calibration_unit"),
+            )
+        except BenefitArtifactError:
+            raise
+        except (TypeError, ValueError) as exc:
+            raise BenefitArtifactFormatError(f"invalid benefit estimator payload: {exc}") from exc
+        if not hmac.compare_digest(recorded, estimator.payload_sha256):
+            raise BenefitArtifactIntegrityError("benefit estimator payload SHA-256 mismatch")
         return estimator
 
     @classmethod
     def load_json(cls, path: str | Path) -> FrozenLinearBenefitEstimator:
-        """Read a trusted JSON artifact and verify its digest."""
+        """Read one strict JSON payload and verify its canonical digest."""
 
-        value = json.loads(Path(path).read_text(encoding="utf-8"))
+        try:
+            value = json.loads(
+                Path(path).read_text(encoding="utf-8"),
+                object_pairs_hook=_reject_duplicate_object_pairs,
+            )
+        except BenefitArtifactError:
+            raise
+        except (UnicodeError, json.JSONDecodeError) as exc:
+            raise BenefitArtifactFormatError(f"invalid benefit estimator JSON: {exc}") from exc
         if not isinstance(value, dict):
-            raise ValueError("benefit estimator artifact root must be a JSON object")
+            raise BenefitArtifactFormatError("benefit estimator artifact root must be a JSON object")
         return cls.from_dict(value)
+
+    @classmethod
+    def load_json_for_deployment(
+        cls,
+        path: str | Path,
+        *,
+        expected_payload_sha256: str,
+    ) -> FrozenLinearBenefitEstimator:
+        """Load a v2 payload and require its externally sealed identity."""
+
+        estimator = cls.load_json(path)
+        estimator.require_payload_identity(expected_payload_sha256)
+        return estimator
 
     def write_new_json(self, path: str | Path) -> None:
         """Create, but never overwrite, a frozen estimator artifact."""
@@ -252,7 +405,9 @@ def fit_frozen_linear_benefit_estimator(
     The function requires separate arrays for model fitting and residual
     calibration.  It does not create cross-fitted or in-pool residuals.
     Callers remain responsible for ensuring the two arrays correspond to
-    genuinely disjoint experimental units.
+    genuinely disjoint experimental units. The returned object's
+    ``payload_sha256`` identifies its content but does not authorize it for
+    deployment; an external protocol must seal that identity separately.
     """
 
     names = tuple(str(name) for name in feature_names)

@@ -1,0 +1,69 @@
+{
+  "schema": "kbound-confirmatory-formal-verification-index-v1",
+  "date": "2026-09-05",
+  "status": "DIRECT_PINNED_COMPILE_AND_AXIOM_AUDIT_INDEPENDENTLY_REVIEWED",
+  "source_base_commit": "b1899ea20567fbd1978521759aa602678b1fdab5",
+  "working_tree_candidate": true,
+  "release_attestation": false,
+  "standard_lake_build_performed": false,
+  "empirical_assumptions_verified": false,
+  "local_modules_compiled": 44,
+  "registered_declarations": 150,
+  "legacy_core_declarations": 65,
+  "additional_support_and_example_axiom_checks": 15,
+  "total_distinct_axiom_checks": 165,
+  "allowed_observed_axioms": ["propext", "Classical.choice", "Quot.sound"],
+  "claim_update": {
+    "id": "CM-04",
+    "prior_dated_audit_preserved": "docs/research/kbound/audits/research_traceability.json",
+    "paper": "docs/research/kbound/kbound_submission_body.tex#thm:compact-beta-minimax",
+    "lean": [
+      "KBound.measurable_audit_floor",
+      "KBound.fibrewise_randomized_audit_floor",
+      "KBound.constant_fibreRadius_audit_valid",
+      "KBound.audit_floor_frontier_inert",
+      "KBound.correctness_fibreRadius_eq_beta",
+      "KBound.correctness_target_fibreRadius_eq_beta"
+    ],
+    "general_premises": [
+      "nonempty fibre",
+      "bounded attainable absolute residuals; supremum need not be attained",
+      "measurable nonnegative real audit",
+      "one common joint observation and seed probability law",
+      "uniform validity over every world at the declared failure budget"
+    ],
+    "full_class_additional_premises": [
+      "full measurable correctness-field class, not an arbitrary restricted deployment subclass",
+      "positive disagreement mass",
+      "minus one half <= M <= one half",
+      "zero <= beta <= one half",
+      "measurable predictors and Markov kernel for the actual target-law realization"
+    ]
+  },
+  "new_lean_source_sha256": {
+    "docs/research/kbound/formal/KBound/Probability/AuditFloor.lean": "f959cafd5f17f87fc947be5328be29071e67f1adc270dce293397e181d330e54",
+    "docs/research/kbound/formal/KBound/Probability/AuditFloorCorrectness.lean": "8077f782fd7532a05fcdcf98541556616ef8cb3a3a97fbbcd0807a49d501cd9d",
+    "docs/research/kbound/formal/KBound/Probability/AuditFloorExamples.lean": "83dbf0a27dcba4bc017fac98ee2f1812986829737850a3adf82fbb241c1b2bf7"
+  },
+  "retained_private_workbench_receipts": {
+    "root": ".superpowers/sdd/RELEASE_COMPLETION_PLAN",
+    "not_final_public_release_members": true,
+    "sha256": {
+      "audit-floor-verification-20260905.json": "e80020a49878088af72046f71ee139aae28b777e1194cd56bf9aae154d3ca70b",
+      "audit-floor-build-20260905.json": "2cce69286c2c898beccc6a7a352f9c5de0d14c6965911b0ad421d7713aeeb31d",
+      "audit-floor-axioms-20260905.json": "c17a46383d7f0d3755742d9bdc205da7883381cc5e6904ec503c96855c318539",
+      "audit-floor-axioms-20260905.log": "4693c6b13d1d75fa4e8542f949544df2ca28d2446f8f79906e206caed4fc8517",
+      "audit-floor-source-20260905.diff": "17e9b54f14ddb8c6a2f69ee44aebfd174db43ca654b3c82fea46f5e59e12875a",
+      "audit-floor-independent-formal-review-20260905.md": "9c9ec8f06adb01ad726fbcf0106f5f2fda8d809a3f85fa95b9b5af90e8facca2",
+      "audit-floor-independent-prose-integration-review-20260905.md": "e1374ed13672635d56981f1f321dd90565b4739c7ffc61761cab492e8d8c2da2",
+      "supplement-census-independent-review-20260905.md": "f06c6eece83b23709b63dbe8bc7af4eb8abc3afef1ebfa2b2672aa3058184fae"
+    }
+  },
+  "remaining": [
+    "Final release rebuild and independent layout validation; a 44-page unsealed reading copy is recorded separately in THEORY_READING_COPY_20260905.json",
+    "standard pinned Lake and complete release workflow verification",
+    "fresh public portable receipts and clean-source release seal",
+    "historical sixth-layer extension is still incomplete",
+    "no population beta learned or benchmark assumptions certified"
+  ]
+}

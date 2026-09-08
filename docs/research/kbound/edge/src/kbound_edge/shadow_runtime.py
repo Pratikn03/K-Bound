@@ -21,9 +21,9 @@ No labels are ever read on this path.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from kbound_edge.replay import run_window, WindowOutcome
+from kbound_edge.replay import WindowOutcome, run_window
 
 
 @dataclass
@@ -48,21 +48,21 @@ class ShadowController:
     f0: Any
     adapter: Any
     estimator: Any
-    eps: float
+    eps: float | None
     window_size: int = 16
     image_size: int = 64
     logger: Any = None
     dashboard: Any = None
-    max_windows: Optional[int] = None
+    max_windows: int | None = None
 
-    _buffer: List[Any] = field(default_factory=list, init=False)
+    _buffer: list[Any] = field(default_factory=list, init=False)
     _wid: int = field(default=0, init=False)
-    official_outputs: List[List[int]] = field(default_factory=list, init=False)
-    shadow_decisions: List[str] = field(default_factory=list, init=False)
-    outcomes: List[WindowOutcome] = field(default_factory=list, init=False)
+    official_outputs: list[list[int]] = field(default_factory=list, init=False)
+    shadow_decisions: list[str] = field(default_factory=list, init=False)
+    outcomes: list[WindowOutcome] = field(default_factory=list, init=False)
 
     # -- frame ingestion -------------------------------------------------------
-    def push_frame(self, frame) -> Optional[WindowOutcome]:
+    def push_frame(self, frame) -> WindowOutcome | None:
         """Add one frame; if a window is complete, process it and return outcome."""
         self._buffer.append(frame)
         if len(self._buffer) >= self.window_size:
@@ -111,7 +111,7 @@ class ShadowController:
         return outcome
 
     # -- driving a source ------------------------------------------------------
-    def run(self, source, max_frames: Optional[int] = None) -> Dict[str, Any]:
+    def run(self, source, max_frames: int | None = None) -> dict[str, Any]:
         """Pull frames from a FrameSource (or cv2.VideoCapture-like) until done.
 
         Stops when the source is exhausted, ``max_windows`` windows have been
@@ -143,11 +143,13 @@ class ShadowController:
                 pass
         return self.summary()
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         from collections import Counter
 
         counts = Counter(self.shadow_decisions)
         return {
+            "schema_version": "kbound-edge-v2",
+            "unavailable_windows": sum(o.decision.availability == "unavailable" for o in self.outcomes),
             "n_windows": self._wid,
             "n_official_outputs": len(self.official_outputs),
             "shadow_decision_counts": dict(counts),

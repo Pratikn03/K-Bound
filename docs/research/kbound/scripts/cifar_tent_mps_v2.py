@@ -746,13 +746,16 @@ def _bn_affine_params(m, freeze_layer4=False):
     mod_to_name = {id(mod): nm for nm, mod in named.items()}
     ps = []
     for mod in m.modules():
-        if freeze_layer4 and _in_layer4(mod_to_name.get(id(mod), "")):
-            continue  # official-SAR: do not adapt the final block
+        exclude_affine = freeze_layer4 and _in_layer4(mod_to_name.get(id(mod), ""))
         if isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)):
             mod.track_running_stats = False; mod.running_mean = None; mod.running_var = None
+            if exclude_affine:
+                continue  # Exclude affine updates, not batch-stat normalization.
             if mod.weight is not None: mod.weight.requires_grad_(True); ps.append(mod.weight)
             if mod.bias is not None: mod.bias.requires_grad_(True); ps.append(mod.bias)
         elif isinstance(mod, nn.LayerNorm):   # ViT / transformer TTA target (no running stats)
+            if exclude_affine:
+                continue
             if mod.weight is not None: mod.weight.requires_grad_(True); ps.append(mod.weight)
             if mod.bias is not None: mod.bias.requires_grad_(True); ps.append(mod.bias)
     return ps
@@ -840,7 +843,12 @@ def sar_adapt(base, stream, steps, lr, num_classes, rho=0.05, margin_e0=None,
             # second forward at w+e(w); re-filter the SAME first-reliable subset
             opt.zero_grad()
             ent2 = _entropy(m(xb).softmax(1))[keep1]; keep2 = ent2 < margin_e0
-            loss2 = ent2[keep2].mean() if keep2.any() else ent2.mean()
+            if not keep2.any():
+                with torch.no_grad():
+                    for p, q in zip(ps, old_p): p.copy_(q)
+                opt.zero_grad(set_to_none=True)
+                continue  # No reliable second-pass loss: no SGD or EMA update.
+            loss2 = ent2[keep2].mean()
             # (3) EMA of the reliable second-step loss = model-recovery criterion
             if not math.isnan(loss2.item()):
                 ema = loss2.item() if ema is None else 0.9 * ema + 0.1 * loss2.item()
@@ -1046,7 +1054,7 @@ def _aetta_accuracy_estimate(net, x, num_classes, mc_images):
     est_ema = None
     with torch.no_grad():
         for i in range(0, N, 256):
-            xb = x[i:i + 256]
+            xb = x[i:min(i + 256, N)]
             _set_dropout(False)
             curr_pred = m(xb).argmax(1)                                    # deterministic (dropout off)
             _set_dropout(True)
@@ -1118,7 +1126,7 @@ def _log_source_reference(bench_tag, model_frozen, clean_x, clean_y, num_classes
 # =============================================================================
 #  RUN ONE BENCHMARK
 # =============================================================================
-def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, quick=False, max_cells=0):
+def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, quick=False, max_cells=0, out_dir=None):
     num_classes = 10 if which == "10" else 100
     bench_tag = "cifar10c" if which == "10" else "cifar100c"   # arm-D npz tag (matches per_condition JSON tag)
     model = get_cifar_model(which, data_root, dev, ckpt)
@@ -1167,14 +1175,16 @@ def run_cifar_benchmark(which, data_root, dev, methods, corruptions, ckpt=None, 
     try:  # per-cell evidence dump for scripts/gate_baseline_comparison.py (non-breaking)
         import json as _json
         _cand = "tent" if "tent" in rows else next(iter(rows))
-        _json.dump(rows[_cand], open(f"cifar10c_percell_{which}.json", "w"))
-        print(f"[{which}] per-cell dump ({_cand}, {len(rows[_cand])} cells) -> cifar10c_percell_{which}.json")
+        _percell_path = os.path.join(out_dir or ".", f"cifar10c_percell_{which}.json")
+        with open(_percell_path, "w") as _percell_file:
+            _json.dump(rows[_cand], _percell_file)
+        print(f"[{which}] per-cell dump ({_cand}, {len(rows[_cand])} cells) -> {_percell_path}")
     except Exception as _e:
         print(f"[{which}] per-cell dump skipped: {_e}")
     return clean_acc, rows
 
 
-def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
+def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False, max_cells=0):
     """CIFAR-10.1 NATURAL-shift harmful-TTA cells. Reuses the CIFAR-10 model and the
     identical stream/KGA machinery as CIFAR-10-C; the ONLY change is the test set is a
     real natural distribution shift instead of a synthetic corruption (no severity axis).
@@ -1194,6 +1204,9 @@ def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
     bkeys = SEL_BATCH if SEL_BATCH else (["small", "tiny"] if quick else list(BATCH_REGIMES.keys()))
     _ags = SEL_AGGR if SEL_AGGR else list(AGGRESSIVENESS)   # WIN_HUNT_v5 operating-point subset
     cells = [(br, comp, agn) for br in bkeys for comp in COMPOSITIONS for agn in _ags]
+    if max_cells and max_cells > 0:
+        cells = cells[:max_cells]  # SMOKE-TEST ONLY; keep all repeats and methods per cell
+        print(f"[cifar101] [SMOKE] max_cells={max_cells} -> running only {len(cells)} cell(s)")
     rows = {m: [] for m in methods}
     print(f"[cifar101] {len(cells)} cells x {N_REPEATS} repeats x {len(methods)} methods")
     t0 = time.time()
@@ -1219,7 +1232,7 @@ def run_cifar101_benchmark(data_root, dev, methods, ckpt=None, quick=False):
     return clean_acc, rows
 
 
-def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=False, max_images=4000, arch="resnet50", severities=None, batch_regimes=None, out_dir=None, cooldown=0.0, compositions=None, max_cells=0):
+def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=False, max_images=4000, arch="resnet50", severities=None, batch_regimes=None, out_dir=None, cooldown=0.0, compositions=None, max_cells=0, require_all_corruptions=False):
     # Frozen pretrained ImageNet backbone; Tent/EATA/SAR adapt BN-affine (ResNet) or
     # LayerNorm-affine (ViT) params; eval on the corruption set itself.
     # Writes progress.log + checkpoint.json after EVERY cell, so the run is VISIBLE on disk
@@ -1227,6 +1240,11 @@ def run_imagenet_benchmark(ic_root, val_root, dev, methods, corruptions, quick=F
     # cells are skipped and it continues from where it stopped (no work lost).
     present = [c for c in corruptions if _ic_available(ic_root, c)]
     _missing = [c for c in corruptions if c not in present]
+    if _missing and require_all_corruptions:
+        raise SystemExit(
+            f"[imagenet-c] explicitly requested corruption(s) unavailable under {ic_root}: "
+            f"{_missing}; provide extracted directories or supported tar archives; refusing a subset run"
+        )
     if _missing:
         print(f"[imagenet-c] skipping {len(_missing)} absent corruption(s): {_missing}")
     if not present:
@@ -1462,9 +1480,9 @@ def main():
             which = "10" if bench == "cifar10c" else "100"
             corrs = (CIFAR_C_QUICK if args.quick else CIFAR_C_ALL)
             ck = args.cifar10_ckpt if which == "10" else args.cifar100_ckpt
-            clean_acc, rows = run_cifar_benchmark(which, args.data_root, dev, args.methods, corrs, ck, args.quick, max_cells=args.max_cells)
+            clean_acc, rows = run_cifar_benchmark(which, args.data_root, dev, args.methods, corrs, ck, args.quick, max_cells=args.max_cells, out_dir=args.out_results)
         elif bench == "cifar101":
-            clean_acc, rows = run_cifar101_benchmark(args.data_root, dev, args.methods, args.cifar10_ckpt, args.quick)
+            clean_acc, rows = run_cifar101_benchmark(args.data_root, dev, args.methods, args.cifar10_ckpt, args.quick, max_cells=args.max_cells)
         else:
             if not args.imagenetc_root: print("[skip] imagenetc needs --imagenetc-root"); continue
             corrs = args.corruptions if args.corruptions else IMAGENET_C_QUICK
@@ -1475,7 +1493,7 @@ def main():
                 _bregimes = [("large_iid", 64), ("small", 16), ("tiny", 8)]
             else:
                 _bregimes = None
-            clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes, out_dir=args.out_results, cooldown=args.cooldown, compositions=args.imagenetc_composition, max_cells=args.max_cells)
+            clean_acc, rows = run_imagenet_benchmark(args.imagenetc_root, None, dev, args.methods, corrs, args.quick, max_images=args.max_images, arch=args.arch, severities=args.severities, batch_regimes=_bregimes, out_dir=args.out_results, cooldown=args.cooldown, compositions=args.imagenetc_composition, max_cells=args.max_cells, require_all_corruptions=args.corruptions is not None)
 
         per_method = {}
         for mth, rws in rows.items():

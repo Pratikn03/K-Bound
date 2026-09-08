@@ -13,8 +13,21 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from official_baseline_provenance import (
+    EXPECTED_CONDITION_COUNT, _canonical_json_sha256,
+    decisions_sha256, is_native_trace_control_file, load_json_strict,
+    validate_promotable_audit, verify_native_execution_attestation,
+)
+from official_decision_artifact import (
+    SCHEMA_VERSION, STAGED, UNVERIFIED_LABEL, atomic_json, convert_native_decisions,
+    stream_conditions, validate_decisions,
+)
 
 PATH_BINDING_SCHEMA = "git-repository-relative-posix-v1"
 SOURCE_TREE_EXCLUDED_PARTS = {
@@ -171,7 +184,7 @@ def audit_aetta(repo: Path, out: Path) -> dict[str, Any]:
         "decision_count": count,
         "decisions_sha256": decisions_sha,
         "checks": checks,
-        "official_label_allowed": all(checks.values()),
+        "official_label_allowed": False,  # preliminary source/log census, not a schema-3 verdict
     }
 
 
@@ -195,6 +208,10 @@ def audit_poem(repo: Path, out: Path) -> dict[str, Any]:
         "environment_lock_present": bool(environment_files),
         "native_logs_successful": logs["successful"],
         "converted_decisions_nonempty": count > 0,
+        # The pinned POEM native entry point is ImageNet-C-only. The existing
+        # 432-condition CIFAR adapter is explicitly unavailable in Item11;
+        # direct auditor calls must retain that blocker as well.
+        "protocol_adapter_compatible": False,
     }
     return {
         "method": "poem",
@@ -210,8 +227,87 @@ def audit_poem(repo: Path, out: Path) -> dict[str, Any]:
         "decision_count": count,
         "decisions_sha256": decisions_sha,
         "checks": checks,
-        "official_label_allowed": all(checks.values()),
+        "official_label_allowed": False,  # preliminary source/log census, not a schema-3 verdict
     }
+
+
+def _native_trace(repo: Path, root: Path, method: str, logs: dict[str, Any], source_tree: str | None) -> None:
+    """Validate actual local control files; the strict validator checks the witness again."""
+    logs.update(completion_verified=False, runner_receipt_verified=False, execution_attested=False)
+    try:
+        completion = load_json_strict(root / 'native_completion.json')
+        runner = load_json_strict(root / 'native_runner_receipt.json')
+        invocation = load_json_strict(root / 'native_invocation.json')
+        attestation = load_json_strict(root / 'native_execution_attestation.json')
+        logs.update(completion=completion, runner_receipt=runner, execution_attestation=attestation)
+        if not all(isinstance(item, dict) for item in (completion, runner, invocation, attestation)):
+            return
+        source_path = 'AETTA' if method == 'aetta' else 'external/poem'
+        producer_path = 'docs/research/kbound/scripts/run_official_native.py'
+        producer = dict(path=producer_path, sha256=sha256_file(repo / producer_path))
+        command = invocation.get('command')
+        invocation_ok = (
+            set(invocation) == {'command','method','producer','schema','source','working_directory'}
+            and invocation.get('schema') == 'kbound-official-native-invocation-v1'
+            and invocation.get('method') == method
+            and invocation.get('working_directory') == source_path
+            and invocation.get('source') == dict(path=source_path, tree_sha256=source_tree)
+            and invocation.get('producer') == producer
+            and isinstance(command, list) and bool(command)
+            and all(isinstance(value, str) and value for value in command)
+            and runner.get('producer') == producer
+            and runner.get('invocation_sha256') == sha256_file(root / 'native_invocation.json')
+        )
+        artifact_hashes = {key:value for key,value in logs['sha256'].items() if not is_native_trace_control_file(key)}
+        logs['completion_verified'] = bool(completion.get('log_sha256') == artifact_hashes)
+        logs['runner_receipt_verified'] = bool(invocation_ok and runner.get('artifacts_sha256') == artifact_hashes
+            and completion.get('runner_receipt_sha256') == _canonical_json_sha256(runner))
+        logs['execution_attested'] = verify_native_execution_attestation(attestation, method=method,
+            runner_receipt_sha256=_canonical_json_sha256(runner))
+    except (OSError, ValueError, TypeError):
+        return
+
+
+def _bind_staged_method(repo, out, record, binding, conditions):
+    method = record['method']
+    source = repo / ('AETTA' if method == 'aetta' else 'external/poem')
+    native = out / ('aetta_native' if method == 'aetta' else 'poem_imagenetc')
+    logs = native_logs(native, repo=repo)
+    _native_trace(repo, native, method, logs, tree_hash(source))
+    record['native_logs'] = logs
+    checks = record['checks']
+    checks.pop('converted_decisions_nonempty', None)
+    checks.update(native_logs_successful=logs['successful'], native_execution_attested=logs['execution_attested'],
+        native_invocation_bound=logs['runner_receipt_verified'], converted_decisions_complete=False,
+        locked_stream_bound=False, environment_receipt_bound=bool(binding.get('environment_receipt_sha256')),
+        toolchain_receipt_bound=bool(binding.get('toolchain_receipt_sha256')))
+    record.update(decision_count=0, decision_payload_sha256=None, official_label_allowed=False)
+    try:
+        stage_path = out / f'{method}_decisions.staged.json'
+        stage = load_json_strict(stage_path)
+        if (not isinstance(stage, dict) or stage.get('schema_version') != SCHEMA_VERSION
+                or stage.get('method') != method or stage.get('status') != STAGED
+                or stage.get('label') != UNVERIFIED_LABEL or stage.get('official_label_allowed') is not False):
+            raise ValueError('unverified staged decision artifact required')
+        decisions = validate_decisions(stage.get('decisions'), conditions)
+        record.update(decision_count=len(decisions), decision_payload_sha256=decisions_sha256(decisions),
+                      decisions_sha256=sha256_file(stage_path))
+        source_log_hash = stage.get('source_log_sha256')
+        candidates = [repo/path for path,digest in logs['sha256'].items()
+                      if digest == source_log_hash and not is_native_trace_control_file(path)]
+        if not candidates:
+            raise ValueError('staged decisions do not bind an available native output')
+        if convert_native_decisions(method, candidates[0]) != decisions:
+            raise ValueError('staged decision payload differs from the native conversion rule')
+        checks['converted_decisions_complete'] = len(decisions) == EXPECTED_CONDITION_COUNT
+        checks['locked_stream_bound'] = (len(conditions) == EXPECTED_CONDITION_COUNT
+            and stage.get('locked_stream_sha256') == binding.get('locked_stream_sha256'))
+        record['source_log_sha256'] = source_log_hash
+        record['official_label_allowed'] = all(value is True for value in checks.values())
+        return decisions
+    except (OSError, ValueError, TypeError) as exc:
+        record['promotion_error'] = str(exc)
+        return {}
 
 
 def main() -> int:
@@ -220,13 +316,29 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--require-promotable", action="store_true")
+    parser.add_argument('--locked-stream', type=Path)
+    parser.add_argument('--environment-receipt', type=Path)
+    parser.add_argument('--toolchain-receipt', type=Path)
     args = parser.parse_args()
 
     repo = args.repo.resolve()
     out_dir = (args.out_dir or repo / "experiments/kbound/results/official_repro_v1").resolve()
     output = (args.output or out_dir / "OFFICIAL_BASELINE_AUDIT.json").resolve()
+    binding = {}
+    conditions = []
+    for field, path in (('locked_stream_sha256', args.locked_stream),
+                        ('environment_receipt_sha256', args.environment_receipt),
+                        ('toolchain_receipt_sha256', args.toolchain_receipt)):
+        if path is not None:
+            if not isinstance(load_json_strict(path), dict):
+                raise ValueError('binding inputs must be JSON objects')
+            binding[field] = sha256_file(path)
+    if args.locked_stream is not None:
+        conditions = stream_conditions(args.locked_stream)
+    binding['condition_count'] = len(conditions)
     payload = {
-        "schema_version": 2,
+        "schema_version": SCHEMA_VERSION,
+        'promotion_binding': binding,
         "provenance_path_binding": {
             "schema": PATH_BINDING_SCHEMA,
             "root": ".",
@@ -243,18 +355,39 @@ def main() -> int:
             "poem": audit_poem(repo, out_dir),
         },
     }
+    staged = {name:_bind_staged_method(repo, out_dir, record, binding, conditions)
+              for name,record in payload['methods'].items()}
+    # Validate the candidate audit using the unchanged strict witness validator
+    # before publication. A failed required-official run never replaces output.
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.official-audit-check.', dir=output.parent) as temporary:
+        candidate = Path(temporary) / 'audit.json'
+        atomic_json(candidate, payload)
+        for name, record in payload['methods'].items():
+            if record['official_label_allowed']:
+                try:
+                    validate_promotable_audit(candidate, method=name, decisions=staged[name],
+                        source_log_sha256=record['source_log_sha256'],
+                        locked_stream_sha256=binding['locked_stream_sha256'],
+                        environment_receipt_sha256=binding['environment_receipt_sha256'],
+                        toolchain_receipt_sha256=binding['toolchain_receipt_sha256'])
+                except (OSError, ValueError, KeyError) as exc:
+                    record['official_label_allowed'] = False
+                    record['promotion_error'] = str(exc)
     payload["all_promotable"] = all(
         method["official_label_allowed"] for method in payload["methods"].values()
     )
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     for name, result in payload["methods"].items():
         failed = [key for key, value in result["checks"].items() if not value]
         print(f"{name}: {'PROMOTABLE' if result['official_label_allowed'] else 'PORT ONLY'}")
         if failed:
             print(f"  failed checks: {', '.join(failed)}")
+    if args.require_promotable and not payload['all_promotable']:
+        print('refusing to replace output: not every method is promotable', file=sys.stderr)
+        return 2
+    atomic_json(output, payload)
     print(f"wrote {output}")
-    return 0 if payload["all_promotable"] or not args.require_promotable else 2
+    return 0
 
 
 if __name__ == "__main__":

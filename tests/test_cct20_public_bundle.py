@@ -31,11 +31,20 @@ def test_release_archive_clis_are_directly_executable_from_outside_repository(
         assert completed.returncode == 0, completed.stderr
 
 
+@pytest.mark.parametrize("environment_ok", [True, False])
 def test_public_bundle_cli_verifies_exact_python_content_before_bundle_semantics(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, environment_ok: bool
 ) -> None:
     calls: list[str] = []
-    monkeypatch.setattr(bundle, "verify_release_python_content", lambda: calls.append("environment"))
+
+    def verify_selected_profile(lock: Path, profile: Path) -> None:
+        assert lock.name == "requirements-release-macos-arm64.lock.txt"
+        assert profile.name == "release_python_environment_macos_arm64_v2.json"
+        calls.append("environment")
+        if not environment_ok:
+            raise ValueError("synthetic Python content rejection")
+
+    monkeypatch.setattr(bundle.verify_python_environment, "verify_exact_content_profile", verify_selected_profile)
     monkeypatch.setattr(
         bundle,
         "verify_public_bundle",
@@ -47,8 +56,13 @@ def test_public_bundle_cli_verifies_exact_python_content_before_bundle_semantics
         ["build_cct20_public_bundle.py", "--check", "--output", str(tmp_path / "bundle.zip")],
     )
 
-    assert bundle.main() == 0
-    assert calls == ["environment", "bundle"]
+    if environment_ok:
+        assert bundle.main() == 0
+        assert calls == ["environment", "bundle"]
+    else:
+        with pytest.raises(ValueError, match="synthetic Python content rejection"):
+            bundle.main()
+        assert calls == ["environment"]
 
 
 def test_public_bundle_portable_check_runs_full_bundle_semantics_without_release_runtime(

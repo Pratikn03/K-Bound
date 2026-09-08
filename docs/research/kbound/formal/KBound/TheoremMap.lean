@@ -24,6 +24,17 @@ import KBound.Probability.LeCamMeasure
 import KBound.Probability.Rates
 import KBound.Probability.Ville
 import KBound.Probability.MeasureCertificate
+import KBound.Probability.RandomizedActionLaw
+import KBound.Probability.ExtendedRadiusCertificate
+import KBound.Probability.EvidenceTransport
+import KBound.Probability.JointKernelScore
+import KBound.Probability.ActualWorldFrontier
+import KBound.Probability.ActualWorldEvidence
+import KBound.Probability.ActualWorldSubclass
+import KBound.WeightedHelpful
+import KBound.FeatureRank
+import KBound.Probability.RiskAlignment
+import KBound.Probability.ActualFibreRadius
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
 import KBound.Probability.MeasureConformal
@@ -35,6 +46,14 @@ import KBound.Probability.MeasureSwap
 import KBound.Probability.MeasureTarget
 import KBound.Probability.MeasureFrontier
 import KBound.Probability.ChannelCounterexample
+import KBound.Probability.AuditFloor
+import KBound.Probability.AuditFloorCorrectness
+import KBound.Probability.JointTargetReduction
+import KBound.Probability.PaperCounterexamples
+import KBound.Probability.DependentSignFlip
+import KBound.Probability.IndependentSignFlip
+import KBound.PaperDecisionAlgebra
+import KBound.Probability.ExactConformal
 
 /-!
 # K-Bound paper theorem index: finite spine and measurable foundations
@@ -46,14 +65,53 @@ import KBound.Probability.ChannelCounterexample
 * FORMALIZED: measurable label kernels, actual joint target laws and the population
   zero-one loss integral (`MeasureTarget`, `MeasureFrontier`). On disagreement the
   constructed class is supported on the two predicted labels.
+* FORMALIZED: arbitrary finite joint laws, binary complementarity or multiclass
+  correct-on-disagreement event differences, and actual conditional set-integral
+  score/residual linearity (`JointTargetReduction`). The subsequent kernel and
+  full-class score-frontier bridges are listed below.
+* FORMALIZED: `JointKernelScore` uses the actual disintegration of an arbitrary
+  joint binary target law, with no Standard Borel assumption on the input space.
+  It identifies kernel correctness with joint event probability, supplies bounded
+  score integrability, and proves the exact score/residual/benefit/sign identities.
+  Positive disagreement mass is explicit for conditional interpretation. The
+  full actual-class frontier is supplied by the separate module below.
+* FORMALIZED: `ActualWorldFrontier` now quantifies the full class of actual binary
+  joint probability laws with fixed input marginal and actual scoreResidual budget.
+  Constructed fields supply witnesses, not a restriction on the universal class.
+  It proves strict-sign iff frontiers, the clipped benefit interval, nonemptiness,
+  closed-band zero attainment, the zero-margin/budget case and rule maximality.
+  The actual augmented-evidence/interior/randomized-probability assembly is
+  supplied by `ActualWorldEvidence` under a fixed observation experiment.
+  `ActualWorldSubclass` supplies the restricted-class interface from legal
+  interior opposite-pair membership and boundary-only zero membership. These
+  minimal conditions follow from the paper construction closure; they are not
+  asserted equivalent to closure under every legal construction. Individual
+  directional iff and uniqueness require a realized/nonempty subclass explicitly.
 
 `lem:nonid` and `cor:matched-abstain`
 * FORMALIZED: opposite fixed benefits force abstention; action-probability arithmetic
   (`matched_opposite_worlds_force_abstain`, `abstention_mass_ge_one_sub_two_alpha_arith`).
+* FORMALIZED: measurable randomized rules on arbitrary world sample spaces, with
+  equal induced action laws and world-specific directional-error probability
+  bounds, force abstention probability at least `1 - 2 * alpha` in both worlds
+  (`RandomizedActionLaw.randomized_rules_force_abstention`). Equality of action
+  laws is explicit; equal seed marginals alone do not establish it.
+* FORMALIZED: `EvidenceTransport` derives input-batch evidence laws under finite
+  iid sampling, and derives common action laws from a fixed Markov policy or an
+  independent common seed. Its two abstention capstones use actual probabilities.
+  Neither a sampling design nor joint observation/seed equality is inferred from
+  separate marginals. `ActualWorldEvidence` composes the actual score-class
+  witnesses with a fixed marginal-based observation experiment, derives its
+  concrete finite iid realization, and proves the fixed augmented-law fibre iff
+  and closed-band randomized abstention bound. It does not infer arbitrary
+  world-dependent batch or seed couplings from marginal equalities.
 * FORMALIZED: measurable target-label kernels and equality of all measurable
   input-evidence laws; opposite risks within the declared full correctness-field
   class subject to a calibration-residual budget (`MeasureTarget`, `MeasureFrontier`).
-* NOT INFERRED: membership in an arbitrary restricted deployment class.
+* FORMALIZED: `ActualWorldSubclass` transports restricted directional-event bounds
+  through the same actual augmented law, using separate opposite interior worlds
+  and the boundary zero world. No interior zero membership is required.
+* NOT INFERRED: construction closure or nonemptiness of an arbitrary deployment class.
 
 `prop:closed-band` and `thm:frontier`
 * FORMALIZED: frontier sufficiency, the three deterministic decision branches, the
@@ -76,6 +134,17 @@ import KBound.Probability.ChannelCounterexample
   measure-level error bounds, and one-shot residual coverage derived from
   exchangeable measurable scores (including ties) and a calibration threshold
   (`MeasureConformal`), not an assumed uniform-rank conclusion.
+* FORMALIZED: measurable radii taking finite and infinite values on a common
+  probability space. Infinity abstains; every finite nonnegative real radius
+  agrees with the original rule. Marginal coverage bounds the measurable union
+  of both strict directional errors by alpha (`ExtendedRadiusCertificate`).
+  Coverage for the declared target remains an explicit premise.
+* FORMALIZED: literal ceiling index and measurable k-th absolute-residual order
+  statistic, with infinity at insufficient calibration size (`ExactConformal`).
+  Finite min/max characterization retains ties and excludes the held-out score;
+  exchangeability yields marginal coverage and the union directional-error bound.
+  Full-protocol score exchangeability and operational label custody are not
+  inferred from cross-fitting or from these formal function-dependence proofs.
 * NOT CLAIMED FORMALIZED: calibration transfer for the paper's heterogeneous deployment tracks or
   a general theorem that leave-one-condition-out empirical calibration is exact conformal.
 
@@ -90,9 +159,111 @@ does not close the historical full one-bit/H/ratio-rate extension.
 
 Successful compilation proves encoded propositions under their explicit
 assumptions; it does not certify empirical preprocessing or calibration transfer.
+
+The maintained appendix's actual calibration and cell/population probability
+witnesses are encoded in `PaperCounterexamples`. `DependentSignFlip` proves the
+nine-coordinate common-sign witness and its exact 1/512 reference calculation;
+`IndependentSignFlip` proves coordinate-flip invariance under mutual independence
+and symmetric marginal laws. `PaperDecisionAlgebra` covers pointwise regret,
+radius monotonicity and the printed numeric branches. Its helpful-only result is
+composed by `WeightedHelpful` over finite common nonnegative weights, with positive
+total weight for means. Per-cell helpfulness stays a premise. `RiskAlignment`
+proves strict implies aligned on a fixed fibre, and supplies genuine zero/positive
+target laws showing the converse fails at M=beta>0 under the fixed observation model.
+`FeatureRank` encodes the literal eleven-coordinate order and both difference
+relations, proves dimension9 of that real-linear schema and rank at most9 for
+any satisfying row family. Observed exact rank9, probabilistic independence and
+physical feature realizability do not follow.
+`ActualFibreRadius` assembles the actual scoreResidual-class supremum and fixed
+augmented-law fibre radius equality, using actual target attainment, positive
+disagreement, the full fixed-marginal class and0<=beta<=1/2. The actual-class
+supremum needs no sampling premise; the augmented-law fibre uses the explicit
+fixed observation model. Literal paper sampling language remains qualified.
+These additions do not establish exhaustive paper-wide semantic closure.
 -/
 
 namespace KBoundTheoremMap
+
+-- Literal measurable conformal ceiling/order-statistic/infinity construction.
+#check KBound.ExactConformal.orderRadius_le_iff
+#check KBound.ExactConformal.orderRadius_eq_top
+#check KBound.ExactConformal.orderRadius_real_characterization
+#check KBound.ExactConformal.orderRadius_ignores_heldout
+#check KBound.ExactConformal.orderRadius_at_full_rank
+#check KBound.ExactConformal.orderRadius_lt_top
+#check KBound.ExactConformal.finite_orderRadius_threshold
+#check KBound.ExactConformal.measurable_orderRadius
+#check KBound.ExactConformal.rank_positive
+#check KBound.ExactConformal.rank_le_total
+#check KBound.ExactConformal.ceiling_rank_budget
+#check KBound.ExactConformal.no_calibration_radius
+#check KBound.ExactConformal.orderRadius_attained
+#check KBound.ExactConformal.real_order_statistic_attained
+#check KBound.ExactConformal.coverage
+#check KBound.ExactConformal.residual_directional_error
+#check KBound.ExactConformal.literal_residual_certificate
+
+-- Reviewed current-paper reductions, probability counterexamples, and algebra.
+#check KBound.JointTargetReduction.measurableSet_disagreementEvent
+#check KBound.JointTargetReduction.measurableSet_correctOnDisagreement
+#check KBound.JointTargetReduction.zeroOneBenefit_eq_indicator_sub
+#check KBound.JointTargetReduction.population_benefit_event_difference
+#check KBound.JointTargetReduction.multiclass_population_reduction
+#check KBound.JointTargetReduction.binary_benefit_eq_indicators
+#check KBound.JointTargetReduction.binary_population_event_reduction
+#check KBound.JointTargetReduction.binary_population_reduction
+#check KBound.JointTargetReduction.conditional_score_residual_identity
+#check KBound.PaperCounterexamples.calibration_correct_probability
+#check KBound.PaperCounterexamples.calibration_score_calibrated
+#check KBound.PaperCounterexamples.calibration_top_label_calibrated
+#check KBound.PaperCounterexamples.calibration_disagreement_accuracy
+#check KBound.PaperCounterexamples.calibration_actual_score_margin
+#check KBound.PaperCounterexamples.calibration_margin_residual
+#check KBound.PaperCounterexamples.calibration_population_benefit
+#check KBound.PaperCounterexamples.calibration_witness_exists
+#check KBound.PaperCounterexamples.cellEstimate_label_free
+#check KBound.PaperCounterexamples.cell_population_benefit
+#check KBound.PaperCounterexamples.cell_coverage_probability
+#check KBound.PaperCounterexamples.cell_adapt_probability
+#check KBound.PaperCounterexamples.cell_false_adapt_probability
+#check KBound.PaperCounterexamples.cell_conditional_false_adapt_one
+#check KBound.PaperCounterexamples.no_adaptation_no_false_adaptation
+#check KBound.PaperCounterexamples.cell_population_witness_exists
+#check KBound.PaperCounterexamples.multiclass_neither_correct
+#check KBound.DependentSignFlip.coordinate_exchangeable
+#check KBound.DependentSignFlip.positive_coordinate_probability
+#check KBound.DependentSignFlip.exchangeable_fair_witness
+#check KBound.DependentSignFlip.fair_map
+#check KBound.DependentSignFlip.measurable_globalFlip
+#check KBound.DependentSignFlip.global_sign_symmetric
+#check KBound.DependentSignFlip.marginal_sign_symmetric
+#check KBound.DependentSignFlip.measurable_flipFirst
+#check KBound.DependentSignFlip.equal_coordinates_probability
+#check KBound.DependentSignFlip.flipped_equal_coordinates_probability
+#check KBound.DependentSignFlip.not_coordinate_sign_symmetric
+#check KBound.DependentSignFlip.sign_le_one
+#check KBound.DependentSignFlip.all_positive_iff
+#check KBound.DependentSignFlip.mean_comparison_iff
+#check KBound.DependentSignFlip.sign_vector_count
+#check KBound.DependentSignFlip.positive_upper_tail_count
+#check KBound.DependentSignFlip.negative_upper_tail_count
+#check KBound.DependentSignFlip.positive_reference_value
+#check KBound.DependentSignFlip.negative_reference_value
+#check KBound.DependentSignFlip.small_reference_probability
+#check KBound.IndependentSignFlip.independent_symmetric_coordinates
+#check KBound.PaperDecisionAlgebra.frozen_oracle_regret
+#check KBound.PaperDecisionAlgebra.adapted_oracle_regret
+#check KBound.PaperDecisionAlgebra.abstain_regret_eq_frozen
+#check KBound.PaperDecisionAlgebra.equal_score_zero_regret
+#check KBound.PaperDecisionAlgebra.adapt_iff
+#check KBound.PaperDecisionAlgebra.freeze_iff
+#check KBound.PaperDecisionAlgebra.larger_radius_adapt_subset
+#check KBound.PaperDecisionAlgebra.larger_radius_freeze_subset
+#check KBound.PaperDecisionAlgebra.larger_radius_commit_subset
+#check KBound.PaperDecisionAlgebra.helpful_only_no_score_improvement
+#check KBound.PaperDecisionAlgebra.radius_expansion_can_increase_regret
+#check KBound.PaperDecisionAlgebra.printed_numeric_branches
+#check KBound.PaperDecisionAlgebra.universal_unit_residual_bound
 
 -- `thm:certificate`: interval-decision algebra and measure containment.
 #check KBound.cert_false_adapt_sound
@@ -101,6 +272,14 @@ namespace KBoundTheoremMap
 #check KBound.measure_false_adapt_le_alpha
 #check KBound.measure_false_freeze_le_alpha
 #check KBound.measure_false_adapt_le_alpha_of_measurable
+-- `thm:certificate`: measurable random finite-or-infinite radius.
+#check KBound.ExtendedRadiusCertificate.action_top
+#check KBound.ExtendedRadiusCertificate.action_finite
+#check KBound.ExtendedRadiusCertificate.action_ofReal
+#check KBound.ExtendedRadiusCertificate.measurableSet_coverage
+#check KBound.ExtendedRadiusCertificate.false_direction_subset_failure
+#check KBound.ExtendedRadiusCertificate.directional_error_probability
+#check KBound.ExtendedRadiusCertificate.measurableSet_falseDirection
 #check KBound.card_high_strictRank_le
 #check KBound.card_low_strictRank_ge
 #check KBound.uniformIndex_miss_eq
@@ -108,10 +287,40 @@ namespace KBoundTheoremMap
 #check KBound.uniformIndex_coverage_ge
 #check KBound.uniformIndex_false_adapt_le
 #check KBound.uniformIndex_false_freeze_le
--- `lem:nonid` corollary only: fixed opposite worlds and probability arithmetic.
+-- `cor:matched-abstain`: retained arithmetic and full common action-law interface.
 #check KBound.gate_regret_identity
 #check KBound.abstention_mass_ge_one_sub_two_alpha_arith
 #check KBound.matched_opposite_worlds_force_abstain
+#check KBound.RandomizedActionLaw.abstention_lower_bound
+#check KBound.RandomizedActionLaw.common_law_forces_abstention
+#check KBound.RandomizedActionLaw.randomized_rules_force_abstention
+#check KBound.EvidenceTransport.common_observable_pushforward
+#check KBound.EvidenceTransport.iid_input_batch_law
+#check KBound.EvidenceTransport.iid_batch_observable_law
+#check KBound.EvidenceTransport.independent_seed_joint_law
+#check KBound.EvidenceTransport.independent_seed_action_law
+#check KBound.EvidenceTransport.kernel_action_law
+#check KBound.EvidenceTransport.kernel_randomized_abstention
+#check KBound.EvidenceTransport.independent_seed_randomized_abstention
+#check KBound.JointKernelScore.joint_disagreement_mass
+#check KBound.JointKernelScore.kernel_correctness_event
+#check KBound.JointKernelScore.joint_correctness_event
+#check KBound.JointKernelScore.joint_conditional_accuracy
+#check KBound.JointKernelScore.joint_score_identity
+#check KBound.JointKernelScore.joint_score_benefit
+#check KBound.JointKernelScore.scoreMargin_bounds
+#check KBound.JointKernelScore.joint_score_sign
+#check KBound.ActualWorldFrontier.fieldWorld_fst
+#check KBound.ActualWorldFrontier.fieldWorld_residual
+#check KBound.ActualWorldFrontier.actual_frontier_adapt_iff
+#check KBound.ActualWorldFrontier.actual_frontier_freeze_iff
+#check KBound.ActualWorldFrontier.actual_identified_interval
+#check KBound.ActualWorldFrontier.actual_class_nonempty
+#check KBound.ActualWorldFrontier.actual_closed_band_zero_target
+#check KBound.ActualWorldFrontier.actual_zero_margin_budget
+#check KBound.ActualWorldFrontier.actual_strict_direction_iff
+#check KBound.ActualWorldFrontier.actual_pointwise_maximal_rule
+#check KBound.RandomizedActionLaw.zero_errors_full_abstention
 #check KBound.lecam_regret_floor_two_point
 #check KBound.lecam_testing_two_point
 -- `thm:frontier`: sufficiency, rule branches, and algebraic necessity witnesses.
@@ -275,4 +484,60 @@ namespace KBoundTheoremMap
 #check KBound.OrbitFibreCounterexample.no_evidence_decoder
 #check KBound.bool_decoder_iff_constant_on_fibres
 
+-- General randomized audit floor and separate full correctness-field radius.
+#check KBound.measurable_audit_floor
+#check KBound.fibrewise_randomized_audit_floor
+#check KBound.constant_fibreRadius_valid
+#check KBound.constant_fibreRadius_audit_valid
+#check KBound.audit_floor_frontier_inert
+#check KBound.fibreRadius_eq_of_bound_and_witness
+#check KBound.correctness_fibreRadius_eq_beta
+#check KBound.correctness_target_fibreRadius_eq_beta
+
+-- Actual score-class witnesses and explicit augmented observation experiments.
+#check KBound.ActualWorldEvidence.augmentedLaw_eq
+#check KBound.ActualWorldEvidence.iidObservation_realization
+#check KBound.ActualWorldEvidence.augmentedLaw_iid
+#check KBound.ActualWorldEvidence.actual_open_band_field_witnesses
+#check KBound.ActualWorldEvidence.actual_open_band_matched_targets
+#check KBound.ActualWorldEvidence.actual_closed_band_matched_zero
+#check KBound.ActualWorldEvidence.actual_augmented_fibre_strict_direction_iff
+#check KBound.ActualWorldEvidence.actual_closed_band_abstention
+
+#check KBound.ActualWorldSubclass.zeroWorld_residual
+#check KBound.ActualWorldSubclass.zeroWorld_benefit
+#check KBound.ActualWorldSubclass.zeroWorld_admissible_iff
+#check KBound.ActualWorldSubclass.tiltWorld_residual
+#check KBound.ActualWorldSubclass.tiltWorld_benefit
+#check KBound.ActualWorldSubclass.tiltWorld_admissible
+#check KBound.ActualWorldSubclass.full_class_tilt_witnesses
+#check KBound.ActualWorldSubclass.subclass_closed_band_obstructions
+#check KBound.ActualWorldSubclass.subclass_strict_direction_iff
+#check KBound.ActualWorldSubclass.subclass_adapt_iff_of_nonempty
+#check KBound.ActualWorldSubclass.subclass_freeze_iff_of_nonempty
+#check KBound.ActualWorldSubclass.subclass_pointwise_maximal_rule
+#check KBound.ActualWorldSubclass.subclass_augmented_fibre_strict_direction_iff
+#check KBound.ActualWorldSubclass.subclass_closed_band_abstention
+
 end KBoundTheoremMap
+
+#check KBound.WeightedHelpful.helpful_weighted_sum
+#check KBound.WeightedHelpful.helpful_weighted_mean
+#check KBound.WeightedHelpful.helpful_weighted_regret_mean
+
+#check KBound.RiskAlignment.strict_implies_aligned
+#check KBound.RiskAlignment.aligned_of_nonnegative
+#check KBound.RiskAlignment.not_strict_of_zero
+#check KBound.RiskAlignment.actual_positive_boundary_nonnegative
+#check KBound.RiskAlignment.actual_boundary_risk_aligned_not_strict
+
+#check KBound.FeatureRank.encode_relations
+#check KBound.FeatureRank.encode_injective
+#check KBound.FeatureRank.mem_range_iff
+#check KBound.FeatureRank.schema_finrank
+#check KBound.FeatureRank.rowspan_finrank_le
+
+#check KBound.ActualFibreRadius.actual_abs_residual_attained
+#check KBound.ActualFibreRadius.actual_class_radius
+#check KBound.ActualFibreRadius.actual_augmented_fibre_eq_class
+#check KBound.ActualFibreRadius.actual_augmented_fibre_radius

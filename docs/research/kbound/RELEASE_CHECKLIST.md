@@ -48,8 +48,14 @@ should be re-labeled as covering the current uncommitted source edits.
 
 Use Python 3.12.13 with the hash-complete `requirements-release-macos-arm64.lock.txt` installed
 from a clean checkout. Verify both `python_environment_2026_09_02.json` and the path-free external
-tool receipt `release_toolchain_2026_09_02.json` against
-`release_toolchain_macos_arm64.json`. First commit every
+tool receipt `release_toolchain_2026_09_05_v2.json` against
+`release_toolchain_macos_arm64_v2.json`. Accept that new maintained receipt only
+after a complete ten-tool verification and independent review; it is intentionally
+absent until acceptance. Preserve the historical 26.05.0 profile and
+`release_toolchain_2026_09_02.json` bytes. No old-profile fallback is permitted.
+Each tool-using phase verifies a fresh private scratch receipt and requires exact
+equality to the maintained v2 receipt before importing executable paths; it does
+not overwrite either maintained receipt on success or failure. First commit every
 maintained source/code edit and record that clean commit as the source freeze. Do not mix newly
 regenerated publication artifacts into that source-freeze commit. The release driver never launches
 training or modifies raw datasets. Its default `all` mode does not resolve or require local
@@ -63,6 +69,13 @@ The external profile must cover all ten executed publication tools, including
 Pandoc, `latexpand`, and the Perl interpreter used to run both `latexpand` and
 `latexmk`. Each tool-using phase must import the verifier's exact realpaths;
 prepending tool directories to `PATH` is not sufficient.
+The v2 external profile changes only the four Poppler executable hashes/version
+lines to 26.08.0, leaving the other six entries and zlib identity unchanged. Its
+existing v1 JSON schema describes executable/version identity, not every dylib,
+OS byte or build provenance. Separate Linux portable PDF pins remain unchanged.
+Historical PDFs, seals, archives, checksums and scientific/baseline results are
+not re-attested by selecting v2; the next release must regenerate and bind its
+own outputs after its reviewed source freeze.
 
 If pre-release generated outputs are already modified, preserve and review them
 in a separately identified baseline-artifact commit before the final source freeze;
@@ -104,19 +117,29 @@ The standalone `checksums` mode is intentionally byte/environment-independent. I
 canonical structural source-seal check before hashing the authoritative inventory; it does not
 claim checkout/source semantics or reproduce the macOS build. The `all` and `all-deep-local` modes
 retain the full checkout-bound source-seal and strict macOS environment checks before and after
-checksum emission. Linux CI uses `verify-portable-release` to verify committed checksums, checkout
-binding, and both archive formats; that mode is an artifact verification gate, not a release build
-or dataset-validation claim. The Linux environment receipt is deliberately labeled as a
-runtime-and-installed-version check: hash-locked installation authenticates downloaded wheels,
-but CI does not claim the macOS installed-content profile. CI writes its regenerated repository
-inventory to runner-temporary storage and requires its source commit to equal the exact checkout
-SHA, leaving the sealed checkout unchanged. The dashboard gate starts with an empty temporary npm
-cache and downloads only the exact integrity-bound TypeScript tarball in `package-lock.json`.
-Portable archive verification likewise uses hash-verified Ubuntu Poppler packages, and Lean uses
-the hash-verified Lean release archive while building exact Git revisions without executing the
-remote Mathlib cache helper. Package gates disable build isolation, use the hash-locked setuptools
-backend declared by `pyproject.toml`, and execute both `python -m kga` and the installed `kga`
-console script from the built wheel.
+checksum emission.
+
+**Required Linux release-verification profile — not yet implemented by current CI:**
+the profile must invoke `verify-portable-release` for committed checksums, checkout binding and
+both archive formats. That mode is artifact verification, not a release build or dataset-validation
+claim. Its Linux environment receipt is a runtime-and-installed-version check: hash-locked wheel
+installation does not establish the macOS installed-content profile. Regenerated repository
+inventory must go to runner-temporary storage and be bound to the exact checkout SHA. Required
+tool/package gates include hash-verified Ubuntu Poppler packages, a hash-verified Lean release
+archive with exact dependency revisions and no remote Mathlib cache helper, and a hash-locked
+setuptools build with isolation disabled. The specified dashboard gate uses an empty temporary npm
+cache and the exact integrity-bound TypeScript tarball. The built-wheel verification must exercise
+both `python -m kga` and the installed `kga` console script outside the source checkout.
+
+The current `.github/workflows/ci.yml` and `.github/workflows/kbound-ci.yml` do not invoke that
+portable-release profile or the exact-commit, runner-temporary repository inventory. Their
+research/API CPU installs are hash-locked, but other jobs install floating dependencies; the
+package job currently runs `python -m build` with default isolation. It does install/import the
+built wheel and exercise its console entry point outside the checkout. Lean CI currently installs
+elan from its remote `master` installer and runs `lake exe cache get`, not the required authenticated
+archive/no-cache-helper profile. Do not describe the whole CI matrix as a hermetic release gate.
+These implementation and exact-checkpoint remote-execution requirements remain open; local
+component tests and the local release driver do not demonstrate that Linux CI ran them.
 
 Required outcomes:
 

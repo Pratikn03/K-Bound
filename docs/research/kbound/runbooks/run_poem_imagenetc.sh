@@ -8,7 +8,8 @@
 # Prereqs already satisfied by prep:
 #   - conda env 'poem' has all deps (timm/pycm/loguru/cotta/...); main.py --help OK
 #   - external/poem/main.py line 40 import guarded (models.Res only needed by bn_torch)
-#   - data at ~/imagenetc_local/<corruption>/<1..5>/<1000 class dirs>
+#   - IMAGENETC_ROOT selects existing <corruption>/<1..5>/<1000 class dirs>
+# Set KBOUND_POEM_PYTHON and IMAGENETC_ROOT to absolute existing paths.
 # Runs GPU (MPS). Do NOT launch while the AETTA source training holds the GPU.
 # --- defect D8: portable roots. No machine-local absolute paths in tracked code
 # --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
@@ -24,12 +25,15 @@ _kb_find_root() {
 }
 KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
 
-set -u
+set -euo pipefail
 R="$KB_REPO_ROOT"
 P="$R/external/poem"
 OUT="$R/experiments/kbound/results/official_repro_v1/poem_imagenetc"
-IC="${IMAGENETC_ROOT:-$HOME/imagenetc_local}"
-PYBIN="/opt/anaconda3/envs/poem/bin/python"
+IC="${IMAGENETC_ROOT:?Set IMAGENETC_ROOT to the existing ImageNet-C data root}"
+PYBIN="${KBOUND_POEM_PYTHON:?Set KBOUND_POEM_PYTHON to the selected Python executable}"
+[[ "$PYBIN" == /* && -f "$PYBIN" && -x "$PYBIN" ]] || { echo "Invalid KBOUND_POEM_PYTHON: $PYBIN" >&2; exit 2; }
+[[ "$IC" == /* && -d "$IC" ]] || { echo "Invalid IMAGENETC_ROOT: $IC" >&2; exit 2; }
+[[ -f "$P/main.py" ]] || { echo "Missing POEM entrypoint: $P/main.py" >&2; exit 2; }
 SEEDS="${SEEDS:-0}"
 SEVERITIES="${SEVERITIES:-5}"            # K-Bound panel uses sev{1,3,5}; default 5 (POEM headline)
 CORRUPTIONS="${CORRUPTIONS:-gaussian_noise shot_noise impulse_noise}"
@@ -43,6 +47,11 @@ say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 [ -d "$IC/gaussian_noise/5" ] || { say "FATAL: ImageNet-C not at $IC (need <corruption>/<level>/<classes>)"; exit 2; }
 NCLS=$(ls "$IC/gaussian_noise/5" 2>/dev/null | wc -l | tr -d ' ')
 [ "$NCLS" = "1000" ] || { say "FATAL: expected 1000 class dirs under $IC/gaussian_noise/5, found $NCLS"; exit 2; }
+for L in $SEVERITIES; do
+  for C in $CORRUPTIONS; do
+    [ -d "$IC/$C/$L" ] || { say "FATAL: requested ImageNet-C directory missing: $IC/$C/$L"; exit 2; }
+  done
+done
 "$PYBIN" -c "import timm; timm.create_model('resnet50_gn', pretrained=True)" >/dev/null 2>&1 \
   || { say "FATAL: timm resnet50_gn did not load in poem env"; exit 2; }
 say "preflight OK — data=$IC seeds=[$SEEDS] sev=[$SEVERITIES] corruptions=[$CORRUPTIONS] bs=$BATCH"

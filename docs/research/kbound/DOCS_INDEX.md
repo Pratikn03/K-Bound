@@ -1,6 +1,6 @@
 # K-Bound research map
 
-**Reviewed 2026-09-03.** Start here for the maintained claims, their evidence, and their limits.
+**Research-map review 2026-09-03; audit-floor update 2026-09-05.** Start here for the maintained claims, their evidence, and their limits.
 The full audit is [research_traceability.json](audits/research_traceability.json).
 Older status documents and successful numerical validators do not establish theorem closure.
 
@@ -11,7 +11,7 @@ Older status documents and successful numerical validators do not establish theo
 | Benefit is not identified from prediction evidence alone when matched-evidence worlds have opposite signs. | [Core theory](paper/sections/theory_core_main.tex) | [Impossibility](formal/KBound/Impossibility.lean), [measurable frontier](formal/KBound/Probability/MeasureFrontier.lean) | Explicit admissible target class; not a claim that every practical problem is unidentifiable. |
 | The clipped identified benefit interval gives the strict ADAPT/FREEZE/ABSTAIN frontier. | [Core theory](paper/sections/theory_core_main.tex) | [Measurable target construction](formal/KBound/Probability/MeasureTarget.lean), [frontier](formal/KBound/Probability/MeasureFrontier.lean) | Binary zero-one loss (or labels supported only on the two predictions on their disagreement region), full declared correctness-field class, feasible margins, positive disagreement mass; equality supports no strict commitment. |
 | A valid interval controls erroneous directional commitments. | [Certificate theorem](paper/sections/theory_certificate.tex) | [Measure certificate](formal/KBound/Probability/MeasureCertificate.lean), [exchangeable residual coverage](formal/KBound/Probability/MeasureConformal.lean), [current certificate](../../../kga/certificate.py) | Marginal, named-target coverage premise; neither conditional false-adapt control nor repeated-use protection follows automatically. |
-| The audit floor explains why unrelated source labels cannot identify the target residual budget. | [Shared body](kbound_submission_body.tex) | Pen-and-paper fibre argument in the body; finite validators are supporting examples. | This general audit-floor statement is not itself one of the registered Lean capstones. |
+| The audit floor explains why unrelated source labels cannot identify the target residual budget. | [Shared body](kbound_submission_body.tex) | [General randomized floor](formal/KBound/Probability/AuditFloor.lean), [full correctness-field radius](formal/KBound/Probability/AuditFloorCorrectness.lean) | Nonempty bounded residual fibre, measurable audit and common joint evidence/seed law. The full-class radius equality additionally needs feasible margins, positive disagreement mass and `0 <= beta <= 1/2`; no learned beta or empirical validity follows. |
 | Additional probability foundations supply coverage, testing, concentration, and anytime ingredients. | [Formal-scope supplement](kbound_submission_supplement.tex) | [Formal package](formal/README.md) | Five foundational layers under explicit assumptions; the historical sixth one-bit/H/ratio-rate extension remains incomplete. |
 | Orbit selection alone does not ensure a consistent sign on an evidence fibre. | [Supplement](kbound_submission_supplement.tex) | [Channel counterexample](formal/KBound/Probability/ChannelCounterexample.lean) | A genuine negative result. It must not be overwritten by older “one bit closes the theory” language. |
 
@@ -21,15 +21,24 @@ an observed batch outcome is different from covering population risk.
 
 ### Formal inventory: counts have different meanings
 
-A fresh full compiler audit checked **238 authored theorem/lemma statements**:
+The historical full compiler audit checked **238 authored theorem/lemma statements**:
 142 registered capstones, 11 further indexed results, and 85 unindexed support/results.
 The complete compiled inventory has 632 declarations; generated auxiliaries, definitions, instances,
 and projections are not additional independent research contributions. All compiled declarations
 passed the axiom/safety audit, with only the standard `propext`, `Classical.choice`, and `Quot.sound`
 axioms observed. Exact types, source hashes, and the compiler receipt are recorded in the audit bundle.
 
-This is broader than the 142-item release registry, but it does not close the historical sixth
+This was broader than the then-142-item release registry, but it does not close the historical sixth
 foundational layer or establish that empirical calibration assumptions hold.
+
+The 2026-09-05 audit-floor addition raises the current registry to **150**. Its
+fresh direct pinned compile covers all **44 local modules**, and its actual axiom
+audit covers the **150 registered plus 15 additional supporting/example declarations**.
+Those are different scopes from the historical 238-statement census; they must not
+be added together or treated as a new all-declaration census. Independent review
+passed. This is not a standard Lake build or a final release receipt. See the
+[new CM-04 verification index](../../../protocols/confirmatory_v2/FORMAL_VERIFICATION_20260905.json);
+the older dated traceability audit is preserved unchanged.
 
 ## Results, including the work that was hard to find
 

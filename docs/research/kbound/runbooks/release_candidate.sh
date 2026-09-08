@@ -123,30 +123,41 @@ configure_release_tool_path() {
 }
 
 verify_release_toolchain_for_phase() {
-  local resolved_dir resolved_file
+  local resolved_dir resolved_file verified_receipt
+  local maintained_receipt="$KB/audits/release_toolchain_2026_09_05_v2.json"
   resolved_dir="$(mktemp -d "${TMPDIR:-/tmp}/kbound-release-tools.XXXXXX")"
   resolved_file="$resolved_dir/resolved-tools.tsv"
+  verified_receipt="$resolved_dir/toolchain-receipt.json"
   if ! "$PY" "$KB/scripts/verify_release_toolchain.py" \
-    --profile "$KB/release_toolchain_macos_arm64.json" \
-    --output "$KB/audits/release_toolchain_2026_09_02.json" \
+    --profile "$KB/release_toolchain_macos_arm64_v2.json" \
+    --output "$verified_receipt" \
     --resolved-tools-output "$resolved_file"; then
-    rm -f "$resolved_file"
+    rm -f "$resolved_file" "$verified_receipt"
+    rmdir "$resolved_dir" 2>/dev/null || true
+    return 1
+  fi
+  # Receipts are maintained source authority. A phase verifies a fresh private
+  # candidate and compares it; it never overwrites or removes accepted history.
+  if [[ ! -f "$maintained_receipt" || -L "$maintained_receipt" || -L "$KB/audits" ]] \
+      || ! cmp -s "$verified_receipt" "$maintained_receipt"; then
+    warn "verified toolchain differs from the maintained v2 receipt (or receipt is missing)"
+    rm -f "$resolved_file" "$verified_receipt"
     rmdir "$resolved_dir" 2>/dev/null || true
     return 1
   fi
   if ! configure_release_tool_path "$resolved_file"; then
-    rm -f "$resolved_file"
+    rm -f "$resolved_file" "$verified_receipt"
     rmdir "$resolved_dir" 2>/dev/null || true
     return 1
   fi
-  rm -f "$resolved_file"
+  rm -f "$resolved_file" "$verified_receipt"
   rmdir "$resolved_dir"
 }
 
 verify_release_python_environment() {
   "$PY" "$KB/scripts/verify_python_environment.py" \
     --lock requirements-release-macos-arm64.lock.txt \
-    --content-profile "$KB/release_python_environment_macos_arm64.json" \
+    --content-profile "$KB/release_python_environment_macos_arm64_v2.json" \
     --output "$KB/audits/python_environment_2026_09_02.json"
 }
 
@@ -204,6 +215,7 @@ step_validate_results() {
     tests/test_pacs_replay_artifact.py \
     tests/test_independent_checkpoint_audit.py \
     tests/test_official_baseline_provenance.py \
+    tests/test_release_provenance_integration.py \
     tests/test_natural_target_provenance.py \
     tests/test_exact_confirmation_pipeline.py \
     tests/test_release_checksum_verifier.py \
@@ -255,7 +267,7 @@ step_generate() {
     --repo "$REPO" \
     --locked-stream "$REPO/experiments/kbound/results/stress_persample_v1/per_condition_cifar10c_tent_seed0.json" \
     --environment-receipt "$KB/audits/python_environment_2026_09_02.json" \
-    --toolchain-receipt "$KB/audits/release_toolchain_2026_09_02.json"
+    --toolchain-receipt "$KB/audits/release_toolchain_2026_09_05_v2.json"
   "$PY" "$KB/scripts/audit_empirical_data_quality_2026_08_27.py" --wording-only
   "$PY" "$KB/scripts/build_empirical_data_quality_report_artifact.py"
   "$PY" "$KB/scripts/build_dashboard_snapshot.py"

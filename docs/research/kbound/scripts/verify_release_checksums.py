@@ -19,9 +19,7 @@ CURRENT_RELEASE_PDF_PATHS: tuple[str, ...] = (
     "docs/research/kbound/release/current/kbound_tmlr.pdf",
     "docs/research/kbound/release/current/kbound_full_report.pdf",
 )
-CURRENT_RELEASE_CHECKSUM_PATH = (
-    "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt"
-)
+CURRENT_RELEASE_CHECKSUM_PATH = "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt"
 
 # This archive embeds the completed checksum file, so including it in that same
 # file would create an impossible self-referential hash. Its deterministic bytes
@@ -77,7 +75,11 @@ REQUIRED_RELEASE_PATHS: tuple[str, ...] = (
     "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json",
     "docs/research/kbound/audits/python_environment_2026_09_02.json",
     "docs/research/kbound/release_python_environment_macos_arm64.json",
+    "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
     "docs/research/kbound/audits/release_toolchain_2026_09_02.json",
+    "docs/research/kbound/release_toolchain_macos_arm64.json",
+    "docs/research/kbound/release_toolchain_macos_arm64_v2.json",
+    "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json",
     "docs/research/kbound/audits/release_source_seal_2026_08_29.json",
     "docs/research/kbound/audits/repository_test_inventory.json",
     "docs/research/kbound/paper/generated/cct20_release_manifest.json",
@@ -174,6 +176,10 @@ def write_checksum_file(
 ) -> int:
     """Atomically write and self-verify one explicit, complete byte inventory."""
 
+    checksum_path = checksum_path.absolute()
+    checksum_parts = checksum_path.parts
+    if any(Path(*checksum_parts[:index]).is_symlink() for index in range(1, len(checksum_parts) + 1)):
+        raise FileNotFoundError(f"release checksum destination is a symlink: {checksum_path}")
     root = root.resolve()
     if not required_paths or len(set(required_paths)) != len(required_paths):
         raise ValueError("checksum inventory must be nonempty and contain unique paths")
@@ -193,8 +199,11 @@ def write_checksum_file(
     temporary: Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
-            mode="w", encoding="ascii", prefix=f".{checksum_path.name}.",
-            dir=checksum_path.parent, delete=False,
+            mode="w",
+            encoding="ascii",
+            prefix=f".{checksum_path.name}.",
+            dir=checksum_path.parent,
+            delete=False,
         ) as stream:
             temporary = Path(stream.name)
             stream.writelines(lines)
@@ -219,7 +228,9 @@ def main() -> int:
         help="verify only listed files and explicit --require paths, not a K-Bound release",
     )
     mode.add_argument("--list-required", action="store_true", help="print the canonical release inventory and exit")
-    mode.add_argument("--write", action="store_true", help="atomically regenerate the complete canonical release checksum inventory")
+    mode.add_argument(
+        "--write", action="store_true", help="atomically regenerate the complete canonical release checksum inventory"
+    )
     args = parser.parse_args()
     if args.list_required:
         print("\n".join(REQUIRED_RELEASE_PATHS))
@@ -227,7 +238,7 @@ def main() -> int:
     if args.write:
         try:
             count = write_checksum_file(
-                args.checksum_file.resolve(), root=args.root, required_paths=REQUIRED_RELEASE_PATHS
+                args.checksum_file.absolute(), root=args.root, required_paths=REQUIRED_RELEASE_PATHS
             )
         except (OSError, UnicodeError, ValueError) as exc:
             parser.exit(1, f"ERROR: {exc}\n")
@@ -236,7 +247,8 @@ def main() -> int:
     required = (() if args.generic else REQUIRED_RELEASE_PATHS) + tuple(args.require)
     try:
         count = verify_checksum_file(
-            args.checksum_file.resolve(),
+            # Preserve symlink components for the receipt-path validation.
+            args.checksum_file.absolute(),
             root=args.root,
             required_paths=required,
         )

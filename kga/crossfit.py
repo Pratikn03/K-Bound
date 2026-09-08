@@ -11,9 +11,10 @@ import hashlib
 import json
 import math
 import platform
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -87,9 +88,7 @@ def controlled_grid_input_sha256(
 def _stable_order(sample_ids: Sequence[str], *, salt: str, random_state: int) -> list[int]:
     return sorted(
         range(len(sample_ids)),
-        key=lambda index: hashlib.sha256(
-            f"{random_state}|{salt}|{sample_ids[index]}".encode("utf-8")
-        ).hexdigest(),
+        key=lambda index: hashlib.sha256(f"{random_state}|{salt}|{sample_ids[index]}".encode()).hexdigest(),
     )
 
 
@@ -178,11 +177,16 @@ def controlled_grid_crossfit(
         features = np.asarray(Z, dtype=float)
         valid_alpha = normalized_alpha is not None and 0.0 < normalized_alpha < 1.0
         valid_hyperparameters = (
-            normalized_n_folds is not None and normalized_n_folds >= 2
-            and normalized_n_estimators is not None and normalized_n_estimators >= 1
-            and normalized_max_depth is not None and normalized_max_depth >= 1
-            and normalized_learning_rate is not None and normalized_learning_rate > 0.0
-            and normalized_subsample is not None and 0.0 < normalized_subsample <= 1.0
+            normalized_n_folds is not None
+            and normalized_n_folds >= 2
+            and normalized_n_estimators is not None
+            and normalized_n_estimators >= 1
+            and normalized_max_depth is not None
+            and normalized_max_depth >= 1
+            and normalized_learning_rate is not None
+            and normalized_learning_rate > 0.0
+            and normalized_subsample is not None
+            and 0.0 < normalized_subsample <= 1.0
             and normalized_random_state is not None
         )
     except (TypeError, ValueError, OverflowError):
@@ -229,8 +233,8 @@ def controlled_grid_crossfit(
     all_indices = set(range(n))
 
     try:
-        from sklearn.ensemble import GradientBoostingRegressor
         import sklearn
+        from sklearn.ensemble import GradientBoostingRegressor
 
         protocol.update(
             {

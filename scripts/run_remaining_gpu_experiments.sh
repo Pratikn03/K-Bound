@@ -28,12 +28,16 @@
 #   DEVICE=cuda    bash scripts/run_remaining_gpu_experiments.sh  # CUDA box
 #   SEEDS="0 1 2 3 4" bash scripts/run_remaining_gpu_experiments.sh
 #
-# ENV OVERRIDES (with defaults):
+# REQUIRED CONFIG: absolute existing runtime and requested-arm data paths.
+# PY must be set. CPY optionally selects a separate prepared WILDS runtime;
+# absent CPY uses the explicitly selected PY, with no other runtime discovery.
+# ENV OVERRIDES (scientific defaults retained):
 #   DEVICE=auto                 auto|mps|cuda|cpu  (auto -> MPS on Apple silicon)
 #   SEEDS="0 1 2"               >=3 recommended for the multi-seed CIs
-#   PY=<repo>/.venv/bin/python  python with torch (+wilds for Camelyon17)
-#   IMAGENETR_DIR=<repo>/experiments/kbound/data/imagenet-r
-#   WILDS_DATA_ROOT=$HOME/datasets/wilds
+#   PY=<python executable>     required python with torch
+#   CPY=<python executable>    optional python with torch + wilds
+#   IMAGENETR_DIR=<data root>   required for ImageNet-R
+#   WILDS_DATA_ROOT=<data root> required for Camelyon17
 #   INR_BATCH=24                ImageNet-R frozen-eval batch (lower if MPS OOMs)
 #   INR_NEVAL=500               ImageNet-R class-balanced eval pool size
 #   NBOOT=10000                 paired-bootstrap resamples for the CI analysis
@@ -48,17 +52,35 @@ cd "$ROOT"
 DEVICE="${DEVICE:-auto}"
 SEEDS="${SEEDS:-0 1 2}"
 ONLY="${ONLY:-both}"
+case "$ONLY" in
+  imagenetr|inr|b4|B4|camelyon|cam|b1|B1|both) ;;
+  *) echo "ERROR: unknown ONLY mode: $ONLY" >&2; exit 2 ;;
+esac
 NBOOT="${NBOOT:-10000}"
 INR_BATCH="${INR_BATCH:-24}"
 INR_NEVAL="${INR_NEVAL:-500}"
 
 # pick a python with torch
-PY="${PY:-$ROOT/.venv/bin/python}"
-if [[ ! -x "$PY" ]]; then
+PY="${PY:?Set PY to the selected Python executable}"
+if [[ "$PY" != /* || ! -f "$PY" || ! -x "$PY" ]]; then
   echo "ERROR: python not found/executable at PY=$PY"
   echo "       set PY=/path/to/python-with-torch (and wilds for Camelyon17)"
   exit 1
 fi
+
+# Validate every requested arm before any Python invocation or training.
+case "$ONLY" in
+  imagenetr|inr|b4|B4|both)
+    : "${IMAGENETR_DIR:?Set IMAGENETR_DIR to existing ImageNet-R data}"
+    [[ "$IMAGENETR_DIR" == /* && -d "$IMAGENETR_DIR" ]] || { echo "Invalid IMAGENETR_DIR: $IMAGENETR_DIR" >&2; exit 2; } ;;
+esac
+case "$ONLY" in
+  camelyon|cam|b1|B1|both)
+    CPY="${CPY:-$PY}"
+    [[ "$CPY" == /* && -f "$CPY" && -x "$CPY" ]] || { echo "Invalid CPY: $CPY" >&2; exit 2; }
+    : "${WILDS_DATA_ROOT:?Set WILDS_DATA_ROOT to existing WILDS data}"
+    [[ "$WILDS_DATA_ROOT" == /* && -d "$WILDS_DATA_ROOT/camelyon17_v1.0" ]] || { echo "Missing camelyon17_v1.0 under WILDS_DATA_ROOT: $WILDS_DATA_ROOT" >&2; exit 2; } ;;
+esac
 
 # keep all heavy torch caches / tmp off the slow data drive if the user has set them
 export TMPDIR="${TMPDIR:-$ROOT/tmp}"
@@ -73,14 +95,21 @@ if command -v caffeinate >/dev/null 2>&1; then CAF=(caffeinate -is); fi
 echo "ROOT=$ROOT"
 echo "PY=$PY"
 echo "DEVICE=$DEVICE  SEEDS=[$SEEDS]  NBOOT=$NBOOT  ONLY=$ONLY"
-"$PY" -c "import torch;print('torch',torch.__version__,'mps',torch.backends.mps.is_available(),'cuda',torch.cuda.is_available())" || true
+"$PY" -c "import torch;print('torch',torch.__version__,'mps',torch.backends.mps.is_available(),'cuda',torch.cuda.is_available())"
+case "$ONLY" in
+  camelyon|cam|b1|B1|both)
+    if ! "$CPY" -c "import wilds" 2>/dev/null; then
+      echo "[B1] ERROR: $CPY has no 'wilds'. Select a prepared CPY (or PY) runtime."
+      echo "[B1] Cannot complete the requested Camelyon17 stage."
+      exit 1
+    fi ;;
+esac
 echo
 
 # =============================================================================
 # GAP B4 -- ImageNet-R multi-seed diverse-backbone panel
 # =============================================================================
 run_imagenetr () {
-  local IMAGENETR_DIR="${IMAGENETR_DIR:-$ROOT/experiments/kbound/data/imagenet-r}"
   local RUN_NAME="imagenetr_protocol_d_multiseed_v1"
   local OUT="$ROOT/experiments/kbound/results/$RUN_NAME"
   mkdir -p "$OUT"
@@ -133,19 +162,11 @@ PYEOF
 # GAP B1 -- Camelyon17 SAR completion (candidate set already includes SAR)
 # =============================================================================
 run_camelyon () {
-  local WILDS_DATA_ROOT="${WILDS_DATA_ROOT:-$HOME/datasets/wilds}"
   local RUN_NAME="camelyon17_fullscale_B_v2"
   local OUT="$ROOT/experiments/kbound/results/$RUN_NAME"
   local F0_TEMPLATE="experiments/kbound/results/camelyon17_fullscale_B_v1/f0_seed{seed}.pt"
   mkdir -p "$OUT"
-  # Camelyon17 needs torch + wilds. Prefer a dedicated wilds venv if present.
-  local CPY="$PY"
-  if [[ -x "$HOME/.venv_wilds/bin/python" ]]; then CPY="$HOME/.venv_wilds/bin/python"; fi
-  if ! "$CPY" -c "import wilds" 2>/dev/null; then
-    echo "[B1] ERROR: $CPY has no 'wilds'. Install (pip install wilds) or set PY/.venv_wilds."
-    echo "[B1] Skipping Camelyon17."
-    return 0
-  fi
+  # CPY was explicitly resolved and checked before either requested arm.
   echo "============================================================"
   echo "[B1] Camelyon17 SAR completion (resume) -> $OUT"
   echo "     data_root=$WILDS_DATA_ROOT  seeds=[$SEEDS]  candidates include SAR"
@@ -178,7 +199,7 @@ run_camelyon () {
 case "$ONLY" in
   imagenetr|inr|b4|B4) run_imagenetr ;;
   camelyon|cam|b1|B1)  run_camelyon ;;
-  both|*)              run_imagenetr; run_camelyon ;;
+  both)                run_imagenetr; run_camelyon ;;
 esac
 
 echo

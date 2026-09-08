@@ -1,0 +1,32 @@
+schema_version: 2
+status: DRAFT_UNSEALED
+before_target_decisions:
+  missing_or_changed_locked_component: STOP_INVALID
+  no_development_eligible_candidate: STOP_NO_FEASIBLE_CANDIDATE
+  incomplete_or_nonindependent_training_records: STOP_UNVERIFIED_TRAINING
+  environment_or_window_identity_overlap: STOP_INVALID_SPLITS
+  unverified_outcome_custody: STOP_NO_TARGET_ACCESS
+  unavailable_or_failed_worker_sandbox: STOP_NO_TARGET_ACCESS
+  comparator_information_contract_unmet: STOP_COMPARATOR_NOT_READY
+  undefined_inference_or_insufficient_design: STOP_UNSEALED_DESIGN
+  missing_calibration_or_feature_identity: ABSTAIN_RETAIN_FROZEN
+  insufficient_calibration_for_finite_radius: ABSTAIN_RETAIN_FROZEN
+after_actions:
+  incomplete_action_or_prediction_set: STOP_BEFORE_LABEL_READ
+  changed_action_record: STOP_INVALID
+  missing_or_duplicate_outcome_join: STOP_INCOMPLETE
+  low_branch_exposure: STRONG_SUCCESS_FALSE
+  failed_primary_endpoint: STRONG_SUCCESS_FALSE
+  unexpected_negative_result: PRESERVE_REPORT_NO_REDEFINITION
+  failure_after_target_label_read: OPENED_INCOMPLETE_NO_UNOPENED_RESET
+prohibited:
+  - target_outcome_candidate_search
+  - post_outcome_threshold_selection
+  - diagnostic_to_confirmatory_promotion_after_results
+  - rewriting_sealed_decisions
+  - treating_ABSTAIN_as_certified_FREEZE
+  - hiding_incomplete_or_failed_runs
+  - inferring_unread_target_outcomes_from_local_hashes
+  - describing_self_managed_process_isolation_as_independent_custody
+  - target_scoring_before_all_predeclared_actions_and_predictions_are_sealed
+  - target_subset_scoring_feedback_to_later_decisions

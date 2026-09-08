@@ -4,15 +4,16 @@
 #
 #   bash docs/research/kbound/scripts/run_final_showcase.sh [flags]
 #
-# Runs the full 9-dataset panel multi-seed on the out-of-fold code, then collates
-# honestly into the paper: manifest -> results_source.json -> tables -> figures ->
-# both PDFs -> verification. See RUN_FINAL_SHOWCASE.md for the pre-registration.
+# Legacy mixed-protocol showcase: some branches run adaptation, ImageNet-R
+# compares frozen backbones, and iWildCam/Office-Home rescore saved records.
+# This is NOT a nine-dataset source-training or published-reference reproduction
+# command. The non-smoke path also regenerates historical paper artifacts.
 #
 # Flags:
 #   --device X     cuda | mps | cpu   (default: auto via KB_DEVICE, else mps)
 #   --seeds "..."  seed list          (default: "0 1 2 3 4 5 6 7" = 5 + 3 more)
 #   --skip-train   reuse the latest existing run; only re-collate + rebuild (no GPU)
-#   --smoke        tiny end-to-end plumbing check (1 seed; not a real result)
+#   --smoke        bounded legacy plumbing check (1 seed); no paper regeneration
 #   --dry-run      print the stage graph and exit; run nothing
 # ============================================================================
 set -euo pipefail
@@ -36,10 +37,28 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ "$SMOKE" = 1 ]; then
+  if [ "$SKIP_TRAIN" = 1 ]; then
+    echo "ERROR: --smoke cannot reuse historical full-run artifacts with --skip-train." >&2
+    exit 2
+  fi
+  SEEDS="0"
+fi
+
 say(){ printf "\n\033[1m== %s ==\033[0m\n" "$*"; }
 run(){ echo "+ $*"; [ "$DRY" = 1 ] || eval "$*"; }
 
 echo "K-Bound final showcase   device=$DEVICE   seeds=[$SEEDS]   skip_train=$SKIP_TRAIN   smoke=$SMOKE   dry_run=$DRY"
+
+if [ "$SMOKE" = 1 ]; then
+  say "A. smoke-all: bounded legacy plumbing check; not fresh training of all nine datasets"
+  run "KB_SEEDS='$SEEDS' KB_DEVICE='$DEVICE' bash '$HERE/kbtrain.sh' smoke-all"
+  say "SMOKE dispatch complete; historical analysis and paper regeneration not invoked"
+  [ "$DRY" = 0 ] || echo "(dry-run: nothing executed)"
+  exit 0
+fi
+
+echo "NOTICE: legacy mixed-protocol replay, not full published-reference training for all nine datasets."
 
 # -- Stage A: the 9-dataset multi-seed engine (integrity-guarded inside kbtrain) -----------
 if [ "$SKIP_TRAIN" = 0 ]; then

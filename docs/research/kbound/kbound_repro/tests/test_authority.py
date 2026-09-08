@@ -78,10 +78,7 @@ def test_curated_withheld_scan_catches_iwildcam_promotion_but_allows_disclosure(
     "leak",
     [
         r"iWildCam H--v2 & 72 & \multicolumn{5}{c}{withheld} \\",
-        (
-            "iWildCam is withheld. A diagnostic recomputation gives regrets "
-            "0.005/0.075/0.005 and actions 0/4/68."
-        ),
+        ("iWildCam is withheld. A diagnostic recomputation gives regrets 0.005/0.075/0.005 and actions 0/4/68."),
         r"iWildCam H v2 & \iWN & \iWAdaptCount & \iWFreezeCount & \iWAbstainCount \\",
     ],
 )
@@ -91,14 +88,11 @@ def test_curated_withheld_scan_rejects_iwildcam_values_even_with_disclaimer(leak
 
 
 def test_maintained_source_inventory_includes_submission_and_excludes_archives():
-    relative = {
-        path.relative_to(KBOUND.parents[2]).as_posix()
-        for path in MS.active_source_paths(KBOUND.parents[2])
-    }
+    relative = {path.relative_to(KBOUND.parents[2]).as_posix() for path in MS.active_source_paths(KBOUND.parents[2])}
     assert "docs/research/kbound/kbound_submission_body.tex" in relative
     assert "docs/research/kbound/kbound_tmlr.tex" in relative
     assert "docs/research/kbound/paper/generated/kbound_numbers.tex" in relative
-    assert "experiments/kbound/results/reconciled_panels_v1/canonical_panel_table.tex" in relative
+    assert "docs/research/kbound/paper/generated/kbound_primary_accuracy_table.tex" in relative
     assert not any("/archive/" in path for path in relative)
     assert all(path.is_file() for path in MS.active_source_paths(KBOUND.parents[2]))
 
@@ -112,8 +106,7 @@ def _mini_manifest(claim_ids):
     return {
         "schema_version": "kbound-result-manifest-v1",
         "results": [
-            {"claim_id": c, "dataset": "d", "protocol": "p", "status": "supported",
-             "source_artifact": "a.json"}
+            {"claim_id": c, "dataset": "d", "protocol": "p", "status": "supported", "source_artifact": "a.json"}
             for c in claim_ids
         ],
     }
@@ -136,25 +129,24 @@ def test_consistency_flags_unbacked_supported_empirical():
     problems = A.consistency_problems(LEDGER, manifest)
     assert any("KB-CLAIM-011" in p for p in problems)
     # Marking the rest long-paper-only clears them:
-    others = ["KB-CLAIM-011", "KB-CLAIM-020", "KB-CLAIM-021", "KB-CLAIM-024",
-              "KB-CLAIM-026", "KB-CLAIM-027"]
+    others = ["KB-CLAIM-011", "KB-CLAIM-020", "KB-CLAIM-021", "KB-CLAIM-024", "KB-CLAIM-026", "KB-CLAIM-027"]
     problems2 = A.consistency_problems(LEDGER, manifest, long_paper_only=others)
     assert not any(c in " ".join(problems2) for c in others)
 
 
 def test_manifest_may_not_carry_withdrawn_claim():
     manifest = _mini_manifest(["KB-CLAIM-022"])
-    problems = A.consistency_problems(LEDGER, manifest, long_paper_only=[
-        c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"
-    ])
+    problems = A.consistency_problems(
+        LEDGER, manifest, long_paper_only=[c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"]
+    )
     assert any("withdrawn in ledger but present" in p for p in problems)
 
 
 def test_manifest_may_not_carry_withheld_claim_under_a_disguised_status():
     manifest = _mini_manifest(["KB-CLAIM-021"])
-    problems = A.consistency_problems(LEDGER, manifest, long_paper_only=[
-        c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"
-    ])
+    problems = A.consistency_problems(
+        LEDGER, manifest, long_paper_only=[c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"]
+    )
     assert any("withheld in ledger but present" in p for p in problems)
 
 
@@ -162,18 +154,17 @@ def test_manifest_status_must_match_ledger_status():
     # KB-CLAIM-020 is descriptive in the ledger; disguising it as supported
     # would silently promote the claim without this cross-authority check.
     manifest = _mini_manifest(["KB-CLAIM-020"])
-    problems = A.consistency_problems(LEDGER, manifest, long_paper_only=[
-        c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"
-    ])
-    assert any("manifest status 'supported' disagrees with ledger status 'descriptive'" in p
-               for p in problems)
+    problems = A.consistency_problems(
+        LEDGER, manifest, long_paper_only=[c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"]
+    )
+    assert any("manifest status 'supported' disagrees with ledger status 'descriptive'" in p for p in problems)
 
 
 def test_manifest_rejects_duplicate_claim_ids():
     manifest = _mini_manifest(["KB-CLAIM-010", "KB-CLAIM-010"])
-    problems = A.consistency_problems(LEDGER, manifest, long_paper_only=[
-        c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"
-    ])
+    problems = A.consistency_problems(
+        LEDGER, manifest, long_paper_only=[c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"]
+    )
     assert any("duplicate claim_id KB-CLAIM-010" in p for p in problems)
 
 
@@ -185,17 +176,17 @@ def test_consistency_rejects_duplicate_ledger_claim_ids_without_schema_gate():
 
 def test_numerical_manifest_may_reference_only_empirical_claims():
     manifest = _mini_manifest(["KB-CLAIM-001"])
-    problems = A.consistency_problems(LEDGER, manifest, long_paper_only=[
-        c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"
-    ])
+    problems = A.consistency_problems(
+        LEDGER, manifest, long_paper_only=[c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"]
+    )
     assert any("non-empirical ledger claim type 'theorem'" in p for p in problems)
 
 
 def test_manifest_unknown_claim_flagged():
     manifest = _mini_manifest(["KB-CLAIM-999"])
-    problems = A.consistency_problems(LEDGER, manifest, long_paper_only=[
-        c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"
-    ])
+    problems = A.consistency_problems(
+        LEDGER, manifest, long_paper_only=[c["claim_id"] for c in LEDGER["claims"] if c["claim_type"] == "empirical"]
+    )
     assert any("unknown claim" in p for p in problems)
 
 
@@ -220,6 +211,7 @@ def test_loo_jackknife_method_name_is_not_forbidden_but_assertive_guarantee_is()
 
 def test_real_promoted_manuscripts_have_no_withdrawn_wording():
     import glob
+
     tex = glob.glob(str(KBOUND / "kbound_short*.tex"))
     if not tex:
         pytest.skip("promoted manuscript sources not present in this checkout")
@@ -229,8 +221,13 @@ def test_real_promoted_manuscripts_have_no_withdrawn_wording():
 
 
 def test_detect_disagreements_aggregates_manuscript_and_consistency():
-    manifest = _mini_manifest([c["claim_id"] for c in LEDGER["claims"]
-                               if c["claim_type"] == "empirical" and c["status"] in A.PROMOTED_STATUSES])
+    manifest = _mini_manifest(
+        [
+            c["claim_id"]
+            for c in LEDGER["claims"]
+            if c["claim_type"] == "empirical" and c["status"] in A.PROMOTED_STATUSES
+        ]
+    )
     # A manuscript that (wrongly) resurrects the withdrawn Camelyon beats-both line.
     bad_manu = {"kbound_short.tex": "Camelyon17 beats both fixed policies (13x)."}
     problems = A.detect_disagreements(LEDGER, manifest=manifest, manuscript_texts=bad_manu)

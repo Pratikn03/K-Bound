@@ -44,10 +44,10 @@ def main():
                          "(iPhone Continuity Camera is often index 1)")
     ap.add_argument("--video", default=None, help="override: use OpenCV video path (e.g. pilot video file)")
     ap.add_argument("--loop", action="store_true", help="loop the video / simulated stream infinitely")
-    ap.add_argument("--eps", type=float, default=None, help="override: K-Bound conformal safety radius")
+    ap.add_argument("--eps", type=float, default=None,
+                    help="legacy radius override: makes the gate unavailable; seal new metadata to change the radius")
     ap.add_argument("--demo", action="store_true",
-                    help="use the synthetic KGA calibrator (varied ADAPT/FREEZE/ABSTAIN) until "
-                         "real S03–S06 calibration is captured")
+                    help="legacy demo flag: makes the gate unavailable and retains the frozen output")
     ap.add_argument("--kga-edge", default=None, metavar="PATH",
                     help="override path to kga_edge.joblib benefit estimator")
     ap.add_argument("--kga-meta", default=None, metavar="PATH",
@@ -63,18 +63,18 @@ def main():
     ap.add_argument("--fps", type=float, default=8.0, help="fps for --record / window")
     ap.add_argument("--max-windows", type=int, default=None,
                     help="stop after N windows (handy for a bounded demo / dry run)")
+    C.add_deployment_arguments(ap)
     args = ap.parse_args()
 
     cfg = C.load_config(args.config)
     sh = C.load_config(args.shadow_config)
 
-    from kbound_edge.tent_adapter import EpisodicTentAdapter
-    from kbound_edge.benefit_estimator import EdgeBenefitEstimator
+    from kbound_edge.dashboard import build_dashboard
     from kbound_edge.logging import WindowLogger, config_hash
     from kbound_edge.shadow_runtime import ShadowController
-    from kbound_edge.dashboard import build_dashboard
+    from kbound_edge.tent_adapter import EpisodicTentAdapter
 
-    f0, version = C.load_f0(cfg)
+    f0, version = C.load_trusted_f0(cfg, args.expected_frozen_sha256)
     adapter = EpisodicTentAdapter(f0, lr=cfg["adapter"]["lr"], steps=cfg["adapter"]["steps"],
                                   device=cfg.get("device", "cpu"))
     is_real = cfg.get("protocol", "edge_label_inspection_v1") == "edge_real_phone_v1"
@@ -84,35 +84,11 @@ def main():
     )
     meta_path = args.kga_meta or cfg["paths"].get("kga_edge_meta", default_meta)
     kga_path = args.kga_edge or cfg["paths"]["kga_edge"]
-    meta = C.load_json(C.resolve(meta_path))
-    use_demo_calibrator = bool(args.demo)
-    if not use_demo_calibrator and is_real and C.is_placeholder_kga_meta(meta):
-        if args.camera is not None or args.video is not None:
-            use_demo_calibrator = True
-            print("[07] NOTE: real-phone calibrator is still a placeholder (eps=0, n_fit<=20).")
-            print("[07]       Auto-switching to synthetic KGA calibrator for a watchable live demo.")
-            print("[07]       After S03–S06 capture + pipeline 03–05, decisions will use real calibration.")
-    if use_demo_calibrator and not args.demo:
-        meta_path = "artifacts_synth/kga_edge_meta.json"
-        kga_path = "artifacts_synth/kga_edge.joblib"
-        meta = C.load_json(C.resolve(meta_path))
-    elif args.demo:
-        meta_path = args.kga_meta or "artifacts_synth/kga_edge_meta.json"
-        kga_path = args.kga_edge or "artifacts_synth/kga_edge.joblib"
-        meta = C.load_json(C.resolve(meta_path))
-        print("[07] DEMO mode: synthetic KGA calibrator (not certified for physical-phone protocol)")
-    est = EdgeBenefitEstimator.load(C.resolve(kga_path))
-    eps = float(meta["eps"])
-    if args.eps is not None:
-        eps = args.eps
-        print(f"[07] safety radius override: eps={eps:.4f}")
-    elif use_demo_calibrator and (args.camera is not None or args.video is not None):
-        demo_eps = 0.12
-        if eps > demo_eps:
-            print(f"[07] demo: capping eps {eps:.4f} -> {demo_eps:.4f} so live webcam verdicts are visible")
-            eps = demo_eps
-    else:
-        print(f"[07] calibrator: {C.resolve(kga_path)}  eps={eps:.4f}  (meta: {C.resolve(meta_path)})")
+    est = C.load_deployment_gate(cfg, args, version, estimator_path=kga_path, metadata_path=meta_path)
+    if args.demo or args.eps is not None:
+        est.invalidate("EDGE_UNSEALED_OVERRIDE")
+    eps = est.eps
+    print(f"[07] gate: {'available' if eps is not None else 'unavailable / retain frozen'}")
 
     src_cfg = dict(sh["source"])
     if args.camera is not None:

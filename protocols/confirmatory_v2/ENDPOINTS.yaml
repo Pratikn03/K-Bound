@@ -1,0 +1,36 @@
+schema_version: 2
+status: DRAFT_UNSEALED
+metric: paired_accuracy_difference
+benefit: candidate_accuracy_minus_frozen_accuracy
+benefit_range: [-1.0, 1.0]
+action_labels: [ADAPT, FREEZE, ABSTAIN]
+serving:
+  ADAPT: candidate
+  FREEZE: frozen
+  ABSTAIN: frozen
+directional_claims:
+  ADAPT: strictly_positive_benefit
+  FREEZE: strictly_negative_benefit
+  ABSTAIN: no_directional_claim
+definitions:
+  regret: max_delta_zero_minus_delta_times_adapt_indicator
+  false_adapt: action_ADAPT_and_delta_le_zero
+  false_freeze: action_FREEZE_and_delta_ge_zero
+  false_adapt_rate_all: false_adapt_count_divided_by_all_records
+  false_freeze_rate_all: false_freeze_count_divided_by_all_records
+  false_adapt_rate_conditional: false_adapt_count_divided_by_ADAPT_count
+  false_freeze_rate_conditional: false_freeze_count_divided_by_FREEZE_count
+  commitment: ADAPT_or_FREEZE
+  conditional_zero_denominator: null_not_zero
+  zero_benefit_strict_commitment: false_direction
+  abstention_opportunity_cost: max_delta_zero_times_ABSTAIN_indicator
+  cell_inclusion: absolute_delta_hat_minus_delta_cell_le_epsilon
+  population_coverage: absolute_delta_hat_minus_delta_population_le_epsilon_plus_sampling_radius
+  baseline_gap: baseline_regret_minus_kga_regret
+descriptive_implementation: kga.evaluation.evaluate_actions
+descriptive_equal_record_weights_are_inferential_design: false
+inferential_unit: environment_and_checkpoint_crossed_not_flat_cell_count
+comparators:
+  identical_underlying_records_required: true
+  additional_published_information_requirements_must_be_bound: true
+  unknown_or_incompatible_comparator: excluded_with_reason_not_substituted_silently

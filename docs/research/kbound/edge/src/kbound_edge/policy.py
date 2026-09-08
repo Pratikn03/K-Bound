@@ -1,14 +1,17 @@
 """kbound_edge.policy -- kga_decide + the policy-comparison family.
 
-``kga_decide`` is the certified gate used on the online path.  It REUSES the
+``kga_decide`` is a conditional interval gate used on the online path. It REUSES the
 published decision rule :func:`kbound.certificate.decide` (imported via
-:mod:`kbound_edge._bridge`) and simply packages the result with the certified
-benefit interval ``[lower, upper] = [Bhat - eps, Bhat + eps]`` and a
+:mod:`kbound_edge._bridge`) and simply packages the result with the
+supplied benefit interval ``[lower, upper] = [Bhat - eps, Bhat + eps]`` and a
 human-readable reason:
 
-    lower > 0           -> ADAPT    (benefit certified positive)
-    upper < 0           -> FREEZE   (harm certified)
+    lower > 0           -> ADAPT    (positive direction under interval coverage)
+    upper < 0           -> FREEZE   (negative direction under interval coverage)
     interval spans 0    -> ABSTAIN  (insufficient evidence)
+
+This module validates numeric inputs, not their calibration, sampling, or
+artifact provenance. A caller-supplied radius is not itself a coverage proof.
 
 The same module exposes the full family of comparison policies required for the
 ablation table (always-freeze, always-adapt, confidence gate, entropy gate,
@@ -19,35 +22,55 @@ evaluate any of them on identical inputs.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Optional
+from typing import Callable
 
 from kbound_edge._bridge import decide as _certificate_decide
 
 
 @dataclass
 class Decision:
-    """A certified adapt/freeze/abstain decision with its benefit interval."""
+    """An interval-conditional decision; coverage remains a caller premise."""
 
-    decision: str          # 'adapt' | 'freeze' | 'abstain'
-    bhat: float            # predicted benefit
-    eps: float             # conformal radius
-    lower: float           # Bhat - eps
-    upper: float           # Bhat + eps
+    decision: str  # 'adapt' | 'freeze' | 'abstain'
+    bhat: float | None  # predicted benefit
+    eps: float | None  # conformal radius
+    lower: float | None  # Bhat - eps
+    upper: float | None  # Bhat + eps
     reason: str
+    availability: str = "available"
+    certificate_status: str = "interval_conditional"
+    provenance: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {
             "decision": self.decision,
-            "bhat": float(self.bhat),
-            "eps": float(self.eps),
-            "lower": float(self.lower),
-            "upper": float(self.upper),
+            "bhat": self.bhat,
+            "eps": self.eps,
+            "lower": self.lower,
+            "upper": self.upper,
             "reason": self.reason,
+            "availability": self.availability,
+            "certificate_status": self.certificate_status,
+            "model_action": "retain_frozen",
+            **{key: self.provenance.get(key) for key in (
+                "authority_sha256", "estimator_sha256", "metadata_sha256", "protocol_sha256",
+                "frozen_model_sha256", "candidate_sha256", "fit_sha256", "calibration_sha256",
+                "runtime_versions", "evidence_schema_version",
+            )},
         }
 
 
+def unavailable_decision(reason: str) -> Decision:
+    return Decision("abstain", None, None, None, None, reason,
+                    availability="unavailable", certificate_status="not_issued")
+
+
 def kga_decide(bhat: float, eps: float) -> Decision:
-    """Certified gate: reuse :func:`kbound.certificate.decide` and report the interval.
+    """Validate supplied interval arithmetic, then report its conditional action.
+
+    Malformed inputs raise ValueError before a decision record is constructed;
+    they are never converted into invented finite certificates. Numeric validity
+    does not establish coverage or an authorized estimator identity.
 
     Parameters
     ----------
@@ -60,19 +83,19 @@ def kga_decide(bhat: float, eps: float) -> Decision:
     -------
     Decision
     """
+    # Validate before float coercion can erase boolean or masked inputs.
+    decision = _certificate_decide(bhat, eps)
     bhat = float(bhat)
     eps = float(eps)
-    decision = _certificate_decide(bhat, eps)  # reused verbatim
     lower = bhat - eps
     upper = bhat + eps
     if decision == "adapt":
-        reason = f"lower bound {lower:+.4f} > 0: benefit certified positive (alpha-level)"
+        reason = f"supplied lower bound {lower:+.4f} > 0: ADAPT conditional on valid interval coverage"
     elif decision == "freeze":
-        reason = f"upper bound {upper:+.4f} < 0: harm certified -- candidate rejected"
+        reason = f"supplied upper bound {upper:+.4f} < 0: FREEZE conditional on valid interval coverage"
     else:
         reason = (
-            f"interval [{lower:+.4f}, {upper:+.4f}] spans 0: "
-            "insufficient evidence to certify -- abstain (keep frozen)"
+            f"interval [{lower:+.4f}, {upper:+.4f}] spans 0: no strict direction supported -- abstain (keep frozen)"
         )
     return Decision(decision=decision, bhat=bhat, eps=eps, lower=lower, upper=upper, reason=reason)
 
@@ -80,6 +103,7 @@ def kga_decide(bhat: float, eps: float) -> Decision:
 # ---------------------------------------------------------------------------
 # Policy-comparison family (for the ablation table)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PolicyContext:
@@ -90,11 +114,11 @@ class PolicyContext:
     can read e.g. ``post_conf`` and ``entropy_drop``).
     """
 
-    bhat: float
-    eps: float
-    evidence: Dict[str, float] = field(default_factory=dict)
-    conf_tau: float = 0.50       # threshold for the confidence gate
-    entropy_tau: float = 0.05    # threshold for the entropy gate
+    bhat: float | None
+    eps: float | None
+    evidence: dict[str, float] = field(default_factory=dict)
+    conf_tau: float = 0.50  # threshold for the confidence gate
+    entropy_tau: float = 0.05  # threshold for the entropy gate
 
 
 def _always_freeze(ctx: PolicyContext) -> str:
@@ -119,16 +143,16 @@ def _kga_no_radius(ctx: PolicyContext) -> str:
     # KGA with eps forced to 0: pure sign of the predicted benefit (no abstain
     # region except the measure-zero boundary).  This is the "trust the
     # estimator, ignore uncertainty" ablation.
-    return _certificate_decide(ctx.bhat, 0.0)
+    return "abstain" if ctx.bhat is None or ctx.eps is None else _certificate_decide(ctx.bhat, 0.0)
 
 
 def _kga_full(ctx: PolicyContext) -> str:
-    # The certified gate: three-way with the conformal radius.
-    return _certificate_decide(ctx.bhat, ctx.eps)
+    # Conditional rule; this does not verify the radius's provenance.
+    return "abstain" if ctx.bhat is None or ctx.eps is None else _certificate_decide(ctx.bhat, ctx.eps)
 
 
 #: Registry of comparison policies.  Keys are stable identifiers used in reports.
-POLICIES: Dict[str, Callable[[PolicyContext], str]] = {
+POLICIES: dict[str, Callable[[PolicyContext], str]] = {
     "always_freeze": _always_freeze,
     "always_adapt": _always_adapt,
     "confidence_gate": _confidence_gate,

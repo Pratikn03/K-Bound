@@ -647,6 +647,9 @@ def _portable_runbook_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     (repo / "pyproject.toml").write_text(
         "[project]\nname = 'portable-release-fixture'\n", encoding="utf-8"
     )
+    receipt = repo / "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json"
+    receipt.parent.mkdir(parents=True)
+    receipt.write_text('{"status": "verified"}\n', encoding="utf-8")
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     event_log = tmp_path / "portable-events.txt"
     fake_python = tmp_path / "portable-python"
@@ -682,6 +685,8 @@ def test_default_preflight_is_data_portable_and_deep_local_preflight_checks_data
         "with event_log.open('a', encoding='utf-8') as handle:\n"
         "    handle.write(json.dumps({'args': args, 'stdin': stdin}) + '\\n')\n"
         "if args and args[0].endswith('verify_release_toolchain.py'):\n"
+        "    output = pathlib.Path(args[args.index('--output') + 1])\n"
+        "    output.write_text('{\"status\": \"verified\"}\\n', encoding='utf-8')\n"
         "    destination = pathlib.Path(args[args.index('--resolved-tools-output') + 1])\n"
         "    tool = os.environ['KBOUND_FAKE_TOOL']\n"
         "    names = ('LATEXMK','LATEXPAND','PANDOC','PDFDETACH','PDFINFO','PDFLATEX','PDFTOPPM','PDFTOTEXT','PERL','SOFFICE')\n"

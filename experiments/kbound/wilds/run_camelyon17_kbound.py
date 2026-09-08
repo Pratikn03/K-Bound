@@ -1313,6 +1313,8 @@ def parse_args(argv=None):
     )
     p.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"])
     p.add_argument("--steps-override", type=int, default=0, dest="steps_override")
+    p.add_argument("--results-root", default="", dest="results_root",
+                   help="dir to write results under (default: repo/experiments/kbound/results)")
     p.add_argument("--out", default="")
     p.add_argument("--run-name", default="wilds_kbound", dest="run_name",
                    help="results subdir name under experiments/kbound/results/")
@@ -1345,7 +1347,8 @@ def parse_args(argv=None):
 
 def main(argv=None):
     args = parse_args(argv)
-    out_dir = os.path.join(REPO, "experiments/kbound/results",
+    results_root = args.results_root or os.path.join(REPO, "experiments/kbound/results")
+    out_dir = os.path.join(results_root,
                            "wilds_kbound_smoke" if args.smoke else args.run_name)
     os.makedirs(out_dir, exist_ok=True)
     partial = os.path.join(out_dir, "_partial.json")

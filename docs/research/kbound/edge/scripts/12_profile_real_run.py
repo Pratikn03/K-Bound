@@ -4,7 +4,6 @@
 import argparse
 import os
 import sys
-import numpy as np
 
 import _common as C
 
@@ -13,15 +12,14 @@ _SRC = os.path.normpath(os.path.join(_HERE, "..", "src"))
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
-from kbound_edge.tent_adapter import EpisodicTentAdapter
-from kbound_edge.benefit_estimator import EdgeBenefitEstimator
-from kbound_edge.real_dataset import load_window
-from kbound_edge.profiling import profile_runtime
-
-
 def main():
+    from kbound_edge.profiling import profile_runtime
+    from kbound_edge.real_dataset import load_window
+    from kbound_edge.tent_adapter import EpisodicTentAdapter
+
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="edge_real_phone_v1.yaml")
+    C.add_deployment_arguments(ap)
     args = ap.parse_args()
 
     cfg = C.load_config(args.config)
@@ -30,14 +28,11 @@ def main():
     if not is_real:
         raise SystemExit("[12] Profiling script is only valid for physical real protocol mode.")
 
-    f0, version = C.load_f0(cfg)
+    f0, version = C.load_trusted_f0(cfg, args.expected_frozen_sha256)
     adapter = EpisodicTentAdapter(f0, lr=cfg["adapter"]["lr"], steps=cfg["adapter"]["steps"],
                                   device=cfg.get("device", "cpu"))
-    est = EdgeBenefitEstimator.load(C.resolve(cfg["paths"]["kga_edge"]))
-
-    kga_meta_path = cfg["paths"].get("kga_edge_meta", "artifacts_real/calibration/kga_edge_meta.json")
-    meta = C.load_json(C.resolve(kga_meta_path))
-    eps = float(meta["eps"])
+    est = C.load_deployment_gate(cfg, args, version)
+    eps = est.eps
 
     # Load 15 windows from calibration_conformal for profiling
     windows_dir = C.resolve(cfg["paths"]["windows_dir"])
@@ -75,7 +70,10 @@ def main():
     print("-" * 80)
     for stage in ["frozen_inference", "tent_update", "candidate_inference", "evidence", "gate", "end_to_end", "capture_preprocess"]:
         stats = profile_summary[stage]
-        print(f"{stage:<35} | {stats['mean_ms']:<10.2f} | {stats['p95_ms']:<10.2f}")
+        if stats["mean_ms"] is None:
+            print(f"{stage:<35} | unavailable / retain frozen")
+        else:
+            print(f"{stage:<35} | {stats['mean_ms']:<10.2f} | {stats['p95_ms']:<10.2f}")
     print("-" * 80)
 
 

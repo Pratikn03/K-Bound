@@ -2,6 +2,8 @@
 
 Date: 2026-08-29
 
+ImageNet-R row reconciled to the current canonical generation: 2026-09-06.
+
 ## Canonical Source
 
 Authoritative result artifact:
@@ -54,7 +56,7 @@ silently merged into that panel:
 | ImageNet-C Tent | 135 | .0154 | .0191 | .0145 | .0222 | .0370 | trails freeze; three observed false adaptations |
 | ImageNet-C EATA | 135 | .0024 | .0001 | .0342 | .0074 | .8074 | trails adapt; one observed false adaptation |
 | PACS | 12 domain-seed units | .0431 | .0176 | .0446 | .0093 | .8148 | favors always-adapt; per-cell replay incomplete |
-| ImageNet-R | 480 | .0150 | .0064 | .0325 | .0000 | .4042 | favors adaptation on 8/10 backbones |
+| ImageNet-R | 480 | .0137 | .0064 | .0325 | .0125 | .4437 | favors adaptation on 8/10 backbones; six false adaptations; current three-way cross-fit diagnostic |
 | CIFAR-10-C Tent | 2160 | .0019 | .0080 | .1239 | .0009 | .6611 | lower exact-rank point regret than each fixed policy; two observed false adaptations; retrospective six-contrast Holm is non-confirmatory |
 | CIFAR-10-C EATA | 2160 | .0016 | .0033 | .1313 | .0000 | .6074 | lower exact-rank point regret than each fixed policy; adapt-side family interval crosses zero; retrospective six-contrast Holm is non-confirmatory |
 | CIFAR-10-C SAR | 2160 | .0018 | .0003 | .1405 | .0000 | .6546 | always-adapt has lower regret |
@@ -64,6 +66,15 @@ silently merged into that panel:
 | Camelyon17 B-v2 SAR | 108 | .0289 | .0016 | .1001 | .0093 | .4815 | comparator-favoring diagnostic |
 | RxRx1 | 60 | .0000 | .2531 | .0000 | .0000 | 1.0000 | freezes throughout; endpoint no-harm |
 | CIFAR-10.1 | 48 | .0017 | .0190 | .0017 | .0000 | .4583 | ties freeze; no adapts |
+
+ImageNet-R generation note: the previous `.0150` regret, zero false adaptations and `.4042`
+coverage described archived-prediction exact-rank leave-one-condition-out calibration. The current
+canonical three-way cell-outcome-disjoint fit/calibrate/score replay has 179/34/267
+ADAPT/FREEZE/ABSTAIN actions, six false adaptations among 480 cells, and exact coverage
+213/480 = .44375 (displayed as `.4437` by the generated table's binary-float formatting).
+The current aggregate and maintained manuscript agree; the older LOO numbers remain historical,
+including in the explicitly superseded `kbound_short.tex` inputs. This reconciliation does not
+establish independent checkpoints, prospective status, or one deployable multi-backbone policy.
 
 Protocol note: these natural-shift candidate losses come from transductive TTA. Episodic updates
 read the unlabeled evaluation batch; online prediction uses evaluation-batch BatchNorm statistics

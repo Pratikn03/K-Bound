@@ -8,6 +8,7 @@
 #   BUILD_SHORT_MAIN=1 bash docs/research/kbound/scripts/build_pdfs.sh
 #   BUILD_SHORT_SUPPLEMENT=1 bash docs/research/kbound/scripts/build_pdfs.sh
 #   BUILD_FULL_REPORT=1 bash docs/research/kbound/scripts/build_pdfs.sh
+#   BUILD_MAIN_WITH_APPENDIX=1 bash docs/research/kbound/scripts/build_pdfs.sh
 #   BUILD_DOCX=1 bash docs/research/kbound/scripts/build_pdfs.sh
 #
 # BUILD_HISTORICAL_TMLR remains a backward-compatible alias for BUILD_LONG_TMLR.
@@ -37,6 +38,7 @@ BUILD_LONG_TMLR="${BUILD_LONG_TMLR:-${BUILD_HISTORICAL_TMLR:-0}}"
 BUILD_SHORT_MAIN="${BUILD_SHORT_MAIN-0}"
 BUILD_SHORT_SUPPLEMENT="${BUILD_SHORT_SUPPLEMENT-0}"
 BUILD_FULL_REPORT="${BUILD_FULL_REPORT-0}"
+BUILD_MAIN_WITH_APPENDIX="${BUILD_MAIN_WITH_APPENDIX-0}"
 KBOUND_AUTHORIZE_PROTECTED_SO2SAT="${KBOUND_AUTHORIZE_PROTECTED_SO2SAT:-0}"
 if [[ -n "${SOURCE_SNAPSHOT_COMMIT:-}" ]]; then
   KBOUND_SOURCE_SNAPSHOT_COMMIT="$SOURCE_SNAPSHOT_COMMIT"
@@ -69,6 +71,7 @@ validate_binary_build_flag BUILD_LONG_TMLR "$BUILD_LONG_TMLR"
 validate_binary_build_flag BUILD_SHORT_MAIN "$BUILD_SHORT_MAIN"
 validate_binary_build_flag BUILD_SHORT_SUPPLEMENT "$BUILD_SHORT_SUPPLEMENT"
 validate_binary_build_flag BUILD_FULL_REPORT "$BUILD_FULL_REPORT"
+validate_binary_build_flag BUILD_MAIN_WITH_APPENDIX "$BUILD_MAIN_WITH_APPENDIX"
 validate_binary_build_flag KBOUND_AUTHORIZE_PROTECTED_SO2SAT "$KBOUND_AUTHORIZE_PROTECTED_SO2SAT"
 
 resolve_release_tool() {
@@ -110,6 +113,7 @@ publish_derived() {
     kbound_short_main.pdf|kbound_short_main.log|kbound_short_main_build.log|\
     kbound_short_supplement.pdf|kbound_short_supplement.log|kbound_short_supplement_build.log|\
     kbound_full_report.pdf|kbound_full_report.log|kbound_full_report_build.log) ;;
+    kbound_main_with_appendix.pdf|kbound_main_with_appendix.log|kbound_main_with_appendix_build.log) ;;
     *) echo "ERROR: refusing unexpected derived-output name: $name" >&2; return 1 ;;
   esac
   if [[ "$source" != "$BUILD_TMP_DIR/"* || ! -s "$source" || -L "$source" || -d "$ROOT/$name" ]]; then
@@ -196,6 +200,15 @@ else
     "$PY" src/scripts/validate_manuscript_claims.py)
 fi
 
+# Recompute only six saved sufficient-statistic scalars. This does not open
+# images, labels, checkpoint files, protected studies, or a new outcome subset.
+# Verification is read-only: stale macros stop the build instead of being
+# silently overwritten or presented as a fresh experiment.
+"$PY" scripts/empirical_macros.py \
+  --bundle paper/release/empirical_macro_inputs \
+  --manifest-sha256 e4c2cff245871a2d2e8ebe626e7c197b59faa4194f921e15eff84a3903e6c3b4 \
+  --check paper/generated/empirical_evidence_numbers.tex
+
 echo "==> Regenerating canonical numbers and figures"
 "$PY" scripts/make_tables.py
 "$PY" scripts/plot_canonical_decision_frontier.py
@@ -228,6 +241,10 @@ if [[ "$BUILD_FULL_REPORT" == "1" ]]; then
   echo "==> Building full technical report"
   build_pdf kbound_full_report.tex kbound_full_report_build.log
 fi
+if [[ "$BUILD_MAIN_WITH_APPENDIX" == "1" ]]; then
+  echo "==> Building named main paper with integrated appendices"
+  build_pdf kbound_main_with_appendix.tex kbound_main_with_appendix_build.log
+fi
 
 # The maintained outputs are written in place. Historical compatibility PDFs
 # are deliberately not refreshed: they are not release deliverables.
@@ -243,6 +260,9 @@ if [[ "$BUILD_SHORT_SUPPLEMENT" == "1" ]]; then
 fi
 if [[ "$BUILD_FULL_REPORT" == "1" ]]; then
   chmod 0644 kbound_full_report.pdf
+fi
+if [[ "$BUILD_MAIN_WITH_APPENDIX" == "1" ]]; then
+  chmod 0644 kbound_main_with_appendix.pdf
 fi
 
 # Publish a single unambiguous release set only when every maintained driver
@@ -283,4 +303,7 @@ if [[ "$BUILD_SHORT_SUPPLEMENT" == "1" ]]; then
 fi
 if [[ "$BUILD_FULL_REPORT" == "1" ]]; then
   ls -lh kbound_full_report.pdf
+fi
+if [[ "$BUILD_MAIN_WITH_APPENDIX" == "1" ]]; then
+  ls -lh kbound_main_with_appendix.pdf
 fi
