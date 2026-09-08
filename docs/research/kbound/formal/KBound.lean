@@ -55,3 +55,6 @@ import KBound.WeightedHelpful
 import KBound.FeatureRank
 import KBound.Probability.RiskAlignment
 import KBound.Probability.ActualFibreRadius
+import KBound.Probability.ConditionalExposure
+import KBound.Probability.IntegrableProxy
+import KBound.Probability.InformationRefinement

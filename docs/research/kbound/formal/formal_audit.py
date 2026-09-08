@@ -380,6 +380,24 @@ FOUNDATION_THEOREMS["ActualFibreRadius"] = [
     "ActualFibreRadius.actual_augmented_fibre_eq_class",
     "ActualFibreRadius.actual_augmented_fibre_radius",
 ]
+FOUNDATION_THEOREMS["ConditionalExposure"] = [
+    "ConditionalExposure.event_ratio_le_min",
+    "ConditionalExposure.false_adapt_ratio_le_min",
+    "ConditionalExposure.conditional_false_adapt_le_min",
+]
+FOUNDATION_THEOREMS["IntegrableProxy"] = [
+    "IntegrableProxy.expectation_decomposition",
+    "IntegrableProxy.positive_of_residual_bound",
+    "IntegrableProxy.negative_of_residual_bound",
+]
+FOUNDATION_THEOREMS["InformationRefinement"] = [
+    "InformationRefinement.zero_disagreement_risks_eq",
+    "InformationRefinement.zero_disagreement_populationBenefit",
+    "InformationRefinement.fibreRadius_mono",
+    "InformationRefinement.observable_fibre_refinement",
+    "InformationRefinement.observable_fibreRadius_mono",
+    "InformationRefinement.deterministic_observable_fibre_eq",
+]
 VERIFIED_THEOREMS = LEGACY_CORE_THEOREMS + [name for names in FOUNDATION_THEOREMS.values() for name in names]
 ALLOWED_AXIOMS = frozenset({"propext", "Classical.choice", "Quot.sound"})
 
@@ -437,8 +455,8 @@ OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = [
 ]
 
 CLOSURE_RECORD = {
-    "revision": "actual-fibre-radius-2026-09-07",
-    "date": "2026-09-07",
+    "revision": "full-report-probability-bridges-2026-09-08",
+    "date": "2026-09-08",
     "scope": (
         "Legacy finite/algebraic spine plus general exchangeable residual coverage, "
         "filtered Ville/predictable betting, KL/TV finite-product testing, concentration, "
@@ -458,6 +476,10 @@ CLOSURE_RECORD = {
         "classes with legal interior opposite-pair and boundary-only zero construction "
         "membership, their strict-direction existence iff, realized individual directional "
         "iff, maximal commitment and augmented-law/error-to-abstention composition; finite common nonnegative-weight helpful-only score/regret composition, and fixed-fibre strict-to-aligned implication with actual zero/positive joint-law nonconverse witnesses; literal eleven-coordinate schema relations, schema dimension nine and satisfying-row rank upper bound nine; actual scoreResidual-class and fixed-augmented-law-fibre supremum radius equality under the full class and small-budget premises. "
+        "Actual null-disagreement risk equality and benefit zero; joint-observation "
+        "fibre refinement, nonempty/bounded real-radius monotonicity and fixed "
+        "measurable recoding invariance; positive-exposure conditional-error bounds "
+        "given marginal error; and integrable proxy expectation and sufficient signs. "
         "The historical full one-bit/H extension "
         "is not closed and is not claimed by the compact paper."
     ),
@@ -467,10 +489,10 @@ CLOSURE_RECORD = {
     ],
     "paper_wide_closure": False,
     "remaining_current_paper_obligations": [
-        "Restricted-class construction and probability assembly are proved; reconcile the paper's uniqueness wording with the explicit realized/nonempty premise for individual directional iff. Minimal pair/zero membership is a consequence, not an equivalence, of full construction closure.",
-        "Maintain the fixed observation/policy experiment: equal one-input marginals alone do not determine arbitrary world-dependent batch/seed couplings. The actual finite iid realization and full-class augmented-law assembly are proved.",
-        "The feature-rank upper bound, weighted helpful-only composition and actual risk-alignment nonconverse are proved under explicit premises. Observed exact rank, ambiguous prose disposition and final semantic completeness remain separate. The actual joint-law radius and fixed-augmented-fibre assembly are proved; literal paper sampling interpretation remains linked to the explicit observation model.",
-        "Independent31-row/23-source semantic census found no omitted named statement/display; its A02 assembly gap is now proved. Targeted review and binding of future author corrections remain required.",
+        "Preserve explicit realized/nonempty and construction-membership premises for restricted classes; minimal pair/zero membership is a consequence, not an equivalence, of full construction closure.",
+        "Justify experimental sampling and fixed observation/policy assumptions separately. Equal one-input marginals do not determine arbitrary world-dependent batch/seed couplings; joint-law refinement does not remove this requirement.",
+        "Observed exact feature rank, empirical calibration coverage, performance and implementation correspondence require their own evidence. Formal rank bounds and conditional-error inequalities alone do not certify them.",
+        "Bind the full-report claim census, revised integrability wording and final rendered artifacts to the combined pinned build. Registry membership alone is not a paper-wide semantic or release verification receipt.",
     ],
     "foundation_layers": FOUNDATION_LAYERS,
     "open_research_frontier": OPEN_RESEARCH_FRONTIER,

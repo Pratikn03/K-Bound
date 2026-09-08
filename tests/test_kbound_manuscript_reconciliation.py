@@ -109,11 +109,12 @@ def test_current_formal_count_is_bounded_and_not_paper_wide_certification():
     supp = words("kbound_submission_supplement.tex")
     assert r"\input{paper/sections/proof_traceability}" in supp
     proof = words("paper/sections/proof_traceability.tex")
-    assert "303 registered declarations: 65 retained core declarations and 238 additional results" in proof
-    assert "309 distinct" in proof
-    assert "Eleven public-root example files contain 67 examples" in proof
+    assert "315 registered declarations: 65 retained core declarations and 250 additional results" in proof
+    assert "326 distinct" in proof
+    assert "Thirteen public-root example files contain 80 examples" in proof
     assert "not a percentage of the paper proved" in proof
     assert "does not supply the reported experiments with a population sampling-error radius" in proof
-    assert "no new kernel build is asserted by this source check" in proof
+    assert "incremental with cached dependencies, not a cold dependency rebuild" in proof
+    assert r"\path{formal/full_report_bridges_verification_20260908.portable.json}" in proof
     assert "common observation law" in proof
     assert "common joint law of observation and random seed" in words("kbound_submission_body.tex")

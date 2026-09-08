@@ -3,23 +3,21 @@
 \label{sec:proof-traceability}
 
 The formal evidence is a source-bound, scoped verification record. The
-7 September 2026 integration receipt records a successful Lean 4.29.1
-strict-core build and transitive-axiom audit for 303 registered declarations:
-65 retained core declarations and 238 additional results, including supporting
-lemmas. The theorem map contains 309 distinct \texttt{\#check} entries; six are
-outside that registry. Eleven public-root example files contain 67 examples.
+8 September 2026 integration receipt records a successful Lean 4.29.1
+strict-core build and transitive-axiom audit for 315 registered declarations:
+65 retained core declarations and 250 additional results, including supporting
+lemmas. The theorem map contains 326 distinct \texttt{\#check} entries across
+all namespaces; eleven are outside that registry.
+Thirteen public-root example files contain 80 examples.
 These are different inventories, not a percentage of the paper proved.
 
-A fresh byte-level check on 8 September matched all 77 formal-source,
-configuration and example files bound by the integration receipt, and verified
-the linked strict-audit and independent-replay receipts. The recorded build was
-incremental with cached dependencies, not a cold dependency rebuild; no new
-kernel build is asserted by this source check. Path-redacted companions
-\path{formal/actual_fibre_radius_verification_20260907.portable.json} and
-\path{formal/actual_fibre_radius_followon_20260907.portable.json} preserve each
-original receipt's SHA-256 and non-path fields; they are not fresh proof receipts.
-The dated audit remains
-\path{formal/formal_actual_fibre_radius_audit_2026_09_07.json}.
+The source-bound summary
+\path{formal/full_report_bridges_verification_20260908.portable.json}
+links the combined audit, example checks and independent reviews by hash.
+The build is incremental with cached dependencies, not a cold dependency rebuild.
+The separate claim census is
+\path{formal/full_report_bridges_semantic_20260908.portable.json}.
+Earlier dated receipts retain their historical scopes.
 The audited axiom dependencies are \texttt{propext},
 \texttt{Classical.choice} and \texttt{Quot.sound}.
 
@@ -65,6 +63,14 @@ nine-dimensional real-linear schema and row rank at most nine under the exact
 coordinate relations; it does not establish observed numerical rank or
 probabilistic independence. \path{RiskAlignment} proves that alignment is
 weaker than strict identification, including an actual zero/positive-law witness.
+
+\paragraph{Full-report implications.}
+\path{InformationRefinement} covers null-disagreement risk equality and
+refinement of actual joint-observation fibres, with nonempty/bounded premises
+for real radii. \path{ConditionalExposure} derives conditional error bounds
+from marginal error and positive action exposure. \path{IntegrableProxy}
+proves the expectation decomposition and sufficient signs with both terms
+integrable under the same law; it does not prove general-loss exactness.
 
 The current prose states the fixed observation, model-pair, seed-coupling and
 nonempty-subclass qualifications. Their empirical applicability remains

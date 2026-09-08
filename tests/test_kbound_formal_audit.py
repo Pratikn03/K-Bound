@@ -64,7 +64,7 @@ def test_probability_interfaces_remain_in_the_kernel_audit_contract() -> None:
         qualified = {f"{module}.{name}" for name in names}
         assert qualified <= set(audit.FOUNDATION_THEOREMS.get(module, []))
         assert all(audit.VERIFIED_THEOREMS.count(name) == 1 for name in qualified)
-    assert len(audit.VERIFIED_THEOREMS) == 303
+    assert len(audit.VERIFIED_THEOREMS) == 315
 
 
 def test_joint_kernel_score_is_exhaustively_registered() -> None:
@@ -145,6 +145,26 @@ def test_feature_rank_is_exhaustively_registered() -> None:
     source = audit.strip_lean_comments((audit.ROOT / "KBound/FeatureRank.lean").read_text())
     assert set(re.findall(r"^theorem\s+(\w+)", source, re.MULTILINE)) == expected
     assert all(audit.VERIFIED_THEOREMS.count(name) == 1 for name in qualified)
+
+
+@pytest.mark.parametrize("module,names", [
+    ("ConditionalExposure", {
+        "event_ratio_le_min", "false_adapt_ratio_le_min", "conditional_false_adapt_le_min",
+    }),
+    ("IntegrableProxy", {
+        "expectation_decomposition", "positive_of_residual_bound", "negative_of_residual_bound",
+    }),
+    ("InformationRefinement", {
+        "zero_disagreement_risks_eq", "zero_disagreement_populationBenefit", "fibreRadius_mono",
+        "observable_fibre_refinement", "observable_fibreRadius_mono", "deterministic_observable_fibre_eq",
+    }),
+])
+def test_report_probability_bridges_cannot_disappear_from_kernel_audit(module, names) -> None:
+    """Dropping a report bridge from the registry must not leave a green audit."""
+    qualified = {f"{module}.{name}" for name in names}
+    assert set(audit.FOUNDATION_THEOREMS.get(module, [])) == qualified
+    assert all(audit.VERIFIED_THEOREMS.count(name) == 1 for name in qualified)
+    assert audit.theorem_map_checks() == []
 
 
 def test_weighted_helpful_is_exhaustively_registered() -> None:

@@ -893,8 +893,8 @@ def test_current_registered_formal_scope_is_not_a_full_six_layer_proof():
     scope = dashboard.registered_formal_scope()
     # Include the literal update and later module assignments in the registry;
     # this remains a source inventory, not proof of the empirical premises.
-    assert scope["registered_lean_checks"] == 303
-    assert scope["legacy_core_checks"] == 65 and scope["foundational_checks"] == 238
+    assert scope["registered_lean_checks"] == 315
+    assert scope["legacy_core_checks"] == 65 and scope["foundational_checks"] == 250
     assert scope["positive_foundational_layers"] == 5 and scope["counterexample_layers"] == 1
     assert scope["full_foundations_proof"] is False
 

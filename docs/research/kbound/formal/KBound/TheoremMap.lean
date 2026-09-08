@@ -35,6 +35,9 @@ import KBound.WeightedHelpful
 import KBound.FeatureRank
 import KBound.Probability.RiskAlignment
 import KBound.Probability.ActualFibreRadius
+import KBound.Probability.ConditionalExposure
+import KBound.Probability.IntegrableProxy
+import KBound.Probability.InformationRefinement
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
 import KBound.Probability.MeasureConformal
@@ -541,3 +544,24 @@ end KBoundTheoremMap
 #check KBound.ActualFibreRadius.actual_class_radius
 #check KBound.ActualFibreRadius.actual_augmented_fibre_eq_class
 #check KBound.ActualFibreRadius.actual_augmented_fibre_radius
+
+-- Full-report null-disagreement clause: actual finite joint law, no division by d.
+#check KBound.InformationRefinement.zero_disagreement_risks_eq
+#check KBound.InformationRefinement.zero_disagreement_populationBenefit
+-- Extra information is an entire joint observation law. Real radii require a
+-- nonempty refined fibre and a bounded coarse residual range; deterministic
+-- recoding uses the same measurable map and an actual compatible world.
+#check KBound.InformationRefinement.fibreRadius_mono
+#check KBound.InformationRefinement.observable_fibre_refinement
+#check KBound.InformationRefinement.observable_fibreRadius_mono
+#check KBound.InformationRefinement.deterministic_observable_fibre_eq
+-- Conditional false-ADAPT bounds retain the marginal-error and positive-exposure
+-- premises. No benchmark coverage or conditional calibration is inferred.
+#check KBound.ConditionalExposure.event_ratio_le_min
+#check KBound.ConditionalExposure.false_adapt_ratio_le_min
+#check KBound.ConditionalExposure.conditional_false_adapt_le_min
+-- General-loss and multiclass-proxy paragraphs: both terms integrable under the
+-- same law. The signs are sufficient, not a new exact identified frontier.
+#check KBound.IntegrableProxy.expectation_decomposition
+#check KBound.IntegrableProxy.positive_of_residual_bound
+#check KBound.IntegrableProxy.negative_of_residual_bound

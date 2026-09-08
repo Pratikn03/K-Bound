@@ -45,7 +45,7 @@ def test_supplement_formal_inventory_and_scope_match_the_current_audit():
     assert re.findall(r"\\input\s*\{([^{}]+)\}", section) == ["paper/sections/proof_traceability"]
     section = " ".join(section.split())
     trace = " ".join(live(PAPER / "paper/sections/proof_traceability.tex").split())
-    assert "303 registered declarations: 65 retained core declarations and 238 additional results" in trace
+    assert "315 registered declarations: 65 retained core declarations and 250 additional results" in trace
     assert "142 declarations" not in section + trace
     assert r"\paragraph{Audit floor.}" in trace
     audit_floor = trace.split(r"\paragraph{Audit floor.}", 1)[1].split(r"\paragraph", 1)[0]
@@ -82,7 +82,7 @@ def formal_scope_sources(tmp_path, monkeypatch):
         "\\section{Reproducibility and Release Procedures}\n", encoding="utf-8",
     )
     trace.write_text(
-        "303 registered declarations: 65 retained core declarations and 238 additional results.\n"
+        "315 registered declarations: 65 retained core declarations and 250 additional results.\n"
         "These are different inventories, not a percentage of the paper proved.\n"
         "\\paragraph{Audit floor.}\n"
         "possibly unattained supremum of a nonempty bounded residual fibre under a common observation law.\n"
@@ -120,8 +120,8 @@ def test_formal_scope_rejects_missing_live_bindings_and_scope_mutations(formal_s
     elif mutation == "outside_include":
         outer = outer.replace(include, "") + include + "\n"
     elif mutation in {"total_count", "core_count", "additional_count"}:
-        old, new = {"total_count": ("303", "304"), "core_count": ("65", "64"),
-                    "additional_count": ("238", "237")}[mutation]
+        old, new = {"total_count": ("315", "314"), "core_count": ("65", "64"),
+                    "additional_count": ("250", "249")}[mutation]
         shared = shared.replace(old, new)
     elif mutation == "common_law":
         shared = shared.replace("common observation law", "unrelated observation laws")

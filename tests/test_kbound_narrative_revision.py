@@ -28,12 +28,12 @@ def test_abstract_is_concise_and_keeps_empirical_and_population_targets_separate
     abstract = words(PAPER / "kbound_abstract_core.tex")
     assert 180 <= len(abstract.split()) <= 250
     for required in (
-        "empirical companion, not an implementation",
-        "measured evaluation-cell benefit",
-        "labeled development and residual-calibration cells",
-        "SAR favors always-adapt",
-        "\\CCTAdaptCount{}/\\CCTFreezeCount{}/\\CCTAbstainCount{} ADAPT/FREEZE/ABSTAIN decisions",
-        "do not establish interval coverage or population-risk protection",
+        "addresses a separate empirical target",
+        "measured score difference between a candidate and its frozen baseline on an evaluation cell",
+        "Labeled development and disjoint residual-calibration cells",
+        "SAR instead favors always-adapt",
+        "\\CCTCellCount{} cells retain the frozen model, including one false FREEZE",
+        "do not establish coverage or population protection on unseen shifts",
     ):
         assert required in abstract
     assert "Holm" not in abstract
@@ -43,23 +43,19 @@ def test_abstract_is_concise_and_keeps_empirical_and_population_targets_separate
 def test_headline_flow_prioritizes_directional_actions_and_exposure():
     abstract = words(PAPER / "kbound_abstract_core.tex")
     for required in (
-        "directionally correct action",
-        "explicit ABSTAIN",
-        "false-action denominators",
-        "utility preservation",
-        r"$\operatorname{sign}(\Delta)=\operatorname{sign}(M+\gamma)$",
-        "opened, dependent, constructed six-family CIFAR-10-C diagnostic",
-        "2/1,091 false ADAPT",
-        "2/2,160 overall",
-        "1/337 false FREEZE",
-        "0/1,207 false ADAPT",
-        "0/105 false FREEZE",
-        "1,414 ADAPT",
-        "no FREEZE exposure",
+        "supports ADAPT, FREEZE, or ABSTAIN for a fixed model pair",
+        "binary $0/1$ loss and positive disagreement mass",
+        "strict direction is uniformly justified exactly when $|M|>\\beta$",
+        "opened, dependent six-family CIFAR-10-C diagnostic",
+        "2 false ADAPT decisions among 1,091 ADAPT actions",
+        "1 false FREEZE among 337 FREEZE actions",
+        "EATA makes neither error among 1,207 ADAPT and 105 FREEZE actions",
+        "five-checkpoint DomainNet development evaluation yields universal abstention",
+        "support conservative retention, not useful selective routing",
     ):
         assert required in abstract
     assert r"$\Delta=M+\gamma$" not in abstract
-    assert abstract.index("directionally correct action") < abstract.index("point regret")
+    assert abstract.index("supports ADAPT, FREEZE, or ABSTAIN") < abstract.index("point regret")
 
     body = live(PAPER / "kbound_submission_body.tex")
     introduction = body.split(r"\section{Introduction}", 1)[1].split(r"\section{Related Work}", 1)[0]
@@ -191,7 +187,7 @@ def test_audits_move_to_supplement_without_discarding_adverse_records():
         "ImageNet-R",
         "no target natural-shift",
         "Historical Protocol-Matched POEM and AETTA",
-        "303 declarations",
+        r"\input{paper/sections/proof_traceability}",
         "--full-foundations",
     ):
         assert token in supplement

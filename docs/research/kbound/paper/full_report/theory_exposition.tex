@@ -731,7 +731,8 @@ correctness advantage
         -\Pr_T(f_0(X)=Y\mid X=x)
   \label{fr:eq-multiclass-advantage}
 \end{equation}
-and compare it with a label-free proxy $u(x)$.  Defining a proxy mean and a residual yields an
+and compare it on $D$ with a label-free proxy $u(x)$ that is integrable under
+$P_X(\cdot\mid D)$.  Defining a proxy mean and a residual yields an
 algebraic decomposition of $\Delta$, and an externally justified residual bound gives an immediate
 outside-band sufficiency statement.  An exact necessity result would require characterizing which
 advantage functions can arise from one multiclass label kernel while all model outputs remain
@@ -741,19 +742,22 @@ not settle it.
 \subsection{Regression and general losses}
 \label{fr:subsec-regression-open}
 
-For a general loss, define the random loss advantage
+For a general loss with both model losses integrable under the target joint law,
+define the random loss advantage
 \begin{equation}
   G(X,Y):=\ell(f_0(X),Y)-\ell(f_a(X),Y),
   \qquad
   \Delta=\E[G(X,Y)].
   \label{fr:eq-general-loss-advantage}
 \end{equation}
-If a label-free proxy $t(X)$ is available, the identity
+For a label-free proxy $t(X)$, assume $\E[|G(X,Y)|]<\infty$ and
+$\E[|t(X)|]<\infty$ under the same target joint law.  These integrability
+conditions justify the identity
 \begin{equation}
-  \Delta=\E[t(X)]+\E[G(X,Y)-t(X)]
+  \Delta=\E[t(X)]+\E[G(X,Y)-t(X)].
   \label{fr:eq-general-loss-decomposition}
 \end{equation}
-suggests a margin-plus-residual analysis.  A declared absolute bound on the second term is sufficient
+This decomposition suggests a margin-plus-residual analysis.  A declared absolute bound on the second term is sufficient
 for a strict sign outside the corresponding band.  Exactness is harder.  It depends on the loss,
 the allowed response distributions, integrability, output bounds, and which label kernels preserve
 the evidence.  Unbounded losses also require tail conditions before a finite residual budget is
