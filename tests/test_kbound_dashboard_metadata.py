@@ -891,9 +891,77 @@ def test_repeated_paper_refresh_keeps_edge_unchecked_and_identical(paper_refresh
 
 def test_current_registered_formal_scope_is_not_a_full_six_layer_proof():
     scope = dashboard.registered_formal_scope()
-    # Eight reviewed audit-floor capstones extend the registered inventory;
+    # Include the literal update and later module assignments in the registry;
     # this remains a source inventory, not proof of the empirical premises.
-    assert scope["registered_lean_checks"] == 150
-    assert scope["legacy_core_checks"] == 65 and scope["foundational_checks"] == 85
+    assert scope["registered_lean_checks"] == 303
+    assert scope["legacy_core_checks"] == 65 and scope["foundational_checks"] == 238
     assert scope["positive_foundational_layers"] == 5 and scope["counterexample_layers"] == 1
     assert scope["full_foundations_proof"] is False
+
+
+def _registry_fixture(tmp_path, monkeypatch, additions):
+    registry = tmp_path / "formal_audit.py"
+    layers = ([{"status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS"}] * 5
+              + [{"status": "PARTIAL_COUNTEREXAMPLE_FOUND"}])
+    registry.write_text(
+        "LEGACY_CORE_THEOREMS = ['core']\n"
+        "FOUNDATION_THEOREMS = {'Initial': ['first']}\n"
+        + additions + "\n"
+        + f"FOUNDATION_LAYERS = {layers!r}\n"
+        + "raise RuntimeError('registry must never execute')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(dashboard, "FORMAL_REGISTRY", registry)
+    return registry
+
+
+def test_formal_scope_counts_literal_extensions_without_executing_registry(tmp_path, monkeypatch):
+    registry = _registry_fixture(
+        tmp_path, monkeypatch,
+        "FOUNDATION_THEOREMS.update({'Added': ['second', 'third']})\n"
+        "FOUNDATION_THEOREMS['Last'] = ['fourth']",
+    )
+    scope = dashboard.registered_formal_scope()
+    assert (scope["registered_lean_checks"], scope["legacy_core_checks"], scope["foundational_checks"]) == (5, 1, 4)
+    assert scope["registry_sha256"] == hashlib.sha256(registry.read_bytes()).hexdigest()
+    assert scope["full_foundations_proof"] is False
+
+
+@pytest.mark.parametrize("additions", [
+    "FOUNDATION_THEOREMS.update({'Initial': ['replacement']})",
+    "FOUNDATION_THEOREMS['Initial'] = ['replacement']",
+    "FOUNDATION_THEOREMS.update({'Added': ['first']})",
+    "FOUNDATION_THEOREMS['Added'] = ['first']",
+    "FOUNDATION_THEOREMS.update(dynamic_registry())",
+    "FOUNDATION_THEOREMS[dynamic_key()] = ['new']",
+    "FOUNDATION_THEOREMS.update(Added=['new'])",
+    "FOUNDATION_THEOREMS.clear()",
+    "FOUNDATION_THEOREMS['Added'] = 'not a list'",
+    "FOUNDATION_THEOREMS.update({'Added': 'not a list'})",
+    "FOUNDATION_THEOREMS.update({'Added': ['a'], 'Added': ['b']})",
+    "FOUNDATION_THEOREMS['Added'] += ['new']",
+    "del FOUNDATION_THEOREMS['Initial']",
+    "if True:\n    FOUNDATION_THEOREMS['Added'] = ['new']",
+    "alias = FOUNDATION_THEOREMS['Initial']\nalias.append('new')",
+    "alias = FOUNDATION_THEOREMS.get('Initial')\nalias.append('new')",
+    "FOUNDATION_THEOREMS.get('Initial').append('new')",
+    "unknown_mutator(FOUNDATION_THEOREMS)",
+    "unknown_mutator([FOUNDATION_THEOREMS])",
+])
+def test_formal_scope_rejects_invalid_or_ambiguous_extensions(tmp_path, monkeypatch, additions):
+    _registry_fixture(tmp_path, monkeypatch, additions)
+    with pytest.raises(ValueError):
+        dashboard.registered_formal_scope()
+
+
+@pytest.mark.parametrize("initial", [
+    "FOUNDATION_THEOREMS = {'Initial': ['first'], 'Initial': ['replacement']}",
+    "FOUNDATION_THEOREMS = alias = {'Initial': ['first']}",
+])
+def test_formal_scope_rejects_ambiguous_initial_declaration(tmp_path, monkeypatch, initial):
+    registry = _registry_fixture(tmp_path, monkeypatch, "")
+    registry.write_text(registry.read_text().replace(
+        "FOUNDATION_THEOREMS = {'Initial': ['first']}", initial,
+    ), encoding="utf-8")
+    with pytest.raises(ValueError):
+        dashboard.registered_formal_scope()

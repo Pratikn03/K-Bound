@@ -236,7 +236,62 @@ def registered_formal_scope() -> dict[str, Any]:
     content = resident_bytes(FORMAL_REGISTRY)
     wanted = {"LEGACY_CORE_THEOREMS", "FOUNDATION_THEOREMS", "FOUNDATION_LAYERS"}
     values: dict[str, Any] = {}
-    for node in ast.parse(content, filename=str(FORMAL_REGISTRY)).body:
+    tree = ast.parse(content, filename=str(FORMAL_REGISTRY))
+    accepted_writes: set[int] = set()
+    accepted_calls: set[int] = set()
+
+    def root_name(node: ast.AST) -> str | None:
+        while isinstance(node, (ast.Attribute, ast.Subscript, ast.Call)):
+            if isinstance(node, ast.Call):
+                if not isinstance(node.func, ast.Attribute):
+                    return None
+                node = node.func.value
+            else:
+                node = node.value
+        return node.id if isinstance(node, ast.Name) else None
+
+    def literal(node: ast.AST) -> Any:
+        for mapping in ast.walk(node):
+            if isinstance(mapping, ast.Dict):
+                keys = [ast.literal_eval(key) for key in mapping.keys]
+                if len(set(keys)) != len(keys):
+                    raise ValueError("Formal registry has duplicate literal dictionary keys")
+        return ast.literal_eval(node)
+
+    def add_foundations(pairs: list[tuple[Any, Any]]) -> None:
+        foundation = values.get("FOUNDATION_THEOREMS")
+        if not isinstance(foundation, dict):
+            raise ValueError("Formal registry extends foundations before a valid declaration")
+        for key, names in pairs:
+            if not isinstance(key, str) or not key or key in foundation:
+                raise ValueError("Formal registry has missing or duplicate foundation module names")
+            if not isinstance(names, list):
+                raise ValueError("Formal registry has invalid foundational theorem lists")
+            foundation[key] = names
+
+    for node in tree.body:
+        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Attribute)
+                and root_name(node.value.func.value) in wanted):
+            call = node.value
+            if (not isinstance(call.func.value, ast.Name)
+                    or call.func.value.id != "FOUNDATION_THEOREMS" or call.func.attr != "update"
+                    or len(call.args) != 1 or call.keywords or not isinstance(call.args[0], ast.Dict)):
+                raise ValueError("Unsupported formal registry mutation")
+            mapping = call.args[0]
+            add_foundations([(literal(key), literal(value))
+                             for key, value in zip(mapping.keys, mapping.values)])
+            accepted_calls.add(id(call))
+            continue
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Subscript)
+                and root_name(node.targets[0]) in wanted):
+            target = node.targets[0]
+            if not isinstance(target.value, ast.Name) or target.value.id != "FOUNDATION_THEOREMS":
+                raise ValueError("Unsupported formal registry mutation")
+            add_foundations([(literal(target.slice), literal(node.value))])
+            accepted_writes.add(id(target))
+            continue
         if isinstance(node, ast.Assign):
             names = [target.id for target in node.targets if isinstance(target, ast.Name)]
             value_node = node.value
@@ -248,9 +303,35 @@ def registered_formal_scope() -> dict[str, Any]:
         else:
             continue
         for name in wanted.intersection(names):
+            if isinstance(node, ast.Assign) and len(node.targets) != 1:
+                raise ValueError("Unsupported chained formal registry declaration")
             if name in values:
                 raise ValueError(f"Formal registry declares {name} more than once")
-            values[name] = ast.literal_eval(value_node)
+            values[name] = literal(value_node)
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            accepted_writes.update(id(target) for target in targets if root_name(target) == name)
+    # Static source inventory only: reject additional mutation syntax, including
+    # nested writes, rather than silently returning a partial initial count.
+    for node in ast.walk(tree):
+        if (isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
+                and isinstance(node.ctx, (ast.Store, ast.Del))
+                and root_name(node) in wanted and id(node) not in accepted_writes):
+            raise ValueError("Unsupported formal registry mutation")
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and root_name(node.func.value) in wanted and id(node) not in accepted_calls
+                and node.func.attr not in {"keys", "values", "items", "get"}):
+            raise ValueError("Unsupported formal registry mutation")
+        if (isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None
+                and root_name(node.value) in wanted):
+            raise ValueError("Unsupported formal registry alias")
+        if isinstance(node, ast.Call) and id(node) not in accepted_calls:
+            argument_references_registry = any(
+                isinstance(part, ast.Name) and part.id in wanted
+                for argument in [*node.args, *(item.value for item in node.keywords)]
+                for part in ast.walk(argument)
+            )
+            if argument_references_registry and not (isinstance(node.func, ast.Name) and node.func.id == "len"):
+                raise ValueError("Unsupported call receiving formal registry data")
     if set(values) != wanted:
         raise ValueError("Formal registry is missing declared theorem/foundation scope")
     core = values["LEGACY_CORE_THEOREMS"]

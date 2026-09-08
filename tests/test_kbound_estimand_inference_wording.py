@@ -314,19 +314,51 @@ def test_cct_inference_keeps_family_level_validity_and_holm_premises() -> None:
     assert "that assumption is unverified here" in cct
 
 
-@pytest.mark.parametrize(
-    "fragment",
-    [
-        "measured evaluation-cell benefit",
-        "empirical companion, not an implementation of this frontier",
-        "Using labeled development and residual-calibration cells",
-        "the scored cell contributes label-free evidence only",
-        "do not establish interval coverage",
-        "population-risk protection on unseen natural shifts",
-    ],
+ABSTRACT_CAVEAT_SENTENCES = (
+    r"Knowability-Guided Adaptation (\KGA) addresses a separate empirical target: the measured score "
+    "difference between a candidate and its frozen baseline on an evaluation cell.",
+    "Labeled development and disjoint residual-calibration cells fit its benefit predictor and error interval; "
+    "the action uses no scored-cell outcome.",
+    "The theory distinguishes structural ambiguity from prediction uncertainty; "
+    "the experiments do not establish coverage or population protection on unseen shifts.",
 )
-def test_shared_abstract_keeps_estimand_and_inference_caveats(fragment: str) -> None:
-    assert fragment in _normalized_tex(ABSTRACT)
+
+
+def test_shared_abstract_keeps_estimand_and_inference_caveats() -> None:
+    # Whole live sentences prevent retained fragments under an injected negation
+    # from satisfying the guard. These are cell-level, not population guarantees.
+    sentences = re.split(r"(?<=[.!?])\s+", _normalized_tex(ABSTRACT))
+    for sentence in ABSTRACT_CAVEAT_SENTENCES:
+        assert sentence in sentences
+
+
+@pytest.mark.parametrize("fragment", [
+    "separate empirical target",
+    "measured score difference between a candidate and its frozen baseline on an evaluation cell",
+    "Labeled development and disjoint residual-calibration cells",
+    "the action uses no scored-cell outcome",
+    "do not establish coverage",
+    "population protection on unseen shifts",
+])
+@pytest.mark.parametrize("mutation", ["remove", "negate"])
+def test_abstract_guard_rejects_removed_or_negated_caveats(tmp_path, monkeypatch, fragment, mutation):
+    source = _normalized_tex(ABSTRACT)
+    assert fragment in source
+    replacement = "" if mutation == "remove" else "it is false that " + fragment
+    altered = tmp_path / "abstract.tex"
+    altered.write_text(source.replace(fragment, replacement), encoding="utf-8")
+    monkeypatch.setattr(__import__(__name__, fromlist=["ABSTRACT"]), "ABSTRACT", altered)
+    with pytest.raises(AssertionError):
+        test_shared_abstract_keeps_estimand_and_inference_caveats()
+
+
+@pytest.mark.parametrize("sentence", ABSTRACT_CAVEAT_SENTENCES)
+def test_abstract_guard_rejects_negated_whole_sentence(tmp_path, monkeypatch, sentence):
+    altered = tmp_path / "abstract.tex"
+    altered.write_text(_normalized_tex(ABSTRACT).replace(sentence, "It is false that " + sentence), encoding="utf-8")
+    monkeypatch.setattr(__import__(__name__, fromlist=["ABSTRACT"]), "ABSTRACT", altered)
+    with pytest.raises(AssertionError):
+        test_shared_abstract_keeps_estimand_and_inference_caveats()
 
 
 def test_cct20_manuscript_uses_display_without_reinterpreting_locked_pass() -> None:
