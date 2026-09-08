@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import random
 from functools import lru_cache
 from pathlib import Path
@@ -26,6 +27,30 @@ def module():
 
 def digest(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def test_authenticated_torch_load_uses_same_real_descriptor(tmp_path, monkeypatch):
+    m = module()
+    path = tmp_path / 'state.pt'
+    torch.save({'weight': torch.ones(2)}, path)
+    original = torch.load
+    def guarded(handle, **kwargs):
+        assert handle.tell() == 0
+        assert os.fstat(handle.fileno()).st_ino == path.stat().st_ino
+        assert kwargs['weights_only'] is True
+        return original(handle, **kwargs)
+    monkeypatch.setattr(torch, 'load', guarded)
+    assert torch.equal(m.authenticated_torch_load(path, digest(path))['weight'], torch.ones(2))
+    with pytest.raises(m.SourceError, match='SHA256'):
+        m.authenticated_torch_load(path, '0' * 64)
+
+
+def test_real_historical_v1_initializer_cpu():
+    path = os.getenv('KBOUND_TEST_V1_INITIALIZATION')
+    if not path:
+        pytest.skip('optional authenticated historical initializer asset not supplied')
+    model = module().load_initialization(path, module().INITIALIZATION_SHA256)
+    assert model.fc.in_features == 2048 and model.fc.out_features == 1139
 
 
 def toy():

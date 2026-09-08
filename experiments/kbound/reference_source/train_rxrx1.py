@@ -235,13 +235,38 @@ class SourceDataset(Dataset):
         return x, self.labels[row["row_id"]]
 
 
+def authenticated_torch_load(path, expected_sha256):
+    """Authenticate and safely load the same real descriptor (supports legacy tar)."""
+    path = safe_path(path)
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as f:
+            before = os.fstat(f.fileno())
+            if not stat.S_ISREG(before.st_mode) or before.st_size == 0:
+                raise SourceError("checkpoint must be a nonempty regular file")
+            def fingerprint(value):
+                return (value.st_dev, value.st_ino, value.st_size,
+                        value.st_mtime_ns, value.st_ctime_ns)
+            digest = hashlib.sha256()
+            for block in iter(lambda: f.read(1024 * 1024), b""):
+                digest.update(block)
+            if digest.hexdigest() != expected_sha256:
+                raise SourceError("checkpoint SHA256 mismatch")
+            if fingerprint(before) != fingerprint(os.fstat(f.fileno())):
+                raise SourceError("checkpoint changed during authentication")
+            f.seek(0)
+            state = torch.load(f, map_location="cpu", weights_only=True)
+            if fingerprint(before) != fingerprint(os.fstat(f.fileno())):
+                raise SourceError("checkpoint changed during safe loading")
+            return state
+    except OSError as exc:
+        raise SourceError(f"checkpoint unavailable: {path}: {exc}") from exc
+
+
 def load_initialization(path, expected_sha256):
     if expected_sha256 != INITIALIZATION_SHA256:
         raise SourceError("initialization must have authenticated historical 19c8e357 lineage")
-    data = read_bytes(path)
-    if sha(data) != expected_sha256:
-        raise SourceError("initialization SHA256 mismatch")
-    state = torch.load(io.BytesIO(data), map_location="cpu", weights_only=True)
+    state = authenticated_torch_load(path, expected_sha256)
     # Public initializer first constructs a 1000-class pretrained model and only
     # then draws a fresh task head. Preserve both RNG consumption and ordering.
     model = torchvision.models.resnet50(weights=None)
