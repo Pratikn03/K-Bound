@@ -13,6 +13,7 @@ TARGETS = {
     'tests/test_reference_source_preflight.py',
     'tests/test_reference_rxrx1_training.py',
     'tests/test_reference_officehome_training.py',
+    'tests/test_reference_pacs_training.py',
     'tests/test_reference_cifar_population.py',
     'tests/test_reference_imagenet_archives.py',
     'tests/test_ci_reference_source_selectors.py',
@@ -51,6 +52,7 @@ def test_reference_source_code_is_included_but_raw_outputs_stay_ignored():
         'experiments/kbound/reference_source/cifar_population.py',
         'experiments/kbound/reference_source/train_officehome.py',
         'experiments/kbound/reference_source/imagenet_archives.py',
+        'experiments/kbound/reference_source/train_pacs.py',
         'experiments/kbound/reference_source/model.pth',
         'experiments/kbound/reference_source/run.log',
         'experiments/kbound/reference_source/._models.py',
@@ -58,4 +60,4 @@ def test_reference_source_code_is_included_but_raw_outputs_stay_ignored():
     result = subprocess.run(['git', 'check-ignore', '--no-index', '--stdin'],
                             input='\n'.join(paths) + '\n', text=True, capture_output=True, cwd=root)
     assert result.returncode == 0, result.stderr
-    assert set(result.stdout.splitlines()) == set(paths[3:])
+    assert set(result.stdout.splitlines()) == set(paths[4:])
