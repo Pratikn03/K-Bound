@@ -412,6 +412,68 @@ class TestGatewayHTTPServer(unittest.TestCase):
         data = json.loads(handler.wfile.getvalue().decode("utf-8"))
         self.assertEqual(data["circuit_state"], "closed")
 
+    def test_sensitivity_frontier_and_break_even_beta(self) -> None:
+        from kga.certificate import Certificate
+        from kga.sensitivity import (
+            SensitivityFrontier,
+            compute_break_even_beta,
+            compute_sensitivity_frontier,
+            compute_sensitivity_interval,
+        )
+
+        # Case 1: ADAPT certificate (lower > 0)
+        cert_adapt = Certificate(delta_hat=0.10, epsilon=0.04, method="ebern", alpha=0.05, n=100)
+        self.assertAlmostEqual(cert_adapt.lower, 0.06)
+        self.assertAlmostEqual(cert_adapt.upper, 0.14)
+
+        frontier_obj = SensitivityFrontier(cert_adapt)
+        self.assertAlmostEqual(frontier_obj.break_even_beta, 0.03)
+        self.assertAlmostEqual(compute_break_even_beta(cert_adapt.lower, cert_adapt.upper), 0.03)
+
+        # Sensitivity interval at beta=0.01: [0.06 - 0.02, 0.14 + 0.02] = [0.04, 0.16] -> ADAPT
+        low, high = frontier_obj.interval(0.01)
+        self.assertAlmostEqual(low, 0.04)
+        self.assertAlmostEqual(high, 0.16)
+
+        # Sensitivity frontier
+        frontier = frontier_obj.frontier(max_beta=0.05, steps=6)
+        self.assertEqual(len(frontier), 6)
+        # At beta=0.0, action is ADAPT
+        self.assertEqual(frontier[0]["action"], "ADAPT")
+        # At beta=0.04 > break_even_beta (0.03), action becomes ABSTAIN
+        self.assertEqual(frontier[-1]["action"], "ABSTAIN")
+
+        # Case 2: FREEZE certificate (upper < 0)
+        cert_freeze = Certificate(delta_hat=-0.10, epsilon=0.04, method="ebern", alpha=0.05, n=100)
+        freeze_frontier = SensitivityFrontier(cert_freeze)
+        self.assertAlmostEqual(freeze_frontier.break_even_beta, 0.03)
+
+        # Case 3: ABSTAIN certificate (lower <= 0 <= upper)
+        cert_abstain = Certificate(delta_hat=0.02, epsilon=0.05, method="ebern", alpha=0.05, n=100)
+        abstain_frontier = SensitivityFrontier(cert_abstain)
+        self.assertEqual(abstain_frontier.break_even_beta, 0.0)
+        self.assertFalse(abstain_frontier.summary()["is_robust_to_1pct_bias"])
+
+    def test_multi_architecture_and_partial_adaptation_probes(self) -> None:
+        from experiments.kbound.benchmarks.multi_architecture_eval import run_multi_architecture_probe
+        from experiments.kbound.cct20.partial_adaptation_gate import run_cct20_partial_adaptation_probe
+
+        arch_report = run_multi_architecture_probe(seed=42, n_samples=200)
+        self.assertIn("resnet18", arch_report["architectures"])
+        self.assertIn("vit_b16", arch_report["architectures"])
+        self.assertIn("convnext_tiny", arch_report["architectures"])
+        self.assertEqual(arch_report["summary"]["safeguard_success_rate"], 1.0)
+
+        cct_report = run_cct20_partial_adaptation_probe(seed=42, n_per_loc=100)
+        self.assertIn("full_tta", cct_report["regimes"])
+        self.assertIn("entropy_gated_partial", cct_report["regimes"])
+        # Full TTA should exhibit zero adaptations due to high drift risk (conservative retention)
+        self.assertEqual(cct_report["regimes"]["full_tta"]["adapt_count"], 0)
+        self.assertEqual(cct_report["regimes"]["full_tta"]["false_adapt_count"], 0)
+        # All regimes strictly maintain 0 false-adaptations (Theorem 3 guarantee)
+        for r_name, r_data in cct_report["regimes"].items():
+            self.assertEqual(r_data["false_adapt_count"], 0)
+            self.assertEqual(r_data["adapt_count"] + r_data["freeze_count"] + r_data["abstain_count"], 5)
 
 
 if __name__ == "__main__":

@@ -21,6 +21,26 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def test_combined_supplement_reference_expansion_preserves_numbered_target() -> None:
+    source = (r"\providecommand{\KBSuppRef}[3]{#2~\ref{#1}}"
+              r"See \KBSuppRef{app:proof}{Appendix}{the supplementary proof}.")
+    assert MODULE.expand_supplement_references(source) == r"See Appendix~\ref{app:proof}."
+
+
+def test_supplement_reference_expansion_rejects_unparsed_invocation() -> None:
+    with pytest.raises(RuntimeError, match="supplement reference"):
+        MODULE.expand_supplement_references(r"\KBSuppRef{app:proof}{Appendix}")
+
+
+def test_combined_main_references_retain_numbered_targets() -> None:
+    source = (r"\providecommand{\KBMainRef}[3]{#2~\ref{#1}}"
+              r"\providecommand{\KBMainEqRef}[2]{Eq.~\eqref{#1}}"
+              r"\KBMainRef{thm:frontier}{Theorem}{the main theorem}; "
+              r"\KBMainEqRef{eq:coverage}{the coverage condition}")
+    assert MODULE.expand_supplement_references(source) == (
+        r"Theorem~\ref{thm:frontier}; Eq.~\eqref{eq:coverage}")
+
+
 def test_generated_sources_follow_live_dependency_graph(tmp_path: Path) -> None:
     source = tmp_path / "paper.tex"
     generated = tmp_path / "paper/generated"
@@ -49,6 +69,15 @@ def test_generated_sources_follow_live_dependency_graph(tmp_path: Path) -> None:
         "BaseMetric": "0.10",
         "CCTMetric": "0.20",
     }
+
+
+def test_alignment_simplifier_keeps_nested_cases_rows_together() -> None:
+    tex = r"\begin{align*} x &= \begin{cases} +1, & X=a, \\ -1, & X=b. \end{cases} \\ y &= 0 \end{align*}"
+
+    simplified = MODULE.simplify_alignment_math(tex)
+
+    assert r"\begin{cases} +1,  X=a, \\ -1,  X=b. \end{cases}" in simplified
+    assert simplified.count(r"\[") == 2
 
 
 def test_generated_macros_parse_nested_values_and_reject_conflicts(tmp_path: Path) -> None:
@@ -497,7 +526,7 @@ def test_release_section_numbers_match_the_maintained_article_hierarchy() -> Non
     labels = MODULE.section_labels(body.read_text(encoding="utf-8") + "\n" + supplement.read_text(encoding="utf-8"))
 
     assert labels["sec:compact-bridge"] == "6.1"
-    assert labels["sec:so2sat-development-stop"] == "8.4"
+    assert labels["sec:so2sat-development-stop"] == "8.5"
     assert labels["app:population-transfer"] == "A"
     assert labels["app:compact-confirmation"] == "K"
 

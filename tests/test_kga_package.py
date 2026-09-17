@@ -14,6 +14,12 @@ They exercise the public API and the K-Bound guarantees:
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import subprocess
+import sys
+import zipfile
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -26,6 +32,7 @@ from kga.certificate import (
     hoeffding,
 )
 from kga.evidence import compute_evidence
+from kga.evidence_v2 import softrun
 from kga.policy import decide
 
 
@@ -45,6 +52,49 @@ def test_public_exports_are_usable():
     assert cert.upper == pytest.approx(0.15)
     assert KGA(alpha=0.1).alpha == 0.1
     assert Evidence is not None
+
+
+def test_distribution_build_uses_spdx_metadata_and_authoritative_license(tmp_path):
+    """The offline wheel build emits current metadata and ships the root license."""
+
+    repository = Path(__file__).resolve().parents[1]
+    source = tmp_path / "source"
+    source.mkdir()
+    for name in ("pyproject.toml", "MANIFEST.in", "README.md", "LICENSE", "CITATION.cff"):
+        shutil.copy2(repository / name, source / name)
+    shutil.copytree(
+        repository / "kga",
+        source / "kga",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    dist = tmp_path / "dist"
+    environment = {**os.environ, "PYTHONWARNINGS": "error"}
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "build",
+            "--no-isolation",
+            "--outdir",
+            str(dist),
+            str(source),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+
+    wheels = list(dist.glob("*.whl"))
+    assert len(wheels) == 1
+    with zipfile.ZipFile(wheels[0]) as archive:
+        metadata_member = next(name for name in archive.namelist() if name.endswith(".dist-info/METADATA"))
+        license_member = next(name for name in archive.namelist() if name.endswith(".dist-info/licenses/LICENSE"))
+        metadata = archive.read(metadata_member).decode("utf-8")
+        assert "License-Expression: MIT\n" in metadata
+        assert archive.read(license_member) == (repository / "LICENSE").read_bytes()
 
 
 # ---------------------------------------------------------------------------
@@ -105,6 +155,20 @@ class TestEvidenceIdentical:
     def test_nonfinite_raises(self):
         with pytest.raises(ValueError):
             compute_evidence(np.array([1.0, np.nan, 2.0]), np.array([1.0, 2.0, 3.0]))
+
+
+def test_softrun_preserves_float32_softmax_branch_at_uncertainty_threshold():
+    delta = np.float32(0.1518222838640213)
+    logits = np.tile(np.array([delta, 0.0, 0.0], dtype=np.float32), (257, 1))
+    exponentials = np.exp(logits - logits.max(axis=1, keepdims=True))
+    expected = exponentials / exponentials.sum(axis=1, keepdims=True)
+    uncertainty = -np.log(np.clip(expected.max(axis=1), 1e-12, 1.0)).mean()
+    assert uncertainty == np.float32(1.0)
+
+    observed = softrun(logits)
+
+    assert observed.dtype == np.dtype(np.float32)
+    np.testing.assert_array_equal(observed, expected)
 
 
 # ---------------------------------------------------------------------------

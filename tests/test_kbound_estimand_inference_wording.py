@@ -343,6 +343,16 @@ def test_population_frontier_stays_inside_feasible_margin_range() -> None:
     assert '"$PY" scripts/make_submission_figures.py --frontier-only' in build
 
 
+def test_frontier_pdf_is_refreshed_from_generated_png() -> None:
+    build = (KBOUND / "scripts/build_pdfs.sh").read_text(encoding="utf-8")
+    # TeX includes the PDF figure, while the generator writes the PNG.  The
+    # build must bridge those two artifacts instead of silently embedding a
+    # stale PDF from an earlier revision.
+    assert "fig_frontier_schematic.png" in build
+    assert "fig_frontier_schematic.pdf" in build
+    assert "magick" in build or "convert" in build
+
+
 def _load_verdict_checker() -> dict:
     """Load pure prose checks without importing or walking release authorities."""
     path = ROOT / "src/scripts/validate_manuscript_claims.py"
@@ -404,3 +414,11 @@ def test_scoped_prose_change_does_not_disable_exposure_or_comparator_guards(over
         context, namespace["_normalize_claim_text"](context), release,
     )
     assert problems, "Overclaims about the unchanged all-freeze result must still fail"
+
+
+def test_population_simulation_reports_finite_empirical_inclusion_not_universal_coverage() -> None:
+    """Finite synthetic trials must not be worded as a universal guarantee."""
+    source = _normalized_tex(SUPPLEMENT)
+    assert "achieves $100\\%$ population coverage" not in source
+    assert "100\\%$ population coverage, zero false commitments" not in source
+    assert "observed $100\\%$ population coverage rate on finite simulation trials" in source

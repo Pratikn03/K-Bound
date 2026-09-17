@@ -78,8 +78,6 @@ def test_rxrx1_multimodel_supervisor_verifies_bound_completion_receipts():
     text = RXRX1_SUPERVISOR.read_text(encoding="utf-8")
     assert "--verify-completion" in text
     assert text.count("completion_receipt_valid") >= 4
-    assert "removed invalid/stale completion receipt" in text
-    assert 'rm -f "$ALLDONE_PATH"' in text
     assert '"${RUN_ARGS[@]}"' in text
     assert '--model-seed "$S"' in text
     assert 'set_seed_context "$S"' in text

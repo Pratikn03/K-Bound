@@ -5,22 +5,18 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app:/app/src
+    PYTHONPATH=/app
 
-COPY requirements-api.txt /app/requirements-api.txt
+COPY requirements-api-py311-linux.lock.txt /app/requirements-api-py311-linux.lock.txt
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential \
-    && pip install --no-cache-dir -r requirements-api.txt \
-    && apt-get purge -y --auto-remove build-essential \
-    && rm -rf /var/lib/apt/lists/* \
+RUN pip install --no-cache-dir --require-hashes --only-binary=:all: \
+        -r /app/requirements-api-py311-linux.lock.txt \
     && useradd --create-home --shell /usr/sbin/nologin kga
 
-COPY deploy /app/deploy
+COPY deploy/api /app/deploy/api
 COPY kga /app/kga
-COPY src /app/src
 
-RUN mkdir -p /app/models /app/experiments \
+RUN mkdir -p /app/models \
     && chown -R kga:kga /app
 
 USER kga

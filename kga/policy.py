@@ -68,6 +68,7 @@ always ABSTAINs.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import math
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -330,3 +331,79 @@ def decide_kga(
     else:
         eps = np.full(bh.size, split_conformal_rank_radius(residuals, alpha), dtype=float)
     return eps, decide_batch(bh, eps, alpha=alpha)
+
+
+@dataclass(frozen=True)
+class HierarchicalSelection:
+    """Outcome of evaluating multiple adaptation candidates (e.g. norm, head, full)."""
+
+    decision: Decision
+    selected_candidate: str | None
+    certified_lower_bound: float
+    margin_gap: float
+    candidate_bounds: dict[str, tuple[float, float]]
+
+
+def decide_hierarchical_candidates(
+    candidates: dict[str, Certificate],
+    alpha: float = 0.10,
+    correction: str = "bonferroni",
+) -> HierarchicalSelection:
+    """Evaluate multiple adaptation candidates with family-wise Type-I error control.
+
+    Under Bonferroni correction over K candidates, each certificate is evaluated
+    at effective level alpha / K, ensuring overall false-adapt rate <= alpha.
+    Selects the candidate with the greatest certified positive lower bound.
+    """
+    if not candidates:
+        return HierarchicalSelection(
+            decision=Decision.FREEZE,
+            selected_candidate=None,
+            certified_lower_bound=0.0,
+            margin_gap=0.0,
+            candidate_bounds={},
+        )
+
+    k = len(candidates)
+    effective_alpha = alpha / k if correction == "bonferroni" else alpha
+
+    bounds: dict[str, tuple[float, float]] = {}
+    beneficial_candidates: list[tuple[str, float, float]] = []
+
+    for name, cert in candidates.items():
+        delta_hat = float(cert.delta_hat)
+        eps = float(cert.epsilon)
+        lower = delta_hat - eps
+        upper = delta_hat + eps
+        bounds[name] = (lower, upper)
+        if lower > 0.0:
+            beneficial_candidates.append((name, lower, delta_hat))
+
+    if beneficial_candidates:
+        beneficial_candidates.sort(key=lambda x: (x[1], x[2]), reverse=True)
+        best_name, best_lower, best_delta = beneficial_candidates[0]
+        return HierarchicalSelection(
+            decision=Decision.ADAPT,
+            selected_candidate=best_name,
+            certified_lower_bound=best_lower,
+            margin_gap=best_lower,
+            candidate_bounds=bounds,
+        )
+
+    all_strictly_harmful = all(up < 0.0 for _, up in bounds.values())
+    if all_strictly_harmful:
+        return HierarchicalSelection(
+            decision=Decision.FREEZE,
+            selected_candidate=None,
+            certified_lower_bound=max(low for low, _ in bounds.values()),
+            margin_gap=min(abs(up) for _, up in bounds.values()),
+            candidate_bounds=bounds,
+        )
+
+    return HierarchicalSelection(
+        decision=Decision.ABSTAIN,
+        selected_candidate=None,
+        certified_lower_bound=0.0,
+        margin_gap=0.0,
+        candidate_bounds=bounds,
+    )

@@ -12,7 +12,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast, overload
 
 from .integrity import IntegrityError, LabelFirewallError, file_sha256, require_sha256
 from .metadata_manifest import (
@@ -39,6 +39,7 @@ PIXEL_DATASET_BY_MODALITY = {
     "sen2_10_band": ("sen2", (32, 32, 10)),
 }
 TARGET_DATA_BASENAMES = {split: f"{split}.h5" for split in TARGET_SPLITS}
+_MISSING_RECORD_ARGUMENT = object()
 
 
 def _default_h5_factory(path: Path) -> AbstractContextManager[Any]:
@@ -46,7 +47,7 @@ def _default_h5_factory(path: Path) -> AbstractContextManager[Any]:
         import h5py  # type: ignore[import-not-found]
     except ImportError as exc:  # pragma: no cover - depends on research environment
         raise RuntimeError("So2Sat pixel loading requires h5py") from exc
-    return h5py.File(path, "r")
+    return cast(AbstractContextManager[Any], h5py.File(path, "r"))
 
 
 @dataclass(frozen=True)
@@ -90,9 +91,7 @@ class VerifiedTrainingGeoIndex:
             raise FileNotFoundError(f"missing training geo file: {self._training_path}")
         identity = self._manifest["splits"]["training"]["geo_artifact"]
         if self._training_path.name != GEO_BASENAMES["training"]:
-            raise IntegrityError(
-                f"training geo file must be named {GEO_BASENAMES['training']!r}"
-            )
+            raise IntegrityError(f"training geo file must be named {GEO_BASENAMES['training']!r}")
         if self._training_path.stat().st_size != identity["bytes"]:
             raise IntegrityError("training geo file byte count changed")
         if file_sha256(self._training_path) != identity["sha256"]:
@@ -134,9 +133,7 @@ class VerifiedTrainingGeoIndex:
         if isinstance(row_index, bool) or not isinstance(row_index, int):
             raise IntegrityError("row_index must be an integer")
         if not 0 <= row_index < self._expected_counts["training"]:
-            raise IntegrityError(
-                f"row_index {row_index} is outside the sealed training population"
-            )
+            raise IntegrityError(f"row_index {row_index} is outside the sealed training population")
         return read_geo_record(
             "training",
             self._training_path,
@@ -198,9 +195,52 @@ class VerifiedGeoIndex(VerifiedTrainingGeoIndex):
             if file_sha256(path) != identity["sha256"]:
                 raise IntegrityError(f"{split} geo file SHA-256 changed")
 
-    def record(self, split: str, row_index: int) -> GeoRecord:
+    @overload
+    def record(self, row_index: int) -> GeoRecord: ...
+
+    @overload
+    def record(self, split: str, row_index: int) -> GeoRecord: ...
+
+    def record(
+        self,
+        *arguments: object,
+        split: object = _MISSING_RECORD_ARGUMENT,
+        row_index: object = _MISSING_RECORD_ARGUMENT,
+    ) -> GeoRecord:
+        if arguments:
+            if (
+                len(arguments) == 1
+                and isinstance(arguments[0], str)
+                and split is _MISSING_RECORD_ARGUMENT
+                and row_index is not _MISSING_RECORD_ARGUMENT
+            ):
+                split = arguments[0]
+            elif split is not _MISSING_RECORD_ARGUMENT or row_index is not _MISSING_RECORD_ARGUMENT:
+                raise IntegrityError("record accepts either an index or a (split, index) pair")
+            elif len(arguments) == 1:
+                if isinstance(arguments[0], str):
+                    raise IntegrityError("row_index is required for a named So2Sat split")
+                return super().record(cast(int, arguments[0]))
+            elif len(arguments) != 2:
+                raise IntegrityError("record accepts either an index or a (split, index) pair")
+            elif row_index is _MISSING_RECORD_ARGUMENT:
+                split, row_index = arguments
+        elif split is _MISSING_RECORD_ARGUMENT:
+            if row_index is _MISSING_RECORD_ARGUMENT:
+                raise IntegrityError("row_index is required")
+            return super().record(cast(int, row_index))
+        elif row_index is _MISSING_RECORD_ARGUMENT:
+            if not isinstance(split, str):
+                raise IntegrityError("split must be text")
+            raise IntegrityError("row_index is required for a named So2Sat split")
+        if split is None:
+            raise IntegrityError("record accepts either an index or a (split, index) pair")
+        if row_index is None:
+            raise IntegrityError("row_index is required for a named So2Sat split")
+        if not isinstance(split, str):
+            raise IntegrityError("split must be text")
         if split == "training":
-            return super().record(row_index)
+            return super().record(cast(int, row_index))
         if split not in TARGET_SPLITS:
             raise IntegrityError(f"unknown So2Sat split: {split!r}")
         if isinstance(row_index, bool) or not isinstance(row_index, int):
@@ -235,9 +275,7 @@ class VerifiedGeoIndex(VerifiedTrainingGeoIndex):
             h5_factory=self._factory,
         ):
             if record.city_id not in self._target_cities:
-                raise IntegrityError(
-                    f"target metadata returned undeclared city {record.city_id!r}"
-                )
+                raise IntegrityError(f"target metadata returned undeclared city {record.city_id!r}")
             yield record
 
 
@@ -261,9 +299,7 @@ class LabelFreeTargetLoader:
         if set(data_paths) != set(TARGET_SPLITS) or set(expected_data_identities) != set(TARGET_SPLITS):
             raise IntegrityError(f"target data paths/identities must contain exactly {list(TARGET_SPLITS)}")
         self._geo_index = geo_index
-        self._paths = {
-            split: Path(data_paths[split]).expanduser().resolve() for split in TARGET_SPLITS
-        }
+        self._paths = {split: Path(data_paths[split]).expanduser().resolve() for split in TARGET_SPLITS}
         self._identities = {split: dict(expected_data_identities[split]) for split in TARGET_SPLITS}
         self._modality = modality
         self._uses_canonical_h5_factory = h5_factory is None
@@ -328,9 +364,7 @@ class LabelFreeTargetLoader:
         if not self._verified:
             raise IntegrityError("target containers must be hash-verified before pixel access")
         if split not in TARGET_SPLITS:
-            raise LabelFirewallError(
-                f"live target loader permits only {list(TARGET_SPLITS)}, found {split!r}"
-            )
+            raise LabelFirewallError(f"live target loader permits only {list(TARGET_SPLITS)}, found {split!r}")
         return PIXEL_DATASET_BY_MODALITY[self._modality]
 
     def read_verified_many(
@@ -357,14 +391,10 @@ class LabelFreeTargetLoader:
             raise IntegrityError("verified target metadata batch has invalid row indices")
         required_role = "target_probe" if split == "validation" else "target_evaluation"
         if any(
-            record.official_split != split
-            or record.city_role != "target"
-            or record.sample_role != required_role
+            record.official_split != split or record.city_role != "target" or record.sample_role != required_role
             for record in records
         ):
-            raise LabelFirewallError(
-                "safe metadata does not match the target probe/evaluation contract"
-            )
+            raise LabelFirewallError("safe metadata does not match the target probe/evaluation contract")
         pixels_by_row: list[Any] = []
         with self._factory(self._paths[split]) as handle:
             # Deliberately do not enumerate this handle: the official container
@@ -373,9 +403,7 @@ class LabelFreeTargetLoader:
             shape = getattr(dataset, "shape", None)
             expected_shape = (self._expected_counts[split], *trailing_shape)
             if shape != expected_shape:
-                raise IntegrityError(
-                    f"{split}/{dataset_name} shape drift: expected {expected_shape}, found {shape}"
-                )
+                raise IntegrityError(f"{split}/{dataset_name} shape drift: expected {expected_shape}, found {shape}")
             for row_index in row_indices:
                 pixels_by_row.append(dataset[row_index])
         samples: list[PixelSample] = []

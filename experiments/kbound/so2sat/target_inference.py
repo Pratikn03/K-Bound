@@ -128,9 +128,7 @@ class TorchTargetCellExecutor:
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
             raise IntegrityError("target executor batch size must be a positive integer")
         if batch_size != ADAPTER_BATCH_SIZE:
-            raise IntegrityError(
-                f"target executor batch size is sealed at {ADAPTER_BATCH_SIZE}"
-            )
+            raise IntegrityError(f"target executor batch size is sealed at {ADAPTER_BATCH_SIZE}")
         self.candidate_id = candidate_id
         self.candidate_spec = candidate_spec(candidate_id)
         self.normalizer: BandNormalizer = load_sealed_band_normalizer(normalizer_path)
@@ -140,17 +138,13 @@ class TorchTargetCellExecutor:
         self.code_identity = target_inference_code_identity()
         self.code_identity_sha256 = self.code_identity["code_identity_sha256"]
         self.environment_identity = target_runtime_environment_identity(device)
-        self.environment_identity_sha256 = self.environment_identity[
-            "environment_identity_sha256"
-        ]
+        self.environment_identity_sha256 = self.environment_identity["environment_identity_sha256"]
         self._checkpoint_payloads: dict[str, Mapping[str, Any]] = {}
 
     def _load_source_model(self, checkpoint: Mapping[str, Any]) -> torch.nn.Module:
         checkpoint_id = checkpoint.get("checkpoint_id")
         path_value = checkpoint.get("checkpoint_path")
-        if checkpoint_id not in {"0", "1", "2", "3", "4"} or not isinstance(
-            path_value, str
-        ):
+        if checkpoint_id not in {"0", "1", "2", "3", "4"} or not isinstance(path_value, str):
             raise IntegrityError("target executor checkpoint identity is invalid")
         path = Path(path_value).expanduser().resolve()
         if not path.is_file() or path.name != checkpoint.get("checkpoint_basename"):
@@ -173,8 +167,7 @@ class TorchTargetCellExecutor:
         if (
             payload.get("schema") != "kbound_so2sat_source_checkpoint_v1"
             or payload.get("model_seed") != int(checkpoint_id)
-            or payload.get("checkpoint_tensor_sha256")
-            != checkpoint.get("checkpoint_tensor_sha256")
+            or payload.get("checkpoint_tensor_sha256") != checkpoint.get("checkpoint_tensor_sha256")
             or tensor_state_sha256(state) != checkpoint.get("checkpoint_tensor_sha256")
             or payload.get("normalizer_sha256") != self.normalizer_sha256
             or payload.get("target_data_inputs") != []
@@ -192,15 +185,11 @@ class TorchTargetCellExecutor:
         for start in range(0, len(samples), self.batch_size):
             batch_samples = samples[start : start + self.batch_size]
             try:
-                values = np.stack(
-                    [np.asarray(sample.pixels, dtype=np.float32) for sample in batch_samples]
-                )
+                values = np.stack([np.asarray(sample.pixels, dtype=np.float32) for sample in batch_samples])
             except (TypeError, ValueError, MemoryError) as exc:
                 raise IntegrityError("target executor could not stack firewall pixels") from exc
             if values.shape != (len(batch_samples), 32, 32, 10):
-                raise IntegrityError(
-                    f"target executor expected N x 32 x 32 x 10 pixels, found {values.shape}"
-                )
+                raise IntegrityError(f"target executor expected N x 32 x 32 x 10 pixels, found {values.shape}")
             if not np.isfinite(values).all():
                 raise IntegrityError("target executor pixels contain NaN or Infinity")
             tensor = torch.from_numpy(values).permute(0, 3, 1, 2).contiguous()
@@ -217,10 +206,7 @@ class TorchTargetCellExecutor:
         if dict(selected_spec) != self.candidate_spec:
             raise IntegrityError("target executor candidate specification differs from the selection")
         probe_city = {sample.metadata.city_id for sample in probe_samples}
-        if (
-            len(probe_city) != 1
-            or any(sample.metadata.sample_role != "target_probe" for sample in probe_samples)
-        ):
+        if len(probe_city) != 1 or any(sample.metadata.sample_role != "target_probe" for sample in probe_samples):
             raise IntegrityError("target executor probe samples violate the city/role boundary")
 
         frozen_model = self._load_source_model(checkpoint)
@@ -243,10 +229,7 @@ class TorchTargetCellExecutor:
             device=self.device,
         )
         expected_probe = len(probe_samples)
-        if (
-            frozen_probe.shape != (expected_probe, 17)
-            or adapted_probe.shape != (expected_probe, 17)
-        ):
+        if frozen_probe.shape != (expected_probe, 17) or adapted_probe.shape != (expected_probe, 17):
             raise IntegrityError("target executor probe-logit coverage is incomplete")
         state = _PreparedTargetCell(
             checkpoint_id=str(checkpoint["checkpoint_id"]),
@@ -258,9 +241,7 @@ class TorchTargetCellExecutor:
             frozen_probe_logits=frozen_probe.numpy(),
             adapted_probe_logits=adapted_probe.numpy(),
             normalized_adapter_update_norm=diagnostics.normalized_adapter_update_norm,
-            batchnorm_source_statistic_divergence=(
-                diagnostics.batchnorm_source_statistic_divergence
-            ),
+            batchnorm_source_statistic_divergence=(diagnostics.batchnorm_source_statistic_divergence),
             opaque_evaluation_state=state,
         )
 
@@ -277,10 +258,7 @@ class TorchTargetCellExecutor:
             type(state) is not _PreparedTargetCell
             or state.consumed
             or evaluation_city != {state.city_id}
-            or any(
-                sample.metadata.sample_role != "target_evaluation"
-                for sample in evaluation_samples
-            )
+            or any(sample.metadata.sample_role != "target_evaluation" for sample in evaluation_samples)
         ):
             raise IntegrityError("target executor evaluation state/city/role is invalid")
         state.consumed = True
@@ -295,9 +273,9 @@ class TorchTargetCellExecutor:
             device=self.device,
         )
         expected_evaluation = len(evaluation_samples)
-        if (
-            frozen_evaluation.shape != (expected_evaluation, 17)
-            or adapted_evaluation.shape != (expected_evaluation, 17)
+        if frozen_evaluation.shape != (expected_evaluation, 17) or adapted_evaluation.shape != (
+            expected_evaluation,
+            17,
         ):
             raise IntegrityError("target executor evaluation-logit coverage is incomplete")
         result = EvaluationComputation(
@@ -327,7 +305,5 @@ class TorchTargetCellExecutor:
             frozen_evaluation_logits=evaluation.frozen_evaluation_logits,
             adapted_evaluation_logits=evaluation.adapted_evaluation_logits,
             normalized_adapter_update_norm=probe.normalized_adapter_update_norm,
-            batchnorm_source_statistic_divergence=(
-                probe.batchnorm_source_statistic_divergence
-            ),
+            batchnorm_source_statistic_divergence=(probe.batchnorm_source_statistic_divergence),
         )

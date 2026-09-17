@@ -3,6 +3,9 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -620,19 +623,34 @@ def test_script_has_no_target_annotation_or_scorer_entrypoint() -> None:
     assert "--target-annotations" not in source
 
 
-def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
+def test_publication_runbook_builds_and_seals_both_manuscript_forms(tmp_path: Path, monkeypatch) -> None:
     from docs.research.kbound.scripts.verify_release_checksums import REQUIRED_RELEASE_PATHS
 
     runbook = (
         release.REPOSITORY_ROOT
         / "docs/research/kbound/runbooks/release_candidate.sh"
     ).read_text(encoding="utf-8")
-    renderer = (
-        release.REPOSITORY_ROOT
-        / "docs/research/kbound/scripts/render_pdf_pages.py"
-    ).read_text(encoding="utf-8")
 
-    assert 'BUILD_LONG_TMLR=1 PYTHON="$PY"' in runbook
+    # Exercise the actual shell function at its builder/renderer boundary.
+    # Equivalent assignment ordering must not cause a false failure.
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "build_pdfs.sh").write_text(
+        '#!/bin/bash\nset -eu\nprintf "%s\\n" "$BUILD_LONG_TMLR" "$BUILD_DOCX" "$PYTHON" > "$KB/build-environment.txt"\n'
+    )
+    (scripts / "render_pdf_pages.py").write_text(
+        'import os\nfrom pathlib import Path\n(Path(os.environ["KB"]) / "rendered.txt").write_text("rendered")\n'
+    )
+    function_body = runbook.split("step_pdf() {", 1)[1].split("\n}\n", 1)[0]
+    execution = subprocess.run(
+        ["/bin/bash", "-c", 'set -eu\nverify_release_toolchain_for_phase() { :; }\n'
+         'log() { :; }\nwarn() { echo "$*" >&2; }\nstep_pdf() {' + function_body + '\n}\nstep_pdf\n'],
+        env={**os.environ, "KB": str(tmp_path), "PY": sys.executable},
+        capture_output=True, text=True, timeout=20,
+    )
+    assert execution.returncode == 0, execution.stderr
+    assert (tmp_path / "build-environment.txt").read_text().splitlines() == ["1", "1", sys.executable]
+    assert (tmp_path / "rendered.txt").read_text() == "rendered"
     assert "tests/test_cct20_release_builder.py" in runbook
     assert "tests/test_cct20_manuscript_claim_validation.py" in runbook
     assert "tests/test_build_docx_pipeline.py" in runbook
@@ -648,4 +666,19 @@ def test_publication_runbook_builds_and_seals_both_manuscript_forms() -> None:
     ):
         prefix = "docs/research/kbound/" if name.endswith(".docx") else "docs/research/kbound/paper/generated/"
         assert prefix + name in REQUIRED_RELEASE_PATHS
-    assert '("kbound_short_final_draft.pdf", "kbound_tmlr.pdf")' in renderer
+    from docs.research.kbound.scripts import render_pdf_pages as renderer
+    # Keep main's artifact selection real; replace only the expensive external
+    # PDF rasterization boundary. A missing companion must fail this check.
+    rendered = tmp_path / 'page-output'
+    for name in ('kbound_short_final_draft.pdf', 'kbound_tmlr.pdf'):
+        (tmp_path / name).write_bytes(b'synthetic PDF boundary fixture')
+    def record_render(pdf, destination):
+        destination.mkdir(parents=True)
+        (destination / 'observed.txt').write_text(pdf.name)
+    monkeypatch.setattr(renderer, 'ROOT', tmp_path)
+    monkeypatch.setattr(renderer, 'render', record_render)
+    monkeypatch.setattr(renderer, 'require_binary', lambda name: '/usr/bin/true')
+    monkeypatch.setattr(sys, 'argv', ['renderer', '--output-root', str(rendered)])
+    renderer.main()
+    assert sorted(p.read_text() for p in rendered.glob('*/observed.txt')) == [
+        'kbound_short_final_draft.pdf', 'kbound_tmlr.pdf']

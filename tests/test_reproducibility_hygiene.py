@@ -50,47 +50,6 @@ TESTS = REPO / "tests"
 KGA = REPO / "kga"
 CIFAR10C_SUITE = REPO / "src" / "scripts" / "kbound" / "cifar10c_suite.py"
 
-
-def _iter_authored_files(root: Path, suffixes: tuple[str, ...]):
-    """Yield authored files without descending into dependency/cache trees."""
-    skipped_directories = {
-        ".git",
-        ".venv",
-        ".venv_wilds",
-        "venv",
-        "__pypackages__",
-        "__pycache__",
-        "node_modules",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".ipynb_checkpoints",
-        "archive",
-        "build",
-        "external",
-    }
-    for directory, names, files in os.walk(root):
-        base = Path(directory)
-        retained = []
-        for name in names:
-            child = base / name
-            try:
-                relative = child.relative_to(REPO).as_posix()
-            except ValueError:
-                relative = ""
-            if (
-                name in skipped_directories
-                or name.startswith(".lake__icloud")
-                or relative == "audits/integrity_2026-06-20"
-            ):
-                continue
-            retained.append(name)
-        names[:] = sorted(retained)
-        for name in sorted(files):
-            path = base / name
-            if path.suffix in suffixes:
-                yield path
-
 #: Machine-local roots that must never appear in tracked source.
 BANNED_PATH_FRAGMENTS = ("AutoML_Flagship_V8", "/Volumes/T9", "/Users/pratik", "/sessions/")
 
@@ -131,12 +90,6 @@ MACHINE_LOCAL_ALLOWLIST: dict[str, str] = {
         "superseded theory probe; same dead session-sandbox mount",
     "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py":
         "superseded theory probe; same dead session-sandbox mount",
-    # -----------------------------------------------------------------------
-    # FILES THAT DOCUMENT OR ASSERT THE ABSENCE OF MACHINE PATHS
-    # -----------------------------------------------------------------------
-    "tests/test_reconciled_panels.py":
-        "asserts that /Volumes/T9 does NOT appear in the canonical panel JSON; "
-        "the path fragment is its own subject, not a dependency",
 }
 
 
@@ -173,7 +126,8 @@ class TestStableSeedIsProcessStable:
             [sys.executable, "-c", source],
             env=env,
             text=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             check=False,
         )
         assert proc.returncode == 0, proc.stderr
@@ -235,40 +189,28 @@ class TestNoMachineLocalPaths:
         Comment lines are **not** exempt: a runbook comment telling a reader to
         ``cd /Volumes/T9/...`` is exactly as unusable as executable code, and
         exempting comments is how 94 files stayed invisible to the old guard.
-
-        Excluded directory subtrees (not authored promotion-path code):
-        - ``.venv`` / ``.venv_wilds`` / ``venv``: third-party packages contain
-          API URL templates and internal strings that are false positives.
-        - ``archive/``: frozen historical snapshots; rewriting them would
-          falsify the audit record. Paths there are never executed.
-        - ``audits/integrity_2026-06-20/``: one-time repair scripts run on the
-          author's machine. Same rationale as the archive entries above.
         """
-        _SKIP_PARTS = {
-            ".venv", ".venv_wilds", "venv", "__pypackages__",
-            "archive",
-        }
-        _SKIP_PREFIXES = (
-            "audits/integrity_2026-06-20",
-        )
-
         bad: dict[str, list[str]] = {}
-        for path in _iter_authored_files(root, (".py", ".sh")):
-            if not _readable(path):
+        # Installed environments are not repository executables. Prune before
+        # descending, rather than reading thousands of dependency files first.
+        for directory, directories, filenames in os.walk(root):
+            directory = Path(directory)
+            if (directory / "pyvenv.cfg").is_file():
+                directories[:] = []
                 continue
-            # Skip historical archive subtrees.
-            if _SKIP_PARTS.intersection(path.parts):
-                continue
-            rel = str(path.relative_to(REPO))
-            if any(rel.startswith(p) for p in _SKIP_PREFIXES):
-                continue
-            hits = [
-                f"{i}: {line.strip()}"
-                for i, line in enumerate(path.read_text(errors="ignore").splitlines(), 1)
-                if any(frag in line for frag in BANNED_PATH_FRAGMENTS)
-            ]
-            if hits:
-                bad[rel] = hits
+            directories[:] = sorted(name for name in directories if name != "__pycache__")
+            for name in sorted(filenames):
+                path = directory / name
+                if path.suffix not in {".py", ".sh"} or not _readable(path):
+                    continue
+                rel = str(path.relative_to(REPO))
+                hits = [
+                    f"{i}: {line.strip()}"
+                    for i, line in enumerate(path.read_text(errors="ignore").splitlines(), 1)
+                    if any(frag in line for frag in BANNED_PATH_FRAGMENTS)
+                ]
+                if hits:
+                    bad[rel] = hits
         return bad
 
     def test_no_machine_local_paths_anywhere_in_the_tree(self):
@@ -298,14 +240,31 @@ class TestNoMachineLocalPaths:
         offenders = self._offending_files(TESTS)
         assert set(offenders) <= set(MACHINE_LOCAL_ALLOWLIST), offenders
 
+    def test_scan_prunes_installed_environments_but_keeps_source(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(sys.modules[__name__], "REPO", tmp_path)
+        environment = tmp_path / ".venv_example"
+        environment.mkdir()
+        (environment / "pyvenv.cfg").write_text("home = python\n")
+        (environment / "dependency.py").write_text(BANNED_PATH_FRAGMENTS[0])
+        source = tmp_path / "src"
+        source.mkdir()
+        (source / "runner.py").write_text(BANNED_PATH_FRAGMENTS[0])
+        # A directory name alone must not exempt project-owned code.
+        unmarked = tmp_path / ".venv_not_an_environment"
+        unmarked.mkdir()
+        (unmarked / "runner.sh").write_text(BANNED_PATH_FRAGMENTS[0])
+        assert set(self._offending_files(tmp_path)) == {
+            "src/runner.py", ".venv_not_an_environment/runner.sh"
+        }
+
 
 class TestNoRawEnvironMutation:
     """Env vars must be set through ``monkeypatch``, which restores on failure."""
 
     def test_no_direct_environ_assignment_in_tests(self):
         offenders = []
-        for path in _iter_authored_files(TESTS, (".py",)):
-            if not path.name.startswith("test_") or not _readable(path):
+        for path in sorted(TESTS.rglob("test_*.py")):
+            if "__pycache__" in path.parts or not _readable(path):
                 continue
             tree = ast.parse(path.read_text())
             for node in ast.walk(tree):

@@ -13,10 +13,9 @@ from typing import Any
 
 import torch
 from torch import nn
-from torchvision.models import resnet18
+from torchvision.models.resnet import BasicBlock, ResNet
 
 from .integrity import IntegrityError, canonical_json_bytes
-
 
 INPUT_CHANNELS = 10
 INPUT_HEIGHT = 32
@@ -91,7 +90,15 @@ def build_so2sat_resnet18() -> nn.Module:
     The caller must seed PyTorch before invoking this function.
     """
 
-    model = resnet18(weights=None)
+    # This is torchvision's exact resnet18 construction: resnet18() delegates
+    # to _resnet(BasicBlock, [2, 2, 2, 2], weights=None, progress=True).
+    # Constructing the concrete class avoids losing its type through the
+    # decorator-wrapped factory while keeping the same default architecture and
+    # initialization.
+    candidate: object = ResNet(BasicBlock, [2, 2, 2, 2])
+    if not isinstance(candidate, nn.Module):
+        raise IntegrityError("torchvision ResNet-18 constructor did not return a torch Module")
+    model = candidate
     model.conv1 = nn.Conv2d(
         INPUT_CHANNELS,
         64,
@@ -101,7 +108,10 @@ def build_so2sat_resnet18() -> nn.Module:
         bias=False,
     )
     model.maxpool = nn.Identity()
-    model.fc = nn.Linear(model.fc.in_features, NUM_CLASSES)
+    classifier = getattr(model, "fc", None)
+    if not isinstance(classifier, nn.Linear):
+        raise IntegrityError("torchvision ResNet-18 must expose a Linear classifier")
+    model.fc = nn.Linear(classifier.in_features, NUM_CLASSES)
     assert_model_contract(model)
     return model
 
@@ -109,10 +119,7 @@ def build_so2sat_resnet18() -> nn.Module:
 def clone_cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
     """Detach and clone a model state so later optimization cannot mutate it."""
 
-    return {
-        name: tensor.detach().cpu().contiguous().clone()
-        for name, tensor in model.state_dict().items()
-    }
+    return {name: tensor.detach().cpu().contiguous().clone() for name, tensor in model.state_dict().items()}
 
 
 def tensor_state_sha256(state: Mapping[str, torch.Tensor]) -> str:

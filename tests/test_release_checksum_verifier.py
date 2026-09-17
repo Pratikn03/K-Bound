@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import shlex
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,17 +69,20 @@ def test_release_checksum_verifier_rejects_mismatch_and_missing_entry(
         )
 
 
-def test_release_runbook_verifies_temp_file_before_atomic_publish() -> None:
-    runbook = (
-        Path(__file__).resolve().parents[1]
-        / "docs/research/kbound/runbooks/release_candidate.sh"
-    ).read_text(encoding="utf-8")
-    assert "verify_release_checksums.py" in runbook
-    assert 'mv -f "$checksum_tmp" "$output"' in runbook
-    assert 'tee -a "$checksum_tmp"' in runbook
-    assert '"$KB/scripts/verify_release_checksums.py" --list-required' in runbook
-    verify_temp = '"$KB/scripts/verify_release_checksums.py" "$checksum_tmp" --root "$REPO"'
-    assert runbook.index(verify_temp) < runbook.index('mv -f "$checksum_tmp" "$output"')
+def test_release_writer_self_verification_failure_preserves_receipt(tmp_path, monkeypatch) -> None:
+    artifact = tmp_path / "artifact.bin"
+    artifact.write_bytes(b"new artifact")
+    receipt = tmp_path / "SUMS"
+    receipt.write_bytes(b"old receipt")
+    def reject_candidate(path, **kwargs):
+        assert path != receipt
+        assert path.read_bytes() != b"old receipt"
+        raise ValueError("synthetic self-verification failure")
+    monkeypatch.setattr(verifier, "verify_checksum_file", reject_candidate)
+    with pytest.raises(ValueError, match="self-verification"):
+        verifier.write_checksum_file(receipt, root=tmp_path, required_paths=("artifact.bin",))
+    assert receipt.read_bytes() == b"old receipt"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["SUMS", "artifact.bin"]
 
 
 def _executed_pytest_targets(source: str) -> set[str]:
@@ -96,7 +102,7 @@ def _executed_pytest_targets(source: str) -> set[str]:
     return targets
 
 
-def test_release_test_mode_executes_current_safety_and_manuscript_regressions() -> None:
+def test_release_test_mode_executes_current_safety_and_manuscript_regressions(tmp_path) -> None:
     runbook = (
         Path(__file__).resolve().parents[1]
         / "docs/research/kbound/runbooks/release_candidate.sh"
@@ -110,7 +116,23 @@ def test_release_test_mode_executes_current_safety_and_manuscript_regressions() 
         "tests/test_kbound_current_policy_bindings.py",
         "tests/test_kga_masked_inputs.py",
     }
-    assert not (required - _executed_pytest_targets(test_body))
+    from docs.research.kbound.scripts import run_repository_verification as runner
+    assert required <= set(runner.classify_test_paths(required)["pytest_paths"])
+    events = tmp_path / "events.jsonl"
+    python = tmp_path / "python"
+    python.write_text(
+        f"#!{sys.executable}\nimport json,sys\n"
+        f"with open({str(events)!r}, 'a') as out: out.write(json.dumps(sys.argv[1:])+'\\n')\n"
+        "raise SystemExit(23 if any('run_repository_verification.py' in a for a in sys.argv) else 0)\n"
+    )
+    python.chmod(0o755)
+    shell = 'set -eu\nlog() { :; }\nverify_release_toolchain_for_phase() { :; }\nstep_test() {' + test_body + '\n}\nstep_test\n'
+    env = dict(os.environ, PY=str(python), REPO=str(tmp_path), KB="docs/research/kbound", RELEASE_SOURCE_COMMIT="a" * 40)
+    completed = subprocess.run(["bash", "-c", shell], env=env, capture_output=True, text=True, timeout=30)
+    assert completed.returncode == 23, completed.stderr
+    calls = [json.loads(line) for line in events.read_text().splitlines()]
+    assert calls[-1] == ["docs/research/kbound/scripts/run_repository_verification.py", "--repo", str(tmp_path),
+                         "--python", str(python), "--all-gates", "--expected-source-commit", "a" * 40]
 
 
 @pytest.mark.parametrize(
@@ -207,7 +229,10 @@ def test_release_inventory_is_unique_complete_and_excludes_self_hash() -> None:
     assert len(paths) == len(set(paths))
     checksum_self = "docs/research/kbound/KBOUND_RELEASE_SHA256SUMS.txt"
     assert checksum_self not in paths
-    assert seal.GENERATED_OUTPUT_ALLOWLIST - {checksum_self} <= set(paths)
+    # Source-dirty allowances also contain operational ledgers and later-stage
+    # outputs. They are not the required pre-package checksum inventory.
+    assert set(paths).isdisjoint(verifier.POST_CHECKSUM_RELEASE_PATHS)
+    assert verifier.POST_CHECKSUM_REQUIRED_PATHS == ("docs/research/kbound/release/kbound_anonymous_supplement.zip",)
     assert {
         "docs/research/kbound/kbound_short_final_draft.pdf",
         "docs/research/kbound/kbound_tmlr.pdf",

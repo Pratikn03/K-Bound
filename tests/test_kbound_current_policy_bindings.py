@@ -33,6 +33,7 @@ sync = _load_sync_module()
 
 
 EXPECTED_BINDINGS = {
+    "crossfit": "kga/crossfit.py",
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
@@ -52,7 +53,7 @@ def bindings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
     return producer.current_policy_code_bindings()
 
 
-def test_producer_and_consumers_require_the_same_exact_four_bindings(bindings: dict) -> None:
+def test_producer_and_consumers_require_the_complete_live_bindings(bindings: dict) -> None:
     for module in (producer, *CONSUMERS):
         assert module.CURRENT_POLICY_BINDING_PATHS == EXPECTED_BINDINGS
     assert set(bindings) == set(EXPECTED_BINDINGS)
@@ -140,15 +141,16 @@ def test_malformed_binding_row_fails_with_validation_error(bindings: dict, modul
 
 
 @pytest.mark.parametrize("module", CONSUMERS, ids=["manifest", "sync"])
-def test_changing_only_numeric_validation_invalidates_old_provenance(bindings: dict, module) -> None:
-    helper = producer.ROOT / EXPECTED_BINDINGS["numeric_validation"]
+@pytest.mark.parametrize("dependency", ["numeric_validation", "crossfit"])
+def test_changing_live_numeric_dependency_invalidates_old_provenance(bindings: dict, module, dependency) -> None:
+    helper = producer.ROOT / EXPECTED_BINDINGS[dependency]
     helper.write_text("synthetic changed mask handling\n", encoding="utf-8")
     refreshed = producer.current_policy_code_bindings()
     assert refreshed["policy"] == bindings["policy"]
     assert refreshed["certificate"] == bindings["certificate"]
     assert refreshed["preregistered_protocol"] == bindings["preregistered_protocol"]
-    assert refreshed["numeric_validation"]["sha256"] != bindings["numeric_validation"]["sha256"]
-    with pytest.raises(ValueError, match="numeric_validation binding"):
+    assert refreshed[dependency]["sha256"] != bindings[dependency]["sha256"]
+    with pytest.raises(ValueError, match=f"{dependency} binding"):
         module._validated_current_policy_bindings(bindings)
     assert module._validated_current_policy_bindings(refreshed) is refreshed
 

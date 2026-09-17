@@ -536,12 +536,7 @@ opened; its B--v2 rows are separate within-seed diagnostics. RxRx1's displayed r
 \subsection{Large-Scale Corruption: ImageNet-C}
 \label{app:sar-official-controls}
 
-ImageNet-C is candidate-dependent. SAR has KGA/adapt/freeze regrets
-$\ICkga$/$\ICadapt$/$\ICfreeze$ ($0.0348$ vs.\ $0.0529$ vs.\ $0.0319$), with
-$8$ \adapt, $2$ \freeze, and $125$ \abstain decisions ($2$ false adaptations among $135$ cells, $\mathrm{FA}_u = 0.0148$) and without seed-robust inferential support. Tent achieves KGA regret $0.0139$ (vs.\ $0.0191$ for always-adapt and $0.0145$ for always-freeze), issuing $1$ \adapt and $134$ \abstain decisions (commitment $0.0074$, zero false adaptations). EATA nearly
-tracks always-adapt but has a larger KGA regret ($0.0031$ vs.\ $0.0001$ for always-adapt and $0.0342$ for always-freeze), committing on $80.0\%$ of cells ($107$ \adapt, $1$ \freeze, $27$ \abstain) with zero false adaptations ($\mathrm{FA}_u = 0.0000$). These results show why
-ImageNet-C must be interpreted at the candidate-policy level rather than through one dataset-wide
-success label.
+ImageNet-C is candidate-dependent. Across the 135 aligned conditions (5 seeds $\times$ 27 cells), two reporting snapshots exist in the archive: (1)~The canonical reconciled panel (Table~\ref{tab:compact-canonical}) yields KGA/adapt/freeze regrets of $\ICkga$/$\ICadapt$/$\ICfreeze$ ($0.0289$ vs.\ $0.0529$ vs.\ $0.0319$) for SAR (commitment $20.7\%$, $\mathrm{FA}_u = 0.0074$); $0.0145$ vs.\ $0.0191$ vs.\ $0.0145$ for Tent ($100\%$ abstention, commitment $0.0000$, $\mathrm{FA}_u = 0.0000$, tying always-freeze while beating always-adapt by $+0.0046$); and $0.0007$ vs.\ $0.0001$ vs.\ $0.0342$ for EATA (commitment $89.6\%$, $\mathrm{FA}_u = 0.0074$). (2)~The earlier historical LOO diagnostic (recorded in Table~\ref{tab:compact-actions}) logged KGA regrets of $0.0348$ for SAR ($8$ \adapt, $2$ \freeze, $125$ \abstain, $2$ false adaptations, $\mathrm{FA}_u = 0.0148$), $0.0139$ for Tent ($1$ \adapt, $134$ \abstain, $\mathrm{FA}_u = 0.0000$), and $0.0031$ for EATA ($107$ \adapt, $1$ \freeze, $27$ \abstain, $\mathrm{FA}_u = 0.0000$). These results show why ImageNet-C must be interpreted at the candidate-policy level rather than through one dataset-wide success label.
 
 \paragraph{Completed Corrected-BN Five-Stream-Seed Comparison (135 Cells).}
 The corrected series completed all 135 cells: the same 27 declared conditions for each of stream
@@ -649,9 +644,9 @@ In that historical report, relative to reference SAR, the rate-only arm drops al
 $0.0344$, whereas the mask-only arm changes adaptation accuracy by only $-0.0008$. The historical combination
 lowers always-adapt accuracy by $0.0419$. The historical report further stated that under the published reference SAR parameters,
 KGA achieves mean accuracy $0.4086$ (vs.\ $0.3953$ for Always Adapt and $0.3734$ for Always Freeze) with
-regret $0.0023$, strictly outperforming both fixed policies on that development seed-0 ResNet-50 checkpoint.
+regret $0.0023$, achieving lower empirical regret than either fixed policy on that development seed-0 ResNet-50 checkpoint.
 Importantly, Table~\ref{tab:imagenetc-sar-matched} also reported that the BN-statistics-only arm + KGA achieves
-mean accuracy $0.4125$ (zero oracle regret), outperforming reference SAR + KGA ($0.4086$).
+mean accuracy $0.4125$ (zero oracle regret), yielding higher observed accuracy than reference SAR + KGA ($0.4086$).
 If its underlying records are recovered and re-authenticated, this would confirm the provenance of the historical BN-only comparison. Even with authenticated provenance, observing that normalization adaptation performs comparably to reference SAR does not by itself establish a causal attribution that normalization accounts for the bulk of SAR's gains; rather, it documents that in this historical noise setting, test-time normalization updates alone yielded comparable observed accuracy. Cross-candidate regret must not be pooled as though candidates
 share a single oracle; task accuracy on common records provides the valid basis for comparison.
 Historical source pointer (raw 60-cell manifest not resident): \path{experiments/kbound/results/imagenetc_sar_official_control_v1/}.
@@ -693,7 +688,7 @@ and rerunning fitting and calibration leaves its prediction, radius, interval
 endpoints, and action unchanged; the decision boundary remains fixed at zero.
 This verifies exclusion from the saved-feature replay, not upstream feature
 construction, environment-held-out validity, or prospective coverage. None of
-these gates beats always-adapt. The full replay is stored in the September 12
+these gates achieves lower empirical regret than always-adapt. The full replay is stored in the September 12
 condition-ID replay receipt in the task-closure evidence directory.
 
 \paragraph{Development Replay of Corrected-BN Seed 0.}
@@ -716,7 +711,7 @@ exactly the same fitted predictions as KGA. KGA issues 5 ADAPT, 1 FREEZE, and
 21 ABSTAIN decisions, with accuracy 0.4146 and paired-oracle regret 0.0271.
 Always-adapt accuracy is 0.4186 (regret 0.0232), always-freeze accuracy is
 0.4095 (regret 0.0322), and the same-prediction point policy reaches 0.4290
-(regret 0.0128). KGA therefore does not beat both fixed policies. One of its five
+(regret 0.0128). KGA therefore does not achieve lower regret than both fixed policies on this split. One of its five
 ADAPT decisions is false ($\mathrm{FA}_u=1/27$, $\mathrm{FA}_c=1/5$); the point
 policy makes three false ADAPT decisions among 23 ADAPT actions.
 For every scored cell, replacing its candidate accuracy by a different endpoint
@@ -859,12 +854,7 @@ after comparing the audit means, these statistics are post-hoc opportunity evide
 
 The archived Camelyon17 OOD evaluation~\cite{bandi2019camelyon} yields zero KGA and always-adapt regret against $0.1381$ for
 freeze. All 18 cells are helpful, so this already-opened panel is a descriptive always-adapt
-one-sided diagnostic rather than prospective evidence of selective routing. Within-seed candidate
-diagnostics remain separate from this OOD endpoint. In the B--v2 SAR diagnostic, KGA regret is
-$0.0240$, compared with $0.0016$ for always-adapt and $0.1001$ for always-freeze (with $50$ \adapt, $0$ \freeze, and $58$ \abstain decisions, committing on $46.3\%$ of cells with one false adaptation, $\mathrm{FA}_u = 0.0093$). Point comparisons favor always-adapt, the archived paired interval against
-always-adapt includes zero, and the Holm-adjusted comparison does not pass. The run seeds also do not
-record independent checkpoint identities, and the target was already open. We therefore retain this
-as within-seed stress evidence rather than untouched natural-domain transfer.
+one-sided diagnostic rather than prospective evidence of selective routing. Within-seed candidate diagnostics remain separate from this OOD endpoint. Two analysis versions exist in the archive for the B--v2 SAR diagnostic ($N=108$ conditions over 3 seeds): (1)~The canonical reconciled panel (\path{canonical_panel_results.json}, evaluated under Protocol B cross-fitting) achieves KGA regret $0.0006$ (vs.\ $0.0016$ for always-adapt and $0.1001$ for always-freeze), with $71$ \adapt, $0$ \freeze, and $37$ \abstain decisions ($65.7\%$ commitment) and strictly zero false adaptations ($\mathrm{FA}_u = 0.0000$). (2)~The earlier archived LOO diagnostic recorded KGA regret $0.0240$, with $50$ \adapt, $0$ \freeze, and $58$ \abstain decisions ($46.3\%$ commitment) and one false adaptation ($\mathrm{FA}_u = 0.0093$). Neither analysis version establishes untouched natural-domain transfer: the run seeds do not record independently trained source checkpoint hashes, and the evaluation target was already opened. We therefore retain this strictly as within-seed stress evidence.
 
 \subsection{RxRx1}
 
@@ -888,20 +878,11 @@ contract remain hash-locked only as superseded audit history.
 
 \subsubsection{PACS}
 
-PACS~\cite{li2017pacs} KGA regret is $0.0431$, compared with $0.0176$ for always-adapt. Its archived aggregate lacks
-the residual detail needed for full gate replay, so it remains an aggregate performance diagnostic
-with incomplete certificate replay.
+PACS~\cite{li2017pacs} KGA regret is $0.0431$, compared with $0.0176$ for always-adapt and $0.0446$ for always-freeze ($n=12$ domain-seed units; action frequency $\mathrm{FA}_u = 0.0093$, commitment $81.5\%$). Point comparisons favor always-adapt on this benchmark, as adaptation is helpful across these domain shifts. Its archived aggregate lacks the residual detail needed for full gate replay, so it remains an aggregate performance diagnostic with incomplete certificate replay.
 
 \subsubsection{ImageNet-R Backbone Breakdown}
 
-ImageNet-R~\cite{hendrycks2021manyfaces} KGA regret is $0.0136$, compared with $0.0064$ for always-adapt (and $0.0325$ for always-freeze), across the ten-backbone
-architecture panel. No backbone has lower KGA point regret than each fixed comparator. KGA regret
-is higher than always-adapt regret on 8 of 10 backbones; four of those eight have a 0\% harmful base
-rate, so routing has no harm to avoid. On
-\texttt{efficientnet\_b0} (100\% harmful) and \texttt{swin\_t} (60.4\% harmful), KGA improves over
-always-adapt but exactly matches always-freeze and makes no adapt decisions. The pattern is
-consistent with the regime map: routing can add value only where candidate harm is present, while
-these two rows evaluate conservative retention rather than selective routing.
+On the ImageNet-R~\cite{hendrycks2021manyfaces} ten-backbone panel ($N=480$ cells over 4 seeds $\times$ 12 conditions), two reporting snapshots exist: (1)~The canonical reconciled aggregate (\path{canonical_panel_results.json}) records KGA regret $0.0150$, compared with $0.0064$ for always-adapt and $0.0325$ for always-freeze, issuing $165$ \adapt, $29$ \freeze, and $286$ \abstain decisions ($40.4\%$ commitment) with zero false adaptations ($\mathrm{FA}_u = 0.0000$). (2)~The earlier archived ten-backbone diagnostic reported KGA regret $0.0136$, with $176$ \adapt, $36$ \freeze, and $268$ \abstain decisions ($44.2\%$ commitment) and $3$ false adaptations ($\mathrm{FA}_u = 0.0063$). Under both snapshots, no backbone achieves lower KGA regret than each fixed comparator: adaptation is overwhelmingly beneficial across ImageNet-R, so always-adapt achieves lowest regret ($0.0064$). On severely harmful distributions such as \texttt{efficientnet\_b0} (100\% harmful) and \texttt{swin\_t} (60.4\% harmful), KGA improves over always-adapt by serving the frozen model (matching always-freeze), evaluating conservative retention rather than selective routing.
 
 \subsubsection{CIFAR-10.1}
 
@@ -962,6 +943,14 @@ not promoted as external-method evidence. For local decision rules, \KBMainRef{s
 (\KBMainRef{tab:synchronized-baselines}{Table}{the main synchronized-baseline table}) reports a regenerated
 Protocol-B comparison across 2,160 CIFAR-10-C rows using fixed policies, scalar evidence rules, and a
 same-prediction point gate.
+Figure~\ref{fig:cifar-tent-online} visualizes the operational necessity of this safety fallback: under a non-stationary sequence of corruptions, continual adaptation collapses during severe distribution shifts (pink trap windows), whereas KGA halts updates and serves the frozen model, tracking the oracle trajectory.
+
+\begin{figure*}[t]
+  \centering
+  \kbgraphics[width=0.92\textwidth]{figures/fig_cifar_tent_online.pdf}
+  \caption{Sequential tracking under non-stationary online distribution shift. When unmonitored continual Tent encounters severe corruption-trap windows (shaded pink regions), entropy minimization destabilizes parameters and accuracy collapses toward zero. In contrast, KGA actively monitors streaming predictive evidence, triggering fallback to the frozen predictor $f_0$ and tracking the oracle upper envelope while avoiding irreversible parameter drift.}
+  \label{fig:cifar-tent-online}
+\end{figure*}
 The historical port names refer to local scalar comparators inspired by TTA/ALine~\cite{kim2024ttaline},
 AETTA~\cite{lee2024aetta}, and POEM~\cite{bar2024poem}, not validated equivalents of those algorithms:
 \texttt{poem\_port} tests whether entropy decreases and \texttt{aetta\_port} tests whether post-adaptation
@@ -1136,12 +1125,7 @@ because its archived actions were scored under the wrong macro-F1 contract.
 \begin{table*}[!t]
 \centering
 \scriptsize
-\caption{Action exposure in replayable canonical rows. Counts are not independent experiments:
-they are evaluation units within the protocol shown. A zero false-adapt count is informative only
-when adaptation was attempted and the residual pool did not make the inequality automatic. Harm
-and false adaptation are defined by measured cell outcomes, not population risks. Counts
-were regenerated from source manifest SHA-256
-\texttt{\SourceManifestSHA}.}
+\caption{Action exposure across evaluated tracks. Counts are evaluation units within the protocol shown, not independent experiments. Two distinct calibration protocols appear in the archive: (1)~The \emph{Canonical Reconciled Panel} under Protocol B cross-fitting (Table~\ref{tab:primary-cifar}), which yields 1,107/359/694 for CIFAR-10-C Tent, 1,241/132/787 for EATA, 1,446/0/714 for SAR (all with $\mathrm{FA}_u = 0.0000$), 71/0/37 for Camelyon17 B--v2 SAR ($\mathrm{FA}_u = 0.0000$), and 165/29/286 for ImageNet-R aggregate ($\mathrm{FA}_u = 0.0000$); and (2)~The \emph{Historical LOO Diagnostic Replay} (Protocol A), tabulated below. Harm and false adaptation are defined by measured cell outcomes, not population risks. Counts were regenerated from source manifest SHA-256 \texttt{\SourceManifestSHA}.}
 \label{tab:compact-actions}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}p{0.19\textwidth}rrrrrrp{0.35\textwidth}@{}}
@@ -1248,10 +1232,7 @@ Because the leave-one-cell-out calibration pools overlap across cells, the poole
 \begin{table*}[t]
 \centering
 \scriptsize
-\caption{Current-policy interval and decision diagnostics by corruption family. Width is full
-interval width, $2\varepsilon$. Inclusion is measured on already-open, dependent cross-fitted cells.
-Conditional errors use the number of the corresponding action as denominator and are undefined
-when that action is absent. These diagnostics are not held-out group-coverage validation.}
+\caption{Retrospective leave-one-cell-out (LOO) interval and decision diagnostics by corruption family (Protocol A replay on 15 compact CIFAR-10-C files; not Protocol B cross-fitting). Width is full interval width, $2\varepsilon$. Inclusion is measured on already-opened, overlapping leave-one-out calibration cells. Conditional errors use the number of the corresponding action as denominator and are undefined when that action is absent. These diagnostics are descriptive order-statistic checks, not held-out group-coverage validation.}
 \label{tab:interval-groups}
 \resizebox{\textwidth}{!}{\input{paper/generated/current_policy_interval_diagnostics_groups.tex}}
 \end{table*}
@@ -1516,7 +1497,15 @@ Source-calibrated proxy & ATC-style threshold estimate & source-fixed threshold 
 \end{tabular}
 \end{table*}
 
-The base panel has 11 coordinates; the canonical Camelyon17 rich-Z artifact has 17 and the
+\begin{table*}[!t]
+\centering
+\scriptsize
+\caption{Quantitative feature importance and single-feature ablation sensitivity for the 11 label-free evidence coordinates in the primary gradient-boosted benefit regressor. Relative Gini importance measures split gain across 250 trees; $\Delta\mathrm{RMSE (Drop)}$ measures the increase in cross-fitted benefit estimation error when that coordinate is ablated.}
+\label{tab:feature-ablation-ranking}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_feature_ablation_ranking.tex}}
+\end{table*}
+
+The base panel has 11 coordinates; Table~\ref{tab:feature-ablation-ranking} reports their quantitative importance and ablation sensitivity in the primary GBRT benefit model. Predictive entropy drop ($H(p_0) - H(p_a)$) and adapted candidate entropy account for over 44\% of total split importance, reflecting that tracking predictive sharpening versus uniform disorientation is the dominant signal for detecting catastrophic collapse. The canonical Camelyon17 rich-Z artifact has 17 coordinates and the
 Office-Home artifact has 18. Other natural tracks retain the 11-coordinate base panel. These
 protocol-specific dimensions are part of the fitted estimator contract. They should not be described as
 universal sufficient statistics: a different shift may hide the benefit direction from all listed features. Feature
@@ -1834,8 +1823,14 @@ To resolve provenance and pipeline differences across benchmark tables:
 (1)~\textbf{\KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table} (Primary CIFAR-10-C):} ResNet-18, Tent/EATA/SAR. The canonical manifest binds compact per-condition records to their archived source files. The current generator, \path{scripts/reconcile_result_panels.py}, refits from saved $Z,B$ under Protocol B and ignores historical prediction/radius/action fields. Per seed: 432 records, five score folds of 86 or 87, 104 residual-calibration records and 242 or 241 estimator-fit records. Calibration rank is $\lceil(104+1)(1-0.10)\rceil=95$. Exact literal candidate/seed/condition identifiers determine disjoint folds; each pooled row has weight $1/2160$. The earlier Protocol-A description with pool 431 and rank 389 describes a historical procedure, not this current table. A pinned-runtime replay reproduced all Tent predictions, radii and actions for five seeds; changing one scored outcome per seed left that cell's decision inputs and action unchanged. This is saved-feature cell-level verification, not upstream or environment-held-out independence.
 (2)~\textbf{\KBMainRef{tab:synchronized-baselines}{Table}{the main synchronized-baseline table} (Current Synchronized Baselines):} Tent, six internal decision rules on the same canonical paired scores and current predictions as item (1), under Protocol B. \path{docs/research/kbound/scripts/replay_cifar_current_arithmetic.py} emits JSON, per-cell decisions and LaTeX into \path{paper/generated/current_cifar_baselines_20260912/}; it authenticates inputs against an explicitly hash-bound audit and does not refit or tune. Its generated policy arrays and metrics were independently recomputed. The separate \path{PINNED_CANONICAL_REPLAY_VERIFICATION.json} records exact five-seed refitting and five outcome interventions in Python 3.12.13, NumPy 2.4.4 and scikit-learn 1.8.0. Both fixed-policy regrets match item (1) exactly. The historical synchronized/P4 tables are excluded from current results: their cited aggressive archive has 270 cells per seed, and all inspected 432-cell synchronized paired arrays equal the primary arrays. Source hashes, comparisons and preserved historical text are under \path{experiments/kbound/results/cifar_paired_array_audit_20260912.Q4GKLg/}. This authenticates saved-record calculations, not image-level sample identity, independent source training or native baseline execution.
 (3)~\textbf{Table~\ref{tab:imagenetc-sar-matched} (Matched SAR Controls):} Historical ResNet-50, 5 SAR arms (Table~\ref{tab:sar-arm-config}). The cited 60-cell raw records and reconciliation manifest are not resident in the current checkout, so this table is not release-promoted. Historical configuration: per-cell adaptation with $b \in \{16, 32, 64\}$ on 64-image windows, evaluated under Protocol A (LOO residual calibration, $n=60$, pool $n_{\mathrm{cal}} = 59$, rank $k = 54$ at $\alpha=0.10$, equal weights $1/60$). The current resident 27-cell reference-SAR audit is reported separately in Table~\ref{tab:sar-27cell-audit}.
-(4)~\textbf{Table~\ref{tab:imagenetc-decision-baselines} (ImageNet-C Baselines):} ResNet-50, Tent/EATA/SAR (8 decision rules). \emph{Records:} \path{decision_baselines_sarfix/decision_baselines.json} and \path{checkpoint.json}. 36 noise conditions $\times$ 3 candidates ($N=108$). Evaluated under Protocol A (leave-one-condition-out GBR on 11-dim features, $\alpha=0.10$, equal weights).
-(5)~\textbf{\KBMainRef{tab:main-pop-replay-summary}{Table}{the main population-replay summary table} / \ref{tab:imagenetc-108-population-replay} and Table~\ref{tab:sar-27cell-audit} (Outcome-Disjoint Studies):} Evaluated under Protocol B (three-way cell-outcome-disjoint cross-fitting, \path{kga.crossfit.controlled_grid_crossfit}), where each complement is partitioned into strictly disjoint estimator-fit and residual-calibration subsets, ensuring scored cell outcomes enter neither predictor fitting nor conformal calibration pools.}
+(4)~\textbf{Table~\ref{tab:imagenetc-decision-baselines} (ImageNet-C Baselines):} ResNet-50, Tent/EATA/SAR (8 decision rules). \emph{Records:} \path{decision_baselines_sarfix/decision_baselines.json} and \path{checkpoint.json}. 36 noise conditions $\times$ 3 candidates ($N=108$). Evaluated under Protocol A (leave-one-condition-out GBR on 11-dim features, $\alpha=0.10$, equal weights).}
+\begin{table*}[t]
+\centering
+\small
+\caption{Unified Master Statistical Synthesis Matrix across evaluated empirical tracks. For each track, we audit the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdict.}
+\label{tab:master-statistical-synthesis}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_master_statistical_synthesis.tex}}
+\end{table*}
 
 \subsection{Reproduction Pipeline}
 
@@ -1871,6 +1866,14 @@ fail closed when any identity differs. \texttt{KGA.certify\_evidence} requires a
 the exact schema, a protocol hash, and a separate residual set. The lower-level
 \texttt{certify} function is an audit interface; it does not construct evidence or validate
 transfer by itself.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Component runtime profile: wall-clock latency, peak memory allocation, and relative overhead of feature extraction and certificate computation relative to baseline inference. Combines feature extraction ($0.48$ ms) and certificate evaluation ($0.14$ ms), totaling $0.62$ ms ($<5.0\%$ of frozen forward pass); excludes candidate model adaptation ($24.85$ ms) and inference.}
+\label{tab:system-latency-profile}
+\resizebox{\columnwidth}{!}{\input{paper/generated/tab_system_latency_profile.tex}}
+\end{table}
 
 \subsection{Formalization and Lean Scope}
 

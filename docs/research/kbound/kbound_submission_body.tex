@@ -36,14 +36,15 @@ explicit: an audit using the same evidence must still cover the unresolved resid
 
 We present K-Bound and Knowability-Guided Adaptation (KGA) together because they address the
 identical practitioner problem---when to risk model adaptation without ground-truth target
-labels---under two complementary evidentiary regimes. K-Bound operates in the deductive regime of
-a single unlabeled test stream, establishing the fundamental impossibility of auditing target risk
-without an exogenous calibration sensitivity parameter $\beta$. KGA operates in the inductive regime
-where historical benchmark shifts are available, fitting an empirical benefit predictor on past
-evaluation cells and calibrating its residual uncertainty to govern a three-way commitment gate.
-We do not claim KGA implements or approximates the population frontier; rather, K-Bound defines
-what is fundamentally impossible from unlabeled test data alone, and KGA demonstrates what becomes
-operational once historical shift benchmarks are admitted into the evidentiary basis.
+labels---under two complementary evidentiary regimes. K-Bound operates in the deductive regime of a single unlabeled test stream, establishing that
+within the declared label-kernel class $\mathcal{C}_\beta$ and observable evidence, auditing target risk
+without an exogenous calibration residual bound $\beta$ is impossible. (Alternative guarantees remain
+possible under different structural couplings or domain assumptions.) KGA operates in the empirical
+inductive regime where past shift records are available, fitting an empirical benefit predictor on
+previous evaluation cells and calibrating its residual uncertainty to govern a three-way commitment gate.
+We do not claim KGA implements or approximates the population frontier; rather, K-Bound clarifies
+the information limits of unlabeled test data alone, while KGA explores what becomes operational
+when empirical shift records are admitted into the evidentiary basis.
 Section~\ref{sec:compact-bridge} formalizes this architectural relationship.
 
 \subsection{Three Scientific Contributions}
@@ -493,10 +494,7 @@ Theorem~\ref{thm:compact-beta-minimax} establishes that $\beta$ must be treated 
 \emph{exogenous sensitivity parameter}, by analogy to Rosenbaum's sensitivity
 parameter $\Gamma$ for unobserved confounding in observational studies~\cite{rosenbaum2002observational}
 or the ambiguity set radius in distributionally robust optimization (an analogy, not a mathematical
-equivalence). In practice, a decision-maker
-evaluates whether a strict action $|M| > \beta$ remains stable across a domain-plausible range of
-budgets $\beta$; the audit floor proves that no label-free audit can self-consistently estimate
-$\beta$ away without external structural assumptions.
+equivalence). Extended exploratory formulations of break-even sensitivity frontiers and continuous selection odds-ratio curves are preserved outside the maintained submission manuscript in \path{docs/research/kbound/appendix_elara_opt/SENSITIVITY_RESEARCH_NOTE.md}. The maintained manuscript retains the exact population frontier $\Delta(\mathcal{C}_\beta)$ established in Theorem~\ref{thm:compact-beta-minimax}.
 
 \subsection{Why Labels at the Wrong Domain Buy Nothing}
 \label{sec:compact-wrong-domain}
@@ -516,9 +514,9 @@ The missing information can be supplied, but each route changes the problem. Dep
 estimate target correctness directly. Historical labeled deployments can support an
 episode-marginal budget under an exchangeability model. A structural coupling can bound the change
 between calibration and target domains. Domain knowledge can declare a physically meaningful
-limit. These are purchases made with labels or assumptions; they are not consequences of the
-current unlabeled batch. Detailed rate results and extended constructions belong to the long-form
-theory record and are not required by the empirical claims here.
+limit.
+
+Multiclass extensions under entropy-constrained support conditions require separate assumptions and proofs; they are preserved as unproved exploratory research notes outside the maintained claims of this manuscript.
 
 \subsection{Implications for K-Bound and KGA}
 
@@ -611,7 +609,11 @@ KGA is label-free at deployment, not during development and calibration. Histori
  \Pr(|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon)\ge1-\alpha.
  \label{eq:compact-coverage}
 \end{equation}
-The proposition below concerns this target when this premise holds.
+The static interval requires its stated calibration assumptions.
+Sequential monitoring is a separate extension requiring its own
+null model and validity conditions. The empirical results reported
+here do not establish an anytime guarantee or a guaranteed response
+to every harmful shift.
 
 \subsection{The Coverage-to-Action Proposition}
 
@@ -678,7 +680,7 @@ Candidate & $N$ & Regret (Cell / Pop) & Cell Gate (A / F / U) & Compound Pop (A 
 
 \paragraph{Non-oracle population diagnostic.}
 While the synthetic diagnostic in \KBSuppRef{tab:synthetic-pop-diagnostic}{Table}{the supplementary synthetic population table} tested exact Bayes prediction ($\widehat\Delta(Z) = 0.6Z$), evaluating an imperfect predictor subject to estimation noise requires an extended non-oracle study. We conducted a diagnostic across 1,000 independent trials per configuration over 16 $(N_{\mathrm{cal}}, m)$ pairs, fitting an imperfect linear predictor on finite development episodes ($m=32$; \KBSuppRef{tab:nonoracle-pop-diagnostic}{Table}{the supplementary non-oracle population table}, \KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}).
-An unhedged point rule ($\operatorname{sign}(\widehat\Delta)$) incurs a $30.9\%$--$35.6\%$ directional error rate ($\operatorname{sign}(g) \neq \operatorname{sign}(\Delta)$) with $0\%$ abstention (where $\mathrm{FA}_u$ is defined strictly for false \adapt; here directional errors combine false \adapt and false \freeze on null/tie states); crucially, $100\%$ of these errors occur on null/tie states ($Z=0, \Delta=0$) due to estimation noise around zero, with zero errors on strictly harmful states ($\Delta = -0.6$). Conformal cell calibration ($\widehat\Delta \pm \varepsilon_{\mathrm{cell}}$) eliminates directional error ($0.000$) with empirical cell coverage matching nominal $1-\alpha_{\mathrm{cell}}=0.95$ ($93.9\%$--$96.5\%$), and already achieves $\approx 100\%$ population coverage of $\Delta$ across all configurations in this model. The compound population interval $[\widehat\Delta \pm (\varepsilon_{\mathrm{cell}} + b)]$ likewise achieves $100\%$ empirical population coverage and strictly zero directional error ($0.000 \le \alpha_{\mathrm{pop}}=0.10$), while enforcing conservative abstention ($99.9\%$--$100\%$ at $m=32$, contracting safely to $\approx 33\%$ matching the null frequency for $m \ge 128$) as a direct consequence of the universal Hoeffding penalty ($b=0.4802$), rather than because cell-level calibration failed in this simulated environment.
+An unhedged point rule ($\operatorname{sign}(\widehat\Delta)$) incurs a $30.9\%$--$35.6\%$ directional error rate ($\{g = \text{ADAPT} \wedge \Delta \le 0\} \cup \{g = \text{FREEZE} \wedge \Delta \ge 0\}$) with $0\%$ abstention (where $\mathrm{FA}_u$ is defined strictly for false \adapt; here directional errors combine false \adapt and false \freeze on null/tie states); crucially, $100\%$ of these errors occur on null/tie states ($Z=0, \Delta=0$) due to estimation noise around zero, with zero errors on strictly harmful states ($\Delta = -0.6$). Conformal cell calibration ($\widehat\Delta \pm \varepsilon_{\mathrm{cell}}$) eliminates directional error ($0.000$) with empirical cell coverage matching nominal $1-\alpha_{\mathrm{cell}}=0.95$ ($93.9\%$--$96.5\%$), and already achieves $\approx 100\%$ population coverage of $\Delta$ across all configurations in this model. The compound population interval $[\widehat\Delta \pm (\varepsilon_{\mathrm{cell}} + b)]$ likewise achieves $100\%$ empirical population coverage and strictly zero directional error ($0.000 \le \alpha_{\mathrm{pop}}=0.10$), while enforcing conservative abstention ($99.9\%$--$100\%$ at $m=32$, contracting safely to $\approx 33\%$ matching the null frequency for $m \ge 128$) as a direct consequence of the universal Hoeffding penalty ($b=0.4802$), rather than because cell-level calibration failed in this simulated environment.
 
 
 \subsection{Evidence, Calibration, and the Action Rule}
@@ -848,7 +850,7 @@ For a vector $G$ of cluster gaps, the sign-flip reference model is
 \end{equation}
 Independent zero-symmetric cluster gaps suffice. Exchangeability, marginal symmetry, or a single
 global sign symmetry alone is not sufficient~\cite{hemerik2018exact}. Enumeration removes Monte
-Carlo error but does not verify this null model. Holm adjustment requires valid input $p$-values;
+Carlo error but does not verify this null model. Retrospective Holm adjustment over the six prospectively named contrasts requires valid input $p$-values;
 nominal family intervals also require valid marginal coverage of their constituent intervals.
 The full inference specification and retrospective search status are collected in
 \KBSuppRef{app:compact-inference}{Appendix}{the supplementary inference specification}.
@@ -875,9 +877,9 @@ Commitment rate is $(A+F)/n$, not interval coverage. Cells share checkpoints and
 
 Tent regret is $\CIFARtentKga$, compared with $\CIFARtentAdapt$ for always-adapt and
 $\CIFARtentFreeze$ for always-freeze. EATA's values are $\CIFAReataKga$,
-$\CIFAReataAdapt$, and $\CIFAReataFreeze$. Their current actions are 1,094/334/732 and
-1,207/118/835, respectively; both have zero observed false adaptations.
-SAR makes 1,430/0/730 decisions and has regret $0.0017$, versus $0.0003$ for always-adapt.
+$\CIFAReataAdapt$, and $\CIFAReataFreeze$. In the canonical primary panel (Table~\ref{tab:primary-cifar}), their actions are 1,107/359/694 and
+1,241/132/787, respectively; both have zero observed false adaptations ($\mathrm{FA}_u = 0.0000$).
+SAR commits 1,446/0/714 actions with regret $0.0016$, versus $0.0003$ for always-adapt (and $0$ false adaptations).
 
 On the recorded CIFAR SAR panel, always-adapt has very low paired-oracle regret. KGA's higher regret
 reflects the net benefit forgone on cells where it retains the frozen predictor. The current results
@@ -886,14 +888,22 @@ or candidate-update dynamics. Normalization and sample-filtering effects remain 
 established causes.
 
 In contrast, Tent and EATA suffer degradation under severe corruptions, allowing KGA's selective
-freezing and abstention to achieve net regret reductions over always-adapt ($+0.0062$ for Tent,
-$+0.0017$ for EATA on this panel).
+freezing and abstention to achieve net regret reductions over always-adapt ($+0.0064$ for Tent,
+$+0.0020$ for EATA on the canonical primary panel; or $+0.0062$ and $+0.0017$ in the synchronized baseline study).
+Figure~\ref{fig:decisive-pareto} illustrates this regret-minimization behavior across deployment streams with varying harmful fraction $p$: while unconstrained always-adapt degrades linearly as harmful mass increases, KGA tracks the lower Pareto envelope, preserving baseline safety without forfeiting adaptation gains when helpful.
+
+\begin{figure}[t]
+  \centering
+  \kbgraphics[width=\columnwidth]{figures/fig_decisive_pareto_cifar10c.pdf}
+  \caption{CIFAR-10-C stress grid mixing-ratio Pareto front: mean regret vs.\ the harmful fraction $p$ of the deployment stream for Tent, comparing always-adapt, always-freeze, and KGA. While unconstrained always-adapt degrades sharply as the harmful fraction increases and always-freeze stalls on helpful distributions, KGA tracks the lower Pareto envelope, maintaining low regret across all mixture proportions and preventing catastrophic model failure.}
+  \label{fig:decisive-pareto}
+\end{figure}
 
 A retrospective cluster-bootstrap sensitivity analysis across the six observed CIFAR-10-C corruption
 families (\KBSuppRef{tab:compact-current-family}{Table}{the supplementary family-sensitivity table})
 indicates an estimated paired regret reduction for Tent of $+0.0062$ over always-adapt
 (95\% CI $[+0.0023,\,+0.0095]$) and $+0.1221$ over always-freeze (95\% CI $[+0.0630,\,+0.1777]$).
-Historical run-seed bootstrap vectors from earlier development cycles are cataloged separately in the supplement.
+Across five stream and evaluation runs (seeds 0--4) on the archived source checkpoint, per-seed regret reductions for Tent are $+0.0058, +0.0065, +0.0061, +0.0072, +0.0054$, strictly positive across each evaluated run. These repetitions evaluate stream variation rather than variation across independently trained source models. Historical run-seed bootstrap vectors from earlier development cycles are cataloged separately in the supplement.
 
 \subsection{Observed Interval Inclusion Is a Separate Diagnostic}
 \label{sec:interval-diagnostics}
@@ -1000,9 +1010,32 @@ KGA retains the frozen model, whereas the one-sided Camelyon17 panel retains ada
 exposure. These candidate-specific outcomes do not demonstrate prospective selective routing.
 Transferring a fixed benefit predictor
 across completely unseen wild domains without target calibration remains an open empirical challenge.
-\KBSuppRef{app:auxiliary-results}{Appendix}{the supplementary auxiliary-results section} reports the valid diagnostic rows on separate metric scales, together with the
-reasons why iWildCam, historical POEM/AETTA ports, and the focused Office-Home route cannot support current
-headline comparisons.
+\subsection{Cross-Architecture and Parameter-Restricted Adaptation Probes}
+\label{sec:architecture-partial-adaptation}
+
+As a preliminary diagnostic probe into whether certificate scale varies across model topologies, we inspected four distinct architectures under systematic covariate shift: ResNet-18 (standard residual), ResNet-50 (bottleneck residual), ViT-B/16 (vision transformer), and ConvNeXt-Tiny (depthwise convolutional; Table~\ref{tab:multi-architecture-invariance}).
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Preliminary cross-architecture diagnostic probe across four model topologies under synthetic covariate shift. Disagreement measure $\mu(D)$, conformal radius $r$, break-even margin $\beta^*$, and action distributions are diagnostic summaries; similar radii do not establish empirical coverage or cross-topology transfer.}
+\label{tab:multi-architecture-invariance}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_multi_architecture_invariance.tex}}
+\end{table*}
+
+Across the four topologies, the disagreement region measure $\mu(D)$ ($0.1727$--$0.1806$) and the calibrated certificate radius $r = \varepsilon + b$ ($0.1023$--$0.1026$) exhibit comparable scale on these evaluation batches. However, similar radii do not establish empirical coverage, which requires held-out inclusion testing. On these severe corruptions where unhedged adaptation collapses, the gate halts adaptation by issuing exclusively FREEZE or ABSTAIN actions. The recorded zero false-adapt rate ($\mathrm{FA}_u = 0.0000$) reflects zero \adapt decisions; zero false \adapt with zero \adapt exposure demonstrates conservative retention in this probe, not active selection of beneficial updates.
+
+Furthermore, we explored parameter-restricted adaptation hierarchies as an exploratory development ablation to understand the conservative retention observed on camera-trap shifts (Table~\ref{tab:cct20-partial-adaptation}).
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Exploratory parameter-restricted adaptation probe on CCT-20 camera-trap deployments. Safe retention denominator is 45/45 evaluated cells (9 target locations $\times$ 5 checkpoints) serving the frozen baseline. The break-even margin $\beta^*$ indicates the local empirical tolerance for overturning the decision, not population truth.}
+\label{tab:cct20-partial-adaptation}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_cct20_partial_adaptation.tex}}
+\end{table*}
+
+On the 45 CCT-20 evaluation cells, unconstrained full adaptation harms accuracy on 44 of 45 cells. KGA achieves 100\% safe retention by serving the frozen model across all 45 cells (44 FREEZE, 1 ABSTAIN, 0 ADAPT), avoiding measured harm. In exploratory development probes restricting updates to normalization statistics or prediction heads, drift is dampened ($\beta^* = 0.013$--$0.022$, where $\beta^*$ denotes the local empirical break-even margin). However, within the maintained benchmark, all 45 cells retain the frozen baseline; these exploratory probes remain development diagnostics and do not demonstrate active opportunistic adaptation on unseen natural shifts.
 
 \section{Limitations and Broader Impact}
 \label{sec:compact-sensitivity}
@@ -1063,7 +1096,7 @@ We consolidate the essential empirical boundaries of the current evidence into f
   future work.
   \item \textbf{Hardware and External Baseline Dependencies:} The synchronized baseline comparison
   (Table~\ref{tab:synchronized-baselines}) and scoped native panel
-  (\KBSuppRef{app:historical-ports}{Appendix}{the supplementary historical ports section}, Table~\ref{tab:native-component-45}) evaluate fixed policies and
+  (\KBSuppRef{app:historical-ports}{Appendix}{the supplementary historical ports section}, \KBSuppRef{tab:native-component-45}{Table}{the supplementary native-component table}) evaluate fixed policies and
   internal benefit estimators on common saved features. While internal components and scoped native runs have been
   verified across CPU and Apple Silicon (MPS) environments, full execution of external baseline drivers is
   constrained by documented method-specific dependencies: the authors provide code for Kim et al.'s TTA/ALine~\cite{kim2024ttaline}; our current scored panel, however, contains no authenticated outputs from that implementation (0/15 available), reflecting an incomplete local evaluation rather than an absence of published code. Baek et al.'s ALine~\cite{baek2022aol} has partial component availability (11/15 available),

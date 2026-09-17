@@ -93,11 +93,9 @@ def _create_execution_seal_core(
         require_production_target_action_unit_alignment()
     manifest, _ = _verified_json(population_manifest_path)
     population_manifest_validator(manifest)
-    source_acceptance, _, source_acceptance_binding = (
-        load_source_postrun_acceptance_pair(
-            source_postrun_acceptance_path,
-            strict_document=execution_mode == PRODUCTION_MODE,
-        )
+    source_acceptance, _, source_acceptance_binding = load_source_postrun_acceptance_pair(
+        source_postrun_acceptance_path,
+        strict_document=execution_mode == PRODUCTION_MODE,
     )
     study_binding = load_study_binding(population_manifest_path)
     gate = load_gate_with_receipt(gate_path)
@@ -106,22 +104,18 @@ def _create_execution_seal_core(
         raise IntegrityError("target seal gate and manifest study binding differ")
     selection, selection_receipt = _verified_json(selected_candidate_path)
     fit_bundle, fit_bundle_receipt = _verified_json(selected_gate_fit_bundle_path)
-    authorization, authorized_selection, authorized_gate = (
-        load_gate_authorization_with_receipt(
-            gate_authorization_path,
-            selection_path=selected_candidate_path,
-            gate_path=gate_path,
-            population_manifest_path=population_manifest_path,
-            fit_bundle_path=selected_gate_fit_bundle_path,
-            calibration_bundle_path=selected_gate_cal_bundle_path,
-        )
+    authorization, authorized_selection, authorized_gate = load_gate_authorization_with_receipt(
+        gate_authorization_path,
+        selection_path=selected_candidate_path,
+        gate_path=gate_path,
+        population_manifest_path=population_manifest_path,
+        fit_bundle_path=selected_gate_fit_bundle_path,
+        calibration_bundle_path=selected_gate_cal_bundle_path,
     )
     authorization_receipt = verify_artifact_receipt(gate_authorization_path)
     if authorized_selection != selection or authorized_gate != gate:
         raise IntegrityError("target seal gate authorization replay changed its inputs")
-    amendment, amendment_receipt = load_target_boundary_amendment(
-        target_boundary_amendment_path
-    )
+    amendment, amendment_receipt = load_target_boundary_amendment(target_boundary_amendment_path)
     collection, collection_receipt = _verified_json(checkpoint_collection_path)
     validate_checkpoint_collection(
         collection,
@@ -130,8 +124,7 @@ def _create_execution_seal_core(
         checkpoint_dir=checkpoint_dir,
     )
     if (
-        authorization["checkpoint_collection_canonical_sha256"]
-        != stable_sha256(collection)
+        authorization["checkpoint_collection_canonical_sha256"] != stable_sha256(collection)
         or authorization["normalizer_sha256"] != collection["normalizer_sha256"]
         or live_normalizer_sha256 != collection["normalizer_sha256"]
     ):
@@ -139,51 +132,38 @@ def _create_execution_seal_core(
     target_identities = opaque_target_identities_from_paths(target_data_paths)
     scorer_code = target_scorer_code_identity()
     scorer_environment = target_scorer_environment_identity()
-    precalibration_seal, precalibration_seal_receipt = (
-        load_precalibration_seal_with_receipt(
-            precalibration_seal_path,
-            study_binding=study_binding,
-            selection=selection,
-            fit_bundle=fit_bundle,
-            target_boundary_amendment=amendment,
-            checkpoint_collection=collection,
-        )
+    precalibration_seal, precalibration_seal_receipt = load_precalibration_seal_with_receipt(
+        precalibration_seal_path,
+        study_binding=study_binding,
+        selection=selection,
+        fit_bundle=fit_bundle,
+        target_boundary_amendment=amendment,
+        checkpoint_collection=collection,
     )
     if (
         precalibration_seal["execution_mode"] != execution_mode
         or precalibration_seal["population_manifest_artifact"]
         != _artifact_binding(verify_artifact_receipt(population_manifest_path))
         or precalibration_seal["selection_artifact"] != _artifact_binding(selection_receipt)
-        or precalibration_seal["selected_gate_fit_bundle_artifact"]
-        != _artifact_binding(fit_bundle_receipt)
-        or precalibration_seal["target_boundary_amendment_artifact"]
-        != _artifact_binding(amendment_receipt)
-        or precalibration_seal["checkpoint_collection_artifact"]
-        != _artifact_binding(collection_receipt)
+        or precalibration_seal["selected_gate_fit_bundle_artifact"] != _artifact_binding(fit_bundle_receipt)
+        or precalibration_seal["target_boundary_amendment_artifact"] != _artifact_binding(amendment_receipt)
+        or precalibration_seal["checkpoint_collection_artifact"] != _artifact_binding(collection_receipt)
         or precalibration_seal["target_data_identities"] != target_identities
-        or precalibration_seal["source_postrun_acceptance"]
-        != source_acceptance_binding
-        or precalibration_seal["source_postrun_training_container"]
-        != source_acceptance["postrun_source_container"]
-        or precalibration_seal["source_hdf5_runtime_disclosure"]
-        != source_acceptance["source_hdf5_runtime_disclosure"]
+        or precalibration_seal["source_postrun_acceptance"] != source_acceptance_binding
+        or precalibration_seal["source_postrun_training_container"] != source_acceptance["postrun_source_container"]
+        or precalibration_seal["source_hdf5_runtime_disclosure"] != source_acceptance["source_hdf5_runtime_disclosure"]
         or precalibration_seal["source_checkpoint_selection_disclosure"]
         != source_acceptance["source_checkpoint_selection_disclosure"]
         or precalibration_seal["source_initialization_clarification"]
         != source_acceptance["source_initialization_clarification"]
         or precalibration_seal["frozen_gate_fit_model"] != gate["ridge"]
-        or precalibration_seal["package_code_identity"]
-        != precalibration_code_identity()
-        or precalibration_seal["target_live_environment_identity"]
-        .get("environment_identity_sha256")
+        or precalibration_seal["package_code_identity"] != precalibration_code_identity()
+        or precalibration_seal["target_live_environment_identity"].get("environment_identity_sha256")
         != live_environment_identity_sha256
-        or precalibration_seal["offline_scorer_environment_identity"]
-        != scorer_environment
+        or precalibration_seal["offline_scorer_environment_identity"] != scorer_environment
     ):
         raise IntegrityError("final target seal does not extend the prior precalibration seal")
-    validate_reveal_registry_directory(
-        reveal_registry_dir, precalibration_seal["outcome_reveal_registry"]
-    )
+    validate_reveal_registry_directory(reveal_registry_dir, precalibration_seal["outcome_reveal_registry"])
     document = build_execution_seal(
         study_binding=study_binding,
         selected_candidate=selection,
@@ -203,15 +183,9 @@ def _create_execution_seal_core(
         code_identity_sha256=live_code_identity_sha256,
         environment_identity_sha256=live_environment_identity_sha256,
         scorer_code_identity_sha256=scorer_code["code_identity_sha256"],
-        scorer_environment_identity_sha256=scorer_environment[
-            "environment_identity_sha256"
-        ],
+        scorer_environment_identity_sha256=scorer_environment["environment_identity_sha256"],
         execution_mode=execution_mode,
-        _production_authority=(
-            _PRODUCTION_SEAL_BUILD_AUTHORITY
-            if execution_mode == PRODUCTION_MODE
-            else None
-        ),
+        _production_authority=(_PRODUCTION_SEAL_BUILD_AUTHORITY if execution_mode == PRODUCTION_MODE else None),
     )
     destination = Path(output_path).expanduser().resolve()
     write_immutable_json_with_receipt(destination, document)

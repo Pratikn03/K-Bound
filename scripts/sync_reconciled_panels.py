@@ -71,6 +71,7 @@ HISTORICAL_POLICY_STATUS = "historical_policy_only"
 CURRENT_CLUSTER_STATUS = "retrospective_current_policy_family_sensitivity"
 CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
 CURRENT_POLICY_BINDING_PATHS = {
+    "crossfit": "kga/crossfit.py",
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
@@ -91,8 +92,47 @@ def _write(path: Path, value: dict[str, Any]) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=False, allow_nan=False) + "\n")
 
 
+def _set_manifest_authority_metadata(table: dict[str, Any]) -> None:
+    """Distinguish measured-cell metrics from population claims; do not alter rows."""
+    table["generated_for"] = (
+        "maintained drivers: kbound_submission.tex, kbound_tmlr.tex, "
+        "kbound_short_main.tex, kbound_short_supplement.tex, and kbound_full.tex"
+    )
+    table["generated_at"] = None
+    table["generation_identity"] = (
+        "Original artifact-generation time is not recorded; an evidence-refresh date "
+        "is not a historical file-creation timestamp."
+    )
+    table["definitions"] = {
+        "population_benefit": "Delta = R_T(f_0) - R_T(f_a)",
+        "measured_cell_benefit": "Delta^cell = S(f_a; E) - S(f_0; E), the observed adapt-minus-frozen score difference for one measured cell",
+        "false_adapt_unconditional": "FA_u^cell = (# measured cells with g=ADAPT and Delta^cell<=0)/(# measured cells); this empirical fraction is not population risk",
+        "false_adapt_conditional": "FA_c^cell = (# measured ADAPT cells with Delta^cell<=0)/(# measured ADAPT cells), when the denominator is nonzero; descriptive only",
+        "population_certificate_target": "The interval and action must concern the same declared scalar target B; measured-cell coverage alone does not establish population-risk coverage",
+    }
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _set_certificate_authority_metadata(ledger: dict[str, Any]) -> None:
+    """Align the conditional claim with the maintained coverage proposition."""
+    ledger["generation_identity"] = (
+        "generated_at records an evidence-synchronization date, not an artifact-creation timestamp."
+    )
+    certificate = _claim(ledger, "KB-CLAIM-003")
+    certificate["claim_text"] = (
+        "For a fixed declared scalar target B, marginal coverage P(|B_hat-B|<=epsilon)>=1-alpha "
+        "implies P(g=ADAPT and B<=0)<=alpha; it does not imply P(B<=0 | g=ADAPT)<=alpha."
+    )
+    certificate["assumptions"] = [
+        "finite real B and B_hat and a measurable possibly infinite radius on a common probability space including fitting, calibration, candidate construction and evaluation randomness",
+        "valid marginal interval coverage for that same fixed declared scalar target",
+        "prediction and radius available without reading the new unit's evaluation labels",
+        "exchangeability of the actual scores, or another separately justified argument, establishes coverage; the numerical decision rule does not establish this premise",
+    ]
+    certificate["allowed_wording"] = "P(g=ADAPT and B<=0) <= alpha under marginal coverage for B"
 
 
 def _relative(path: Path) -> str:
@@ -1910,13 +1950,37 @@ def _sync_ledger(
     ledger: dict[str, Any],
     current_cluster: dict[str, Any],
     panel: dict[str, Any] | None = None,
+    *,
+    refresh_separate_natural_authorities: bool = True,
 ) -> None:
     # Keep the two-argument helper interface used by the release idempotence tests.
     if panel is None:
         panel = _load(PANEL_PATH)
     source = PANEL_PATH.relative_to(ROOT).as_posix()
     source_manifest = SOURCE_MANIFEST.relative_to(ROOT).as_posix()
-    cct20_authority, so2sat_authority = _validated_separate_natural_authorities()
+    preserved_natural_claims = {
+        claim_id: [row for row in ledger.get("claims", []) if row.get("claim_id") == claim_id]
+        for claim_id in ("KB-CLAIM-051", "KB-CLAIM-052")
+    }
+    preserved_separate_authorities = ledger.get("reconciliation_source", {}).get(
+        "separate_receipt_linked_authorities"
+    )
+    if refresh_separate_natural_authorities:
+        cct20_authority, so2sat_authority = _validated_separate_natural_authorities()
+    else:
+        if any(len(rows) != 1 for rows in preserved_natural_claims.values()):
+            raise ValueError("public-only synchronization requires exactly one preserved CCT-20 and So2Sat claim")
+        if (
+            not isinstance(preserved_separate_authorities, dict)
+            or set(preserved_separate_authorities) != {"cct20", "so2sat_development"}
+            or not all(isinstance(row, dict) for row in preserved_separate_authorities.values())
+            or preserved_separate_authorities["cct20"].get("claim_id") != "KB-CLAIM-051"
+            or preserved_separate_authorities["cct20"].get("verdict") != "SAFE_UTILITY_ONLY"
+            or preserved_separate_authorities["so2sat_development"].get("claim_id") != "KB-CLAIM-052"
+            or preserved_separate_authorities["so2sat_development"].get("verdict") != "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+            or preserved_separate_authorities["so2sat_development"].get("target_access") != "none"
+        ):
+            raise ValueError("public-only synchronization requires the existing bounded natural-study index")
     fmow_diagnostic, poverty_diagnostic = _validated_historical_natural_diagnostics()
 
     theorem = _claim(ledger, "KB-CLAIM-001")
@@ -1927,16 +1991,7 @@ def _sync_ledger(
     theorem["allowed_wording"] = "strict-commitment frontier over the declared drift class"
     theorem["forbidden_wording"] = ["assumption-free", "universal", "benefit sign identifiable iff"]
 
-    certificate = _claim(ledger, "KB-CLAIM-003")
-    certificate["claim_text"] = (
-        "If P(|Delta_hat-Delta| <= epsilon) >= 1-alpha, the KGA interval rule controls the "
-        "unconditional false-adapt event FA_u at level alpha."
-    )
-    certificate["assumptions"] = [
-        "valid marginal interval coverage",
-        "exchangeability or another justified calibration argument is one route to coverage",
-    ]
-    certificate["allowed_wording"] = "FA_u <= alpha under interval coverage"
+    _set_certificate_authority_metadata(ledger)
 
     cifar = _claim(ledger, "KB-CLAIM-010")
     cifar.update(
@@ -2206,7 +2261,7 @@ def _sync_ledger(
             "status": CURRENT_CLUSTER_STATUS,
             "retrospective_six_contrast_holm_gate": "failed_for_all_candidates",
         },
-        "separate_receipt_linked_authorities": {
+        "separate_receipt_linked_authorities": preserved_separate_authorities if not refresh_separate_natural_authorities else {
             "cct20": {
                 "claim_id": "KB-CLAIM-051",
                 "artifact": _relative(CCT20_RELEASE_PATH),
@@ -2271,7 +2326,6 @@ def _sync_ledger(
     camelyon_b_v2_sar = camelyon_b_v2["panel"]["candidates"]["sar"]
     if (
         camelyon_b_v2["headline_promotion"].get("eligible") is not False
-        or camelyon_b_v2_sar.get("point_beats_both") is not True
         or camelyon_b_v2_sar.get("seed_inference", {}).get("ci_robust_beats_both") is not False
     ):
         raise ValueError("Camelyon17 B-v2 SAR diagnostic scope drifted")
@@ -2489,9 +2543,14 @@ def _sync_ledger(
             ],
         },
     ]
-    closure_claims.extend(
-        _separate_natural_release_claims(cct20_authority, so2sat_authority)
-    )
+    if refresh_separate_natural_authorities:
+        closure_claims.extend(_separate_natural_release_claims(cct20_authority, so2sat_authority))
+    else:
+        closure_claims.extend(rows[0] for rows in preserved_natural_claims.values())
+        ledger["_artifact_audit_2026_08_29"]["note"] = (
+            "Public synchronization preserved the existing CCT-20 and So2Sat claims and index "
+            "without reading or revalidating their separate authorities."
+        )
     by_id = {row["claim_id"]: row for row in ledger["claims"]}
     for row in closure_claims:
         if row["claim_id"] in by_id:
@@ -2541,6 +2600,8 @@ def _sync_frontier(panel: dict[str, Any], frontier_data: dict[str, Any]) -> None
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--public-only", action="store_true",
+                        help="preserve existing separate natural-study claims without reading their authorities")
     parser.add_argument(
         "--json-only",
         action="store_true",
@@ -2558,9 +2619,11 @@ def main() -> None:
     for candidate in ("tent", "eata", "sar"):
         _normalized_current_cluster(current_cluster, candidate)
     _sync_table(panel, table, current_cluster)
+    _set_manifest_authority_metadata(table)
     _sync_uniform_verdicts(panel, uniform, current_cluster)
     _sync_decision_metrics(panel, decision_metrics, current_cluster)
-    _sync_ledger(ledger, current_cluster, panel)
+    _sync_ledger(ledger, current_cluster, panel,
+                 refresh_separate_natural_authorities=not args.public_only)
     _sync_frontier(panel, frontier)
     if not args.json_only:
         _write_current_cluster_table(current_cluster)

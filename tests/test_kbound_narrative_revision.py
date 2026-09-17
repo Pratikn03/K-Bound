@@ -87,7 +87,7 @@ def test_audits_move_to_supplement_without_discarding_adverse_records():
     for token in (
         "five-checkpoint", "invalid", "withheld", "PACS", "ImageNet-R",
         "no target natural-shift", "Historical Protocol-Matched POEM and AETTA",
-        "142 declarations", "--full-foundations",
+            "147 named declarations", "--full-foundations",
     ):
         assert token in supplement
     assert r"\input{paper/generated/kbound_primary_accuracy_table.tex}" in body
@@ -110,8 +110,13 @@ def test_coverage_to_action_is_a_proposition_not_a_new_calibration_theorem():
 def test_interval_audit_cannot_be_promoted_to_fresh_group_validation():
     body = words(PAPER / "kbound_submission_body.tex")
     supplement = words(PAPER / "kbound_submission_supplement.tex")
-    for token in ("rank-constrained", "not independent validation", "one false FREEZE among 359",
-                  "only two FREEZE decisions", "conditional false-freeze frequency is undefined"):
+    for token in (
+        "rank-constrained",
+        "not independent validation",
+        "one false FREEZE among 118 FREEZE decisions",
+        "zero FREEZE decisions",
+        "conditional frequency divides by FREEZE decisions and is undefined when that action is absent",
+    ):
         assert token in body
     assert "pooled LOO inclusion remains rank-constrained" in supplement
     assert "No fitting, tuning, new target access, or training is performed" in supplement
@@ -154,10 +159,18 @@ def test_new_inputs_and_outputs_are_in_the_release_inventory():
     assert not expected_outputs & all_sources
 
 
+def test_historical_closure_docs_cannot_claim_current_full_foundations_pass() -> None:
+    for name in ("THEORY_100_PERCENT_CLOSURE_PLAN.md", "PROJECT_STATUS_AND_OPEN_PROBLEMS.md"):
+        text = (PAPER / name).read_text(encoding="utf-8")
+        assert "full-foundations` PASS" not in text
+        assert "currently fails" in text or "remains open" in text
+
+
 def test_build_checks_diagnostics_and_full_generation_refreshes_explicitly():
     build = (PAPER / "scripts/build_pdfs.sh").read_text()
     runbook = (PAPER / "runbooks/release_candidate.sh").read_text()
     assert "scripts/build_current_policy_interval_diagnostics.py --check" in build
-    assert '"$KB/scripts/build_current_policy_interval_diagnostics.py" --refresh-existing' in runbook
+    assert "KBOUND_REFRESH_CANONICAL" in runbook
+    assert "reconcile_result_panels.py --reuse-transfer" in runbook
     for test_name in ("test_kbound_interval_diagnostics", "test_kbound_metric_display_tables", "test_kbound_narrative_revision", "test_kbound_pdf_build_isolation"):
         assert f"tests/{test_name}.py" in runbook

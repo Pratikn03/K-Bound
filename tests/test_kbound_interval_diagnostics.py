@@ -27,6 +27,8 @@ def raw_records(n: int = 20, *, seed: int = 0, candidate: str = "tent") -> list[
                 "method": candidate,
                 "benchmark": "cifar10c",
                 "condition": f"{family}|synthetic{index}",
+                "Z": [float(index % 5), float(index // 5), float((index * 3) % 7)],
+                "Z_names": ["z0", "z1", "z2"],
                 "B": benefit,
                 "b_hat": benefit,
                 "a0": 0.5,
@@ -40,6 +42,31 @@ def raw_records(n: int = 20, *, seed: int = 0, candidate: str = "tent") -> list[
     return records
 
 
+def test_scored_outcome_cannot_change_its_own_crossfit_decision() -> None:
+    raw = raw_records(40)
+    baseline = diagnostics.replay_records(raw, "tent", 0)
+    perturbed = copy.deepcopy(raw)
+    # Keep the adapted-minus-frozen identity valid while changing only the
+    # scored outcome for one cell.  Its score fold excludes this outcome from
+    # both the estimator fit and residual calibration.
+    perturbed[0]["B"] = -0.125
+    perturbed[0]["a_adapted"] = perturbed[0]["a0"] + perturbed[0]["B"]
+    changed = diagnostics.replay_records(perturbed, "tent", 0)
+    for field in ("b_hat", "epsilon", "decision"):
+        assert changed[0][field] == baseline[0][field]
+
+
+def test_current_replay_does_not_use_archived_point_prediction() -> None:
+    raw = raw_records(40)
+    baseline = diagnostics.replay_records(raw, "tent", 0)
+    changed_archive = copy.deepcopy(raw)
+    changed_archive[0]["b_hat"] = 0.99
+    changed = diagnostics.replay_records(changed_archive, "tent", 0)
+    assert [(row["b_hat"], row["epsilon"], row["decision"]) for row in changed] == [
+        (row["b_hat"], row["epsilon"], row["decision"]) for row in baseline
+    ]
+
+
 def summary_record(benefit: float, prediction: float, radius: float, decision: str) -> dict:
     return {
         "B": benefit,
@@ -51,23 +78,34 @@ def summary_record(benefit: float, prediction: float, radius: float, decision: s
     }
 
 
-def test_replay_uses_released_loo_policy_and_ignores_historical_fields(monkeypatch) -> None:
-    original = diagnostics._released_policy()
+def test_replay_uses_released_crossfit_and_ignores_historical_fields(monkeypatch) -> None:
+    original = diagnostics._released_crossfit()
     calls = []
 
-    def spy(prediction, benefit, **kwargs):
+    def spy(features, benefit, **kwargs):
         calls.append(kwargs)
-        return original(prediction, benefit, **kwargs)
+        return original(features, benefit, **kwargs)
 
-    monkeypatch.setattr(diagnostics, "_released_policy", lambda: spy)
+    monkeypatch.setattr(diagnostics, "_released_crossfit", lambda: spy)
     raw = raw_records()
     unchanged = copy.deepcopy(raw)
     replay = diagnostics.replay_records(raw, "tent", 0)
     assert raw == unchanged
-    assert calls == [{"alpha": 0.1, "calibration": "loo"}]
+    assert calls == [{
+        "sample_ids": [
+            f"tent|seed=0|condition={row['condition']}" for row in raw
+        ],
+        "alpha": 0.1,
+        "n_folds": 5,
+        "n_estimators": 250,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "random_state": 0,
+    }]
     assert len(replay) == len(raw)
-    assert [row["epsilon"] for row in replay] == [0.0] * 20
-    assert [row["decision"] for row in replay] == ["ADAPT", "FREEZE"] * 10
+    assert all(math.isfinite(row["b_hat"]) and math.isfinite(row["epsilon"]) for row in replay)
+    assert all(row["decision"] in diagnostics.ACTIONS for row in replay)
     assert all("eps_conformal" not in row and "kga_decision" not in row for row in replay)
 
 
@@ -77,15 +115,18 @@ def test_family_summaries_keep_the_original_per_seed_calibration_pool() -> None:
         row["b_hat"] += index / 512
     replay = diagnostics.replay_records(raw, "tent", 0)
     before = copy.deepcopy(replay)
-    original_epsilon, _ = diagnostics._released_policy()(
-        [row["b_hat"] for row in raw], [row["B"] for row in raw], alpha=0.1, calibration="loo"
+    original_current = diagnostics._released_crossfit()(
+        [row["Z"] for row in raw], [row["B"] for row in raw],
+        sample_ids=[f"tent|seed=0|condition={row['condition']}" for row in raw],
+        alpha=0.1, n_folds=5, n_estimators=250, max_depth=2,
+        learning_rate=0.05, subsample=0.8, random_state=0,
     )
     for family in ("contrast", "fog"):
         indexes = [index for index, row in enumerate(replay) if row["family"] == family]
         group = [replay[index] for index in indexes]
         result = diagnostics.summarize(group)
         assert result["n"] == 20
-        assert result["full_interval_width"]["mean"]["value"] == float(np.mean(2 * original_epsilon[indexes]))
+        assert result["full_interval_width"]["mean"]["value"] == float(np.mean(2 * original_current.radius[indexes]))
     assert replay == before
 
 
@@ -138,21 +179,8 @@ def test_false_adapt_and_freeze_use_their_own_exposure_denominators() -> None:
 
 
 def test_infinite_intervals_are_counted_not_dropped_and_json_is_strict() -> None:
-    with pytest.warns(UserWarning):
-        replay = diagnostics.replay_records(raw_records(3), "tent", 0)
-    result = diagnostics.summarize(replay)
-    assert result["n"] == 3
-    assert result["observed_inclusion"]["value"] == 1
-    assert result["finite_interval_count"] == 0
-    assert result["infinite_interval_count"] == 3
-    assert result["finite_interval_inclusion"]["defined"] is False
-    assert result["actions"]["ABSTAIN"]["numerator"] == 3
-    assert result["commitment"]["value"] == 0
-    for summary in result["full_interval_width"].values():
-        if isinstance(summary, dict):
-            assert summary == {"value": None, "status": "positive_infinity"}
-    encoded = json.dumps(result, allow_nan=False)
-    assert "Infinity" not in encoded and "NaN" not in encoded
+    with pytest.raises(ValueError, match="failed closed|infeasible"):
+        diagnostics.replay_records(raw_records(3), "tent", 0)
 
 
 @pytest.mark.parametrize("field", ["B", "b_hat", "a0", "a_adapted"])
@@ -250,20 +278,42 @@ def scientific_fixture() -> tuple[list[dict], dict, dict]:
     per_seed = [diagnostics.replay_records(raw_records(seed=seed), "tent", seed) for seed in (0, 1)]
     rows = [row for group in per_seed for row in group]
     canonical = diagnostics.replay_score(rows)
-    canonical["per_file"] = [
-        {"seed": seed, "score": diagnostics.replay_score(group), "epsilon_min": 0.0, "epsilon_mean": 0.0, "epsilon_max": 0.0}
-        for seed, group in enumerate(per_seed)
-    ]
+    canonical["per_file"] = []
+    for seed, group in enumerate(per_seed):
+        epsilon = np.asarray([row["epsilon"] for row in group], dtype=float)
+        canonical["per_file"].append(
+            {
+                "seed": seed,
+                "score": diagnostics.replay_score(group),
+                "epsilon_min": float(np.min(epsilon)),
+                "epsilon_mean": float(np.mean(epsilon)),
+                "epsilon_max": float(np.max(epsilon)),
+            }
+        )
+    score = diagnostics.replay_score(rows)
+    families = sorted({row["family"] for row in rows})
+    counts = {action: score[f"{action.lower()}_count"] for action in diagnostics.ACTIONS}
+    comparisons = {}
+    for baseline in diagnostics.BASELINES:
+        effects = {}
+        for family in families:
+            values = []
+            for row in rows:
+                if row["family"] != family:
+                    continue
+                oracle = max(row["a0"], row["a_adapted"])
+                served = row["a_adapted"] if row["decision"] == "ADAPT" else row["a0"]
+                fixed = row["a_adapted"] if baseline == "always_adapt" else row["a0"]
+                values.append((oracle - fixed) - (oracle - served))
+            effects[family] = float(np.mean(values))
+        comparisons[baseline] = {"point": float(np.mean(list(effects.values()))), "family_effects": effects}
     inference = {
-        "decision_counts": {"ADAPT": 20, "FREEZE": 20, "ABSTAIN": 0},
-        "adapt_exposure": 0.5,
-        "freeze_exposure": 0.5,
-        "strict_decision_coverage": 1.0,
-        "grain": {"n_records": 40, "n_run_seeds": 2, "n_conditions_per_seed": 20, "n_inference_units": 2, "families": ["contrast", "fog"]},
-        "comparisons": {
-            "always_adapt": {"point": 0.0625, "family_effects": {"contrast": 0.0, "fog": 0.125}},
-            "always_freeze": {"point": 0.0625, "family_effects": {"contrast": 0.125, "fog": 0.0}},
-        },
+        "decision_counts": counts,
+        "adapt_exposure": score["adapt_rate"],
+        "freeze_exposure": score["freeze_count"] / score["n"],
+        "strict_decision_coverage": score["decision_coverage"],
+        "grain": {"n_records": 40, "n_run_seeds": 2, "n_conditions_per_seed": 20, "n_inference_units": 2, "families": families},
+        "comparisons": comparisons,
     }
     return rows, canonical, inference
 

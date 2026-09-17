@@ -8,7 +8,6 @@ from typing import Any
 
 from .integrity import IntegrityError, file_sha256, stable_sha256, strict_json_load
 
-
 SCHEMA = "kbound_so2sat_prospective_protocol_v1"
 PROTOCOL_ID = "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1"
 PROTOCOL_BASENAME = "prospective_protocol_v1.json"

@@ -99,7 +99,14 @@ from kga.frontier import (
     frontier_sensitivity,
 )
 from kga.kga import KGA
-from kga.policy import Decision, decide, decide_batch, decide_kga
+from kga.policy import (
+    Decision,
+    HierarchicalSelection,
+    decide,
+    decide_batch,
+    decide_hierarchical_candidates,
+    decide_kga,
+)
 from kga.population_transfer import (
     ConditionalPopulationInterval,
     compose_conditional_population_interval,
@@ -136,6 +143,14 @@ from kga.integrations import TorchModelAdapter
 from kga.registry import ProtocolIntegrityError, SealedProtocolManifest
 from kga.observability import AuditLogger, METRICS
 
+from kga.sensitivity import (
+    SensitivityFrontier,
+    SensitivityPoint,
+    compute_break_even_beta,
+    compute_sensitivity_frontier,
+    compute_sensitivity_interval,
+)
+
 __all__ = [
     "KGA",
     "BenefitEstimator",
@@ -143,6 +158,11 @@ __all__ = [
     "fit_frozen_linear_benefit_estimator",
     "Decision",
     "Certificate",
+    "SensitivityFrontier",
+    "SensitivityPoint",
+    "compute_break_even_beta",
+    "compute_sensitivity_frontier",
+    "compute_sensitivity_interval",
     "Evidence",
     "EVIDENCE_FEATURE_NAMES",
     "EVIDENCE_SCHEMA_VERSION",
@@ -157,7 +177,10 @@ __all__ = [
     "conformal_split",
     "conformal_radii_loo",
     "conformal_attained_level",
-    "min_calibration_size",
+    "decide_kga",
+    "decide_batch",
+    "HierarchicalSelection",
+    "decide_hierarchical_candidates",
     "split_conformal_rank_radius",
     "ControlledGridCrossfitResult",
     "controlled_grid_crossfit",

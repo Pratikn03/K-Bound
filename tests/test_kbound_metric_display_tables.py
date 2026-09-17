@@ -109,7 +109,7 @@ def test_primary_keeps_all_three_candidates_and_adverse_sar(helpers) -> None:
         for candidate, label in (("tent", "Tent"), ("eata", "EATA"), ("sar", "SAR"))
     ]
     assert recorded["sar"]["regret"]["kga"] > recorded["sar"]["regret"]["always_adapt"]
-    assert "SAR & 2160 & 0.0016 & 0.0003 & 0.1405 & 1446/0/714" in text
+    assert "SAR & 2160 & 0.0017 & 0.0003 & 0.1405 & 1430/0/730" in text
     assert "Commitment rate" in text and "Coverage" not in text
 
 

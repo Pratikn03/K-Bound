@@ -37,7 +37,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from kga.certificate import split_conformal_rank_radius  # noqa: E402
-from kga.policy import decide_batch, decide_kga  # noqa: E402
+from kga.crossfit import controlled_grid_crossfit  # noqa: E402
+from kga.policy import decide_batch  # noqa: E402
 
 ALPHA = 0.10
 EXPECTED_NUMPY_VERSION = "2.4.4"
@@ -98,6 +99,12 @@ META_KEYS = (
 
 def _json_bytes(data: Any) -> bytes:
     return (json.dumps(data, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+
+
+def _sha256_json(data: Any) -> str:
+    """Hash a normalized JSON value for current and historical array lineage."""
+
+    return hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
 def _write_json(path: Path, data: Any) -> None:
@@ -719,8 +726,35 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
             raise ValueError(f"duplicate candidate/seed panel: {candidate}/{seed}")
         seen_seeds[candidate].add(seed)
         benefit = np.asarray([row["B"] for row in records], dtype=float)
-        prediction = np.asarray([row["b_hat"] for row in records], dtype=float)
-        epsilon, decisions = decide_kga(prediction, benefit, alpha=ALPHA, calibration="loo")
+        # Refit the current cross-fitted authority from Z/B.  Historical b_hat,
+        # eps_conformal, and kga_decision fields remain archived metadata only;
+        # they must not control regenerated metrics (outcome/prediction poison
+        # regression in test_controlled_grid_crossfit.py).
+        sample_ids = [
+            "|".join(
+                (
+                    str(candidate),
+                    f"seed={seed}",
+                    f"condition={row.get('condition', index)}",
+                )
+            )
+            for index, row in enumerate(records)
+        ]
+        current = controlled_grid_crossfit(
+            np.asarray([row["Z"] for row in records], dtype=float),
+            benefit,
+            sample_ids=sample_ids,
+            alpha=ALPHA,
+            n_folds=5,
+            n_estimators=250,
+            max_depth=2,
+            learning_rate=0.05,
+            subsample=0.8,
+            random_state=0,
+        )
+        prediction = current.prediction
+        epsilon = current.radius
+        decisions = current.action
         by_candidate[candidate].append((records, prediction, epsilon, decisions))
     if any(seeds != expected_seeds for seeds in seen_seeds.values()):
         raise ValueError(f"incomplete seed panel: {dict(seen_seeds)}; expected {sorted(expected_seeds)}")
@@ -742,6 +776,18 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
             candidate_predictions.extend(float(value) for value in prediction)
             candidate_epsilons.extend(float(value) for value in epsilon)
             candidate_decisions.extend(str(value) for value in decisions)
+            historical_bhat = [float(row["b_hat"]) if "b_hat" in row else None for row in records]
+            historical_eps = [float(row["eps_conformal"]) if "eps_conformal" in row else None for row in records]
+            historical_actions = [str(row["kga_decision"]) if "kga_decision" in row else None for row in records]
+            current_cells = [
+                {
+                    "sample_id": f"{candidate}|seed={int(row['seed'])}|condition={row.get('condition', index)}",
+                    "prediction": float(prediction[index]),
+                    "radius": float(epsilon[index]),
+                    "action": str(decisions[index]),
+                }
+                for index, row in enumerate(records)
+            ]
             per_file.append(
                 {
                     "seed": int(records[0]["seed"]),
@@ -750,6 +796,27 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
                     "epsilon_mean": float(np.mean(epsilon)),
                     "epsilon_max": float(np.max(epsilon)),
                     "score": score_decisions(records, decisions),
+                    "current_prediction_sha256": _sha256_json([float(value) for value in prediction]),
+                    "current_radius_sha256": _sha256_json([float(value) for value in epsilon]),
+                    "current_action_sha256": _sha256_json([str(value) for value in decisions]),
+                    "current_cell_authority": {
+                        "rule": "refit current cross-fitted prediction/radius/action; historical fields are non-authoritative",
+                        "cells": current_cells,
+                    },
+                    "historical_fields": {
+                        "b_hat": {
+                            "sha256": _sha256_json(historical_bhat),
+                            "current_authority": False,
+                        },
+                        "eps_conformal": {
+                            "sha256": _sha256_json(historical_eps),
+                            "current_authority": False,
+                        },
+                        "kga_decision": {
+                            "sha256": _sha256_json(historical_actions),
+                            "current_authority": False,
+                        },
+                    },
                 }
             )
         score = _annotate_score(candidate_records, candidate_decisions)
@@ -771,6 +838,7 @@ def _grid_panel(directory: Path, *, expected_seeds: set[int]) -> dict[str, Any]:
     aggregate["radius_diagnostics"] = _radius_diagnostics(all_records, all_predictions, all_epsilons, all_decisions)
     return {
         "rule": "per-candidate, per-seed exact-rank leave-one-condition-out KGA",
+        "result_scope": "retrospective, opened, dependent, and constructed",
         "calibration_scope": (
             "cross-fitted empirical residual calibration; direct self-inclusion removed, "
             "exchangeability and independence not established"

@@ -110,7 +110,7 @@ def _probabilities(logits: np.ndarray) -> np.ndarray:
     probabilities = exponentiated / denominator
     if not np.isfinite(probabilities).all():  # pragma: no cover - defensive
         raise IntegrityError("softmax produced a non-finite probability")
-    return probabilities
+    return np.ascontiguousarray(probabilities, dtype=np.float64)
 
 
 def _unit_interval(value: float) -> float:

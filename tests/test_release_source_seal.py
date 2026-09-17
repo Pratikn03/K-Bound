@@ -87,9 +87,11 @@ def test_tree_enumeration_does_not_request_unrelated_blob_sizes(
         return f"100644 blob {oid}\tmaintained.txt\0".encode("ascii")
 
     monkeypatch.setattr(seal, "_git_bytes", fake_git_bytes)
+    monkeypatch.setattr(seal, "_source_tree_pathspecs", lambda repo: ("maintained.txt",))
 
     assert seal._tree_blobs(tmp_path, "source-commit") == {"maintained.txt": oid}
-    assert calls == [("ls-tree", "-r", "-z", "source-commit")]
+    # Preserve positive-only source scope as well as avoiding blob-size reads.
+    assert calls == [("ls-tree", "-r", "-z", "source-commit", "--", "maintained.txt")]
 
 
 def test_source_seal_verifies_checkout_without_materializing_loose_blobs(
@@ -147,6 +149,7 @@ def test_release_generated_authorities_are_outer_checksum_outputs() -> None:
 def test_direct_release_scripts_are_explicitly_source_sealed() -> None:
     required = {
         "docs/research/kbound/scripts/audit_natural_target_provenance.py",
+        "docs/research/kbound/scripts/verify_cct20_prospective_evidence.py",
         "docs/research/kbound/scripts/audit_official_baselines.py",
         "docs/research/kbound/scripts/plot_canonical_decision_frontier.py",
         "docs/research/kbound/scripts/plot_conceptual_regime_geometry.py",
@@ -250,8 +253,11 @@ def test_final_seal_rejects_committed_non_output_change(
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     path = repo / "release_seal.json"
     seal._write(path, seal.build_payload(repo, source))
-    (repo / "other_source.py").write_text("changed = True\n", encoding="utf-8")
-    _git(repo, "add", "other_source.py", "release_seal.json")
+    # New code inside the maintained release scope must invalidate the seal;
+    # unrelated repository paths are deliberately outside its authority.
+    (repo / "tests").mkdir()
+    (repo / "tests/other_source.py").write_text("changed = True\n", encoding="utf-8")
+    _git(repo, "add", "tests/other_source.py", "release_seal.json")
     _git(repo, "commit", "-qm", "not an artifact-only commit")
     with pytest.raises(ValueError, match="committed changes since the sealed source"):
         seal.validate_seal(repo, path)
@@ -264,7 +270,8 @@ def test_final_seal_rejects_mutable_source_reference(
     payload = seal.build_payload(repo, source)
     payload["source_commit"] = "HEAD"
     path = repo / "release_seal.json"
-    seal._write(path, payload)
+    # Bypass the validated writer to exercise rejection of an external bad seal.
+    path.write_bytes(seal._seal_bytes(payload))
     with pytest.raises(ValueError, match="full immutable commit ID"):
         seal.validate_seal(repo, path)
 
@@ -281,13 +288,22 @@ def test_formal_pins_and_selected_validation_files_are_source_sealed() -> None:
     assert required <= set(seal.EXPLICIT_FILES["formal_source"])
     runbook = (seal.ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text()
     executed: set[str] = set()
+    # The runbook passes its regression array to pytest as quoted argv; collect
+    # that list too instead of silently treating the command as zero tests.
+    array = runbook.split("local regression_tests=(", 1)[1].split(")", 1)[0]
+    executed.update(shlex.split(array, comments=True))
     for line in runbook.replace("\\\n", " ").splitlines():
         if not line.lstrip().startswith('"$PY" -m pytest'):
             continue
         tokens = shlex.split(line, comments=True)
         if "--collect-only" not in tokens:
             executed.update(t for t in tokens if t.startswith("tests/") and t.endswith(".py"))
-    assert executed <= set(seal.EXPLICIT_FILES["release_validation"])
+    def is_sealed(path: str) -> bool:
+        return path in seal.EXPLICIT_FILES["release_validation"] or any(
+            category == "release_validation" and path.startswith(prefix) and path.endswith(suffixes)
+            for category, prefix, suffixes in seal.SOURCE_PREFIX_RULES
+        )
+    assert all(is_sealed(path) for path in executed)
     assert {
         "tests/test_kbound_formal_audit.py", "tests/test_kga_masked_inputs.py",
         "tests/test_kbound_current_policy_bindings.py",
@@ -354,6 +370,9 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
         f"    spec = importlib.util.spec_from_file_location('release_seal', {seal.__file__!r})\n"
         "    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)\n"
         "    module.ROOT = pathlib.Path.cwd()\n"
+        # This fixture exercises Git/source gates, not the machine-specific
+        # installed-package receipt (which has its own verification tests).
+        "    module.verify_release_python_content = lambda: None\n"
         "    module.EXPLICIT_FILES = {'source': ('maintained.txt',)}\n"
         "    module.GENERATED_OUTPUT_ALLOWLIST = frozenset({'generated.json', 'release_seal.json'})\n"
         "    sys.argv = args\n"

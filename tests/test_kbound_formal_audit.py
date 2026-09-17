@@ -13,7 +13,9 @@ from docs.research.kbound.formal import formal_audit as audit
 
 
 def test_registered_capstones_are_unique_and_imported() -> None:
-    assert len(audit.LEGACY_CORE_THEOREMS) == 65
+    # Current registry after the measurable-foundations additions.  The
+    # historical 65-name report remains archived separately.
+    assert len(audit.LEGACY_CORE_THEOREMS) == 70
     assert len(audit.VERIFIED_THEOREMS) == len(set(audit.VERIFIED_THEOREMS))
     assert audit.theorem_map_checks() == []
     assert audit.scan_for_forbidden_tokens() == []
@@ -23,15 +25,20 @@ def test_registered_capstones_are_unique_and_imported() -> None:
         assert (audit.ROOT / "KBound" / "Probability" / f"{module}.lean").is_file()
 
 
-def test_five_foundations_do_not_silently_close_the_false_sixth_extension() -> None:
-    assert len(audit.FOUNDATION_LAYERS) == 6
-    assert [row["status"] for row in audit.FOUNDATION_LAYERS].count(
-        "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS"
-    ) == 5
-    assert audit.FOUNDATION_LAYERS[-1]["status"] == "PARTIAL_COUNTEREXAMPLE_FOUND"
+def test_corrected_conditional_extension_does_not_close_refuted_historical_claim() -> None:
+    layers = {row["item"]: row for row in audit.FOUNDATION_LAYERS}
+    assert layers["full one-bit channel dichotomy over the historical declared model class"]["status"] == "PARTIAL_COUNTEREXAMPLE_FOUND"
+    assert layers["corrected one-bit decoder and conditional H/ratio-rate bridge"]["status"] == "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS"
     assert audit.OPEN_RESEARCH_FRONTIER
     assert "orbit-selection sufficiency" in audit.OPEN_RESEARCH_FRONTIER[0]["current"]
     assert "bool_decoder_iff_constant_on_fibres" in audit.VERIFIED_THEOREMS
+
+
+def test_manuscript_formal_count_matches_registered_scope() -> None:
+    text = (audit.ROOT.parent / "kbound_submission_supplement.tex").read_text()
+    assert f"kernel-checks {len(audit.VERIFIED_THEOREMS)} named declarations" in text
+    assert "It does not derive that premise" in text
+    assert "unrestricted historical" in text
 
 
 def test_nested_comment_mask_preserves_lines_and_does_not_hide_active_hole() -> None:

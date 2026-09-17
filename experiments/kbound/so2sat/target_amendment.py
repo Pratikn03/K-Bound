@@ -54,8 +54,7 @@ def validate_target_boundary_amendment(document: Mapping[str, Any]) -> None:
     if (
         document.get("schema") != AMENDMENT_SCHEMA
         or document.get("amendment_id") != AMENDMENT_ID
-        or document.get("status")
-        != "SEALED_TARGET_BOUNDARY_AMENDMENT_BEFORE_ANY_TARGET_CONTAINER_DESERIALIZATION"
+        or document.get("status") != "SEALED_TARGET_BOUNDARY_AMENDMENT_BEFORE_ANY_TARGET_CONTAINER_DESERIALIZATION"
     ):
         raise IntegrityError("unknown or unsealed target-boundary amendment")
     directory = Path(__file__).resolve().parent
@@ -74,8 +73,7 @@ def validate_target_boundary_amendment(document: Mapping[str, Any]) -> None:
     if (
         not isinstance(base_receipt, Mapping)
         or base_receipt.get("artifact_sha256") != expected_base["artifact_sha256"]
-        or base_receipt.get("canonical_document_sha256")
-        != expected_base["canonical_document_sha256"]
+        or base_receipt.get("canonical_document_sha256") != expected_base["canonical_document_sha256"]
     ):
         raise IntegrityError("base protocol receipt differs from the amendment binding")
     supersession = document.get("supersession")
@@ -89,9 +87,7 @@ def validate_target_boundary_amendment(document: Mapping[str, Any]) -> None:
             "outcome dataset; the offline entry point is authorized only after the complete "
             "prediction/action bundle and all receipts exist."
         ),
-        "superseded_json_pointer": (
-            "/target_label_firewall/scoring_implementation_in_this_package"
-        ),
+        "superseded_json_pointer": ("/target_label_firewall/scoring_implementation_in_this_package"),
     }:
         raise IntegrityError("target-boundary amendment changes more than its declared field")
     if document.get("boundary_contract") != _expected_boundary_contract():

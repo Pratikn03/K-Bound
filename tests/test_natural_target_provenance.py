@@ -75,3 +75,28 @@ def test_unavailable_historical_result_still_marks_track_opened(
     assert track["evidence"][0]["sha256"] is None
     assert track["evidence"][0]["hash_status"] == "unavailable"
     assert track["evidence"][0]["os_error_errno"] == 89
+
+
+def test_verified_cct20_bridge_is_prospective_evidence_not_unopened_target(
+    tmp_path: Path,
+) -> None:
+    module = load_module()
+    results = tmp_path / "experiments/kbound/results"
+    bridge = results / "task1_cct20_prospective_bridge_20260911/CCT20_PROSPECTIVE_EVIDENCE_RECEIPT.json"
+    bridge.parent.mkdir(parents=True)
+    bridge.write_text(
+        '{"schema":"kbound_cct20_prospective_evidence_bridge_v1",'
+        '"verification_outcome":"PASS",'
+        '"target_outcomes_unopened_before_execution":true,'
+        '"literal_label_unopened":false,'
+        '"exchangeability_status":"ASSUMED_AT_PROTOCOL_SCOPE_NOT_EMPIRICALLY_PROVEN",'
+        '"result_status":"SAFE_UTILITY_ONLY"}',
+        encoding="utf-8",
+    )
+
+    payload = module.audit(results)
+
+    assert payload["tracks"]["cct20"]["status"] == "PROSPECTIVE_COMPLETED_SAFE_UTILITY_ONLY"
+    assert payload["verified_prospective_tracks"] == ["cct20"]
+    assert payload["prospective_evidence_available"] is True
+    assert payload["prospective_natural_track_available"] is False

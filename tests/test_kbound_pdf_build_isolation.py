@@ -7,15 +7,14 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
-import signal
 import shutil
+import signal
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD_SCRIPT = ROOT / "docs/research/kbound/scripts/build_pdfs.sh"
@@ -37,6 +36,12 @@ def build_replica(tmp_path: Path) -> SimpleNamespace:
     shared = paper / "paper/sections/shared.tex"
     shared.parent.mkdir(parents=True)
     shared.write_text("Shared relative input stays available.\n", encoding="utf-8")
+    figures = paper / "figures"
+    figures.mkdir(parents=True)
+    # The real figure generator refreshes this source before conversion.  A
+    # small fixture file keeps the isolated shell test independent of the
+    # repository's actual generated assets while exercising that conversion.
+    (figures / "fig_frontier_schematic.png").write_bytes(b"fixture PNG source\n")
     for driver in ("kbound_submission", "kbound_tmlr", "kbound_short"):
         (paper / f"{driver}.tex").write_text("\\input{paper/sections/shared.tex}\n", encoding="utf-8")
     (paper / "kbound_short_original_build.log").write_text("historical do not refresh\n", encoding="utf-8")
@@ -64,6 +69,14 @@ if os.environ.get('BUILD_TEST_FAIL_VALIDATOR') == script:
 if script == 'build_docx.py':
     output = pathlib.Path(sys.argv[sys.argv.index('--output') + 1])
     output.write_bytes(b'test successful DOCX')
+""")
+    _executable(tools / "magick", common + """
+args = sys.argv[1:]
+event('magick', args=args, cwd=os.getcwd())
+source = pathlib.Path(args[-2])
+destination = pathlib.Path(args[-1])
+assert source.is_file(), 'figure conversion must consume the freshly generated PNG'
+destination.write_bytes(b'%PDF-1.4\\nfixture frontier figure\\n')
 """)
     _executable(tools / "latexmk", common + """
 args = sys.argv[1:]
@@ -214,13 +227,14 @@ def test_all_scientific_validation_precedes_latex_and_metadata_refresh_is_last(b
     events = _events(build_replica)
     calls = [event for event in events if event["kind"] in {"python", "latexmk"}]
     assert [call.get("script", "latexmk") for call in calls] == [
-        "build_so2sat_numbers.py", "validate_canonical_release_data.py",
+        "verify_cifar_current_arithmetic.py", "build_so2sat_numbers.py", "validate_canonical_release_data.py",
         "build_current_policy_interval_diagnostics.py", "validate_manuscript_claims.py",
         "make_tables.py", "plot_canonical_decision_frontier.py",
         "plot_conceptual_regime_geometry.py", "make_submission_figures.py",
         "plot_kga_interval_rule.py", "latexmk", "build_docx.py", "build_dashboard_snapshot.py",
     ]
-    assert calls[2]["args"] == ["--check"]
+    assert calls[0]["args"] == []
+    assert calls[3]["args"] == ["--check"]
     assert calls[-1]["args"] == ["--metadata-only"]
     assert (build_replica.paper / "kbound_short_final_draft.docx").read_bytes() == b"test successful DOCX"
 
@@ -232,6 +246,15 @@ def test_failed_scientific_validation_never_starts_latex_or_publishes(build_repl
     assert not any(event["kind"] == "latexmk" for event in _events(build_replica))
     assert (build_replica.paper / "kbound_short_final_draft.pdf").is_symlink()
     assert canaries["kbound_short_final_draft.pdf"].read_bytes() == b"old output must never be opened or changed\n"
+
+
+def test_failed_current_cifar_verification_precedes_all_regeneration_and_build_activity(build_replica):
+    result = _run(build_replica, BUILD_TEST_FAIL_VALIDATOR="verify_cifar_current_arithmetic.py")
+    assert result.returncode != 0
+    assert [event["script"] for event in _events(build_replica) if event["kind"] == "python"] == [
+        "verify_cifar_current_arithmetic.py",
+    ]
+    assert not any(event["kind"] == "latexmk" for event in _events(build_replica))
 
 
 @pytest.mark.parametrize("long_option", ["BUILD_LONG_TMLR", "BUILD_HISTORICAL_TMLR"])
