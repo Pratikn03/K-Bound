@@ -6,11 +6,11 @@ measured. This script compares against the promoted values parsed from
 paper/generated/kbound_numbers.tex (the same macros the paper compiles from) and exits nonzero on
 any out-of-tolerance mismatch, printing a per-metric report for the sign-off form (Part D).
 
-Their JSON schema (any subset of keys; unknown keys are reported, not scored):
+Their JSON schema (exactly all declared keys, finite JSON numbers only):
   {"cifar_tent_kga_regret": 0.0016, "cifar_tent_fa_u": 0.0, ...}
 Key -> macro mapping below; extend MAPPING as the packet grows.
 """
-import argparse, json, re, sys, os
+import argparse, json, re, sys, os, math
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NUMBERS_TEX = os.path.join(HERE, "..", "paper", "generated", "kbound_numbers.tex")
@@ -32,15 +32,36 @@ MAPPING = {
 
 
 def parse_macros(path: str) -> dict:
-    with open(path) as stream:
-        txt = stream.read()
+    txt = open(path).read()
     out = {}
-    # Hex spelling denotes a literal TeX backslash, not a network path.
-    for name, body in re.findall(r"\x5cnewcommand\{\x5c([A-Za-z]+)\}\{([^}]*)\}", txt):
+    for name, body in re.findall(r"\\newcommand\{\\([A-Za-z]+)\}\{([^}]*)\}", txt):
         m = re.search(r"-?\d+\.?\d*", body.replace("$", ""))
         if m:
             out[name] = float(m.group())
     return out
+
+
+def load_results(path: str) -> dict:
+    def reject_constant(value):
+        raise ValueError(f"non-finite JSON value: {value}")
+
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"duplicate JSON key: {key}")
+            result[key] = value
+        return result
+
+    with open(path, encoding="utf-8") as handle:
+        result = json.load(handle, parse_constant=reject_constant,
+                           object_pairs_hook=unique_pairs)
+    if not isinstance(result, dict) or set(result) != set(MAPPING):
+        raise ValueError("metric keys must match the complete declared set exactly")
+    for key, value in result.items():
+        if type(value) not in (int, float) or not math.isfinite(value):
+            raise ValueError(f"metric {key} must be a finite JSON number")
+    return result
 
 
 def main() -> None:
@@ -49,15 +70,15 @@ def main() -> None:
     ap.add_argument("--numbers-tex", default=NUMBERS_TEX)
     args = ap.parse_args()
 
-    macros = parse_macros(args.numbers_tex)
-    with open(args.their_results) as stream:
-        theirs = json.load(stream)
+    try:
+        macros = parse_macros(args.numbers_tex)
+        theirs = load_results(args.their_results)
+    except (OSError, ValueError, OverflowError) as exc:
+        print(f"[verify] INVALID RESULTS — {exc}")
+        sys.exit(2)
 
     failures, checked = [], 0
     for key, value in sorted(theirs.items()):
-        if key not in MAPPING:
-            print(f"  ?  {key}: {value}  (no mapping; reported only)")
-            continue
         macro, tol = MAPPING[key]
         if macro not in macros:
             print(f"  !  {key}: macro \\{macro} not found in kbound_numbers.tex")
@@ -71,9 +92,6 @@ def main() -> None:
             failures.append(key)
 
     print(f"\n[verify] {checked} metrics checked, {len(failures)} failures.")
-    if checked == 0:
-        print("[verify] NO METRICS CHECKED — provide at least one recognized metric; do not sign off.")
-        sys.exit(1)
     if failures:
         print("[verify] MISMATCH — do not sign off; investigate before any paper edit.")
         sys.exit(1)

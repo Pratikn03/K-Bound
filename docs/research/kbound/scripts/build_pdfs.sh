@@ -5,10 +5,7 @@
 # Usage:
 #   bash docs/research/kbound/scripts/build_pdfs.sh
 #   BUILD_LONG_TMLR=1 bash docs/research/kbound/scripts/build_pdfs.sh
-#   BUILD_SHORT_MAIN=1 bash docs/research/kbound/scripts/build_pdfs.sh
-#   BUILD_SHORT_SUPPLEMENT=1 bash docs/research/kbound/scripts/build_pdfs.sh
-#   BUILD_FULL_REPORT=1 bash docs/research/kbound/scripts/build_pdfs.sh
-#   BUILD_MAIN_WITH_APPENDIX=1 bash docs/research/kbound/scripts/build_pdfs.sh
+#   BUILD_FULL=1 bash docs/research/kbound/scripts/build_pdfs.sh
 #   BUILD_DOCX=1 bash docs/research/kbound/scripts/build_pdfs.sh
 #
 # BUILD_HISTORICAL_TMLR remains a backward-compatible alias for BUILD_LONG_TMLR.
@@ -18,13 +15,23 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(cd "$ROOT/../../.." && pwd)"
 cd "$ROOT"
 export COPYFILE_DISABLE=1
-# Freeze TeX's clock for byte-reproducible release PDFs.  The epoch is the
-# start of the final release day in the repository's declared local timezone
-# (2026-09-04 00:00:00 America/Chicago).  Individual drivers also suppress the
-# random trailer identifier and engine-path metadata.
-export SOURCE_DATE_EPOCH=1788498000
-export FORCE_SOURCE_DATE=1
-export TZ=UTC
+
+# Retired split-artifact switches are accepted only as explicit boolean
+# compatibility inputs.  Validate them before any Python/tool discovery so a
+# malformed environment cannot trigger partial regeneration of release data.
+for split_flag in BUILD_SHORT_MAIN BUILD_SHORT_SUPPLEMENT; do
+  # Bash 3.2 (the macOS system shell) has no ``[[ -v name ]]``.  Preserve an
+  # explicitly empty value as invalid while treating an unset switch as 0.
+  eval "split_value=\${$split_flag-__unset__}"
+  [[ "$split_value" == "__unset__" ]] && split_value=0
+  case "$split_value" in
+    0|1) ;;
+    *)
+      echo "ERROR: $split_flag must be 0 or 1" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [[ -n "${PYTHON:-}" ]]; then
   PY="$PYTHON"
@@ -35,69 +42,28 @@ else
 fi
 
 BUILD_LONG_TMLR="${BUILD_LONG_TMLR:-${BUILD_HISTORICAL_TMLR:-0}}"
-BUILD_SHORT_MAIN="${BUILD_SHORT_MAIN-0}"
-BUILD_SHORT_SUPPLEMENT="${BUILD_SHORT_SUPPLEMENT-0}"
-BUILD_FULL_REPORT="${BUILD_FULL_REPORT-0}"
-BUILD_MAIN_WITH_APPENDIX="${BUILD_MAIN_WITH_APPENDIX-0}"
-KBOUND_AUTHORIZE_PROTECTED_SO2SAT="${KBOUND_AUTHORIZE_PROTECTED_SO2SAT:-0}"
-if [[ -n "${SOURCE_SNAPSHOT_COMMIT:-}" ]]; then
-  KBOUND_SOURCE_SNAPSHOT_COMMIT="$SOURCE_SNAPSHOT_COMMIT"
-elif [[ -e "$REPO/.git" ]]; then
-  KBOUND_SOURCE_SNAPSHOT_COMMIT="$(git -C "$REPO" rev-parse --short=12 HEAD)"
-else
-  KBOUND_SOURCE_SNAPSHOT_COMMIT="000000000000"
-  echo "WARNING: no Git metadata; using an unsealed nonrelease source identity" >&2
-fi
-if [[ ! "$KBOUND_SOURCE_SNAPSHOT_COMMIT" =~ ^[0-9a-f]{12}$ ]]; then
-  echo "ERROR: SOURCE_SNAPSHOT_COMMIT must be exactly 12 lowercase hex characters" >&2
-  exit 1
-fi
+case "$BUILD_LONG_TMLR" in
+  0|1) ;;
+  *)
+    echo "ERROR: BUILD_LONG_TMLR must be 0 or 1" >&2
+    exit 1
+    ;;
+esac
 
-validate_binary_build_flag() {
-  local name="$1"
-  local value="$2"
-  case "$value" in
-    0|1) ;;
-    *)
-      echo "ERROR: $name must be 0 or 1" >&2
-      exit 1
-      ;;
-  esac
-}
+BUILD_FULL="${BUILD_FULL:-0}"
+case "$BUILD_FULL" in
+  0|1) ;;
+  *)
+    echo "ERROR: BUILD_FULL must be 0 or 1" >&2
+    exit 1
+    ;;
+esac
 
-# Validate every build selector before resolving release tools so malformed
-# opt-ins fail without consulting the local LaTeX installation.
-validate_binary_build_flag BUILD_LONG_TMLR "$BUILD_LONG_TMLR"
-validate_binary_build_flag BUILD_SHORT_MAIN "$BUILD_SHORT_MAIN"
-validate_binary_build_flag BUILD_SHORT_SUPPLEMENT "$BUILD_SHORT_SUPPLEMENT"
-validate_binary_build_flag BUILD_FULL_REPORT "$BUILD_FULL_REPORT"
-validate_binary_build_flag BUILD_MAIN_WITH_APPENDIX "$BUILD_MAIN_WITH_APPENDIX"
-validate_binary_build_flag KBOUND_AUTHORIZE_PROTECTED_SO2SAT "$KBOUND_AUTHORIZE_PROTECTED_SO2SAT"
-
-resolve_release_tool() {
-  local logical_name="$1"
-  local command_name="$2"
-  local override_name="KBOUND_TOOL_${logical_name}"
-  local override="${!override_name:-}"
-  local candidate
-  if [[ -n "$override" ]]; then
-    case "$override" in
-      /*) ;;
-      *) echo "ERROR: $override_name must name an absolute non-symlink executable" >&2; return 1 ;;
-    esac
-    if [[ ! -f "$override" || ! -x "$override" || -L "$override" ]]; then
-      echo "ERROR: $override_name must name an absolute non-symlink executable" >&2
-      return 1
-    fi
-    printf '%s\n' "$override"
-    return
-  fi
-  candidate="$(command -v "$command_name" 2>/dev/null || true)"
-  if [[ -z "$candidate" || ! -f "$candidate" || ! -x "$candidate" ]]; then
-    echo "ERROR: missing required tool '$command_name'" >&2
-    return 1
-  fi
-  printf '%s\n' "$candidate"
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "ERROR: missing required tool '$1'" >&2
+    exit 1
+  }
 }
 
 publish_derived() {
@@ -109,11 +75,10 @@ publish_derived() {
   case "$name" in
     kbound_short_final_draft.pdf|kbound_short_final_draft.log|\
     kbound_submission_build_driver.log|kbound_short_final_build.log|\
-    kbound_tmlr.pdf|kbound_tmlr.log|kbound_tmlr_build.log) ;;
-    kbound_short_main.pdf|kbound_short_main.log|kbound_short_main_build.log|\
-    kbound_short_supplement.pdf|kbound_short_supplement.log|kbound_short_supplement_build.log|\
-    kbound_full_report.pdf|kbound_full_report.log|kbound_full_report_build.log) ;;
-    kbound_main_with_appendix.pdf|kbound_main_with_appendix.log|kbound_main_with_appendix_build.log) ;;
+    kbound_tmlr.pdf|kbound_tmlr.log|kbound_tmlr_build.log|\
+    kbound_full.pdf|kbound_full.log|kbound_full_build.log|\
+    kbound_short.pdf|kbound_short.log|kbound_full_ieee_diagnostic.pdf|\
+    kbound_full_ieee_diagnostic_build.log) ;;
     *) echo "ERROR: refusing unexpected derived-output name: $name" >&2; return 1 ;;
   esac
   if [[ "$source" != "$BUILD_TMP_DIR/"* || ! -s "$source" || -L "$source" || -d "$ROOT/$name" ]]; then
@@ -140,8 +105,7 @@ build_pdf() {
   for suffix in aux out toc lof lot loa lol bbl; do
     : >"$BUILD_TMP_DIR/$stem.$suffix"
   done
-  local command=("$PERL" "$LATEXMK" -g -pdf -interaction=nonstopmode -halt-on-error -file-line-error
-    "-pdflatex=$PDFLATEX_COMMAND"
+  local command=(latexmk -g -pdf -interaction=nonstopmode -halt-on-error -file-line-error
     "-outdir=$BUILD_TMP_DIR" "-auxdir=$BUILD_TMP_DIR")
   if [[ -n "$jobname" ]]; then
     command+=("-jobname=$jobname")
@@ -156,7 +120,7 @@ build_pdf() {
     echo "ERROR: successful compiler did not produce a PDF and TeX log in $BUILD_TMP_DIR" >&2
     return 1
   fi
-  if ! "$PDFINFO" "$BUILD_TMP_DIR/$stem.pdf" >"$BUILD_TMP_DIR/$stem.pdfinfo" 2>&1; then
+  if ! pdfinfo "$BUILD_TMP_DIR/$stem.pdf" >"$BUILD_TMP_DIR/$stem.pdfinfo" 2>&1; then
     echo "ERROR: built PDF failed validation; local diagnostics retained in $BUILD_TMP_DIR" >&2
     tail -80 "$BUILD_TMP_DIR/$stem.pdfinfo" >&2
     return 1
@@ -166,48 +130,23 @@ build_pdf() {
   publish_derived "$driver_log" "$log"
 }
 
-LATEXMK="$(resolve_release_tool LATEXMK latexmk)"
-PERL="$(resolve_release_tool PERL perl)"
-PDFLATEX="$(resolve_release_tool PDFLATEX pdflatex)"
-PDFINFO="$(resolve_release_tool PDFINFO pdfinfo)"
-# The verified realpath behind the conventional `pdflatex` symlink is the
-# `pdftex` executable. Bind the LaTeX format explicitly so resolving the
-# symlink cannot silently switch the engine to plain TeX via argv[0].
-printf -v PDFLATEX_COMMAND '%q -fmt=pdflatex %%O %%S' "$PDFLATEX"
+need latexmk
+need pdfinfo
+
+echo "==> Verifying release-bound current CIFAR arithmetic artifacts"
+(cd "$REPO" && "$PY" "$ROOT/scripts/verify_cifar_current_arithmetic.py")
+
+echo "==> Regenerating receipt-bound So2Sat manuscript numbers"
+"$PY" scripts/build_so2sat_numbers.py
 
 echo "==> Validating frozen release authorities"
 # A manuscript build is a presentation operation.  It must not rewrite sealed
 # scientific evidence with a new timestamp, Git head, or local package version.
 # Release-data regeneration and resealing are separate, explicit runbook steps.
-if [[ "$KBOUND_AUTHORIZE_PROTECTED_SO2SAT" == "1" ]]; then
-  echo "==> Explicit authorization: refreshing and validating protected So2Sat development authority"
-  "$PY" scripts/build_so2sat_numbers.py
-  (cd "$REPO" && "$PY" "$ROOT/scripts/validate_canonical_release_data.py")
-else
-  echo "==> Protected So2Sat development authority remains outside the public build closure"
-fi
+(cd "$REPO" && "$PY" "$ROOT/scripts/validate_canonical_release_data.py")
 "$PY" scripts/build_current_policy_interval_diagnostics.py --check
-# The claim validator expands every active TeX include.  Generate the shared
-# release identity first so a clean checkout does not depend on an older local
-# build product being present.
-"$PY" scripts/generate_release_identity.py \
-  --source-snapshot-commit "$KBOUND_SOURCE_SNAPSHOT_COMMIT"
-if [[ "$KBOUND_AUTHORIZE_PROTECTED_SO2SAT" == "1" ]]; then
-  (cd "$REPO" && PYTHONPATH="$REPO/src:$ROOT${PYTHONPATH:+:$PYTHONPATH}" \
-    "$PY" src/scripts/validate_manuscript_claims.py --authorize-protected-so2sat)
-else
-  (cd "$REPO" && PYTHONPATH="$REPO/src:$ROOT${PYTHONPATH:+:$PYTHONPATH}" \
-    "$PY" src/scripts/validate_manuscript_claims.py)
-fi
-
-# Recompute only six saved sufficient-statistic scalars. This does not open
-# images, labels, checkpoint files, protected studies, or a new outcome subset.
-# Verification is read-only: stale macros stop the build instead of being
-# silently overwritten or presented as a fresh experiment.
-"$PY" scripts/empirical_macros.py \
-  --bundle paper/release/empirical_macro_inputs \
-  --manifest-sha256 e4c2cff245871a2d2e8ebe626e7c197b59faa4194f921e15eff84a3903e6c3b4 \
-  --check paper/generated/empirical_evidence_numbers.tex
+(cd "$REPO" && PYTHONPATH="$REPO/src:$ROOT${PYTHONPATH:+:$PYTHONPATH}" \
+  "$PY" src/scripts/validate_manuscript_claims.py)
 
 echo "==> Regenerating canonical numbers and figures"
 "$PY" scripts/make_tables.py
@@ -215,6 +154,17 @@ echo "==> Regenerating canonical numbers and figures"
 "$PY" scripts/plot_conceptual_regime_geometry.py
 "$PY" scripts/make_submission_figures.py --frontier-only
 "$PY" scripts/plot_kga_interval_rule.py
+# TeX includes the PDF form of this schematic, while the generator above
+# writes the canonical PNG.  Refresh the included PDF in the same build so a
+# changed frontier cannot be masked by a stale conversion from an older run.
+if command -v magick >/dev/null 2>&1; then
+  magick -density 200 figures/fig_frontier_schematic.png figures/fig_frontier_schematic.pdf
+elif command -v convert >/dev/null 2>&1; then
+  convert -density 200 figures/fig_frontier_schematic.png figures/fig_frontier_schematic.pdf
+else
+  echo "ERROR: ImageMagick (magick or convert) is required to refresh fig_frontier_schematic.pdf" >&2
+  exit 1
+fi
 
 # Keep the paper working directory for relative TeX inputs, but never place
 # latexmk's intermediate files or redirected logs beside cloud-backed sources.
@@ -229,21 +179,14 @@ if [[ "$BUILD_LONG_TMLR" == "1" ]]; then
   echo "==> Building synchronized maintained long TMLR companion"
   build_pdf kbound_tmlr.tex kbound_tmlr_build.log
 fi
-if [[ "$BUILD_SHORT_MAIN" == "1" ]]; then
-  echo "==> Building standalone short main paper"
-  build_pdf kbound_short_main.tex kbound_short_main_build.log
+if [[ "$BUILD_FULL" == "1" ]]; then
+  echo "==> Building maintained non-anonymous full companion"
+  build_pdf kbound_full.tex kbound_full_build.log
 fi
-if [[ "$BUILD_SHORT_SUPPLEMENT" == "1" ]]; then
-  echo "==> Building standalone short supplement"
-  build_pdf kbound_short_supplement.tex kbound_short_supplement_build.log
-fi
-if [[ "$BUILD_FULL_REPORT" == "1" ]]; then
-  echo "==> Building full technical report"
-  build_pdf kbound_full_report.tex kbound_full_report_build.log
-fi
-if [[ "$BUILD_MAIN_WITH_APPENDIX" == "1" ]]; then
-  echo "==> Building named main paper with integrated appendices"
-  build_pdf kbound_main_with_appendix.tex kbound_main_with_appendix_build.log
+
+if [[ "${BUILD_DIAGNOSTIC_IEEE:-0}" == "1" ]]; then
+  build_pdf kbound_short.tex kbound_full_ieee_diagnostic_build.log
+  publish_derived "$BUILD_TMP_DIR/kbound_short.pdf" kbound_full_ieee_diagnostic.pdf
 fi
 
 # The maintained outputs are written in place. Historical compatibility PDFs
@@ -252,29 +195,8 @@ chmod 0644 kbound_short_final_draft.pdf
 if [[ "$BUILD_LONG_TMLR" == "1" ]]; then
   chmod 0644 kbound_tmlr.pdf
 fi
-if [[ "$BUILD_SHORT_MAIN" == "1" ]]; then
-  chmod 0644 kbound_short_main.pdf
-fi
-if [[ "$BUILD_SHORT_SUPPLEMENT" == "1" ]]; then
-  chmod 0644 kbound_short_supplement.pdf
-fi
-if [[ "$BUILD_FULL_REPORT" == "1" ]]; then
-  chmod 0644 kbound_full_report.pdf
-fi
-if [[ "$BUILD_MAIN_WITH_APPENDIX" == "1" ]]; then
-  chmod 0644 kbound_main_with_appendix.pdf
-fi
-
-# Publish a single unambiguous release set only when every maintained driver
-# was rebuilt in this invocation. Partial developer builds must never combine
-# fresh and older PDFs under the current release names.
-if [[ "$BUILD_LONG_TMLR" == "1" && "$BUILD_SHORT_MAIN" == "1" && \
-      "$BUILD_SHORT_SUPPLEMENT" == "1" && "$BUILD_FULL_REPORT" == "1" ]]; then
-  echo "==> Publishing one stable current PDF set"
-  "$PY" scripts/publish_current_pdfs.py \
-    --paper-dir "$ROOT" \
-    --release-dir "$ROOT/release/current" \
-    --output-dir "$REPO/output/pdf"
+if [[ "$BUILD_FULL" == "1" ]]; then
+  chmod 0644 kbound_full.pdf
 fi
 
 if [[ "${BUILD_DOCX:-0}" == "1" ]]; then
@@ -295,15 +217,7 @@ if [[ "$BUILD_LONG_TMLR" == "1" ]]; then
   echo "==> Maintained synchronized long output"
   ls -lh kbound_tmlr.pdf
 fi
-if [[ "$BUILD_SHORT_MAIN" == "1" ]]; then
-  ls -lh kbound_short_main.pdf
-fi
-if [[ "$BUILD_SHORT_SUPPLEMENT" == "1" ]]; then
-  ls -lh kbound_short_supplement.pdf
-fi
-if [[ "$BUILD_FULL_REPORT" == "1" ]]; then
-  ls -lh kbound_full_report.pdf
-fi
-if [[ "$BUILD_MAIN_WITH_APPENDIX" == "1" ]]; then
-  ls -lh kbound_main_with_appendix.pdf
+if [[ "$BUILD_FULL" == "1" ]]; then
+  echo "==> Maintained full companion output"
+  ls -lh kbound_full.pdf
 fi

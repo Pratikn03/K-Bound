@@ -31,9 +31,8 @@ from __future__ import annotations
 
 import os
 from collections import Counter
-from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -118,7 +117,7 @@ class DecisionStats:
 # ---------------------------------------------------------------------------
 # Helpers to read class + confidence from an outcome.
 # ---------------------------------------------------------------------------
-def _class_conf(prob: Any) -> tuple[int, float]:
+def _class_conf(prob: Any) -> Tuple[int, float]:
     """Window-level (class, confidence) from a per-frame softmax (N,C) or (C,)."""
     p = np.asarray(prob, dtype=float)
     if p.size == 0:
@@ -129,7 +128,7 @@ def _class_conf(prob: Any) -> tuple[int, float]:
     return int(m.argmax()), float(m.max())
 
 
-def _frozen_class_conf(outcome: Any) -> tuple[int, float]:
+def _frozen_class_conf(outcome: Any) -> Tuple[int, float]:
     p0 = getattr(outcome, "p0", None)
     if p0 is not None:
         return _class_conf(p0)
@@ -139,7 +138,7 @@ def _frozen_class_conf(outcome: Any) -> tuple[int, float]:
     return -1, float("nan")
 
 
-def _candidate_class_conf(outcome: Any) -> tuple[int, float]:
+def _candidate_class_conf(outcome: Any) -> Tuple[int, float]:
     pa = getattr(outcome, "pa", None)
     if pa is not None:
         return _class_conf(pa)
@@ -149,7 +148,7 @@ def _candidate_class_conf(outcome: Any) -> tuple[int, float]:
     return -1, float("nan")
 
 
-def _class_name(idx: int, class_names: Sequence[str] | None) -> str:
+def _class_name(idx: int, class_names: Optional[Sequence[str]]) -> str:
     if idx < 0:
         return "n/a"
     if class_names and 0 <= idx < len(class_names):
@@ -177,8 +176,8 @@ def _to_bgr_uint8(frame: Any) -> np.ndarray:
 def annotate_frame(
     frame: Any,
     outcome: Any,
-    stats: DecisionStats | None = None,
-    class_names: Sequence[str] | None = None,
+    stats: Optional[DecisionStats] = None,
+    class_names: Optional[Sequence[str]] = None,
     frame_px: int = 360,
     panel_w: int = 420,
     stats_h: int = 104,
@@ -240,16 +239,12 @@ def annotate_frame(
     cv2.rectangle(canvas, (px - 4, by0), (W - 8, by0 + 84), color, -1)
     label = DECISION_LABELS.get(decision, decision.upper())
     text(f"KGA: {label}", (px + 6, by0 + 32), 0.92, (20, 20, 20), 2)
-    if getattr(d, "availability", "available") == "unavailable":
-        text("unavailable / retain frozen", (px + 6, by0 + 58), 0.5, (20, 20, 20), 1)
-        text("certificate not issued", (px + 6, by0 + 78), 0.5, (20, 20, 20), 1)
-    else:
-        bhat = float(d.bhat)
-        eps = float(d.eps)
-        lo = float(d.lower)
-        hi = float(d.upper)
-        text(f"B^ = {bhat:+.3f}   eps = {eps:.3f}", (px + 6, by0 + 58), 0.5, (20, 20, 20), 1)
-        text(f"[{lo:+.3f}, {hi:+.3f}]", (px + 6, by0 + 78), 0.5, (20, 20, 20), 1)
+    bhat = float(getattr(d, "bhat", 0.0))
+    eps = float(getattr(d, "eps", 0.0))
+    lo = float(getattr(d, "lower", bhat - eps))
+    hi = float(getattr(d, "upper", bhat + eps))
+    text(f"B^ = {bhat:+.3f}   eps = {eps:.3f}", (px + 6, by0 + 58), 0.5, (20, 20, 20), 1)
+    text(f"[{lo:+.3f}, {hi:+.3f}]", (px + 6, by0 + 78), 0.5, (20, 20, 20), 1)
 
     # one-line reason (wrapped to two short lines if long)
     reason = str(getattr(d, "reason", "")).strip()
@@ -292,7 +287,7 @@ def _chip(canvas, org, color, label, text_fn):
     text_fn(label, (x + 20, y), 0.44, _DIM, 1)
 
 
-def _wrap(s: str, width: int) -> list[str]:
+def _wrap(s: str, width: int) -> List[str]:
     out, line = [], ""
     for word in s.split():
         if len(line) + len(word) + 1 > width:
@@ -337,8 +332,6 @@ class LiveDashboard:
 
     def render(self, outcome) -> str:
         d = outcome.decision
-        if getattr(d, "availability", "available") == "unavailable":
-            return f"[w{outcome.window_id:04d}] abstain: unavailable / retain frozen; certificate not issued"
         sym = _SYMBOL.get(d.decision, "?")
         return (
             f"[w{outcome.window_id:04d}] {sym} {d.decision:7s} "
@@ -390,10 +383,10 @@ class VisualDashboard:
         self,
         window_name: str = "K-Bound Edge - live shadow",
         show: bool = True,
-        record_path: str | None = None,
-        sample_dir: str | None = None,
+        record_path: Optional[str] = None,
+        sample_dir: Optional[str] = None,
         max_samples: int = 8,
-        class_names: Sequence[str] | None = None,
+        class_names: Optional[Sequence[str]] = None,
         fps: float = 8.0,
         delay_ms: int = 1,
         every: int = 1,
@@ -409,10 +402,10 @@ class VisualDashboard:
         self.every = max(1, int(every))
 
         self.stats = DecisionStats()
-        self._writer: Any = None
+        self._writer = None
         self._win_ready = False
         self._n_saved = 0
-        self.last_frame: np.ndarray | None = None
+        self.last_frame: Optional[np.ndarray] = None
         self.stopped = False
 
         if self.sample_dir:
@@ -441,16 +434,15 @@ class VisualDashboard:
         import cv2
         if self._writer is None:
             h, w = annotated.shape[:2]
-            fourcc = cast(Any, cv2).VideoWriter_fourcc(*"mp4v")
-            record_path = cast(str, self.record_path)
-            os.makedirs(os.path.dirname(os.path.abspath(record_path)), exist_ok=True)
-            self._writer = cv2.VideoWriter(record_path, fourcc, self.fps, (w, h))
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            os.makedirs(os.path.dirname(os.path.abspath(self.record_path)), exist_ok=True)
+            self._writer = cv2.VideoWriter(self.record_path, fourcc, self.fps, (w, h))
         self._writer.write(annotated)
 
     def _save_sample(self, annotated, outcome) -> None:
         import cv2
         name = f"window_{getattr(outcome, 'window_id', self._n_saved):04d}_{outcome.decision.decision}.png"
-        cv2.imwrite(os.path.join(cast(str, self.sample_dir), name), annotated)
+        cv2.imwrite(os.path.join(self.sample_dir, name), annotated)
         self._n_saved += 1
 
     def _imshow(self, annotated) -> None:
@@ -493,9 +485,9 @@ class VisualDashboard:
 
 def build_dashboard(
     view: str = "console",
-    record_path: str | None = None,
-    sample_dir: str | None = None,
-    class_names: Sequence[str] | None = None,
+    record_path: Optional[str] = None,
+    sample_dir: Optional[str] = None,
+    class_names: Optional[Sequence[str]] = None,
     every: int = 1,
     fps: float = 8.0,
 ):

@@ -1,0 +1,1102 @@
+% Combined drivers resolve supplement labels; standalone main uses descriptive references.
+\providecommand{\KBSuppRef}[3]{#2~\ref{#1}}
+% Shared scientific narrative. Audit material is in kbound_submission_supplement.tex.
+
+% Shared scientific main text for the maintained compact and anonymous TMLR layouts.
+% Numerical authorities are unchanged. Supplementary material is loaded separately
+% after the shared bibliography by both drivers.
+
+\section{Introduction}
+\label{sec:compact-intro}
+
+Test-time adaptation changes a model using unlabeled deployment data. Entropy minimization,
+filtering, regularization, and related methods can recover accuracy under shift, but the same update
+can also make predictions worse~\cite{wang2021tent,niu2022eata,niu2023sar,wang2022cotta}.
+An adaptation method proposes a candidate; a deployment system must still decide whether to use it.
+
+Our primary research question is:
+\emph{When can evidence available without new target labels justify replacing a frozen predictor
+with a fixed adapted candidate?}
+Let $f_0$ be the frozen predictor and $f_a$ the candidate. Their population benefit is
+\begin{equation}
+  \Delta=R_T(f_0)-R_T(f_a).
+  \label{eq:compact-benefit}
+\end{equation}
+A positive benefit favors the update; a negative benefit favors the frozen model. We distinguish
+three conclusions: \adapt supports positive benefit, \freeze supports negative benefit, and
+\abstain records insufficient evidence for either strict direction. Both non-adapt actions retain
+$f_0$, but only freeze asserts that the candidate is worse.
+
+K-Bound studies this decision as a partial-identification problem. In a binary model, we hold the
+input law, predictors, and label-free evidence fixed and vary the target labels within a declared
+class. The resulting feasible benefit set gives an exact boundary for a uniformly justified strict
+decision. The bound on the hidden calibration residual is an assumption about that class, not a
+quantity that an unlabeled batch supplies for free. A second result makes this information limit
+explicit: an audit using the same evidence must still cover the unresolved residual range.
+
+We present K-Bound and Knowability-Guided Adaptation (KGA) together because they address the
+identical practitioner problem---when to risk model adaptation without ground-truth target
+labels---under two complementary evidentiary regimes. K-Bound operates in the deductive regime of
+a single unlabeled test stream, establishing the fundamental impossibility of auditing target risk
+without an exogenous calibration sensitivity parameter $\beta$. KGA operates in the inductive regime
+where historical benchmark shifts are available, fitting an empirical benefit predictor on past
+evaluation cells and calibrating its residual uncertainty to govern a three-way commitment gate.
+We do not claim KGA implements or approximates the population frontier; rather, K-Bound defines
+what is fundamentally impossible from unlabeled test data alone, and KGA demonstrates what becomes
+operational once historical shift benchmarks are admitted into the evidentiary basis.
+Section~\ref{sec:compact-bridge} formalizes this architectural relationship.
+
+\subsection{Three Scientific Contributions}
+
+\begin{enumerate}
+  \item \textbf{An exact benefit frontier on a declared class.}
+  We construct target label laws with identical label-free evidence, derive their feasible benefit
+  interval, and characterize its strict positive, strict negative, and unresolved regions,
+  including the zero-benefit boundary.
+  \item \textbf{An evidence-fibre audit limit.}
+  We identify the least residual bound that the same observable law can support uniformly,
+  explaining why historical labels help only through a stated link to the deployment domain.
+  \item \textbf{An empirical paired-benefit gate.}
+  We give a reproducible three-way interval procedure and evaluate its commitment behavior under
+  controlled and natural shifts. The standard coverage-to-action implication states exactly what
+  follows if the interval covers its declared target.
+\end{enumerate}
+
+The controlled CIFAR-10-C results show useful routing for some candidates, not a universal
+improvement: Tent and EATA have lower point regret than either fixed policy, whereas SAR favors
+always-adapt due to high baseline benefit under noise corruptions. On real-camera natural shift
+(CCT-20), KGA served the frozen model across all 45 cells and avoided the measured loss of
+always adapting, but selected ADAPT zero times. This demonstrates retention in that study,
+not general harm avoidance or successful selection of beneficial updates on unseen environments,
+confirming that selective opportunistic routing under unseen natural shifts remains an open
+empirical challenge. The supplementary results
+retain adverse, incomplete, and withheld studies, so this distinction does not depend on discarding
+unfavorable evidence.
+
+\begin{figure*}[t]
+  \centering
+  \kbgraphics[width=0.94\textwidth]{figures/fig_decision_flow.pdf}
+  \caption{KGA's empirical workflow. A shadow candidate proposes an update; a learned benefit
+  prediction and residual interval determine whether to accept it. Historical labels support
+  development and calibration, while the new decision uses no evaluation labels.}
+  \label{fig:compact-flow}
+\end{figure*}
+
+\section{Related Work}
+\label{sec:compact-related}
+
+\subsection{Candidate Adaptation and Update Selection}
+
+Tent, EATA, SAR, CoTTA, MEMO, SHOT, and test-time training improve candidate construction through
+entropy objectives, sample filtering, regularization, temporal stabilization, augmentation, or
+auxiliary tasks~\cite{wang2021tent,niu2022eata,niu2023sar,wang2022cotta,zhang2022memo,
+liang2020shot,sun2020ttt}. Selective methods also choose where or when to update. TTSA selects
+modality-specific adapters~\cite{chen2025ttsa}; GALA selects layers and filters samples using
+gradient alignment~\cite{sahoo2025gala}; Informed Adaptation learns topological features associated
+with useful updates~\cite{mutlu2026informed}. KGA evaluates a fixed proposed candidate against its
+frozen baseline. Learned routing and rollback are established ideas; their existence is not our
+novelty claim.
+
+\subsection{Label-Free Performance and Strategy Estimation}
+
+ATC, agreement-on-the-line, AETTA, and prediction-matrix statistics estimate performance from
+unlabeled outputs and suitable development information
+~\cite{garg2022atc,baek2022aol,miller2021aol,lee2024aetta,deng2023confidence,xie2024mano}.
+The closest empirical comparison is Kim et al.'s NeurIPS 2024 work,
+\emph{Test-Time Adaptation Induces Stronger Accuracy and Agreement-on-the-Line}
+~\cite{kim2024ttaline}. It uses agreement-based ALine estimators after adaptation, supports
+hyperparameter selection, and compares adaptation strategies without labeled OOD data.
+
+KGA instead fits the paired observed benefit of one frozen/candidate pair and uses an interval
+to make a three-way decision. This is a difference in the fitted target and decision procedure,
+not a claim that accuracy estimates cannot be differenced to compare models. In Section~\ref{sec:synchronized-baselines}
+(Table~\ref{tab:synchronized-baselines}), we compare current KGA with fixed
+policies, scalar evidence rules and a point gate sharing its exact predictions.
+Historical TTA/ALine, AETTA and POEM port labels do not establish faithful
+implementations of the published estimators or controllers. Authenticated native
+comparisons under a shared protocol remain distinct from this saved-feature diagnostic.
+
+\subsection{Monitoring and Adaptation Controllers}
+
+POEM protects adaptation through entropy matching and online betting~\cite{bar2024poem}.
+Schirmer et al. monitor the running risk of an adapting model relative to a source-risk reference,
+under a proxy-informativeness condition~\cite{schirmer2025monitoring}; the supervised precursor
+uses a labeled test stream~\cite{podkopaev2022tracking}. Drift-to-Action Controllers use delayed
+labels and online certificates to gate adaptation, abstention, rollback, and retraining
+~\cite{lamaakal2026drifttoaction}. These methods differ in the risk target, label access, and
+sequential guarantee. KGA concerns one paired benefit and does not establish an anytime-valid
+risk guarantee.
+
+\subsection{Partial Identification and Robust Decisions}
+
+An identified set describes the values compatible with the observations and assumptions.
+Decision theory under partial identification studies how to act when that set leaves payoffs
+ambiguous; Christensen et al. combine worst-case payoff uncertainty with statistical learning of
+identified parameters~\cite{christensen2026optimal}. K-Bound addresses the narrower question of
+a uniformly correct strict benefit sign. It does not solve their general optimal-decision problem
+or claim that interval thresholding itself is new.
+
+Indistinguishable adaptation problems are already central to domain-adaptation impossibility
+~\cite{bendavid2010theory,bendavid2010impossibility}. K-Bound's specific contribution is a
+disagreement-conditional label-kernel construction, its clipped benefit set, and the associated
+residual-audit floor. The proof does not introduce label-free impossibility.
+Risk-estimation assumptions based on conditional independence~\cite{steinhardt2016}, label shift
+~\cite{lipton2018bbse,garg2020labelshift}, or disagreement discrepancy~\cite{rosenfeld2023dis2}
+restrict the compatible laws. Likewise, MMD-credal risk intervals impose RKHS and covariate-shift
+structure~\cite{ariq2026mmd}. Such restrictions can change the identified set; they are not
+contradicted by a converse theorem for a richer class.
+
+\subsection{Marginal and Conditional Coverage}
+
+Selective classification and reject-option learning abstain on individual predictions
+~\cite{geifman2017selective,chow1970reject,cortes2016boosting}. KGA abstains on an update.
+Its coverage-to-action proposition applies standard interval logic
+~\cite{tibshirani2019conformal,barber2023beyond,bates2021rcps,angelopoulos2025ltt}.
+The main statistical work is to justify coverage, especially after selection or under shift.
+
+Jin and Ren's JOMI procedure targets coverage conditional on a unit being selected, under
+exchangeability and a compatible selection rule~\cite{jin2025selection}. Gibbs et al. provide
+conditional guarantees over specified classes of shifts using a different calibration construction
+~\cite{gibbs2025conditional}. KGA's ordinary residual interval implements neither procedure.
+Its marginal false-adapt bound therefore must be distinguished from error conditional on ADAPT
+and from coverage within each target environment. Learn Then Test separately addresses
+configuration selection and multiplicity~\cite{angelopoulos2025ltt}.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Closest roles, targets, and remaining distinctions. Literature comparisons are conceptual;
+the paper does not report a synchronized official head-to-head experiment.}
+\label{tab:related-comparison}
+\begin{tabular}{@{}p{0.20\textwidth}p{0.27\textwidth}p{0.43\textwidth}@{}}
+\toprule
+Approach & Main target & Relation to this paper \\
+\midrule
+TTA/ALine; AETTA & adapted-model performance and selection & closest empirical estimators; their scores can inform paired comparisons \\
+POEM; risk monitors & protected adaptation or running risk & different monitored target and sequential assumptions \\
+Partial-identification decisions & uncertain payoffs across compatible laws & context for the population benefit set and robust sign decision \\
+Selection/shift-conditional conformal & coverage after selection or within a shift class & stronger, specialized targets not supplied by KGA's marginal interval \\
+K-Bound / KGA & feasible population benefit / predicted cell benefit & shared update question, distinct uncertainty objects and guarantees \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Setup, Notation, and Claim Levels}
+\label{sec:compact-setup}
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Notation and probability targets. Population and measured-cell quantities are kept separate.}
+\label{tab:compact-bridge}
+\begin{tabular}{@{}p{0.19\textwidth}p{0.16\textwidth}p{0.55\textwidth}@{}}
+\toprule
+Quantity & Level & Meaning \\
+\midrule
+$f_0,f_a$ & both & frozen predictor and realized shadow candidate \\
+$\Delta$ & population & expected risk reduction $R_T(f_0)-R_T(f_a)$ \\
+$D,\ \mu_T(D)$ & population & disagreement region and its target probability \\
+$M$ & population & label-free mean correctness-score margin on $D$ \\
+$\gamma,\ \beta$ & population & hidden calibration residual and its externally declared absolute bound \\
+$\Delta^{\mathrm{cell}}$ & empirical & observed score difference on one predeclared evaluation unit \\
+$\widehat\Delta,\ \varepsilon$ & empirical & predicted cell benefit and residual-based interval radius \\
+$\mathrm{FA}_{\mathrm u}$ & empirical & probability of ADAPT and a nonpositive cell benefit \\
+$\mathrm{FA}_{\mathrm c}$ & empirical & probability of nonpositive cell benefit conditional on ADAPT \\
+Commitment rate & empirical & fraction of ADAPT or FREEZE decisions; not interval coverage \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Model Pair, Evidence, and Evaluation Unit}
+
+Let $P_S$ and $P_T$ be the source and target laws and
+$R_T(f)=\mathbb E_{(X,Y)\sim P_T}[\ell(f(X),Y)]$.
+Population risks integrate a fresh draw from $P_T$, holding the realized model pair fixed.
+An adapter $\mathcal A$ proposes $f_a$ from $f_0$ and unlabeled inputs $X_{1:m}$.
+The decision can read
+\[
+  Z=\phi(X_{1:m},f_0,f_a),
+\]
+including predictions, logits, and update statistics, but not the new evaluation labels.
+
+For evaluation unit $j$, with records $\mathcal E_j$ and a fixed higher-is-better score $S$, define
+\[
+  \Delta_j^{\mathrm{cell}}=S(f_a;\mathcal E_j)-S(f_0;\mathcal E_j).
+\]
+The two models are scored on the same records. This measured quantity is not population risk.
+For accuracy it is a sample average of paired correctness differences; for macro-F1 it is a
+difference of dataset-level scores, not an average of per-example losses. Metric scales are
+reported separately.
+
+\subsection{Actions and Their Operational Meaning}
+
+\begin{definition}[Decision semantics]
+\adapt commits $f_a$ when the interval supports positive benefit.
+\freeze rejects the candidate when it supports negative benefit.
+\abstain retains $f_0$ when neither strict direction is supported or the assessment is unavailable.
+\end{definition}
+
+Freeze is a supported rejection. Abstention is an unresolved assessment. An operator can attach
+monitoring, label acquisition, or human review to the abstention record; the experiments here
+evaluate only the frozen fallback and uncertainty log, not those additional interventions.
+Retaining $f_0$ after missing evidence must be logged as ABSTAIN, not as a certified FREEZE.
+
+The observed-cell oracle chooses the larger score. Regret is the policy's score shortfall from
+that oracle, averaged over the named units. Always-freeze regret is
+$\max(\Delta_j^{\mathrm{cell}},0)$; always-adapt regret is
+$\max(-\Delta_j^{\mathrm{cell}},0)$. KGA uses the candidate score only after ADAPT. Lower regret is
+better, and a zero-benefit tie carries zero regret for either model even though it supports
+neither strict sign.
+
+\subsection{Commitment, Interval Coverage, and Error}
+
+These are three different measurements:
+\begin{align}
+  \mathrm{Commit}
+    &=\Pr(g\in\{\adapt,\freeze\}), \label{eq:commitment-rate}\\
+  \mathrm{Cov}_{\mathrm{cell}}
+    &=\Pr(|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon), \label{eq:interval-coverage}\\
+  \mathrm{FA}_{\mathrm u}
+    &=\Pr(g=\adapt,\Delta^{\mathrm{cell}}\le0). \label{eq:compact-fau}
+\end{align}
+Conditional false adaptation is
+$\mathrm{FA}_{\mathrm c}=\Pr(\Delta^{\mathrm{cell}}\le0\mid g=\adapt)$, defined only when
+$\Pr(g=\adapt)>0$. The operational proposition below bounds the marginal error under interval
+coverage; it does not bound $\mathrm{FA}_{\mathrm c}$. A gate that never adapts has zero false
+adaptations mechanically, so every error report includes action exposure.
+Analogously, a false FREEZE is a FREEZE decision with $\Delta^{\mathrm{cell}}\ge0$; its
+conditional frequency divides by FREEZE decisions and is undefined when that action is absent.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Three claim levels and their validity obligations. This table collects the distinctions
+used throughout the paper.}
+\label{tab:compact-validity}
+\begin{tabular}{@{}p{0.18\textwidth}p{0.34\textwidth}p{0.39\textwidth}@{}}
+\toprule
+Claim level & Required premise & Conclusion and boundary \\
+\midrule
+Population frontier & binary $0/1$ loss, fixed augmented evidence, declared residual class; richness for necessity & exact strict-sign frontier within that class, not a learned residual bound \\
+Operational proposition & marginal interval coverage for a named scalar target and unit & marginal false commitment for that target, not automatic conditional or anytime control \\
+Empirical evaluation & fixed recorded candidates, splits, metric and action rule & measured cell regret, interval inclusion and action exposure; population transfer needs a separate argument \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The population theorem uses binary labels and $0/1$ loss. The empirical gate can instead target
+any predeclared scalar score difference, including multiclass metrics. This interface does not
+extend the binary theorem. In general multiclass classification,
+$\Delta=\Pr_T(D)(p_a-p_0)$, with $p_a=\Pr_T(f_a=Y\mid D)$ and
+$p_0=\Pr_T(f_0=Y\mid D)$; only the binary setting forces $p_0=1-p_a$.
+
+\section{Population Partial-Identification Frontier}
+\label{sec:compact-theory}
+
+The result describes which benefit signs are compatible with a fixed label-free evidence law
+and a declared bound on the hidden residual.
+
+\subsection{Disagreement-Region Model}
+
+\begin{assumption}[Deployment setup]
+\label{ass:deploy}
+Let $Y\in\{0,1\}$, use $0/1$ loss, fix measurable binary predictors $f_0,f_a$, and assume
+$\mu_T(D)>0$ for $D=\{x:f_0(x)\ne f_a(x)\}$. Let
+$s:\mathcal X\to[0,1]$ be a fixed measurable candidate-correctness score, fitted using source
+information, and let the target law admit the measurable pointwise correctness kernel
+$\eta_a(x)=\Pr_T(f_a(X)=Y\mid X=x)$. On $D$, set
+\begin{equation}
+ M=\E[s(X)\mid D]-\tfrac12,
+ \qquad
+ \gamma=\E[\eta_a(X)-s(X)\mid D].
+ \label{eq:compact-Mgamma}
+\end{equation}
+The declared population class is
+$\mathcal C_\beta=\{P_T:|\gamma(P_T)|\le\beta\}$ for an externally supplied
+$\beta\ge0$.
+Because $s\in[0,1]$, the feasible margin satisfies $M\in[-\tfrac12,\tfrac12]$.
+The identities and frontier below do not require a source-calibration property of $s$.
+\end{assumption}
+
+\begin{remark}[Residual identity]
+\label{rem:gamma-residual}
+The definition gives
+\begin{align*}
+M+\gamma
+&=\bigl(\E[s(X)\mid D]-\tfrac12\bigr)
+  +\E[\eta_a(X)-s(X)\mid D]\\
+&=\E[\eta_a(X)\mid D]-\tfrac12.
+\end{align*}
+This is an identity, not empirical evidence that calibration transfers. We call $\gamma$ a
+target disagreement-conditional calibration residual, not automatically source-to-target
+drift. Ordinary source calibration need not hold after conditioning on $D$, so $\gamma$ can be
+nonzero even when $P_T=P_S$. A literal label-kernel shift interpretation would require an
+additional reference, for example the pointwise source correctness
+$s(x)=\Pr_S(f_a(X)=Y\mid X=x)$. The no-shift counterexample is given in
+\KBSuppRef{app:theorem-dependencies}{Appendix}{the supplementary theorem-dependency map}.
+Calibration notions also depend on the conditioning information: top-label calibration, for
+example, additionally conditions on the predicted class~\cite{gupta2021toplabel}.
+Neither score nor top-label calibration automatically supplies calibration conditional on $D$.
+\end{remark}
+
+\begin{definition}[Risk alignment]
+\label{def:risk-align}
+Evidence $Z$ is risk-aligned on a class $\mathcal P$ if no two laws in $\mathcal P$ with opposite
+nonzero benefit signs induce the same law of $Z$. This is weaker than uniform strict-sign
+identification: a fibre containing zero and positive benefit is risk-aligned by this definition,
+but does not support a uniformly positive claim. Population frontier claims take $M$ to be fixed on each
+augmented evidence fibre, equivalently by using $\widetilde Z=(Z,M)$.
+\end{definition}
+
+\begin{definition}[Strict directional soundness]
+\label{def:strict-sound}
+At a fixed augmented-evidence law, \adapt is uniformly directionally sound when $\Delta(P)>0$ for
+every compatible $P\in\mathcal C_\beta$; \freeze is sound when $\Delta(P)<0$ for every such law.
+A pointwise maximal three-way rule commits whenever one strict action is sound and abstains
+otherwise. The strict convention treats $\Delta=0$ as insufficient for either directional claim,
+although the actions then have equal task risk.
+\end{definition}
+
+\subsection{Label-Kernel Freedom on the Disagreement Region}
+
+\begin{lemma}[Label-kernel freedom on disagreement]
+\label{lem:fibre}
+Fix $(\mu_T,P_S,f_0,f_a,s)$, hence $D$ and $M$, and fix the conditional label law outside $D$.
+For every measurable $\eta:D\to[0,1]$ there is a target law with input marginal $\mu_T$ and
+$\Pr(f_a(X)=Y\mid X=x)=\eta(x)$ on $D$. Every label-free observable formed from the input batch,
+the fixed models, and their outputs has the same law for all such $\eta$, while
+\[
+ \gamma=\E[\eta(X)\mid D]-\tfrac12-M.
+\]
+\end{lemma}
+\begin{proof}
+On $D$, binary predictors disagree, so their outputs are $0$ and $1$. Assign conditional mass
+$\eta(x)$ to $Y=f_a(x)$ and $1-\eta(x)$ to $Y=f_0(x)$, retaining the fixed kernel outside $D$.
+This changes no input marginal or model output and therefore changes no label-free evidence law.
+The expression for $\gamma$ follows from Eq.~\eqref{eq:compact-Mgamma}.
+\end{proof}
+
+% Shared statements and proofs for the reduction, interior impossibility,
+% closed-band boundary case, and exact strict-commitment frontier.
+\input{paper/sections/theory_core_main}
+
+\begin{figure*}[t]
+  \centering
+  \kbgraphics[width=0.96\textwidth]{figures/fig_frontier_schematic.pdf}
+  \caption{Population strict-commitment frontier. $M>\beta$ supports adapt;
+  $M<-\beta$ supports freeze; and $|M|\le\beta$ supports no uniform strict commitment. Interior
+  ambiguity uses opposite nonzero benefit signs, whereas the boundary uses zero-benefit ambiguity.
+  This population rule is not the numerical KGA rule used on the real-data panels.}
+  \label{fig:compact-frontier}
+\end{figure*}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+Region & Meaning & Action \\
+\midrule
+$M>\beta$ & strictly positive benefit & \adapt \\
+$M<-\beta$ & strictly negative benefit & \freeze \\
+$|M|<\beta$ & both strict signs are feasible & \abstain \\
+$|M|=\beta>0$ & zero benefit is feasible & \abstain \\
+$M=\beta=0$ & benefit is identically zero & \abstain \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Interpretation and Limits of the Frontier}
+
+The theorem depends on a declared class. Choosing $\beta=0$ assumes a zero target
+disagreement-conditional residual; it is not a conservative default. Without a credible upper bound on $|\gamma|$, the
+population frontier cannot support a robust strict action. More unlabeled samples do not solve this
+problem because the missing difference lies in the target labels, not in the input batch.
+
+Empirical abstention is not automatically evidence of structural unknowability. A wide finite-sample
+interval may instead reflect limited calibration data, estimator error, or transfer failure. The
+frontier therefore leaves one central question: can its required residual bound be learned from the
+same label-free evidence?
+
+\section{What Label-Free Evidence Cannot Learn}
+\label{sec:compact-budget}
+
+\subsection{Audit Setup and Evidence Fibres}
+
+Let $W$ collect everything a deployment-time audit may read: the unlabeled target batch, the fixed
+models and score function, label-free statistics derived from them, and any source or calibration
+sample whose law is specified independently of the target label kernel. An audit is a nonnegative
+random quantity $\widehat\beta=g(W,U)$, where $U$ is independent randomization.
+
+For a declared class $\mathcal C$ and an observable law $z=\Law(W)$, define the evidence fibre
+\[
+ \mathcal C(z)=\{P\in\mathcal C:\Law(W\mid P)=z\}
+\]
+and its unresolved residual radius
+\begin{equation}
+ \Gamma_z(\mathcal C)=\sup_{P\in\mathcal C(z)}|\gamma(P)|.
+ \label{eq:compact-fibre-radius}
+\end{equation}
+The fibre collects target laws that the audit cannot distinguish. Its radius is therefore the
+smallest uniform residual bound that those observations could support.
+
+\subsection{Exact Fibre-Wise Audit Floor}
+
+\begin{theorem}[Exact label-free audit floor]
+\label{thm:compact-beta-minimax}
+Fix a nonempty fibre $\mathcal C(z)$ and $\delta\in[0,1)$. If
+$\widehat\beta$ satisfies
+$\Pr_P(|\gamma(P)|\le\widehat\beta)\ge1-\delta$ for every
+$P\in\mathcal C(z)$, then
+\[
+ \Pr\!\left(\widehat\beta\ge\Gamma_z(\mathcal C)\right)\ge1-\delta.
+\]
+The constant audit $\widehat\beta\equiv\Gamma_z(\mathcal C)$ is valid with $\delta=0$.
+Consequently, on the high-probability event above, an audited frontier commits only where the
+frontier using the declared radius $\Gamma_z(\mathcal C)$ already commits.
+\end{theorem}
+\begin{proof}
+Every law in the fibre induces the same law for $W$, and hence the same law for
+$\widehat\beta$. Validity for each fixed $P$ requires that common law to exceed
+$|\gamma(P)|$ with probability at least $1-\delta$. Taking an increasing sequence of attainable
+absolute residuals approaching the supremum gives the lower bound. The constant audit is valid by the
+definition of the supremum. If $\widehat\beta\ge\Gamma_z$, then
+$|M|>\widehat\beta$ implies $|M|>\Gamma_z$.
+\end{proof}
+
+This result does not say that useful budgets never exist. It says that the same label-free fibre
+cannot create information about the target label kernel that the fibre definition removes. A valid
+audit must cover the unresolved radius; reading more functions of the same $W$ does not shrink it.
+The constant $\Gamma_z(\mathcal C)$ is an oracle benchmark for the fixed evidence-law fibre.
+The theorem does not provide an algorithm that learns the unknown law $z$ or its radius from a
+finite observed batch. We therefore describe this as a fibre-wise audit floor rather than an
+unspecified minimax estimation result.
+
+\subsection{Declared Budget and Abstention Radius}
+
+For the full declared class
+$\mathcal C_\beta=\{P:|\gamma(P)|\le\beta\}$ with
+$0\le\beta\le\tfrac12$, the label-kernel construction in
+Lemma~\ref{lem:fibre} gives
+\begin{equation}
+ \Gamma_z(\mathcal C_\beta)=\beta.
+ \label{eq:compact-beta-radius}
+\end{equation}
+Thus the least fibre-wide budget a label-free audit can certify is the budget already declared by
+the class. The same number is also the population abstention radius:
+\[
+ \boxed{\begin{gathered}
+ \text{least valid fibre-wide residual bound}\\
+ =\text{population abstention radius}=\beta
+ \end{gathered}}
+\]
+This equality connects the audit problem to the strict-commitment frontier. Crucially,
+Theorem~\ref{thm:compact-beta-minimax} establishes that $\beta$ must be treated as an
+\emph{exogenous sensitivity parameter}, by analogy to Rosenbaum's sensitivity
+parameter $\Gamma$ for unobserved confounding in observational studies~\cite{rosenbaum2002observational}
+or the ambiguity set radius in distributionally robust optimization (an analogy, not a mathematical
+equivalence). In practice, a decision-maker
+evaluates whether a strict action $|M| > \beta$ remains stable across a domain-plausible range of
+budgets $\beta$; the audit floor proves that no label-free audit can self-consistently estimate
+$\beta$ away without external structural assumptions.
+
+\subsection{Why Labels at the Wrong Domain Buy Nothing}
+\label{sec:compact-wrong-domain}
+
+Suppose the audit also observes a fully labeled calibration domain, but the declared class contains
+no coupling between that domain's label kernel and the deployment label kernel. The construction in
+Lemma~\ref{lem:fibre} changes only deployment labels on $D$ and leaves the calibration sample
+unchanged. The augmented evidence law is therefore identical across the same target fibre, so
+Theorem~\ref{thm:compact-beta-minimax} applies without a smaller radius. Labels help only when they
+come from the deployment domain or when a stated assumption links the labeled and deployment
+domains.
+
+\subsection{What Additional Structure Can Buy}
+\label{sec:compact-additional-structure}
+
+The missing information can be supplied, but each route changes the problem. Deployment labels can
+estimate target correctness directly. Historical labeled deployments can support an
+episode-marginal budget under an exchangeability model. A structural coupling can bound the change
+between calibration and target domains. Domain knowledge can declare a physically meaningful
+limit. These are purchases made with labels or assumptions; they are not consequences of the
+current unlabeled batch. Detailed rate results and extended constructions belong to the long-form
+theory record and are not required by the empirical claims here.
+
+\subsection{Implications for K-Bound and KGA}
+
+Theorem~\ref{thm:compact-beta-minimax} provides the formal justification for why KGA is designed
+as an inductive decision layer rather than an empirical estimator of $\beta$. Because unlabeled
+deployment data cannot identify the residual bound on its own evidence fibres, an empirical system
+seeking data-driven decision thresholds must draw upon additional structure or assumptions (such
+as the routes cataloged in Section~\ref{sec:compact-additional-structure}). KGA pursues the
+empirical shift-benchmark route:
+it fits an empirical benefit regressor $\widehat\Delta=h_\theta(Z)$ and places a calibrated
+conformal prediction radius $\varepsilon$ around it. While population benefit $\Delta$ and observed
+cell benefit $\Delta^{\mathrm{cell}}$ describe the same model pair under different evaluation
+regimes, KGA's finite-sample radius $\varepsilon$ reflects predictive uncertainty over historical
+cells, not an estimate of the latent population residual $\beta$. Furthermore, historical data do
+not automatically establish calibration transfer to unseen deployment environments.
+
+\section{KGA: An Empirical Benefit-Interval Gate}
+\label{sec:compact-kga}
+
+\subsection{The Two-Regime Architecture: Theory and Practice}
+\label{sec:compact-bridge}
+
+We present K-Bound and KGA together because they address the identical practitioner problem---whether
+to accept a proposed model adaptation---under two complementary evidentiary foundations:
+\begin{enumerate}
+  \item \textbf{Deductive Population Frontier (K-Bound, Sections 4--5):} For a target deployment
+  stream without coupled target labels, Theorem~\ref{thm:frontier} and
+  Theorem~\ref{thm:compact-beta-minimax} prove that strict commitment is justified if and only if
+  $|M| > \beta$, where $\beta$ is an exogenous calibration sensitivity parameter that cannot be
+  audited away from label-free evidence alone (even in the presence of uncoupled historical labels;
+  Section~\ref{sec:compact-wrong-domain}).
+  \item \textbf{Inductive Empirical Gate (KGA, Sections 6--8):} For deployment settings where
+  historical shift benchmarks are available, KGA fits a learned benefit predictor $\widehat\Delta=h_\theta(Z)$
+  on past evaluation cells and constructs a conformal residual interval $[\widehat\Delta \pm \varepsilon]$
+  to make three-way commit/abstain decisions without target labels.
+\end{enumerate}
+We do not claim KGA implements or approximates the population frontier. Rather, K-Bound defines the
+information limits of pure label-free observation, and KGA demonstrates what becomes operationally
+possible once historical shift benchmarks are admitted into the evidentiary basis.
+The binary population model gives
+\begin{equation}
+ \Delta=2\mu_T(D)(M+\gamma),
+\label{eq:compact-bridge}
+\end{equation}
+while the observed cell outcome and fitted empirical prediction are
+\begin{equation}
+ \Delta^{\mathrm{cell}}=S(f_a;\mathcal E)-S(f_0;\mathcal E), \qquad \widehat\Delta=h_\theta(Z).
+\end{equation}
+Table~\ref{tab:theory-algorithm-bridge} summarizes this architectural correspondence.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\caption{Correspondence between population theory (K-Bound) and the empirical decision rule (KGA). A shared target functional does not make the quantities equal.}
+\label{tab:theory-algorithm-bridge}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}p{0.14\columnwidth}p{0.46\columnwidth}p{0.40\columnwidth}@{}}
+\toprule
+Quantity & Role in Population Frontier (K-Bound) & Status in Empirical Rule (KGA) \\
+\midrule
+$M$ & Observable margin on disagreement region & Not explicitly estimated \\
+$\gamma$ & Hidden calibration residual ($M+\gamma=\bar a-\frac12$) & Unobserved / unestimated \\
+$\beta$ & Externally declared hidden-residual bound & Not a numerical KGA input \\
+$\Delta$ & Population benefit $2\mu_T(D)(M+\gamma)$ & Target estimand under population transfer \\
+$\Delta^{\mathrm{cell}}$ & Not present in pure population model & Measured evaluation-cell benefit $S(f_a;\mathcal E)-S(f_0;\mathcal E)$ \\
+$\widehat\Delta$ & Not present in pure population model & Fitted prediction $h_\theta(Z)$ of empirical target $\Delta^{\mathrm{cell}}$ \\
+$\varepsilon$ & Not present in pure population model & Empirical residual-calibration radius \\
+$b(m,\delta)$ & Not present in pure population model & Separately justified sampling allowance \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Connecting the two formulations proceeds not through an automatic deductive chain, but through an explicit conditional concentration bridge:
+\begin{gather*}
+  \Pr\bigl(|\widehat\Delta - \Delta^{\mathrm{cell}}| \le \varepsilon\bigr)
+    \ge 1 - \alpha_{\mathrm{cell}}, \\
+  \Pr\bigl(|\Delta^{\mathrm{cell}} - \Delta| \le b(m,\delta)\bigr)
+    \ge 1 - \delta.
+\end{gather*}
+The cell-coverage and fresh-sample concentration premises imply, by a union bound,
+\begin{multline*}
+  \Pr\bigl(|\widehat\Delta - \Delta| \le \varepsilon + b(m,\delta)\bigr) \\
+  \ge 1 - \alpha_{\mathrm{cell}} - \delta.
+\end{multline*}
+K-Bound establishes what an entire declared family of target worlds permits: if every allowed drift in $\mathcal C_\beta$ preserves one strict direction ($|M|>\beta$), that direction is population sound; otherwise the maximal uniform rule must abstain. KGA addresses the realized deployment unit under a separately declared operational transfer model: it predicts the empirical risk difference $h_\theta(Z)$ and commits only when a calibrated interval excludes zero. The common decision problem is the paired deployment choice; the population theorem brackets the population benefit $\Delta$ through $(M,\gamma,\beta)$, whereas KGA brackets the empirical cell benefit $\Delta^{\mathrm{cell}}$ through $(\widehat\Delta,\varepsilon)$ at the cell level, and through $(\widehat\Delta, \varepsilon+b)$ at the population level via Proposition~\ref{thm:population-transfer} (\KBSuppRef{thm:app-pop-cert}{Theorem}{the supplementary population certificate theorem} in \KBSuppRef{app:transfer-proof}{Appendix}{the supplementary transfer proof}). Table~\ref{tab:theory-algorithm-bridge} makes this correspondence explicit.
+
+KGA is label-free at deployment, not during development and calibration. Historical labeled cell outcomes fit $h_\theta$ and supply residuals. At the new decision, KGA reads only $Z$ and the frozen fitted artifacts. The interval premise for the empirical target is
+\begin{equation}
+ \Pr(|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon)\ge1-\alpha.
+ \label{eq:compact-coverage}
+\end{equation}
+The proposition below concerns this target when this premise holds.
+
+\subsection{The Coverage-to-Action Proposition}
+
+The following standard implication makes the decision semantics explicit. It is not a new
+calibration theorem: coverage is the premise, and establishing it is the statistical burden.
+
+\input{paper/sections/theory_certificate}
+
+Proposition~\ref{thm:population-transfer} formalizes the conditional bridge to population risk $\Delta$: under independent fresh evaluation draws, adding the Hoeffding concentration radius $b(m,\delta)$ to the empirical radius $\varepsilon$ yields a compound population interval with radius $\varepsilon+b$ and error budget $\alpha_{\mathrm{cell}}+\delta$. The full protocol, counterexample, and proof are detailed in \KBSuppRef{app:population-transfer}{Appendix}{the population-transfer supplement}. No such sampling-error bound is established for the reported benchmark panels; in particular, when a candidate adapts to evaluation inputs, transductive normalization couples the candidate across batches.
+
+The deterministic action layer for this bridge is now kernel-checked in
+\path{docs/research/kbound/formal/KBound/Population.lean}: an outcome-blind estimate,
+cell radius, and independently justified sampling radius define the compound interval,
+and strict ADAPT/FREEZE actions are sound whenever the target benefit is inside that
+interval. The companion replay interface is
+\path{docs/research/kbound/scripts/run_population_panel.py}; it rejects outcome-dependent
+inputs and records the input hash. This procedure is available for a benchmark panel.
+The historical canonical benchmark records do not contain a sealed per-cell tuple of
+fitted prediction, cell radius, and fresh-sample size, so no population-transfer number
+is promoted into those tables.
+
+\paragraph{Task 2 theorem--code reconciliation.}
+The formal map distinguishes the population and cell-level objects rather than treating
+the implementation as a proof of the transfer premises. In particular,
+\texttt{formal/}\allowbreak\texttt{KBound/}\allowbreak\texttt{Probability/}\allowbreak\texttt{HistoricalExtension.lean} proves
+\texttt{historical\_}\allowbreak\texttt{one\_bit\_}\allowbreak\texttt{decoder\_}\allowbreak\texttt{iff\_}\allowbreak\texttt{fibre\_}\allowbreak\texttt{consistent}: a label-free one-bit
+decoder exists only when the label is constant on each observable evidence fibre. The
+stronger historical claim that one representative per swap orbit is sufficient is
+refuted by the checked counterexample in
+\texttt{formal/}\allowbreak\texttt{KBound/}\allowbreak\texttt{Probability/}\allowbreak\texttt{ChannelCounterexample.lean},
+not silently promoted to a theorem. The former module, \texttt{HistoricalExtension.lean}, formalizes
+\texttt{h\_ratio\_rate\_transfer} only under an explicit episode-level contract
+($\mathrm{miss}_{T}\le H\,\mathrm{miss}_{S}$, $H\ge0$, and
+$\mathrm{miss}_{S}\le\alpha$); it does not estimate $H$, prove benchmark
+exchangeability, or establish prospective population provenance. Thus K-Bound's
+population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval
+$(\widehat\Delta,\varepsilon)$ remain distinct, with the population procedure adding
+the separately justified sampling radius $b(m,\delta)$.
+
+\paragraph{ImageNet-C 108-cell population replay.}
+To audit this procedure on existing benchmark data without changing historical estimands, we replayed the outcome-blind compound interval $[\widehat\Delta \pm (\varepsilon + b)]$ across 108 ImageNet-C development cells (36 cells each for Tent, EATA, and SAR; five-fold cell-outcome-disjoint cross-fitting; sensitivity parameter $m=2{,}000$, yielding uniform concentration radius $b=0.0607$; Table~\ref{tab:main-pop-replay-summary}). Full fold breakdowns and radius distributions appear in \KBSuppRef{tab:imagenetc-108-population-replay}{Table}{the supplementary 108-cell replay table} (\KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}).
+Finite radii were obtained on $108/108$ cells. Across the panel, the cell-level gate ($\widehat\Delta \pm \varepsilon$) issued $40$ \adapt, $11$ \freeze, and $57$ \abstain decisions with zero false adaptations ($\mathrm{FA}_u = 0.0000$) and mean oracle regret $0.0167$. Incorporating the sampling radius ($b=0.0607$, with mean compound half-width $\bar\varepsilon + b = 0.1272$) shifted compound decisions to $1$ \adapt, $10$ \freeze, and $97$ \abstain, preserving strictly zero false adaptations ($\mathrm{FA}_u = 0.0000$) while shifting regret to $0.0374$. This concretely demonstrates the sensitivity to the added concentration radius $b=0.0607$: because most empirical gains on this benchmark are smaller than the universal Hoeffding penalty for $m=2{,}000$, the compound rule withholds action on nearly all adaptations, illustrating the numerical Price of Rigor rather than establishing prospective population truth. As clarified in \KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}, $m=2{,}000$ is an evaluation sensitivity parameter, not fresh sampling; population truth remains unestablished on historical development records.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\caption{108-cell ImageNet-C population replay: cell gate ($\widehat\Delta \pm \varepsilon$) vs.\ compound population interval ($\widehat\Delta \pm (\varepsilon+b)$) under 5-fold cross-fitting ($\alpha_{\mathrm{cell}}=\delta=0.05, \alpha_{\mathrm{pop}}=0.10, m=2{,}000, b=0.0607$). Full 12-column breakdown with fold details and radii ranges in \KBSuppRef{tab:imagenetc-108-population-replay}{Table}{the supplementary 108-cell replay table}.}
+\label{tab:main-pop-replay-summary}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Candidate & $N$ & Regret (Cell / Pop) & Cell Gate (A / F / U) & Compound Pop (A / F / U) & $\mathrm{FA}_u$ \\
+\midrule
+\textbf{Tent} & 36 & $0.0162$ / $0.0468$ & $18$ / $0$ / $18$ & $1$ / $0$ / $35$ & $0.000$ \\
+\textbf{EATA} & 36 & $0.0095$ / $0.0386$ & $20$ / $0$ / $16$ & $0$ / $0$ / $36$ & $0.000$ \\
+\textbf{SAR}  & 36 & $0.0245$ / $0.0267$ & $2$ / $11$ / $23$ & $0$ / $10$ / $26$ & $0.000$ \\
+\midrule
+\textbf{Total / Panel} & \textbf{108} & \textbf{0.0167} / \textbf{0.0374} & \textbf{40} / \textbf{11} / \textbf{57} & \textbf{1} / \textbf{10} / \textbf{97} & \textbf{0.000} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\paragraph{Non-oracle population diagnostic.}
+While the synthetic diagnostic in \KBSuppRef{tab:synthetic-pop-diagnostic}{Table}{the supplementary synthetic population table} tested exact Bayes prediction ($\widehat\Delta(Z) = 0.6Z$), evaluating an imperfect predictor subject to estimation noise requires an extended non-oracle study. We conducted a diagnostic across 1,000 independent trials per configuration over 16 $(N_{\mathrm{cal}}, m)$ pairs, fitting an imperfect linear predictor on finite development episodes ($m=32$; \KBSuppRef{tab:nonoracle-pop-diagnostic}{Table}{the supplementary non-oracle population table}, \KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}).
+An unhedged point rule ($\operatorname{sign}(\widehat\Delta)$) incurs a $30.9\%$--$35.6\%$ directional error rate ($\operatorname{sign}(g) \neq \operatorname{sign}(\Delta)$) with $0\%$ abstention (where $\mathrm{FA}_u$ is defined strictly for false \adapt; here directional errors combine false \adapt and false \freeze on null/tie states); crucially, $100\%$ of these errors occur on null/tie states ($Z=0, \Delta=0$) due to estimation noise around zero, with zero errors on strictly harmful states ($\Delta = -0.6$). Conformal cell calibration ($\widehat\Delta \pm \varepsilon_{\mathrm{cell}}$) eliminates directional error ($0.000$) with empirical cell coverage matching nominal $1-\alpha_{\mathrm{cell}}=0.95$ ($93.9\%$--$96.5\%$), and already achieves $\approx 100\%$ population coverage of $\Delta$ across all configurations in this model. The compound population interval $[\widehat\Delta \pm (\varepsilon_{\mathrm{cell}} + b)]$ likewise achieves $100\%$ empirical population coverage and strictly zero directional error ($0.000 \le \alpha_{\mathrm{pop}}=0.10$), while enforcing conservative abstention ($99.9\%$--$100\%$ at $m=32$, contracting safely to $\approx 33\%$ matching the null frequency for $m \ge 128$) as a direct consequence of the universal Hoeffding penalty ($b=0.4802$), rather than because cell-level calibration failed in this simulated environment.
+
+
+\subsection{Evidence, Calibration, and the Action Rule}
+
+The controlled implementation stores 11 label-free features, with effective rank 9 because two
+features are deterministic differences. They summarize confidence, class balance, model
+disagreement, and update size. For each dataset and adapter, a separate
+\texttt{GradientBoostingRegressor}~\cite{pedregosa2011sklearn} uses squared-error loss, 250 trees,
+depth 2, learning rate $0.05$, subsample $0.8$, and seed 0.
+Natural protocols retain their own fitted model and feature schema; for example, CCT-20 uses a
+ridge model. Details are in \KBSuppRef{app:compact-evidence}{Appendix}{the supplementary evidence specification}. A common interface does not imply
+that an estimator or radius transfers across adapters.
+
+Given residuals $r_i=|\widehat\Delta_i-\Delta_i^{\mathrm{cell}}|$, ordered as
+$r_{(1)}\le\cdots\le r_{(n)}$, the order-statistic rule is
+\begin{equation}
+ k=\left\lceil(n+1)(1-\alpha)\right\rceil,\qquad
+ \varepsilon=
+ \begin{cases}
+ r_{(k)},&k\le n,\\
+ +\infty,&k>n.
+ \end{cases}
+ \label{eq:compact-rank}
+\end{equation}
+Split-conformal coverage requires joint exchangeability of the calibration and next-unit scores
+under the fitting and candidate-construction protocol
+~\cite{tibshirani2019conformal,barber2023beyond}. An independently fitted predictor and exchangeable
+calibration/deployment units are one sufficient route. The rank counts evaluation units, not the
+images inside them.
+
+We distinguish two calibration protocols across the paper:
+\emph{Protocol B: Three-way cell-outcome-disjoint cross-fitting} (\path{kga.crossfit.controlled_grid_crossfit}, used in the current primary CIFAR table, interval diagnostics, the 108-cell ImageNet-C population replay, and the \KBSuppRef{app:sar-official-controls}{Appendix}{the supplementary SAR controls} 27-cell audit). For each score fold, its entire complement is partitioned into strictly disjoint estimator-fit and residual-calibration subsets, ensuring that scored cell outcomes enter neither predictor training nor conformal calibration pools. Historical saved LOO predictions and radii do not determine these current CIFAR results.
+\emph{Protocol A: Leave-one-cell-out empirical order-statistic calibration} (used in earlier historical controlled grids). Benefit predictions $\widehat\Delta_i$ were cross-fitted on the remaining $n-1$ cells, and each scored residual $r_i = |\widehat\Delta_i - \Delta_i^{\mathrm{cell}}|$ was excluded from the pool used to compute its own radius $\varepsilon_i$. However, this historical leave-one-out construction is peer-dependent: for $j \neq i$, the model $h_{-j}$ was fitted on training data containing $\Delta_i^{\mathrm{cell}}$, so the scored cell's outcome could indirectly influence other residuals $r_j$ in its calibration pool through model fitting.
+Where historical stress grids retain pooled LOO residuals (Protocol A), they are reported with this peer-dependence caveat rather than claiming full outcome disjointness. Natural protocols use separated development, calibration, and target partitions where the archived design records that separation.
+
+\begin{algorithm}[t]
+\caption{KGA for one proposed update}
+\label{alg:compact-kga}
+\begin{algorithmic}[1]
+\Require Frozen $f_0$, adapter $\mathcal A$, unlabeled $X$, frozen $h_\theta$ and calibration artifacts
+\State Create $f_a\leftarrow\mathcal A(f_0,X)$ in isolated shadow state
+\State Extract $Z=\phi(X,f_0,f_a)$ and validate the assessment inputs
+\If{the assessment is unavailable}
+  \State retain $f_0$, log the reason, and return \abstain
+\EndIf
+\State Obtain $\varepsilon$ from the calibrated residual rule in Eq.~\eqref{eq:compact-rank}
+\State $\widehat\Delta\leftarrow h_\theta(Z)$; $L\leftarrow\widehat\Delta-\varepsilon$; $U\leftarrow\widehat\Delta+\varepsilon$
+\If{$L>0$} \State commit $f_a$ and return \adapt
+\ElsIf{$U<0$} \State discard $f_a$ and return \freeze
+\Else \State retain $f_0$, log uncertainty, and return \abstain
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+For example, prediction $0.04$ and radius $0.01$ give $[0.03,0.05]$ and ADAPT; prediction
+$-0.04$ gives $[-0.05,-0.03]$ and FREEZE; prediction $0.005$ gives $[-0.005,0.015]$ and ABSTAIN.
+These illustrate the rule, not measured results.
+
+\begin{figure*}[t]
+\centering
+\kbgraphics[width=0.88\textwidth]{figures/fig_certificate.pdf}
+\caption{Illustration of the three interval decisions for measured cell benefit. Only an interval
+strictly above or below zero supports a commitment. The figure illustrates the rule; coverage
+must be established for the intended evaluation unit.}
+\label{fig:compact-certificate}
+\end{figure*}
+
+Candidate adaptation, frozen and candidate inference, evidence extraction, and shadow-state storage
+all contribute to runtime. The tree prediction and interval comparison are inexpensive, but the
+whole procedure is not one extra forward pass. Comparable end-to-end latency measurements are
+not available across the recorded tracks.
+
+\section{Primary Experimental Protocols}
+\label{sec:compact-experiments}
+
+\subsection{Two Primary Questions and the Evidence Hierarchy}
+
+The controlled study asks whether the gate distinguishes useful from harmful updates.
+The CCT-20 study asks whether a frozen gate avoids measured candidate harm under a natural
+camera-location shift. These are different claims. We predefine the interpretation of each study
+before presenting its results in Table~\ref{tab:compact-taxonomy}.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Experiment status and role. Primary presentation does not imply prospective confirmation.
+All recorded unfavorable outcomes remain disclosed.}
+\label{tab:compact-taxonomy}
+\begin{tabular}{@{}p{0.21\textwidth}p{0.30\textwidth}p{0.40\textwidth}@{}}
+\toprule
+Evidence & Design and status & Question it can answer \\
+\midrule
+CIFAR-10-C: Tent, EATA, SAR & opened controlled grids; cross-fitted empirical calibration & candidate-specific routing on the evaluated cells \\
+CCT-20: Tent & internally sealed protocol; five checkpoints and nine target camera locations & conservative retention under the stated score and safe-utility rule \\
+So2Sat-LCZ42 & development feasibility stopped; no target access & whether a candidate met the pre-target eligibility checks \\
+Other replayable tracks & opened natural/semantic and candidate-configuration diagnostics & transfer limits and one-sided retention; full results in the supplement \\
+PACS; iWildCam; historical ports; focused Office-Home route & partial replay, withheld metric, superseded policy, or invalid route & audit history only where the corresponding contract is incomplete or invalid \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+CIFAR-10-C~\cite{hendrycks2019cifar10c} supplies 2,160 recorded cells per candidate: five
+archived ResNet-18 run-seed groups, each evaluated across 432
+corruption/composition/update conditions. The current gate is refitted from the saved label-free
+features $Z$ and measured cell outcomes under Protocol B, rather than reusing historical stored
+predictions or radii. For this canonical evaluation, the analysis uses three-way
+cell-outcome-disjoint cross-fitting: each scored fold has separate estimator-fit and
+residual-calibration subsets, so its outcome enters neither its fitted prediction nor its radius.
+This is still a retrospective opened panel, not an untouched environment test; historical stored
+fields remain audit-only and do not determine the current decisions.
+
+\subsection{CCT-20 Design and Safe Utility}
+\label{sec:cct20-design}
+
+The CCT-20 camera-location study~\cite{beery2018recognition} crosses
+\CCTCheckpointCount{} independent source checkpoints with \CCTLocationCount{} target locations,
+giving \CCTCellCount{} checkpoint--location cells. It uses
+\CCTProbeImageCount{} probe images and \CCTEvaluationImageCount{} evaluation images
+(\CCTTargetImageCount{} total). The primary metric is set-membership top-1 accuracy: a prediction
+is correct if it matches any distinct archived category for that image.
+It is not an official single-label leaderboard reproduction. The candidate uses the official Tent
+implementation, one non-episodic Adam step at learning rate $10^{-3}$, and state reset per cell.
+
+The protocol was internally sealed before source training and outcome access, not publicly
+registered. Aggregate target label metadata had been inspected during candidate ranking; cell-level
+outcomes remained unopened until one-shot scoring. This is outcome-blind execution, not a
+label-unopened study. The source ridge fit used 10 rows from two camera locations; calibration used
+45 rows aggregated to nine cis-test locations. Transfer to trans-test locations remains an assumption:
+the protocol treats camera-location clusters as the population unit and assumes the nine trans-test
+clusters are exchangeable with the declared target population under the locked sampling rule. This
+is a design assumption, not an empirically proven fact about future deployments.
+
+For either fixed policy $b$, define $G_b$ as mean baseline regret minus KGA regret.
+Positive $G_b$ means lower regret for KGA. The \emph{safe-utility} rule is a predeclared,
+limited harm-avoidance check. Using nominal pointwise 95\% bootstrap lower endpoints, it passes when
+\begin{equation}
+ L_{\mathrm{adapt}}>0,\qquad
+ L_{\mathrm{freeze}}>\CCTSafeUtilityMargin.
+ \label{eq:cct-safe-utility}
+\end{equation}
+The second threshold is the frozen-policy noninferiority margin, on the accuracy-proportion scale.
+This rule can pass when KGA always retains $f_0$. The stronger routing criterion additionally
+requires improvement over both fixed policies at the declared inference level and nontrivial
+ADAPT/FREEZE exposure. The word \emph{safe} names this protocol endpoint, not a population guarantee.
+
+\subsection{Scoring, Dependence, and Statistical Inference}
+\label{sec:compact-inference-units}
+
+All policies use the same evaluation records, and evaluation labels are joined only after actions
+are fixed. The candidate TTA step can be transductive: episodic candidates update on the unlabeled
+evaluation inputs, and online candidates may use evaluation-batch BatchNorm statistics.
+Development/calibration separation therefore does not imply independent fresh-sample inference.
+
+We report oracle regret, action counts, commitment rate, and false-commit frequencies. Empirical
+interval inclusion and interval width are reported separately from commitment.
+A paired regret contrast always means baseline regret minus KGA regret, so positive values favor
+KGA. Accuracy and macro-F1 regrets are separated rather than pooled.
+
+Bootstrap levels are nominal throughout. CIFAR sensitivity resamples six corruption families,
+conditional on an archived checkpoint. CCT-20 uses a paired two-way product bootstrap over
+checkpoint rows and location columns; sign-flip calculations instead use nine location means.
+For a vector $G$ of cluster gaps, the sign-flip reference model is
+\begin{equation}
+ G\overset{d}{=}s\odot G
+ \quad\text{for every }s\in\{-1,+1\}^{m}.
+ \label{eq:compact-signflip-null}
+\end{equation}
+Independent zero-symmetric cluster gaps suffice. Exchangeability, marginal symmetry, or a single
+global sign symmetry alone is not sufficient~\cite{hemerik2018exact}. Enumeration removes Monte
+Carlo error but does not verify this null model. Holm adjustment requires valid input $p$-values;
+nominal family intervals also require valid marginal coverage of their constituent intervals.
+The full inference specification and retrospective search status are collected in
+\KBSuppRef{app:compact-inference}{Appendix}{the supplementary inference specification}.
+
+\section{Primary Results}
+\label{sec:compact-results}
+
+\subsection{Controlled Routing Depends on the Candidate}
+
+Table~\ref{tab:primary-cifar} reports all three CIFAR-10-C candidates under the same current rule.
+Tent and EATA have lower measured point regret than always-adapt and always-freeze.
+SAR is the counterexample: always-adapt has lower regret than KGA. The mixed panel therefore
+supports candidate-specific routing, not a claim that gating improves every adapter.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Primary controlled CIFAR-10-C results. Regret is the mean accuracy shortfall from the
+per-cell oracle, on the proportion scale; lower is better. A/F/U denotes ADAPT/FREEZE/ABSTAIN.
+Commitment rate is $(A+F)/n$, not interval coverage. Cells share checkpoints and residual pools.}
+\label{tab:primary-cifar}
+\resizebox{\textwidth}{!}{\input{paper/generated/kbound_primary_accuracy_table.tex}}
+\end{table*}
+
+Tent regret is $\CIFARtentKga$, compared with $\CIFARtentAdapt$ for always-adapt and
+$\CIFARtentFreeze$ for always-freeze. EATA's values are $\CIFAReataKga$,
+$\CIFAReataAdapt$, and $\CIFAReataFreeze$. Their current actions are 1,094/334/732 and
+1,207/118/835, respectively; both have zero observed false adaptations.
+SAR makes 1,430/0/730 decisions and has regret $0.0017$, versus $0.0003$ for always-adapt.
+
+On the recorded CIFAR SAR panel, always-adapt has very low paired-oracle regret. KGA's higher regret
+reflects the net benefit forgone on cells where it retains the frozen predictor. The current results
+do not isolate whether those decisions arise mainly from prediction error, conservative calibration,
+or candidate-update dynamics. Normalization and sample-filtering effects remain hypotheses rather than
+established causes.
+
+In contrast, Tent and EATA suffer degradation under severe corruptions, allowing KGA's selective
+freezing and abstention to achieve net regret reductions over always-adapt ($+0.0062$ for Tent,
+$+0.0017$ for EATA on this panel).
+
+A retrospective cluster-bootstrap sensitivity analysis across the six observed CIFAR-10-C corruption
+families (\KBSuppRef{tab:compact-current-family}{Table}{the supplementary family-sensitivity table})
+indicates an estimated paired regret reduction for Tent of $+0.0062$ over always-adapt
+(95\% CI $[+0.0023,\,+0.0095]$) and $+0.1221$ over always-freeze (95\% CI $[+0.0630,\,+0.1777]$).
+Historical run-seed bootstrap vectors from earlier development cycles are cataloged separately in the supplement.
+
+\subsection{Observed Interval Inclusion Is a Separate Diagnostic}
+\label{sec:interval-diagnostics}
+
+Commitment rate measures how often the interval excludes zero. Interval inclusion measures how
+often it contains the observed cell outcome. Table~\ref{tab:interval-diagnostics} reports these
+diagnostics separately under Protocol B (disjoint fit/calibrate/score cross-fitting) at nominal target
+$1-\alpha=0.90$.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Retrospective interval diagnostics for the controlled cells under Protocol B (disjoint fit/calibrate/score cross-fitting), at nominal target
+$1-\alpha=0.90$. Observed inclusion concerns $\Delta^{\mathrm{cell}}$.
+Candidate/family breakdowns and directional-error denominators are provided in the supplement.}
+\label{tab:interval-diagnostics}
+\resizebox{\textwidth}{!}{\input{paper/generated/current_policy_interval_diagnostics.tex}}
+\end{table*}
+
+Observed inclusion rates closely track the 90\% nominal level across all three candidates:
+Tent includes 1,954 of 2,160 outcomes (90.46\%), EATA includes 1,957 (90.60\%), and SAR includes 1,933 (89.49\%).
+Evaluating directional errors relative to committed decisions reveals asymmetric behavior:
+EATA commits one false FREEZE among 118 FREEZE decisions ($\mathrm{FF}_c = 0.0085$, occurring in Gaussian noise).
+Tent commits zero false FREEZE decisions among 334 FREEZE decisions ($\mathrm{FF}_c = 0.0000$), while SAR commits
+zero FREEZE decisions and one false ADAPT among 1,430 ADAPT decisions ($\mathrm{FA}_c = 0.0007$, in pixelate).
+These conditional denominators describe the observed directional errors among committed decisions
+on this panel, reflecting low empirical error rates on the evaluated records.
+
+\subsection{Synchronized Development Baseline Comparison}
+\label{sec:synchronized-baselines}
+
+Table~\ref{tab:synchronized-baselines} compares KGA against fixed policies, scalar heuristics, and an uncalibrated
+point gate on 2,160 CIFAR-10-C Tent rows, using identical saved features and candidate-specific oracles under Protocol B.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Current outcome-disjoint saved-feature comparison on 2,160 CIFAR-10-C
+Tent rows, generated from one authenticated paired-score authority. All rows
+have the same oracle and weights; both fitted gates use identical predictions.
+Lower regret is better. $\mathrm{FA}_{\mathrm u}$ is the fraction of all rows
+with ADAPT and $B\le0$; commitment is $(A+F)/n$.}
+\label{tab:synchronized-baselines}
+\resizebox{\textwidth}{!}{\input{paper/generated/current_cifar_baselines_20260912/current_arithmetic_panel.tex}}
+\end{table*}
+
+KGA achieves lower point regret ($0.0018$, mean accuracy $0.7931$) than either fixed policy
+(always-adapt $0.0080$, always-freeze $0.1239$), while committing zero false adaptations
+($\mathrm{FA}_u = 0.000$, zero false ADAPT decisions out of 1{,}094 ADAPT commitments).
+The same-prediction point gate achieves even lower point regret ($0.0004$, mean accuracy $0.7945$)
+by committing to adaptation whenever $\widehat\Delta > 0$ without an uncertainty margin;
+however, this unhedged stance causes 88 non-positive adaptations ($\mathrm{FA}_u = 0.041$,
+$88/2{,}160$). KGA explicitly trades this regret gap for directional safety: by withholding
+commitment on 732 ambiguous cells, it eliminates false adaptations entirely on these records.
+The scalar heuristics (confidence increase and entropy decrease) achieve regret of $0.0080$ and $0.0081$,
+respectively, with substantial false adaptations ($\mathrm{FA}_u = 0.250$ and $0.249$) and lack formal calibration.
+Detailed exact-replay receipts are indexed in \KBSuppRef{sec:compact-repro}{Appendix}{the supplementary reproducibility ledger}.
+
+\subsection{CCT-20: Conservative Retention, Not Selective Routing}
+\label{sec:cct20-result}
+
+On the recorded CCT-20 cells, KGA served the frozen model throughout and avoided the measured loss of always adapting.
+Across \CCTCellCount{} evaluation cells, KGA issued \CCTAdaptCount{} ADAPT, \CCTFreezeCount{} FREEZE,
+and \CCTAbstainCount{} ABSTAIN decisions. Because every non-adapt decision serves the base
+model, KGA served frozen predictions across the entire benchmark.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{CCT-20 safe-utility endpoint defined in Eq.~\eqref{eq:cct-safe-utility}.
+Contrasts are baseline regret minus KGA regret on the set-membership accuracy-proportion scale.
+Contrasts report nominal pointwise 95\% two-way bootstrap intervals.
+Location-level records are detailed in the supplement.}
+\label{tab:cct20-safe-utility}
+\input{paper/generated/cct20_safe_utility_display.tex}
+\end{table*}
+
+KGA matched always-freeze exactly and avoided the measured degradation of always-adapt (\CCTSafeUtilityPass),
+earning the recorded verdict \CCTVerdict. However, the stronger opportunistic routing criterion was not met:
+the candidate was helpful in \CCTHelpfulCount{} cell, tied in \CCTZeroCount{}, and harmful in \CCTHarmfulCount{}.
+Among the \CCTHarmfulCount{} harmful updates, the gate strictly rejected 43 (issuing \freeze) and issued \abstain
+on the remaining 1 (which defaults to serving the frozen model), while also issuing \freeze on the single helpful candidate.
+Because all development cells for Tent were harmful, the training distribution supplied no positive examples, leading the
+model to predict negative benefit throughout.
+This demonstrates retention in that study, not general harm avoidance or successful selection of beneficial updates on
+unseen environments; selective opportunistic routing under natural shift remains an open empirical challenge.
+
+\subsection{Development Stops and Adverse Diagnostics}
+\label{sec:so2sat-development-stop}
+
+So2Sat-LCZ42~\cite{zhu2020so2sat} tested \SoTwoCandidateCount{} candidates on
+\SoTwoDevelopmentCityCount{} development cities and \SoTwoCheckpointCount{} independent
+checkpoints. Tent had both helpful and harmful cities, but neither candidate passed all
+predeclared eligibility checks. The study stopped before gate calibration: no target inputs or
+labels were accessed, and there is no target natural-shift score. The development outcomes are
+now open, so retuning them cannot produce fresh confirmation.
+
+The auxiliary studies also show limitations. ImageNet-R and PACS favor always-adapt;
+ImageNet-C is sensitive to the candidate and its operating point. Office-Home and RxRx1 mainly
+retain the frozen model, whereas the opened Camelyon17 OOD panel adapts throughout.
+The opened Camelyon17 panel shows that KGA can issue ADAPT decisions on natural data;
+it does not establish why CCT-20 produced no such decisions. On the observed CCT-20 cells,
+KGA retains the frozen model, whereas the one-sided Camelyon17 panel retains adaptation
+exposure. These candidate-specific outcomes do not demonstrate prospective selective routing.
+Transferring a fixed benefit predictor
+across completely unseen wild domains without target calibration remains an open empirical challenge.
+\KBSuppRef{app:auxiliary-results}{Appendix}{the supplementary auxiliary-results section} reports the valid diagnostic rows on separate metric scales, together with the
+reasons why iWildCam, historical POEM/AETTA ports, and the focused Office-Home route cannot support current
+headline comparisons.
+
+\section{Limitations and Broader Impact}
+\label{sec:compact-sensitivity}
+
+\subsection{Assumptions, Not an Unconditional Safety Guarantee}
+
+The population frontier is exact within its declared rich binary class. A credible residual bound
+must come from domain knowledge, target labels, or a stated transfer assumption. A narrower class
+may permit stronger decisions, while an unsupported bound cannot justify a strict population claim.
+The useful object is the class-dependent feasible set, not the algebraic inequality alone.
+
+\paragraph{Withdrawal of the development-based surrogate for $\beta$.}
+\label{par:beta-surrogate-failure}
+We evaluated whether an empirical benefit-scale proxy computed from development shifts could serve
+as an operational surrogate for $\beta$. On CIFAR-10-C, this heuristic surrogate proved $1.4$--$50\times$
+too small for operational soundness: 24--73\% of evaluation cells produced measured outcomes outside
+the proxy-declared interval, and commit error reached 0.4--16.6\%. On ImageNet-C, the heuristic returned
+zero commitments across all 405 evaluation cells in 5 of 10 configurations.
+We therefore withdraw this empirical surrogate route. The historical proxy failure is consistent with
+the theorem's warning that processing unchanged evidence cannot replace a justified structural assumption.
+The theorem does not identify the cause or magnitude of this particular proxy's errors. Rather,
+Theorem~\ref{thm:compact-beta-minimax} shows why $\beta$ cannot be audited from label-free target
+data alone, so any population guarantee without coupled target labels requires treating $\beta$ as an
+externally declared sensitivity parameter (by analogy to sensitivity analysis in causal inference), while
+KGA pursues empirical interval coverage through historical shift benchmarks.
+
+For KGA, empirical interval coverage requires separate support at the intended decision unit.
+A larger radius reduces commitment but can increase regret when the frozen model is worse.
+A smaller radius increases exposure and makes calibration failures more consequential.
+Changing the adapter, checkpoint, feature schema, or update settings changes the prediction problem
+and requires recalibration or a justified transfer argument.
+
+\paragraph{Repeated deployment needs a separate guarantee.}
+A predeclared policy does not by itself supply exchangeability or time-uniform safety.
+Reusing calibration data, changing the frozen baseline after accepted updates, and selecting later
+candidates from earlier outcomes change the joint process. Adaptive conformal inference studies
+online coverage frequency with feedback~\cite{gibbs2021adaptive}; that is not time-uniform control
+of KGA's false commitments. Selection-conditional and group-conditional guarantees likewise require
+additional methods, as discussed in Section~\ref{sec:compact-related}.
+
+\subsection{Core Empirical Delimitations and Open Frontiers}
+\label{sec:empirical-delimitations}
+
+We consolidate the essential empirical boundaries of the current evidence into four concrete delimitations:
+\begin{enumerate}
+  \item \textbf{Retention vs.\ Opportunistic Routing under Natural Shift:} On real-camera distribution shifts
+  (CCT-20), KGA served the frozen model across all 45 cells and avoided the measured degradation of always-adapt
+  in that study. However, it made zero \adapt decisions. Demonstrating selective, opportunistic routing that
+  identifies and exploits beneficial adaptation under natural shifts remains an open empirical challenge.
+  \item \textbf{Retrospective Benchmarks vs.\ Prospective Deployment:} The controlled CIFAR-10-C and ImageNet-C
+  experiments evaluate retrospective, opened panels under Protocol B cross-fitting. While these report empirical
+  commitment and inclusion diagnostics on opened records, prospective evaluation on unopened environments is
+  required to assess distribution-transfer properties.
+  \item \textbf{Single-Checkpoint Dependence:} The 2,160 CIFAR-10-C cells reuse a single pre-trained
+  ResNet-18 source checkpoint across corruption conditions. These evaluate 2,160 distinct adaptation conditions,
+  not 2,160 independent models. Multi-checkpoint evaluations across independently trained source models remain
+  future work.
+  \item \textbf{Hardware and External Baseline Dependencies:} The synchronized baseline comparison
+  (Table~\ref{tab:synchronized-baselines}) and scoped native panel
+  (\KBSuppRef{app:historical-ports}{Appendix}{the supplementary historical ports section}, Table~\ref{tab:native-component-45}) evaluate fixed policies and
+  internal benefit estimators on common saved features. While internal components and scoped native runs have been
+  verified across CPU and Apple Silicon (MPS) environments, full execution of external baseline drivers is
+  constrained by documented method-specific dependencies: no authenticated outputs from Kim et al.'s TTA/ALine~\cite{kim2024ttaline} are available for our scored panel (0/15 available), Baek et al.'s ALine~\cite{baek2022aol} has partial component availability (11/15 available),
+  and original POEM/AETTA pipelines require upstream external library versions and native CUDA configurations.
+\end{enumerate}
+Together, these delimitations define the exact scope of our empirical findings: the controlled studies
+quantify candidate-specific utility and commitment tradeoffs. CCT-20 provides retention evidence without
+ADAPT exposure. These experiments do not establish population coverage or protection on unseen environments.
+
+\subsection{Operational Scope and Potential Harm}
+
+A rejected update can prevent adaptation harm, but retaining a frozen model is not proof that the
+model is accurate or suitable for a high-stakes setting. Misinterpreting an abstention as a
+certificate would be particularly risky. Deployment should preserve the assessment reason and
+connect unresolved cases to a domain-appropriate review or evidence-acquisition process.
+The reported experiments do not validate clinical, safety-critical, or autonomous operation.
+No held-out physical camera deployment or common end-to-end latency result is claimed.
+
+The maintained software distinguishes an unavailable assessment from a supported negative interval.
+Its tests and proof artifacts document a scoped validity, commitment-control, and rollback layer;
+they do not certify every data pipeline or production system. Reproduction instructions, formal
+scope, excluded historical extensions, and release checks are provided in the supplement.
+
+\section{Conclusion}
+\label{sec:compact-conclusion}
+
+K-Bound separates information that is absent from uncertainty that can be estimated.
+For a fixed model pair in the declared binary class, the feasible population benefit set determines
+when a strict direction is supported. The evidence-fibre audit result shows why the same unlabeled
+observations cannot remove the unresolved residual bound.
+
+KGA is an empirical companion: it predicts a measured cell benefit and uses an interval to accept,
+reject, or defer an update. The controlled results show candidate-specific routing value.
+The CCT-20 result shows conservative retention, while the So2Sat development stop exposes a transfer
+limit. Together they motivate evidence-aware commitment, with the validity of each conclusion tied
+to its stated target and assumptions. Stronger natural-shift routing and independent coverage
+validation remain open empirical questions.

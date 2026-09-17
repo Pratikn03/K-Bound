@@ -16,6 +16,12 @@ from typing import Any
 
 
 TRACKS: dict[str, dict[str, Any]] = {
+    # CCT-20 is handled by its strict bridge receipt below.  Generic
+    # label-bearing artifacts must not be mistaken for prospective evidence.
+    "cct20": {
+        "environments": ["trans_test camera locations (9 clusters)"],
+        "patterns": [],
+    },
     "officehome": {
         "environments": ["Art", "Clipart", "Product", "Real_World"],
         "patterns": ["**/*officehome*/**/*.json", "**/officehome_splits.json"],
@@ -56,6 +62,12 @@ TRACKS: dict[str, dict[str, Any]] = {
 # Darwin marks cloud-evicted files with UF_DATALESS. Reading one may block on an
 # unrelated download or fail with ECANCELED, so an inventory must not hydrate it.
 _UF_DATALESS = 0x40000000
+CCT20_BRIDGE_RELATIVES = (
+    "task1_cct20_prospective_bridge_20260911_full/"
+    "CCT20_PROSPECTIVE_EVIDENCE_RECEIPT.json",
+    "task1_cct20_prospective_bridge_20260911/"
+    "CCT20_PROSPECTIVE_EVIDENCE_RECEIPT.json",
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -88,11 +100,60 @@ def matching_artifacts(results: Path, patterns: list[str]) -> list[Path]:
     return sorted(matches)
 
 
+def _verified_cct20_bridge(results: Path) -> tuple[Path | None, dict[str, Any] | None]:
+    """Read only the bridge's public status fields; never infer from its absence."""
+
+    path = next(
+        (results / relative for relative in CCT20_BRIDGE_RELATIVES
+         if (results / relative).is_file() and not (results / relative).is_symlink()),
+        None,
+    )
+    if path is None:
+        # A malformed/symlinked candidate should remain visible as an opened
+        # artifact, but must never be promoted to prospective evidence.
+        for relative in CCT20_BRIDGE_RELATIVES:
+            candidate = results / relative
+            if candidate.exists() or candidate.is_symlink():
+                return candidate, None
+        return None, None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return path, None
+    if (
+        isinstance(document, dict)
+        and document.get("schema") == "kbound_cct20_prospective_evidence_bridge_v1"
+        and document.get("verification_outcome") == "PASS"
+        and document.get("target_outcomes_unopened_before_execution") is True
+        and document.get("literal_label_unopened") is False
+        and document.get("exchangeability_status")
+        == "ASSUMED_AT_PROTOCOL_SCOPE_NOT_EMPIRICALLY_PROVEN"
+        and document.get("result_status") == "SAFE_UTILITY_ONLY"
+    ):
+        return path, document
+    return path, None
+
+
 def audit(results: Path) -> dict[str, Any]:
     tracks: dict[str, Any] = {}
     for name, spec in TRACKS.items():
         artifacts = matching_artifacts(results, spec["patterns"])
-        if artifacts:
+        bridge_path = None
+        bridge_document = None
+        if name == "cct20":
+            bridge_path, bridge_document = _verified_cct20_bridge(results)
+        if name == "cct20" and bridge_document is not None:
+            status = "PROSPECTIVE_COMPLETED_SAFE_UTILITY_ONLY"
+            reason = (
+                "strict bridge verifies a locked outcome-unopened CCT-20 trans-test run; "
+                "exchangeability remains a protocol assumption"
+            )
+            artifacts = [bridge_path] if bridge_path is not None else []
+        elif name == "cct20" and bridge_path is not None:
+            status = "OPENED_BEFORE_PROSPECTIVE_CLOSURE"
+            reason = "CCT-20 bridge is present but failed strict verification"
+            artifacts = [bridge_path]
+        elif artifacts:
             status = "OPENED_BEFORE_PROSPECTIVE_CLOSURE"
             reason = "label-bearing metrics or decisions were already archived"
         else:
@@ -109,6 +170,9 @@ def audit(results: Path) -> dict[str, Any]:
             "evidence_truncated": len(artifacts) > 25,
         }
     unopened = [name for name, row in tracks.items() if row["status"] == "UNOPENED_VERIFIED"]
+    prospective = [
+        name for name, row in tracks.items() if row["status"] == "PROSPECTIVE_COMPLETED_SAFE_UTILITY_ONLY"
+    ]
     return {
         "schema_version": 1,
         "audit_rule": (
@@ -117,9 +181,15 @@ def audit(results: Path) -> dict[str, Any]:
         ),
         "tracks": tracks,
         "verified_unopened_tracks": unopened,
+        "verified_prospective_tracks": prospective,
+        "prospective_evidence_available": bool(prospective),
         "prospective_natural_track_available": bool(unopened),
         "verdict": (
-            "eligible_unopened_target_found" if unopened else "no_verified_unopened_target_found"
+            "eligible_unopened_target_found"
+            if unopened
+            else "prospective_evidence_verified_no_unopened_target_available"
+            if prospective
+            else "no_verified_unopened_target_found"
         ),
     }
 

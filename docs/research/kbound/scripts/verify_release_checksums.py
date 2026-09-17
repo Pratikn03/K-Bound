@@ -13,14 +13,6 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_CHECKSUMS = ROOT / "docs/research/kbound/KBOUND_RELEASE_SHA256SUMS.txt"
 
-CURRENT_RELEASE_PDF_PATHS: tuple[str, ...] = (
-    "docs/research/kbound/release/current/kbound_short_main.pdf",
-    "docs/research/kbound/release/current/kbound_short_supplement.pdf",
-    "docs/research/kbound/release/current/kbound_tmlr.pdf",
-    "docs/research/kbound/release/current/kbound_full_report.pdf",
-)
-CURRENT_RELEASE_CHECKSUM_PATH = "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt"
-
 # This archive embeds the completed checksum file, so including it in that same
 # file would create an impossible self-referential hash. Its deterministic bytes
 # and internal commitments are verified by build_anonymous_supplement.py.
@@ -35,14 +27,24 @@ POST_CHECKSUM_RELEASE_PATHS: tuple[str, ...] = (
 # default CLI verifier. Generic checksum verification remains an explicit
 # lower-level operation; it must not accidentally certify a truncated release.
 REQUIRED_RELEASE_PATHS: tuple[str, ...] = (
+    "DATA.md",
+    "docs/research/kbound/REPRODUCE.md",
+    "docs/research/kbound/RELEASE_CHECKLIST.md",
+    "docs/research/kbound/KBOUND_SHORT_CLAIM_MANIFEST.md",
+    "docs/research/kbound/KBOUND_SHORT_RESULT_AUDIT.md",
+    "docs/research/kbound/KBOUND_SHORT_THEORY_AUDIT.md",
+    "docs/research/kbound/dashboard/README.md",
     "docs/research/kbound/claim_ledger.json",
     "docs/research/kbound/RESULT_MANIFEST.json",
     "docs/research/kbound/STORAGE_MANIFEST.json",
     "docs/research/kbound/results_source.json",
     "docs/research/kbound/audits/empirical_data_quality_2026_08_27/artifact.json",
     "docs/research/kbound/audits/empirical_data_quality_2026_08_27/audit_summary.json",
+    "docs/research/kbound/audits/empirical_data_quality_2026_08_27/findings.csv",
+    "docs/research/kbound/audits/empirical_data_quality_2026_08_27/remediation_status.csv",
     "docs/research/kbound/audits/empirical_data_quality_2026_08_27/reviewer_scorecard.csv",
     "docs/research/kbound/dashboard/data/snapshot.json",
+    "docs/research/kbound/notebooks/kbound_empirical_data_quality_audit_2026_08_27.ipynb",
     "docs/research/kbound/paper/generated/kbound_numbers.tex",
     "docs/research/kbound/paper/generated/kbound_result_manifest.json",
     "docs/research/kbound/paper/generated/current_policy_family_sensitivity.tex",
@@ -52,13 +54,19 @@ REQUIRED_RELEASE_PATHS: tuple[str, ...] = (
     "docs/research/kbound/paper/generated/kbound_primary_accuracy_table.tex",
     "docs/research/kbound/paper/generated/kbound_auxiliary_accuracy_table.tex",
     "docs/research/kbound/paper/generated/kbound_auxiliary_balanced_accuracy_table.tex",
+    "docs/research/kbound/paper/generated/cct20_location_effects_display.tex",
+    "docs/research/kbound/paper/generated/cct20_primary_table_display.tex",
     "docs/research/kbound/paper/generated/cct20_safe_utility_display.tex",
+    "docs/research/kbound/paper/generated/empirical_audit/claim_matrix.md",
     "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json",
     "docs/research/kbound/paper/generated/uniform_verdicts.json",
     "docs/research/kbound/figures/fig_decision_value_frontier.png",
+    "docs/research/kbound/figures/fig_certificate.png",
+    "docs/research/kbound/figures/fig_frontier_schematic.png",
     "docs/research/kbound/figures/fig_phase_diagram.png",
-    *CURRENT_RELEASE_PDF_PATHS,
-    CURRENT_RELEASE_CHECKSUM_PATH,
+    "docs/research/kbound/kbound_short_final_draft.pdf",
+    "docs/research/kbound/kbound_short_final_draft.docx",
+    "docs/research/kbound/kbound_tmlr.pdf",
     "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
     "experiments/kbound/results/reconciled_panels_v1/CANONICAL_PANEL_RESULTS.md",
     "experiments/kbound/results/reconciled_panels_v1/canonical_panel_table.tex",
@@ -75,11 +83,7 @@ REQUIRED_RELEASE_PATHS: tuple[str, ...] = (
     "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json",
     "docs/research/kbound/audits/python_environment_2026_09_02.json",
     "docs/research/kbound/release_python_environment_macos_arm64.json",
-    "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
     "docs/research/kbound/audits/release_toolchain_2026_09_02.json",
-    "docs/research/kbound/release_toolchain_macos_arm64.json",
-    "docs/research/kbound/release_toolchain_macos_arm64_v2.json",
-    "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json",
     "docs/research/kbound/audits/release_source_seal_2026_08_29.json",
     "docs/research/kbound/audits/repository_test_inventory.json",
     "docs/research/kbound/paper/generated/cct20_release_manifest.json",
@@ -87,23 +91,11 @@ REQUIRED_RELEASE_PATHS: tuple[str, ...] = (
     "docs/research/kbound/paper/generated/cct20_numbers.tex",
     "docs/research/kbound/paper/generated/cct20_primary_table.tex",
     "docs/research/kbound/paper/generated/cct20_location_effects.tex",
-    "docs/research/kbound/paper/generated/cct20_reporting_numbers.tex",
-    "docs/research/kbound/paper/generated/current_release_identity.tex",
-    "docs/research/kbound/paper/release/current_release.json",
-    "docs/research/kbound/CURRENT_RELEASE.md",
-    "docs/research/kbound/paper/reports/KBOUND_SOURCE_OUTPUT_MAP.md",
-    "docs/research/kbound/paper/reports/KBOUND_CURRENT_RELEASE_REPAIR_REPORT.md",
-    "docs/research/kbound/paper/reports/TMLR_ANONYMITY_AUDIT.md",
-    "docs/research/kbound/archive/superseded_do_not_cite/originals/kbound_short.pdf",
-    "docs/research/kbound/archive/superseded_do_not_cite/originals/kbound.pdf",
-    "docs/research/kbound/archive/superseded_do_not_cite/originals/kbound_submission.pdf",
-    "docs/research/kbound/archive/superseded_do_not_cite/kbound_short_SUPERSEDED.pdf",
-    "docs/research/kbound/archive/superseded_do_not_cite/kbound_SUPERSEDED.pdf",
-    "docs/research/kbound/archive/superseded_do_not_cite/kbound_submission_SUPERSEDED.pdf",
     "docs/research/kbound/release/cct20_public_evidence_bundle.zip",
     "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml",
     "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml.sha256",
     "docs/research/kbound/audits/formal_foundations_2026_08_31.json",
+    "docs/research/multiclass_vector_capacity/formal/verification/theorem_inventory.json",
 )
 
 
@@ -120,12 +112,16 @@ def verify_checksum_file(
     *,
     root: Path,
     required_paths: tuple[str, ...] = (),
+    exact_paths: bool = False,
 ) -> int:
-    """Verify a caller-selected inventory; the CLI defaults to the full release.
+    """Verify a caller-selected inventory; production callers use exact mode.
 
     This primitive is intentionally usable for small fixtures and independent
-    byte checks. A publication gate must supply ``REQUIRED_RELEASE_PATHS``.
+    byte checks. A publication gate must supply its canonical inventory and set
+    ``exact_paths=True`` so unknown entries are rejected before artifact I/O.
     """
+    if len(set(required_paths)) != len(required_paths):
+        raise ValueError("required checksum inventory contains duplicate paths")
     root = root.resolve()
     checksum_absolute = checksum_path.absolute()
     checksum_parts = checksum_absolute.parts
@@ -138,6 +134,7 @@ def verify_checksum_file(
     if not lines:
         raise ValueError("release checksum file is empty")
     entries: dict[str, str] = {}
+    order: list[str] = []
     for line_number, line in enumerate(lines, 1):
         match = re.fullmatch(r"([0-9a-f]{64})  (.+)", line)
         if match is None:
@@ -149,10 +146,18 @@ def verify_checksum_file(
         if relative in entries:
             raise ValueError(f"duplicate checksum entry: {relative}")
         entries[relative] = digest
+        order.append(relative)
 
-    missing_entries = sorted(set(required_paths) - entries.keys())
+    missing_entries = [relative for relative in required_paths if relative not in entries]
     if missing_entries:
         raise ValueError("required checksum entries are missing: " + ", ".join(missing_entries))
+    if exact_paths:
+        required_set = set(required_paths)
+        unexpected_entries = [relative for relative in order if relative not in required_set]
+        if unexpected_entries:
+            raise ValueError("unexpected checksum entries: " + ", ".join(unexpected_entries))
+        if tuple(order) != required_paths:
+            raise ValueError("checksum entries are not in canonical inventory order")
 
     for relative, expected in entries.items():
         parts = PurePosixPath(relative).parts
@@ -176,15 +181,11 @@ def write_checksum_file(
 ) -> int:
     """Atomically write and self-verify one explicit, complete byte inventory."""
 
-    checksum_path = checksum_path.absolute()
-    checksum_parts = checksum_path.parts
-    if any(Path(*checksum_parts[:index]).is_symlink() for index in range(1, len(checksum_parts) + 1)):
-        raise FileNotFoundError(f"release checksum destination is a symlink: {checksum_path}")
     root = root.resolve()
     if not required_paths or len(set(required_paths)) != len(required_paths):
         raise ValueError("checksum inventory must be nonempty and contain unique paths")
     lines: list[str] = []
-    for relative in sorted(required_paths):
+    for relative in required_paths:
         parsed = PurePosixPath(relative)
         if parsed.is_absolute() or ".." in parsed.parts or str(parsed) != relative:
             raise ValueError(f"unsafe checksum inventory path: {relative}")
@@ -207,7 +208,12 @@ def write_checksum_file(
         ) as stream:
             temporary = Path(stream.name)
             stream.writelines(lines)
-        count = verify_checksum_file(temporary, root=root, required_paths=required_paths)
+        count = verify_checksum_file(
+            temporary,
+            root=root,
+            required_paths=required_paths,
+            exact_paths=True,
+        )
         os.replace(temporary, checksum_path)
         temporary = None
         return count
@@ -227,34 +233,51 @@ def main() -> int:
         action="store_true",
         help="verify only listed files and explicit --require paths, not a K-Bound release",
     )
+    mode.add_argument(
+        "--post-checksum",
+        action="store_true",
+        help="verify the exact one-entry post-checksum inventory",
+    )
     mode.add_argument("--list-required", action="store_true", help="print the canonical release inventory and exit")
     mode.add_argument(
         "--write", action="store_true", help="atomically regenerate the complete canonical release checksum inventory"
     )
     args = parser.parse_args()
+    if args.require and not args.generic:
+        parser.error("--require is available only with --generic")
     if args.list_required:
         print("\n".join(REQUIRED_RELEASE_PATHS))
         return 0
     if args.write:
         try:
             count = write_checksum_file(
-                args.checksum_file.absolute(), root=args.root, required_paths=REQUIRED_RELEASE_PATHS
+                args.checksum_file.resolve(), root=args.root, required_paths=REQUIRED_RELEASE_PATHS
             )
         except (OSError, UnicodeError, ValueError) as exc:
             parser.exit(1, f"ERROR: {exc}\n")
         print(f"release checksums: WROTE AND VERIFIED ({count} files)")
         return 0
-    required = (() if args.generic else REQUIRED_RELEASE_PATHS) + tuple(args.require)
+    if args.generic:
+        required = tuple(args.require)
+        exact_paths = False
+        label = "generic checksums"
+    elif args.post_checksum:
+        required = POST_CHECKSUM_REQUIRED_PATHS
+        exact_paths = True
+        label = "post-checksum release"
+    else:
+        required = REQUIRED_RELEASE_PATHS
+        exact_paths = True
+        label = "release checksums"
     try:
         count = verify_checksum_file(
-            # Preserve symlink components for the receipt-path validation.
-            args.checksum_file.absolute(),
+            args.checksum_file.resolve(),
             root=args.root,
             required_paths=required,
+            exact_paths=exact_paths,
         )
     except (OSError, UnicodeError, ValueError) as exc:
         parser.exit(1, f"ERROR: {exc}\n")
-    label = "generic checksums" if args.generic else "release checksums"
     print(f"{label}: PASS ({count} files)")
     return 0
 

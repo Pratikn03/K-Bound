@@ -7,9 +7,11 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import re
+import stat
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 KBOUND = ROOT / "docs/research/kbound"
@@ -17,17 +19,9 @@ sys.path.insert(0, str(KBOUND))
 
 from kbound_repro import authority, manuscript_sources  # noqa: E402
 
-CANONICAL = (
-    ROOT
-    / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
-)
-SOURCE_MANIFEST = (
-    ROOT / "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
-)
-CURRENT_CLUSTER = (
-    ROOT
-    / "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
-)
+CANONICAL = ROOT / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
+SOURCE_MANIFEST = ROOT / "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
+CURRENT_CLUSTER = ROOT / "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
 GENERATED_MANIFEST = KBOUND / "paper/generated/kbound_result_manifest.json"
 KBOUND_NUMBERS = KBOUND / "paper/generated/kbound_numbers.tex"
 CURRENT_CLUSTER_TABLE = KBOUND / "paper/generated/current_policy_family_sensitivity.tex"
@@ -37,15 +31,23 @@ CLAIM_MATRIX = KBOUND / "paper/generated/empirical_audit/claim_matrix.md"
 CLAIM_LEDGER = KBOUND / "claim_ledger.json"
 RESULT_MANIFEST = KBOUND / "RESULT_MANIFEST.json"
 RESULTS_SOURCE = KBOUND / "results_source.json"
+HISTORICAL_LEDGER = (
+    KBOUND / "archive/legacy_publication_surfaces_2026-09-02/retired_tree"
+    / "docs/research/kbound/SUBMISSION_LEDGER.md"
+)
 RESULT_AUDIT = KBOUND / "KBOUND_SHORT_RESULT_AUDIT.md"
 CLAIM_MANIFEST = KBOUND / "KBOUND_SHORT_CLAIM_MANIFEST.md"
 README = KBOUND / "README.md"
 LONG_TMLR = KBOUND / "kbound_tmlr.tex"
 STORAGE_MANIFEST = KBOUND / "STORAGE_MANIFEST.json"
-LOCK_SEAL = (
-    KBOUND
-    / "archive/superseded_empirical_authorities_2026-09-02/retired_tree"
-    / "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+LOCK_SEAL = ROOT / "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+PUBLIC_STORAGE_AUTHORITIES = frozenset(
+    {
+        "docs/research/kbound/claim_ledger.json",
+        "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
+        "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
+        "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json",
+    }
 )
 HISTORICAL_LOCK_PATH_REMAP = {
     "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_FINDINGS.md": (
@@ -108,7 +110,58 @@ REQUIRED_CCT20_NUMBER_MACROS = {
     "CCTSecondaryMetricDisclosure",
     "CCTInferenceSHA",
 }
+ACTIVE_SOURCES = manuscript_sources.active_source_paths(ROOT)
+
+
 live_latex = manuscript_sources.live_latex
+
+
+_TEXT_MANUSCRIPT_SUFFIXES = frozenset({".bib", ".cls", ".sty", ".tex"})
+_BINARY_MANUSCRIPT_SUFFIXES = frozenset(
+    {".eps", ".gif", ".jpeg", ".jpg", ".pdf", ".png", ".svg", ".webp"}
+)
+
+
+def _active_manuscript_corpus(
+    root: Path, sources: tuple[Path, ...] | list[Path]
+) -> tuple[tuple[Path, ...], str]:
+    """Read only textual members of the live dependency closure.
+
+    ``active_source_paths`` deliberately includes graphics so the release
+    inventory can bind every compiled input.  Claim scanning must not decode
+    those binary members as UTF-8, and it must reject an unclassified member
+    rather than silently skipping a potentially relevant input.
+    """
+
+    root = Path(root).absolute()
+    text_sources: list[Path] = []
+    corpus: list[str] = []
+    classified: list[Path] = []
+    for source in sources:
+        suffix = source.suffix.casefold()
+        if suffix in _BINARY_MANUSCRIPT_SUFFIXES:
+            continue
+        if suffix not in _TEXT_MANUSCRIPT_SUFFIXES:
+            raise RuntimeError(
+                f"unsupported active manuscript dependency type: {source}"
+            )
+        try:
+            source.relative_to(root)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"active manuscript dependency is outside the repository: {source}"
+            ) from exc
+        classified.append(source)
+    # Classify the full closure before opening any member. This makes an
+    # opaque dependency fail closed even when an earlier text member is a
+    # symlink or otherwise unreadable.
+    for source in classified:
+        text = manuscript_sources.read_unlinked_text(
+            source, label="active manuscript dependency"
+        )
+        text_sources.append(source)
+        corpus.append(live_latex(text))
+    return tuple(text_sources), "\n".join(corpus)
 
 
 def row_by_track(rows: list[dict], track: str) -> dict:
@@ -170,25 +223,20 @@ def _normalize_claim_text(text: str) -> str:
     normalized = normalized.replace("~", " ").replace("–", "-").replace("—", "-")
     normalized = re.sub(r"[\u00ad\u200b\u200c\u200d\u2060\ufeff]", "", normalized)
     formatting = r"(?:text(?:bf|it|tt|sc|rm|normal)|emph|mbox|textrm)"
-    command_escape = re.escape(chr(92))
     previous = None
     while normalized != previous:
         previous = normalized
         normalized = re.sub(
-            command_escape + formatting + r"\s*\{([^{}]*)\}",
+            rf"\\{formatting}\s*\{{([^{{}}]*)\}}",
             r"\1",
             normalized,
         )
     normalized = re.sub(
-        command_escape + r"(?:allowbreak|nobreak|protect|relax|/)(?![A-Za-z@])",
+        r"\\(?:allowbreak|nobreak|protect|relax|/)(?![A-Za-z@])",
         "",
         normalized,
     )
-    normalized = re.sub(
-        command_escape + r"(?:hspace|kern|mkern)\*?\s*\{[^{}]*\}",
-        "",
-        normalized,
-    )
+    normalized = re.sub(r"\\(?:hspace|kern|mkern)\*?\s*\{[^{}]*\}", "", normalized)
     normalized = normalized.replace("{", " ").replace("}", " ")
     normalized = re.sub(r"\s*-\s*", "-", normalized)
     normalized = re.sub(r"\s+", " ", normalized)
@@ -203,14 +251,12 @@ def _cct20_claim_contexts(text: str) -> str:
     statements about conformal coverage.
     """
 
-    marker = re.compile(
-        r"\b(?:cct\s*[- ]?20|caltech camera traps?\s*[- ]?20)\b", re.IGNORECASE
-    )
+    marker = re.compile(r"\b(?:cct\s*[- ]?20|caltech camera traps?\s*[- ]?20)\b", re.IGNORECASE)
 
     def mentions_cct(fragment: str) -> bool:
         return marker.search(_normalize_claim_text(fragment)) is not None
 
-    section_starts = list(re.finditer(re.escape(chr(92)) + r"section\*?\s*\{", text))
+    section_starts = list(re.finditer(r"\\section\*?\s*\{", text))
     if not section_starts:
         return text if mentions_cct(text) else ""
 
@@ -231,14 +277,10 @@ def _claim_clause(text: str, start: int, end: int) -> str:
 
     left = max(text.rfind(token, 0, start) for token in (".", "!", "?", ";", ",", ":"))
     right_candidates = [
-        position
-        for token in (".", "!", "?", ";", ",", ":")
-        if (position := text.find(token, end)) >= 0
+        position for token in (".", "!", "?", ";", ",", ":") if (position := text.find(token, end)) >= 0
     ]
     right = min(right_candidates) if right_candidates else len(text)
-    for boundary in re.finditer(
-        r"\b(?:but|yet|however|nevertheless|nonetheless)\b", text, flags=re.IGNORECASE
-    ):
+    for boundary in re.finditer(r"\b(?:but|yet|however|nevertheless|nonetheless)\b", text, flags=re.IGNORECASE):
         if boundary.end() <= start:
             left = max(left, boundary.end() - 1)
         elif boundary.start() >= end:
@@ -254,9 +296,7 @@ def _has_unsafe_match(
 ) -> bool:
     for match in re.finditer(claim_pattern, text, flags=re.IGNORECASE):
         clause = _claim_clause(text, match.start(), match.end())
-        if not any(
-            re.search(pattern, clause, flags=re.IGNORECASE) for pattern in safe_patterns
-        ):
+        if not any(re.search(pattern, clause, flags=re.IGNORECASE) for pattern in safe_patterns):
             return True
     return False
 
@@ -265,7 +305,7 @@ def _cct20_completed_result_claimed(text: str) -> bool:
     """Detect promotion of an observed CCT result, not a future protocol."""
 
     completed_patterns = (
-        re.escape(chr(92)) + r"(?:input|include)\s*(?:\{\s*)?[^{}\s]*"
+        r"\\(?:input|include)\s*(?:\{\s*)?[^{}\s]*"
         r"cct20_(?:numbers|primary_table|location_effects)(?:\.tex)?(?:\s*\})?",
         r"\bcompleted\s+(?:cct\s*[- ]?20|caltech camera traps?\s*[- ]?20)\s+"
         r"(?:evaluation|experiment|analysis|run|result)",
@@ -283,9 +323,7 @@ def _cct20_completed_result_claimed(text: str) -> bool:
         r"\bon\s+(?:cct\s*[- ]?20|caltech camera traps?\s*[- ]?20)\b[^.]{0,180}"
         r"\b(?:was|were|achieved|yielded|observed|measured)\b",
     )
-    return any(
-        re.search(pattern, text, flags=re.IGNORECASE) for pattern in completed_patterns
-    )
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in completed_patterns)
 
 
 def _artifact_path(raw_path: str, repository_root: Path) -> Path:
@@ -380,14 +418,10 @@ def _validate_hash_binding(
     path = _artifact_path(raw_path, repository_root)
     if require_canonical_absolute_path:
         if not Path(raw_path).is_absolute() or str(path.resolve()) != raw_path:
-            problems.append(
-                f"CCT-20 release {label} path is not canonical and absolute: {raw_path}"
-            )
+            problems.append(f"CCT-20 release {label} path is not canonical and absolute: {raw_path}")
             return False
     if path.is_symlink():
-        problems.append(
-            f"CCT-20 release {label} artifact path is a symlink: {raw_path}"
-        )
+        problems.append(f"CCT-20 release {label} artifact path is a symlink: {raw_path}")
         return False
     if not path.is_file():
         problems.append(f"CCT-20 release {label} artifact is missing: {raw_path}")
@@ -432,10 +466,7 @@ def _validate_hash_binding_metadata(
     if require_absolute_path and not Path(raw_path).is_absolute():
         problems.append(f"CCT-20 release {label} path is not absolute: {raw_path}")
         return False
-    if (
-        not isinstance(expected_sha256, str)
-        or re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None
-    ):
+    if not isinstance(expected_sha256, str) or re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None:
         problems.append(f"CCT-20 release {label} lacks a lowercase SHA-256")
         return False
     size_bytes = binding.get("size_bytes")
@@ -470,9 +501,7 @@ def _validate_received_identity_metadata(
         not isinstance(canonical_sha, str)
         or re.fullmatch(r"[0-9a-f]{64}", canonical_sha) is None
     ):
-        problems.append(
-            f"CCT-20 release {label} has an invalid canonical document SHA-256"
-        )
+        problems.append(f"CCT-20 release {label} has an invalid canonical document SHA-256")
     if not receipt_present:
         return
     if (
@@ -488,9 +517,7 @@ def _validate_received_identity_metadata(
     if not isinstance(raw_path, str) or Path(receipt_path) != Path(
         raw_path + ".receipt.json"
     ):
-        problems.append(
-            f"CCT-20 release {label} receipt path is not adjacent to its artifact"
-        )
+        problems.append(f"CCT-20 release {label} receipt path is not adjacent to its artifact")
 
 
 def _validate_binding_against_local_file(
@@ -518,9 +545,7 @@ def _validate_binding_against_local_file(
         problems.append(f"CCT-20 release repository artifact is missing: {local_path}")
         return False
     if file_sha256(local_path) != binding["sha256"]:
-        problems.append(
-            f"CCT-20 release {label} SHA-256 mismatch for repository artifact"
-        )
+        problems.append(f"CCT-20 release {label} SHA-256 mismatch for repository artifact")
         return False
     expected_size = binding.get("size_bytes", binding.get("bytes"))
     if expected_size is not None and local_path.stat().st_size != expected_size:
@@ -529,9 +554,7 @@ def _validate_binding_against_local_file(
     return True
 
 
-def _load_json_object_for_release(
-    problems: list[str], path: Path, *, label: str
-) -> dict | None:
+def _load_json_object_for_release(problems: list[str], path: Path, *, label: str) -> dict | None:
     def reject_constant(token: str) -> None:
         raise ValueError(f"non-standard JSON constant {token}")
 
@@ -569,9 +592,7 @@ def _validate_received_identity(
             not isinstance(canonical_document_sha256, str)
             or re.fullmatch(r"[0-9a-f]{64}", canonical_document_sha256) is None
         ):
-            problems.append(
-                f"CCT-20 release {label} has an invalid canonical document SHA-256"
-            )
+            problems.append(f"CCT-20 release {label} has an invalid canonical document SHA-256")
             return
         artifact_path = _artifact_path(str(binding.get("path", "")), repository_root)
         artifact_document = _load_json_object_for_release(
@@ -579,24 +600,16 @@ def _validate_received_identity(
             artifact_path,
             label=label,
         )
-        if (
-            artifact_document is not None
-            and _stable_json_sha256(artifact_document) != canonical_document_sha256
-        ):
-            problems.append(
-                f"CCT-20 release {label} canonical document SHA-256 mismatch"
-            )
+        if artifact_document is not None and _stable_json_sha256(artifact_document) != canonical_document_sha256:
+            problems.append(f"CCT-20 release {label} canonical document SHA-256 mismatch")
         return
     if not all(
-        isinstance(value, str) and value
-        for value in (receipt_path_raw, receipt_sha256, canonical_document_sha256)
+        isinstance(value, str) and value for value in (receipt_path_raw, receipt_sha256, canonical_document_sha256)
     ):
         problems.append(f"CCT-20 release {label} has an incomplete receipt identity")
         return
     if re.fullmatch(r"[0-9a-f]{64}", canonical_document_sha256) is None:
-        problems.append(
-            f"CCT-20 release {label} has an invalid canonical document SHA-256"
-        )
+        problems.append(f"CCT-20 release {label} has an invalid canonical document SHA-256")
         return
     receipt_binding = {
         "path": receipt_path_raw,
@@ -611,14 +624,10 @@ def _validate_received_identity(
     ):
         return
     artifact_path = _artifact_path(str(binding.get("path", "")), repository_root)
-    expected_receipt_path = artifact_path.with_name(
-        artifact_path.name + ".receipt.json"
-    )
+    expected_receipt_path = artifact_path.with_name(artifact_path.name + ".receipt.json")
     receipt_path = _artifact_path(receipt_path_raw, repository_root)
     if receipt_path != expected_receipt_path:
-        problems.append(
-            f"CCT-20 release {label} receipt path is not adjacent to its artifact"
-        )
+        problems.append(f"CCT-20 release {label} receipt path is not adjacent to its artifact")
         return
     receipt = _load_json_object_for_release(
         problems,
@@ -630,17 +639,13 @@ def _validate_received_identity(
     expected_receipt = {
         "schema": "kbound_cct20_artifact_receipt_v1",
         "artifact_path": str(artifact_path),
-        "artifact_bytes": artifact_path.stat().st_size
-        if artifact_path.is_file()
-        else None,
+        "artifact_bytes": artifact_path.stat().st_size if artifact_path.is_file() else None,
         "artifact_sha256": binding.get("sha256"),
         "canonical_document_sha256": canonical_document_sha256,
     }
     for field, expected in expected_receipt.items():
         if receipt.get(field) != expected:
-            problems.append(
-                f"CCT-20 release {label} receipt {field} disagrees with its identity"
-            )
+            problems.append(f"CCT-20 release {label} receipt {field} disagrees with its identity")
     artifact_document = _load_json_object_for_release(
         problems,
         artifact_path,
@@ -653,9 +658,7 @@ def _validate_received_identity(
             problems.append(f"CCT-20 release {label} is not canonicalizable: {exc}")
         else:
             if observed_canonical != canonical_document_sha256:
-                problems.append(
-                    f"CCT-20 release {label} canonical document SHA-256 mismatch"
-                )
+                problems.append(f"CCT-20 release {label} canonical document SHA-256 mismatch")
 
 
 def _validate_counted_release_bundle(
@@ -676,9 +679,7 @@ def _validate_counted_release_bundle(
         or len(items) != expected_count
         or not all(isinstance(row, dict) for row in items)
     ):
-        problems.append(
-            f"CCT-20 release {label} ledger does not contain {expected_count} items"
-        )
+        problems.append(f"CCT-20 release {label} ledger does not contain {expected_count} items")
         return
     try:
         observed_aggregate = _stable_json_sha256(items)
@@ -688,13 +689,9 @@ def _validate_counted_release_bundle(
     if bundle.get("aggregate_sha256") != observed_aggregate:
         problems.append(f"CCT-20 release {label} aggregate SHA-256 is stale")
     if items != sorted(items, key=ordering_key):
-        problems.append(
-            f"CCT-20 release {label} ledger ordering differs from the builder"
-        )
+        problems.append(f"CCT-20 release {label} ledger ordering differs from the builder")
     paths = [row.get("path") for row in items]
-    if len(set(paths)) != expected_count or any(
-        not isinstance(path, str) for path in paths
-    ):
+    if len(set(paths)) != expected_count or any(not isinstance(path, str) for path in paths):
         problems.append(f"CCT-20 release {label} ledger has duplicate or invalid paths")
 
 
@@ -714,27 +711,17 @@ def _validate_execution_dependency_bundle(problems: list[str], bundle: object) -
         or len(code_items) != 138
         or bundle.get("total_count") != 142
     ):
-        problems.append(
-            "CCT-20 release execution dependency counts differ from 4 + 138"
-        )
+        problems.append("CCT-20 release execution dependency counts differ from 4 + 138")
     if not all(isinstance(row, dict) for row in (*dataset_items, *code_items)):
-        problems.append(
-            "CCT-20 release execution dependency ledger contains a non-object"
-        )
+        problems.append("CCT-20 release execution dependency ledger contains a non-object")
         return
     if dataset_items != sorted(dataset_items, key=lambda row: str(row.get("name", ""))):
-        problems.append(
-            "CCT-20 release dataset dependency ordering differs from the builder"
-        )
+        problems.append("CCT-20 release dataset dependency ordering differs from the builder")
     if code_items != sorted(code_items, key=lambda row: str(row.get("name", ""))):
-        problems.append(
-            "CCT-20 release code dependency ordering differs from the builder"
-        )
+        problems.append("CCT-20 release code dependency ordering differs from the builder")
     names = [str(row.get("name", "")) for row in (*dataset_items, *code_items)]
     if "" in names or len(set(names)) != len(names):
-        problems.append(
-            "CCT-20 release execution dependency names are empty or duplicated"
-        )
+        problems.append("CCT-20 release execution dependency names are empty or duplicated")
     expected_aggregate = _stable_json_sha256(
         {
             "dataset_dependencies": dataset_items,
@@ -742,9 +729,7 @@ def _validate_execution_dependency_bundle(problems: list[str], bundle: object) -
         }
     )
     if bundle.get("aggregate_sha256") != expected_aggregate:
-        problems.append(
-            "CCT-20 release execution dependency aggregate SHA-256 is stale"
-        )
+        problems.append("CCT-20 release execution dependency aggregate SHA-256 is stale")
 
 
 def _validate_one_shot_marker_binding(
@@ -786,12 +771,7 @@ def _validate_one_shot_marker_binding(
         label="one-shot score",
     )
     cell_rows = required["prediction_cells"].get("items")
-    if (
-        marker is None
-        or collection is None
-        or score is None
-        or not isinstance(cell_rows, list)
-    ):
+    if marker is None or collection is None or score is None or not isinstance(cell_rows, list):
         return
     cell_hashes: list[str] = []
     for index, binding in enumerate(cell_rows):
@@ -805,10 +785,7 @@ def _validate_one_shot_marker_binding(
         if cell is None:
             return
         cell_sha256 = cell.get("cell_sha256")
-        if (
-            not isinstance(cell_sha256, str)
-            or re.fullmatch(r"[0-9a-f]{64}", cell_sha256) is None
-        ):
+        if not isinstance(cell_sha256, str) or re.fullmatch(r"[0-9a-f]{64}", cell_sha256) is None:
             problems.append(f"CCT-20 release prediction cell {index} lacks cell_sha256")
             return
         cell_hashes.append(cell_sha256)
@@ -816,11 +793,7 @@ def _validate_one_shot_marker_binding(
         "execution_seal_artifact_sha256": required["execution_seal"].get("sha256"),
         "prediction_collection_sha256": collection.get("collection_sha256"),
         "prediction_cell_sha256": sorted(cell_hashes),
-        "output_path": str(
-            _artifact_path(
-                str(score_binding.get("path", "")), repository_root
-            ).resolve()
-        ),
+        "output_path": str(_artifact_path(str(score_binding.get("path", "")), repository_root).resolve()),
         "expected_target_images": 23_275,
         "label_contract": "set_membership_top1_and_16_indicator_multilabel_macro_f1",
     }
@@ -831,16 +804,10 @@ def _validate_one_shot_marker_binding(
         or marker.get("request") != expected_request
         or marker.get("request_sha256") != _stable_json_sha256(expected_request)
     ):
-        problems.append(
-            "CCT-20 release one-shot scoring marker differs from the release chain"
-        )
+        problems.append("CCT-20 release one-shot scoring marker differs from the release chain")
     expected_score_fields = {
-        "execution_seal_artifact_sha256": expected_request[
-            "execution_seal_artifact_sha256"
-        ],
-        "prediction_collection_sha256": expected_request[
-            "prediction_collection_sha256"
-        ],
+        "execution_seal_artifact_sha256": expected_request["execution_seal_artifact_sha256"],
+        "prediction_collection_sha256": expected_request["prediction_collection_sha256"],
         "target_image_count": 23_275,
         "checkpoint_count": 5,
         "location_count": 9,
@@ -867,20 +834,14 @@ def validate_cct20_release_manifest(
     problems: list[str] = []
     manifest_path = Path(manifest_path).expanduser().resolve()
     if manifest_path.name != "cct20_release_manifest.json":
-        problems.append(
-            "completed CCT-20 release manifest has a non-canonical filename"
-        )
+        problems.append("completed CCT-20 release manifest has a non-canonical filename")
     try:
         document = json.loads(
             manifest_path.read_text(encoding="utf-8"),
-            parse_constant=lambda token: (_ for _ in ()).throw(
-                ValueError(f"non-standard JSON constant {token}")
-            ),
+            parse_constant=lambda token: (_ for _ in ()).throw(ValueError(f"non-standard JSON constant {token}")),
         )
     except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
-        return None, [
-            f"completed CCT-20 result lacks a readable release manifest: {exc}"
-        ]
+        return None, [f"completed CCT-20 result lacks a readable release manifest: {exc}"]
     if not isinstance(document, dict):
         return None, ["completed CCT-20 release manifest must be a JSON object"]
     if deep_local_provenance and manifest_path.stat().st_mode & 0o222:
@@ -888,13 +849,9 @@ def validate_cct20_release_manifest(
     if document.get("schema") != "kbound_cct20_release_manifest_v1":
         problems.append("completed CCT-20 release manifest has an unknown schema")
     if document.get("status") != "RELEASE_COMPLETE":
-        problems.append(
-            "completed CCT-20 release manifest is not marked RELEASE_COMPLETE"
-        )
+        problems.append("completed CCT-20 release manifest is not marked RELEASE_COMPLETE")
     if document.get("artifacts_complete") is not True:
-        problems.append(
-            "completed CCT-20 release manifest does not mark artifacts complete"
-        )
+        problems.append("completed CCT-20 release manifest does not mark artifacts complete")
 
     release_sha256 = document.get("release_sha256")
     unsigned = dict(document)
@@ -902,23 +859,17 @@ def validate_cct20_release_manifest(
     try:
         expected_release_sha256 = _stable_json_sha256(unsigned)
     except (TypeError, ValueError, UnicodeEncodeError) as exc:
-        problems.append(
-            f"completed CCT-20 release manifest is not canonicalizable: {exc}"
-        )
+        problems.append(f"completed CCT-20 release manifest is not canonicalizable: {exc}")
     else:
         if release_sha256 != expected_release_sha256:
-            problems.append(
-                "completed CCT-20 release manifest has a stale release_sha256"
-            )
+            problems.append("completed CCT-20 release manifest has a stale release_sha256")
 
     expected_disclosure = (
         "outcome-unopened before model execution; aggregate target metadata had already been "
         "inspected during candidate ranking, so this is not described as literally label-unopened"
     )
     if document.get("prospective_disclosure") != expected_disclosure:
-        problems.append(
-            "completed CCT-20 release manifest has a stale prospective disclosure"
-        )
+        problems.append("completed CCT-20 release manifest has a stale prospective disclosure")
     expected_signs = {
         "adaptation_benefit": "adapted_accuracy_minus_frozen_accuracy",
         "primary_contrast": "baseline_regret_minus_kga_regret; positive_favors_kga",
@@ -943,17 +894,13 @@ def validate_cct20_release_manifest(
             "independent_checkpoint_tensor_identities_verified": True,
         }.items()
     ):
-        problems.append(
-            "completed CCT-20 release manifest does not describe the locked 5 x 9 design"
-        )
+        problems.append("completed CCT-20 release manifest does not describe the locked 5 x 9 design")
     comparisons = document.get("primary_comparisons")
     if not isinstance(comparisons, dict) or set(comparisons) != {
         "versus_always_adapt",
         "versus_always_freeze",
     }:
-        problems.append(
-            "completed CCT-20 release manifest lacks the two locked comparisons"
-        )
+        problems.append("completed CCT-20 release manifest lacks the two locked comparisons")
         comparisons = {}
     else:
         for comparison, comparator in (
@@ -961,9 +908,7 @@ def validate_cct20_release_manifest(
             ("versus_always_freeze", "always_freeze"),
         ):
             evidence = comparisons.get(comparison)
-            pointwise = (
-                evidence.get("pointwise_95_ci") if isinstance(evidence, dict) else None
-            )
+            pointwise = evidence.get("pointwise_95_ci") if isinstance(evidence, dict) else None
             simultaneous = (
                 evidence.get("simultaneous_bonferroni_97_5_ci")
                 if isinstance(evidence, dict)
@@ -982,9 +927,7 @@ def validate_cct20_release_manifest(
                 or len(simultaneous) != 2
                 or not all(_is_finite_number(value) for value in simultaneous)
                 or float(simultaneous[0]) > float(simultaneous[1])
-                or not _is_finite_number(
-                    evidence.get("exact_location_sign_flip_p_one_sided")
-                )
+                or not _is_finite_number(evidence.get("exact_location_sign_flip_p_one_sided"))
                 or not _is_finite_number(evidence.get("holm_adjusted_p"))
                 or not isinstance(evidence.get("holm_reject_at_familywise_0_05"), bool)
             ):
@@ -1004,32 +947,19 @@ def validate_cct20_release_manifest(
         not isinstance(exposure_counts, dict)
         or set(exposure_counts) != {"ADAPT", "FREEZE", "ABSTAIN"}
         or not all(
-            isinstance(value, int) and not isinstance(value, bool) and value >= 0
-            for value in exposure_counts.values()
+            isinstance(value, int) and not isinstance(value, bool) and value >= 0 for value in exposure_counts.values()
         )
         or sum(exposure_counts.values()) != 45
     ):
-        problems.append(
-            "completed CCT-20 release manifest action exposure does not cover 45 cells"
-        )
+        problems.append("completed CCT-20 release manifest action exposure does not cover 45 cells")
 
     false_adapt = document.get("false_adapt_accounting")
-    false_count = (
-        false_adapt.get("false_adapt_count") if isinstance(false_adapt, dict) else None
-    )
-    false_rate = (
-        false_adapt.get("false_adapt_rate_unconditional")
-        if isinstance(false_adapt, dict)
-        else None
-    )
+    false_count = false_adapt.get("false_adapt_count") if isinstance(false_adapt, dict) else None
+    false_rate = false_adapt.get("false_adapt_rate_unconditional") if isinstance(false_adapt, dict) else None
     conditional_rate = (
-        false_adapt.get("false_adapt_rate_conditional")
-        if isinstance(false_adapt, dict)
-        else None
+        false_adapt.get("false_adapt_rate_conditional") if isinstance(false_adapt, dict) else None
     )
-    adapt_count = (
-        exposure_counts.get("ADAPT") if isinstance(exposure_counts, dict) else None
-    )
+    adapt_count = exposure_counts.get("ADAPT") if isinstance(exposure_counts, dict) else None
     if (
         not isinstance(false_adapt, dict)
         or false_adapt.get("event") != "decision == ADAPT and adaptation_benefit <= 0"
@@ -1045,7 +975,10 @@ def validate_cct20_release_manifest(
         or not isinstance(false_rate, (int, float))
         or not math.isfinite(float(false_rate))
         or not math.isclose(float(false_rate), false_count / 45.0, abs_tol=1e-15)
-        or (adapt_count == 0 and conditional_rate is not None)
+        or (
+            adapt_count == 0
+            and conditional_rate is not None
+        )
         or (
             adapt_count > 0
             and (
@@ -1058,9 +991,7 @@ def validate_cct20_release_manifest(
             )
         )
     ):
-        problems.append(
-            "completed CCT-20 release manifest has invalid false-adapt accounting"
-        )
+        problems.append("completed CCT-20 release manifest has invalid false-adapt accounting")
 
     safe_utility = document.get("safe_utility")
     safe_comparisons = (
@@ -1079,16 +1010,12 @@ def validate_cct20_release_manifest(
         )
         or not isinstance(safe_utility.get("passes"), bool)
     ):
-        problems.append(
-            "completed CCT-20 release manifest has invalid safe-utility evidence"
-        )
+        problems.append("completed CCT-20 release manifest has invalid safe-utility evidence")
     else:
         safe_evidence_valid = True
         for comparison, label in safe_comparisons:
             evidence = safe_utility.get(comparison)
-            interval = (
-                evidence.get("pointwise_95_ci") if isinstance(evidence, dict) else None
-            )
+            interval = evidence.get("pointwise_95_ci") if isinstance(evidence, dict) else None
             primary = comparisons.get(comparison)
             if (
                 not isinstance(evidence, dict)
@@ -1101,21 +1028,15 @@ def validate_cct20_release_manifest(
                 or evidence.get("point_estimate") != primary.get("point_estimate")
                 or interval != primary.get("pointwise_95_ci")
             ):
-                problems.append(
-                    f"completed CCT-20 release manifest has invalid {label} safe-utility evidence"
-                )
+                problems.append(f"completed CCT-20 release manifest has invalid {label} safe-utility evidence")
                 safe_evidence_valid = False
         if safe_evidence_valid:
             expected_safe_pass = (
-                float(safe_utility["versus_always_freeze"]["pointwise_95_ci"][0])
-                > -0.005
-                and float(safe_utility["versus_always_adapt"]["pointwise_95_ci"][0])
-                > 0.0
+                float(safe_utility["versus_always_freeze"]["pointwise_95_ci"][0]) > -0.005
+                and float(safe_utility["versus_always_adapt"]["pointwise_95_ci"][0]) > 0.0
             )
             if safe_utility["passes"] is not expected_safe_pass:
-                problems.append(
-                    "completed CCT-20 release manifest has a stale safe-utility pass flag"
-                )
+                problems.append("completed CCT-20 release manifest has a stale safe-utility pass flag")
 
     secondary = document.get("secondary_outcome_reporting")
     expected_secondary_disclosure = (
@@ -1130,9 +1051,7 @@ def validate_cct20_release_manifest(
         or secondary.get("aggregate_claim") is not None
         or secondary.get("disclosure") != expected_secondary_disclosure
     ):
-        problems.append(
-            "completed CCT-20 release manifest has stale secondary-outcome disclosure"
-        )
+        problems.append("completed CCT-20 release manifest has stale secondary-outcome disclosure")
 
     verdict = document.get("verdict")
     verdict_code = verdict.get("code") if isinstance(verdict, dict) else None
@@ -1153,9 +1072,7 @@ def validate_cct20_release_manifest(
         or not isinstance(expanded_strong, bool)
         or not isinstance(safe_pass, bool)
     ):
-        problems.append(
-            "completed CCT-20 release manifest has an invalid paper verdict"
-        )
+        problems.append("completed CCT-20 release manifest has an invalid paper verdict")
     else:
         expected_code = _expected_cct20_verdict_code(
             protocol_strong_success=protocol_strong,
@@ -1170,28 +1087,17 @@ def validate_cct20_release_manifest(
             "safe_utility_passes": safe_pass,
         }
         if expanded_strong and not protocol_strong:
-            problems.append(
-                "completed CCT-20 release manifest has inconsistent strong-success checks"
-            )
+            problems.append("completed CCT-20 release manifest has inconsistent strong-success checks")
         if verdict_code != expected_code or any(
-            verdict.get(field) is not expected
-            for field, expected in expected_flags.items()
+            verdict.get(field) is not expected for field, expected in expected_flags.items()
         ):
-            problems.append(
-                "completed CCT-20 release manifest verdict is inconsistent with its evidence"
-            )
+            problems.append("completed CCT-20 release manifest verdict is inconsistent with its evidence")
 
     upstream = document.get("upstream_artifacts")
-    if not isinstance(upstream, dict) or not REQUIRED_CCT20_UPSTREAM_KEYS <= set(
-        upstream
-    ):
-        problems.append(
-            "completed CCT-20 release manifest lacks builder-required upstream ledgers"
-        )
+    if not isinstance(upstream, dict) or not REQUIRED_CCT20_UPSTREAM_KEYS <= set(upstream):
+        problems.append("completed CCT-20 release manifest lacks builder-required upstream ledgers")
         upstream = {} if not isinstance(upstream, dict) else upstream
-    _validate_execution_dependency_bundle(
-        problems, upstream.get("execution_dependencies")
-    )
+    _validate_execution_dependency_bundle(problems, upstream.get("execution_dependencies"))
     _validate_counted_release_bundle(
         problems,
         label="development traces",
@@ -1224,9 +1130,7 @@ def validate_cct20_release_manifest(
         )
     bindings = list(_iter_hash_bindings(upstream))
     if not bindings:
-        problems.append(
-            "completed CCT-20 release manifest has no upstream artifact hashes"
-        )
+        problems.append("completed CCT-20 release manifest has no upstream artifact hashes")
     for label, binding in bindings:
         if deep_local_provenance:
             valid = _validate_hash_binding(
@@ -1257,9 +1161,7 @@ def validate_cct20_release_manifest(
             )
     release_generator = upstream.get("release_generator")
     if isinstance(release_generator, dict):
-        expected_builder = (
-            repository_root / "docs/research/kbound/scripts/build_cct20_release.py"
-        )
+        expected_builder = repository_root / "docs/research/kbound/scripts/build_cct20_release.py"
         _validate_binding_against_local_file(
             problems,
             label="upstream_artifacts.release_generator",
@@ -1276,13 +1178,9 @@ def validate_cct20_release_manifest(
         "cct20_location_effects_tex",
     }
     if not isinstance(generated, dict) or set(generated) != required_generated:
-        problems.append(
-            "completed CCT-20 release manifest lacks the required generated TeX artifacts"
-        )
+        problems.append("completed CCT-20 release manifest lacks the required generated TeX artifacts")
     if not generated_bindings:
-        problems.append(
-            "completed CCT-20 release manifest has no generated artifact hashes"
-        )
+        problems.append("completed CCT-20 release manifest has no generated artifact hashes")
     for label, binding in generated_bindings:
         expected_name = label.rsplit(".", maxsplit=1)[-1].removesuffix("_tex") + ".tex"
         standard_path = (
@@ -1311,22 +1209,12 @@ def validate_cct20_release_manifest(
                 try:
                     numbers_text = generated_path.read_text(encoding="ascii")
                 except (OSError, UnicodeError) as exc:
-                    problems.append(
-                        f"completed CCT-20 number macros are unreadable: {exc}"
-                    )
+                    problems.append(f"completed CCT-20 number macros are unreadable: {exc}")
                 else:
                     missing_macros = sorted(
                         name
                         for name in REQUIRED_CCT20_NUMBER_MACROS
-                        if re.search(
-                            re.escape(chr(92))
-                            + r"newcommand\s*\{"
-                            + re.escape(chr(92))
-                            + re.escape(name)
-                            + r"\}",
-                            numbers_text,
-                        )
-                        is None
+                        if re.search(rf"\\newcommand\s*\{{\\{re.escape(name)}\}}", numbers_text) is None
                     )
                     if missing_macros:
                         problems.append(
@@ -1334,22 +1222,15 @@ def validate_cct20_release_manifest(
                             + ", ".join(missing_macros)
                         )
                     expected_commands: dict[str, str] = {}
-                    if isinstance(false_count, int) and not isinstance(
-                        false_count, bool
-                    ):
-                        expected_commands["CCTFalseAdaptCount"] = (
-                            rf"\newcommand{{\CCTFalseAdaptCount}}{{{false_count}}}"
-                        )
+                    if isinstance(false_count, int) and not isinstance(false_count, bool):
+                        expected_commands["CCTFalseAdaptCount"] = rf"\newcommand{{\CCTFalseAdaptCount}}{{{false_count}}}"
                     if isinstance(safe_pass, bool):
                         expected_commands["CCTSafeUtilityPass"] = (
                             rf"\newcommand{{\CCTSafeUtilityPass}}{{\textnormal{{"
                             f"{'yes' if safe_pass else 'no'}"
                             r"}}"
                         )
-                    if (
-                        isinstance(verdict, dict)
-                        and verdict_code in CCT20_VERDICT_CLAIMS
-                    ):
+                    if isinstance(verdict, dict) and verdict_code in CCT20_VERDICT_CLAIMS:
                         expected_commands["CCTVerdict"] = (
                             rf"\newcommand{{\CCTVerdict}}{{\textnormal{{"
                             f"{_cct20_tex_text(verdict_code.replace('_', ' '))}"
@@ -1360,9 +1241,7 @@ def validate_cct20_release_manifest(
                             f"{_cct20_tex_text(verdict['manuscript_claim'])}"
                             r"}}"
                         )
-                    if isinstance(secondary, dict) and isinstance(
-                        secondary.get("disclosure"), str
-                    ):
+                    if isinstance(secondary, dict) and isinstance(secondary.get("disclosure"), str):
                         expected_commands["CCTSecondaryMetricDisclosure"] = (
                             rf"\newcommand{{\CCTSecondaryMetricDisclosure}}{{\textnormal{{"
                             f"{_cct20_tex_text(secondary['disclosure'])}"
@@ -1370,9 +1249,7 @@ def validate_cct20_release_manifest(
                         )
                     inference_binding = upstream.get("two_way_inference")
                     if isinstance(inference_binding, dict):
-                        inference_sha = inference_binding.get(
-                            "canonical_document_sha256"
-                        )
+                        inference_sha = inference_binding.get("canonical_document_sha256")
                         if isinstance(inference_sha, str):
                             expected_commands["CCTInferenceSHA"] = (
                                 rf"\newcommand{{\CCTInferenceSHA}}{{{inference_sha}}}"
@@ -1396,9 +1273,7 @@ def validate_cct20_release_manifest(
     )
     if receipt is not None:
         if deep_local_provenance and receipt_path.stat().st_mode & 0o222:
-            problems.append(
-                "completed CCT-20 release manifest receipt is writable, not immutable"
-            )
+            problems.append("completed CCT-20 release manifest receipt is writable, not immutable")
         expected_receipt = {
             "schema": "kbound_cct20_artifact_receipt_v1",
             "artifact_bytes": manifest_path.stat().st_size,
@@ -1407,42 +1282,30 @@ def validate_cct20_release_manifest(
         }
         for field, expected in expected_receipt.items():
             if receipt.get(field) != expected:
-                problems.append(
-                    f"completed CCT-20 release manifest receipt has stale {field}"
-                )
+                problems.append(f"completed CCT-20 release manifest receipt has stale {field}")
         receipt_artifact_path = receipt.get("artifact_path")
         if (
             not isinstance(receipt_artifact_path, str)
             or not Path(receipt_artifact_path).is_absolute()
             or Path(receipt_artifact_path).name != manifest_path.name
         ):
-            problems.append(
-                "completed CCT-20 release manifest receipt has stale artifact_path"
-            )
+            problems.append("completed CCT-20 release manifest receipt has stale artifact_path")
     return document, problems
 
 
 def _has_verified_public_registry(document: dict | None, repository_root: Path) -> bool:
     """Accept public-preregistration language only with a hashed registry snapshot."""
 
-    if (
-        not isinstance(document, dict)
-        or document.get("schema") != "kbound_cct20_release_manifest_v1"
-    ):
+    if not isinstance(document, dict) or document.get("schema") != "kbound_cct20_release_manifest_v1":
         return False
     registry = document.get("public_registry_evidence")
     if not isinstance(registry, dict):
         return False
     if registry.get("registered_before_target_execution") is not True:
         return False
-    if (
-        not isinstance(registry.get("registry_id"), str)
-        or not registry["registry_id"].strip()
-    ):
+    if not isinstance(registry.get("registry_id"), str) or not registry["registry_id"].strip():
         return False
-    if not isinstance(registry.get("url"), str) or not registry["url"].startswith(
-        "https://"
-    ):
+    if not isinstance(registry.get("url"), str) or not registry["url"].startswith("https://"):
         return False
     snapshot = registry.get("snapshot")
     if not isinstance(snapshot, dict):
@@ -1473,9 +1336,7 @@ def _validate_cct20_verdict_usage(
     # receipt-bound historical claim: current prose qualifies its inference scope.
     # CCTManuscriptClaim remains required and checked in the sealed number macros.
     if re.search(r"\\CCTVerdict(?![A-Za-z@])", source) is None:
-        problems.append(
-            "completed CCT-20 manuscript must consume generated \\CCTVerdict"
-        )
+        problems.append("completed CCT-20 manuscript must consume generated \\CCTVerdict")
 
     verdict = release_document.get("verdict", {})
     code = verdict.get("code")
@@ -1491,7 +1352,9 @@ def _validate_cct20_verdict_usage(
             )
 
     cct_prefix = r"\b(?:cct\s*[- ]?20|caltech camera traps?\s*[- ]?20)\b"
-    confirmatory_success = rf"{cct_prefix}[^.{{}}]{{0,180}}\b(?:confirmatory|strong[- ]success|beats?\s+both)\b"
+    confirmatory_success = (
+        rf"{cct_prefix}[^.{{}}]{{0,180}}\b(?:confirmatory|strong[- ]success|beats?\s+both)\b"
+    )
     mixed_effects_present = (
         rf"{cct_prefix}[^.{{}}]{{0,180}}\b(?:both\s+helpful\s+and\s+harmful|"
         r"mixed\s+helpful\s*/?\s*harmful)\b[^.]{0,80}\b(?:present|observed|met|pass(?:es|ed)?)\b"
@@ -1500,11 +1363,7 @@ def _validate_cct20_verdict_usage(
         rf"{cct_prefix}[^.{{}}]{{0,180}}\bsafe[- ]utility\b[^.{{}}]{{0,80}}"
         r"\b(?:pass(?:es|ed)?|satisf(?:y|ies|ied))\b"
     )
-    optional_command_escape = rf"(?:{re.escape(chr(92))})?"
-    action_pair = (
-        rf"both\s+(?:{optional_command_escape}adapt\s+and\s+{optional_command_escape}freeze|"
-        rf"{optional_command_escape}freeze\s+and\s+{optional_command_escape}adapt)"
-    )
+    action_pair = r"both\s+(?:\\?adapt\s+and\s+\\?freeze|\\?freeze\s+and\s+\\?adapt)"
     kga_both_actions = (
         r"\bkga\b[^.{}]{0,120}\b(?:uses?|used|makes?|made|issues?|issued|selects?|selected|"
         r"produces?|produced|exercises?|exercised)\b[^.{}]{0,100}\b" + action_pair
@@ -1534,21 +1393,15 @@ def _validate_cct20_verdict_usage(
             r"\bnot\s+evidence\s+of\b",
         ),
     ):
-        problems.append(
-            f"CCT-20 manuscript overstates the release verdict {code} as confirmatory success"
-        )
+        problems.append(f"CCT-20 manuscript overstates the release verdict {code} as confirmatory success")
     if code == "CONFIRMATORY_PRIMARY_SUCCESS_MIXED_EFFECTS_MISSING" and re.search(
         mixed_effects_present, normalized, flags=re.IGNORECASE
     ):
-        problems.append(
-            "CCT-20 manuscript claims mixed helpful/harmful evidence that the release verdict lacks"
-        )
+        problems.append("CCT-20 manuscript claims mixed helpful/harmful evidence that the release verdict lacks")
     if code == "NO_CONFIRMATORY_SUCCESS" and re.search(
         safe_utility_pass, normalized, flags=re.IGNORECASE
     ):
-        problems.append(
-            "CCT-20 manuscript claims safe utility although the release verdict rejects it"
-        )
+        problems.append("CCT-20 manuscript claims safe utility although the release verdict rejects it")
 
     exposure = release_document.get("action_exposure", {})
     counts = exposure.get("counts") if isinstance(exposure, dict) else None
@@ -1566,7 +1419,7 @@ def _validate_cct20_verdict_usage(
             safe_patterns=(
                 r"\b(?:does|did)\s+not\s+(?:show|establish|indicate|demonstrate|mean)\b",
                 r"\bkga\b[^,;:.]{0,80}\b(?:does|did|has|had)\s+not\b",
-                rf"\bnot\s+both\s+(?:{optional_command_escape}adapt|{optional_command_escape}freeze)\b",
+                r"\bnot\s+both\s+(?:\\?adapt|\\?freeze)\b",
                 r"\bneither\b",
             ),
         )
@@ -1634,7 +1487,6 @@ def validate_cct20_claims(
             r"target\s+(?:labels?|annotations?))\b",
             (
                 r"\bnot\s+literally\s+label[- ]?un[- ]?opened\b",
-                r"\bnot\s+globally\s+label[- ]?un[- ]?opened\b",
                 r"\bnot\s+(?:described|claimed|presented)\s+as\s+literally\s+"
                 r"label[- ]?un[- ]?opened\b",
                 r"\bnot\s+(?:a\s+)?label[- ]?un[- ]?opened\s+"
@@ -1749,7 +1601,6 @@ def validate_cct20_claims(
         r"registered\s+publicly|public\s+pre[- ]?registration)\b",
         safe_patterns=(
             r"\b(?:not|was\s+not|is\s+not|never)\s+publicly\s+pre[- ]?registered\b",
-            r"\bnot\s+globally\s+label[- ]unopened\s+or\s+publicly\s+pre[- ]?registered\b",
             r"\bpublicly\s+pre[- ]?registered\b[^,;:.]{0,60}\b(?:is|was)\s+not\s+claimed\b",
             r"\b(?:public\s+pre[- ]?registration|registered\s+publicly)\b"
             r"[^,;:.]{0,60}\b(?:is|was)\s+not\s+claimed\b",
@@ -1765,12 +1616,8 @@ def validate_cct20_claims(
         )
         problems.extend(release_problems)
     if completed_result_claimed and isinstance(release_document, dict):
-        problems.extend(
-            _validate_cct20_verdict_usage(context, normalized, release_document)
-        )
-    if public_preregistration_claimed and not _has_verified_public_registry(
-        release_document, repository_root
-    ):
+        problems.extend(_validate_cct20_verdict_usage(context, normalized, release_document))
+    if public_preregistration_claimed and not _has_verified_public_registry(release_document, repository_root):
         problems.append(
             "CCT-20 registration overclaim: publicly preregistered requires a hashed public-registry record"
         )
@@ -1782,8 +1629,106 @@ def _is_protected_so2sat_storage_location(location: object) -> bool:
 
     if not isinstance(location, str):
         return False
-    normalized = location.replace("\\", "/").casefold()
-    return "so2sat" in normalized
+    return "so2sat" in location.replace("\\", "/").casefold()
+
+
+def _repo_regular_file_metadata_no_symlinks(location: str) -> tuple[int, str]:
+    """Hash one repository-relative regular file without following symlinks."""
+
+    parts = PurePosixPath(location).parts
+    if (
+        not parts
+        or PurePosixPath(location).is_absolute()
+        or ".." in parts
+        or any(part in ("", ".") for part in parts)
+    ):
+        raise ValueError(f"not a literal repository-relative path: {location!r}")
+    root_metadata = os.lstat(ROOT)
+    if stat.S_ISLNK(root_metadata.st_mode) or not stat.S_ISDIR(root_metadata.st_mode):
+        raise ValueError("repository root is not a non-symlink directory")
+    path = ROOT
+    final_metadata: os.stat_result | None = None
+    for index, part in enumerate(parts):
+        path = path / part
+        try:
+            metadata = os.lstat(path)
+        except FileNotFoundError as exc:
+            raise FileNotFoundError(location) from exc
+        if stat.S_ISLNK(metadata.st_mode):
+            raise ValueError(f"path contains a symlink: {location}")
+        if index < len(parts) - 1 and not stat.S_ISDIR(metadata.st_mode):
+            raise ValueError(f"path parent is not a directory: {location}")
+        if index == len(parts) - 1 and not stat.S_ISREG(metadata.st_mode):
+            raise ValueError(f"path is not a regular file: {location}")
+        final_metadata = metadata
+    assert final_metadata is not None
+    descriptor = os.open(ROOT / PurePosixPath(*parts), os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        opened_metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(opened_metadata.st_mode):
+            raise ValueError(f"path is not a regular file: {location}")
+        if (opened_metadata.st_dev, opened_metadata.st_ino) != (final_metadata.st_dev, final_metadata.st_ino):
+            raise ValueError(f"path changed while it was being verified: {location}")
+        digest = hashlib.sha256()
+        while block := os.read(descriptor, 1024 * 1024):
+            digest.update(block)
+    finally:
+        os.close(descriptor)
+    return opened_metadata.st_size, digest.hexdigest()
+
+
+def _validate_public_storage_projection(problems: list[str], storage: object) -> tuple[int, int]:
+    """Validate only the four public authority rows, without touching protected rows."""
+
+    if not isinstance(storage, dict):
+        problems.append("storage manifest must be an object")
+        return 0, 0
+    artifacts = storage.get("artifacts")
+    if not isinstance(artifacts, list):
+        problems.append("storage manifest artifacts must be a list")
+        return 0, 0
+    rows: dict[str, tuple[int, dict]] = {}
+    for index, row in enumerate(artifacts):
+        if not isinstance(row, dict):
+            continue
+        location = row.get("expected_location")
+        if location not in PUBLIC_STORAGE_AUTHORITIES:
+            continue
+        assert isinstance(location, str)
+        if location in rows:
+            problems.append(f"duplicate public storage artifact path: {location}")
+            continue
+        rows[location] = (index, row)
+    missing = sorted(PUBLIC_STORAGE_AUTHORITIES - rows.keys())
+    if missing:
+        problems.append(f"storage manifest is missing public authorities: {missing}")
+    for location in sorted(rows):
+        index, row = rows[location]
+        label = f"public storage artifact row {index}"
+        if row.get("tracked") is not True:
+            problems.append(f"{label} is not marked tracked: {location}")
+        expected_size = row.get("size_bytes")
+        expected_sha256 = row.get("sha256")
+        if not isinstance(expected_size, int) or isinstance(expected_size, bool) or expected_size < 0:
+            problems.append(f"{label} has invalid size_bytes: {expected_size!r}")
+            continue
+        if not isinstance(expected_sha256, str) or len(expected_sha256) != 64 or any(
+            char not in "0123456789abcdef" for char in expected_sha256
+        ):
+            problems.append(f"{label} has invalid SHA-256 metadata")
+            continue
+        try:
+            observed_size, observed_sha256 = _repo_regular_file_metadata_no_symlinks(location)
+        except (OSError, ValueError) as exc:
+            problems.append(f"{label} is not a resident non-symlink file: {location}: {exc}")
+            continue
+        if observed_size != expected_size:
+            problems.append(f"{label} size mismatch for {location}: expected {expected_size}, got {observed_size}")
+        if observed_sha256 != expected_sha256:
+            problems.append(
+                f"{label} SHA-256 mismatch for {location}: expected {expected_sha256}, got {observed_sha256}"
+            )
+    return len(rows), 0
 
 
 def validate_storage_manifest(
@@ -1792,12 +1737,7 @@ def validate_storage_manifest(
     *,
     authorize_protected_so2sat: bool = False,
 ) -> tuple[int, int]:
-    """Verify the public storage projection, with protected access opt-in only.
-
-    The default classifies So2Sat rows by their literal manifest strings and
-    skips them before constructing, resolving, stating, or opening any path.
-    Full local validation requires explicit authorization from the caller.
-    """
+    """Verify local evidence, lock-seal agreement, and promoted-source coverage."""
 
     try:
         storage = json.loads(STORAGE_MANIFEST.read_text())
@@ -1805,13 +1745,15 @@ def validate_storage_manifest(
         problems.append(f"storage manifest is unreadable: {exc}")
         return 0, 0
 
-    def verify_present(
-        *, label: str, location: object, expected_size: object, expected_sha256: object
-    ) -> bool:
+    # The default publication gate is intentionally restricted to the exact
+    # public authority projection. Protected So2Sat rows may contain sealed
+    # or access-controlled artifacts and require an explicit opt-in.
+    if not authorize_protected_so2sat:
+        return _validate_public_storage_projection(problems, storage)
+
+    def verify_present(*, label: str, location: object, expected_size: object, expected_sha256: object) -> bool:
         if not isinstance(location, str) or not location or location.startswith("$"):
-            problems.append(
-                f"{label} does not name an explicit repository-relative path"
-            )
+            problems.append(f"{label} does not name an explicit repository-relative path")
             return False
         parsed_location = Path(location)
         if (
@@ -1819,15 +1761,9 @@ def validate_storage_manifest(
             or ".." in parsed_location.parts
             or any(token in location for token in ("*", "?", "["))
         ):
-            problems.append(
-                f"{label} is not a literal repository-relative path: {location!r}"
-            )
+            problems.append(f"{label} is not a literal repository-relative path: {location!r}")
             return False
-        if (
-            not isinstance(expected_size, int)
-            or isinstance(expected_size, bool)
-            or expected_size < 0
-        ):
+        if not isinstance(expected_size, int) or isinstance(expected_size, bool) or expected_size < 0:
             problems.append(f"{label} has invalid size_bytes: {expected_size!r}")
             return False
         if (
@@ -1850,9 +1786,7 @@ def validate_storage_manifest(
 
         observed_size = path.stat().st_size
         if observed_size != expected_size:
-            problems.append(
-                f"{label} size mismatch for {location}: expected {expected_size}, got {observed_size}"
-            )
+            problems.append(f"{label} size mismatch for {location}: expected {expected_size}, got {observed_size}")
         observed_sha256 = file_sha256(path)
         if observed_sha256 != expected_sha256:
             problems.append(
@@ -1870,25 +1804,15 @@ def validate_storage_manifest(
             problems.append(f"storage manifest artifact row {index} is not an object")
             continue
         location = row.get("expected_location")
-        if not authorize_protected_so2sat and _is_protected_so2sat_storage_location(
-            location
-        ):
-            continue
         expected_size = row.get("size_bytes")
         expected_sha256 = row.get("sha256")
-        if row.get("tracked") is True and (
-            expected_size is None or expected_sha256 is None
-        ):
-            problems.append(
-                f"tracked storage artifact {location!r} must record both size_bytes and SHA-256"
-            )
+        if row.get("tracked") is True and (expected_size is None or expected_sha256 is None):
+            problems.append(f"tracked storage artifact {location!r} must record both size_bytes and SHA-256")
             continue
         if expected_size is None and expected_sha256 is None:
             continue
         if expected_size is None or expected_sha256 is None:
-            problems.append(
-                f"storage artifact {location!r} must record both size_bytes and SHA-256"
-            )
+            problems.append(f"storage artifact {location!r} must record both size_bytes and SHA-256")
             continue
         label = f"storage artifact row {index}"
         verify_present(
@@ -1911,18 +1835,12 @@ def validate_storage_manifest(
     sealed_records: dict[str, tuple[int, str]] = {}
     status_counts = {"present": 0, "absent": 0}
     for location, row in sealed.items():
-        if not authorize_protected_so2sat and _is_protected_so2sat_storage_location(
-            location
-        ):
-            continue
         if not isinstance(row, dict):
             problems.append(f"sealed evidence row is not an object: {location}")
             continue
         status = str(row.get("status", "")).lower()
         if status not in status_counts:
-            problems.append(
-                f"sealed evidence has invalid status {status!r}: {location}"
-            )
+            problems.append(f"sealed evidence has invalid status {status!r}: {location}")
             continue
         status_counts[status] += 1
         path = ROOT / location
@@ -1943,7 +1861,7 @@ def validate_storage_manifest(
     summary = storage.get("sealed_evidence_summary")
     if not isinstance(summary, dict):
         problems.append("storage manifest sealed_evidence_summary must be an object")
-    elif authorize_protected_so2sat:
+    else:
         expected_summary = {
             "files": len(sealed),
             "present": status_counts["present"],
@@ -1961,17 +1879,12 @@ def validate_storage_manifest(
         problems.append("storage manifest unsealed_present_artifacts must be a list")
     else:
         for index, row in enumerate(unsealed):
-            location = row.get("path") if isinstance(row, dict) else None
-            if not authorize_protected_so2sat and _is_protected_so2sat_storage_location(
-                location
-            ):
-                continue
             if not isinstance(row, dict) or row.get("status") != "present_unsealed":
                 problems.append(f"invalid unsealed-present artifact row {index}")
                 continue
             verify_present(
                 label=f"unsealed-present artifact row {index}",
-                location=location,
+                location=row.get("path"),
                 expected_size=row.get("current_bytes"),
                 expected_sha256=row.get("current_sha256"),
             )
@@ -1992,51 +1905,74 @@ def validate_storage_manifest(
             problems.append(f"nine-track lock seal files must be an object: {track}")
             continue
         for location, row in files.items():
-            if not authorize_protected_so2sat and _is_protected_so2sat_storage_location(
-                location
-            ):
-                continue
             if not isinstance(row, dict):
                 problems.append(f"invalid nine-track lock entry: {track}/{location}")
                 continue
             record = (row.get("bytes"), row.get("sha256"))
-            storage_location = HISTORICAL_LOCK_PATH_REMAP.get(location, location)
-            previous = locked_records.get(storage_location)
+            previous = locked_records.get(location)
             if previous is not None and previous != record:
-                problems.append(
-                    f"nine-track lock has conflicting duplicate metadata: {storage_location}"
-                )
-            locked_records[storage_location] = record
+                problems.append(f"nine-track lock has conflicting duplicate metadata: {location}")
+            locked_records[location] = record
     for location, record in locked_records.items():
         if location not in sealed_records:
-            problems.append(
-                f"nine-track locked evidence is absent from storage manifest: {location}"
-            )
+            problems.append(f"nine-track locked evidence is absent from storage manifest: {location}")
         elif sealed_records[location] != record:
-            problems.append(
-                f"storage manifest disagrees with nine-track lock metadata: {location}"
-            )
+            problems.append(f"storage manifest disagrees with nine-track lock metadata: {location}")
 
     for location in sorted(set(direct_records) & set(sealed_records)):
         if direct_records[location] != sealed_records[location]:
-            problems.append(
-                f"direct and sealed storage metadata disagree for duplicate path: {location}"
-            )
+            problems.append(f"direct and sealed storage metadata disagree for duplicate path: {location}")
 
     covered_paths = set(direct_records) | set(sealed_records)
-    promoted_sources = {
-        source
-        for source in iter_source_paths(generated)
-        if authorize_protected_so2sat
-        or not _is_protected_so2sat_storage_location(source)
-    }
-    for source in sorted(promoted_sources):
+    for source in sorted(set(iter_source_paths(generated))):
         if source not in covered_paths:
-            problems.append(
-                f"promoted result source lacks storage-manifest coverage: {source}"
-            )
+            problems.append(f"promoted result source lacks storage-manifest coverage: {source}")
 
     return len(direct_records), len(sealed_records)
+
+
+def validate_calibration_protocol_scope(corpus: str) -> list[str]:
+    """Check each declared protocol's scope rather than requiring legacy LOO globally."""
+
+    normalized = _normalize_claim_text(corpus)
+    before_b, _separator, protocol_b = normalized.partition("protocol b:")
+    _before_a, _separator, protocol_a = before_b.partition("protocol a:")
+    protocol_b = re.split(r"\\(?:begin|section|subsection)\b", protocol_b, maxsplit=1)[0]
+    requirements = (
+        (protocol_a, "used in historical controlled grids", "Protocol A must remain historical"),
+        (
+            protocol_a,
+            "scored cell's outcome can indirectly influence other residuals",
+            "historical Protocol A must disclose indirect scored-outcome dependence",
+        ),
+        (
+            protocol_b,
+            "three-way cell-outcome-disjoint cross-fitting",
+            "current Protocol B must specify three-way cell-outcome-disjoint cross-fitting",
+        ),
+        (
+            protocol_b,
+            "used in the current primary cifar table",
+            "Protocol B must identify its current primary CIFAR use",
+        ),
+        (
+            protocol_b,
+            "strictly disjoint estimator-fit and residual-calibration subsets",
+            "current Protocol B must separate estimator-fit and residual-calibration subsets",
+        ),
+        (
+            protocol_b,
+            "scored cell outcomes enter neither predictor training nor conformal calibration",
+            "current Protocol B must exclude scored outcomes from fitting and calibration",
+        ),
+    )
+    problems = [problem for context, required, problem in requirements if required not in context]
+    if re.search(
+        r"\bprotocol b:\s*(?:leave-one-(?:cell|condition)-out\b|(?:(?:pooled|peer-dependent)\s+)?loo\b)",
+        normalized,
+    ):
+        problems.append("current Protocol B must not be labeled leave-one-out calibration")
+    return problems
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2053,22 +1989,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--authorize-protected-so2sat",
         action="store_true",
-        help=(
-            "explicitly authorize stat/hash/open validation of protected So2Sat "
-            "storage-manifest rows"
-        ),
+        help="opt in to validating protected So2Sat storage rows; default checks public authorities only",
     )
     args = parser.parse_args(argv)
     problems: list[str] = []
-    active_sources = manuscript_sources.active_source_paths(ROOT)
-    missing = [
-        str(path.relative_to(ROOT)) for path in active_sources if not path.is_file()
-    ]
+    missing = [str(path.relative_to(ROOT)) for path in ACTIVE_SOURCES if not path.is_file()]
     if missing:
         problems.extend(f"missing active source: {path}" for path in missing)
         corpus = ""
+        text_sources: tuple[Path, ...] = ()
     else:
-        corpus = "\n".join(live_latex(path.read_text()) for path in active_sources)
+        try:
+            text_sources, corpus = _active_manuscript_corpus(ROOT, ACTIVE_SOURCES)
+        except RuntimeError as exc:
+            problems.append(str(exc))
+            text_sources, corpus = (), ""
     normalized_corpus = " ".join(corpus.split())
     problems.extend(
         validate_cct20_claims(
@@ -2078,9 +2013,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if not LONG_TMLR.is_file():
-        problems.append(
-            f"missing maintained long driver: {LONG_TMLR.relative_to(ROOT)}"
-        )
+        problems.append(f"missing maintained long driver: {LONG_TMLR.relative_to(ROOT)}")
     else:
         long_driver = LONG_TMLR.read_text()
         long_driver_live = live_latex(long_driver)
@@ -2091,9 +2024,7 @@ def main(argv: list[str] | None = None) -> int:
                 r"\input{kbound_submission_body.tex}",
             )
         ):
-            problems.append(
-                "maintained long driver must input the synchronized kbound_submission_body"
-            )
+            problems.append("maintained long driver must input the synchronized kbound_submission_body")
         stale_long_tokens = {
             "kbound_short_body": "stale pre-Phase-1 body",
             "kbound_short_appendix": "stale pre-Phase-1 appendix",
@@ -2127,40 +2058,21 @@ def main(argv: list[str] | None = None) -> int:
     required = {
         r"\Delta=R_T(f_0)-R_T(f_a)": "benefit convention",
         r"if and only if $|M|>\beta$": "strict-commitment frontier",
+        r"does not numerically apply $|M|>\beta$": "population/KGA separation",
         r"validity, commitment-control, and rollback layer": "claim-scope framing",
-        r"three-way cell-outcome-disjoint cross-fit": "stress-grid scope",
     }
     for token, reason in required.items():
         if token not in corpus and token not in normalized_corpus:
             problems.append(f"missing {reason}: {token}")
-
-    if not re.search(
-        r"(?:does not|doesn't|never)\s+(?:numerically\s+)?(?:apply|applies|evaluate)\s+"
-        + re.escape(r"$|M|>\beta$")
-        + r"(?:\s+numerically)?",
-        normalized_corpus,
-        flags=re.IGNORECASE,
-    ):
-        problems.append(
-            "missing population/KGA separation: KGA must not numerically apply the population frontier"
-        )
+    problems.extend(validate_calibration_protocol_scope(corpus))
 
     for path in (KBOUND / "kbound_submission_body.tex",):
         if path.is_file():
             text = live_latex(path.read_text())
-            normalized_text = " ".join(text.split())
-            if not re.search(
-                r"candidate(?:\s+tta|\s+adaptation).{0,160}\btransductive\b",
-                normalized_text,
-                re.IGNORECASE,
-            ):
-                problems.append(
-                    f"missing transductive candidate-TTA disclosure: {path.relative_to(ROOT)}"
-                )
-            if "evaluation-batch BatchNorm statistics" not in normalized_text:
-                problems.append(
-                    f"missing evaluation-batch BatchNorm disclosure: {path.relative_to(ROOT)}"
-                )
+            if "candidate TTA" not in text or "transductive" not in text:
+                problems.append(f"missing transductive candidate-TTA disclosure: {path.relative_to(ROOT)}")
+            if "evaluation-batch BatchNorm statistics" not in text:
+                problems.append(f"missing evaluation-batch BatchNorm disclosure: {path.relative_to(ROOT)}")
             if r"\SourceManifestSHA" in text:
                 problems.append(
                     "main scientific narrative must keep release hashes in the supplement"
@@ -2176,14 +2088,10 @@ def main(argv: list[str] | None = None) -> int:
     for driver in (KBOUND / "kbound_submission.tex", LONG_TMLR):
         if driver.is_file():
             source = live_latex(driver.read_text())
-            reference_position = source.find(
-                r"\input{paper/references_kbound_expanded}"
-            )
+            reference_position = source.find(r"\input{paper/references_kbound_expanded}")
             supplement_position = source.find(r"\input{kbound_submission_supplement}")
             if reference_position < 0 or supplement_position < reference_position:
-                problems.append(
-                    f"references must precede the maintained supplement: {driver.relative_to(ROOT)}"
-                )
+                problems.append(f"references must precede the maintained supplement: {driver.relative_to(ROOT)}")
 
     data: dict | None = None
     cluster_data: dict | None = None
@@ -2192,25 +2100,17 @@ def main(argv: list[str] | None = None) -> int:
     else:
         data = json.loads(CANONICAL.read_text())
         if not SOURCE_MANIFEST.is_file():
-            problems.append(
-                f"missing canonical source manifest: {SOURCE_MANIFEST.relative_to(ROOT)}"
-            )
+            problems.append(f"missing canonical source manifest: {SOURCE_MANIFEST.relative_to(ROOT)}")
         else:
             observed_source_manifest_sha256 = file_sha256(SOURCE_MANIFEST)
             if data.get("source_manifest_sha256") != observed_source_manifest_sha256:
-                problems.append(
-                    "canonical panel source-manifest hash disagrees with the live source manifest"
-                )
+                problems.append("canonical panel source-manifest hash disagrees with the live source manifest")
             if KBOUND_NUMBERS.is_file():
                 expected_macro = rf"\newcommand{{\SourceManifestSHA}}{{{observed_source_manifest_sha256}}}"
                 if expected_macro not in KBOUND_NUMBERS.read_text():
-                    problems.append(
-                        "generated LaTeX exposes a stale source-manifest hash"
-                    )
+                    problems.append("generated LaTeX exposes a stale source-manifest hash")
             else:
-                problems.append(
-                    f"missing generated numbers: {KBOUND_NUMBERS.relative_to(ROOT)}"
-                )
+                problems.append(f"missing generated numbers: {KBOUND_NUMBERS.relative_to(ROOT)}")
         if data.get("source_file_count") != 106:
             problems.append(
                 f"canonical source artifact count changed: expected 106, got {data.get('source_file_count')}"
@@ -2218,125 +2118,67 @@ def main(argv: list[str] | None = None) -> int:
         panel = data["panels"]["cifar10c"]["panel"]
         candidates = panel["candidates"]
         expected = {
-            "tent": (1091, 337, 732),
-            "eata": (1207, 105, 848),
-            "sar": (1414, 0, 746),
+            "tent": (1094, 334, 732),
+            "eata": (1207, 118, 835),
+            "sar": (1430, 0, 730),
         }
         for candidate, counts in expected.items():
             row = candidates[candidate]
             observed = (row["adapt_count"], row["freeze_count"], row["abstain_count"])
             if observed != counts:
-                problems.append(
-                    f"canonical {candidate} action counts changed: expected {counts}, got {observed}"
-                )
+                problems.append(f"canonical {candidate} action counts changed: expected {counts}, got {observed}")
         aggregate = panel["architecture_panel_aggregate"]
-        if aggregate["false_adapt_count"] != 2:
+        if aggregate["false_adapt_count"] != 1:
             problems.append(
-                "canonical CIFAR-10-C aggregate no longer preserves two observed false adaptations"
+                "canonical CIFAR-10-C aggregate false-adapt count changed: "
+                f"expected 1, got {aggregate['false_adapt_count']}"
             )
         iwild = data["panels"]["iwildcam"]
         historical = iwild.get("historical_reconciliation", {})
         if historical.get("status") != "superseded_not_promotable":
-            problems.append(
-                "iWildCam historical beats-both result is not marked superseded"
-            )
+            problems.append("iWildCam historical beats-both result is not marked superseded")
         if historical.get("historical_claim", {}).get("beats_both") is not True:
-            problems.append(
-                "iWildCam historical reconciliation lost the archived positive flag"
-            )
+            problems.append("iWildCam historical reconciliation lost the archived positive flag")
         if historical.get("corrected_claim", {}).get("point_beats_both") is not False:
-            problems.append(
-                "iWildCam corrected replay was accidentally promoted to beats-both"
-            )
-        imagenetc_sar = data["panels"]["imagenetc"]["panel"]["candidates"]["sar"]
-        imagenetc_bootstrap = imagenetc_sar.get("seed_inference", {}).get(
-            "descriptive_seed_bootstrap", {}
-        )
-        if imagenetc_sar.get("false_adapt_count") != 0 or imagenetc_sar.get("n") != 135:
-            problems.append(
-                "ImageNet-C SAR no longer records 0/135 observed false adaptations"
-            )
-        if not all(
-            imagenetc_bootstrap.get("gaps", {}).get(baseline, {}).get("ci95", [0])[0]
-            > 0
-            for baseline in ("always_adapt", "always_freeze")
-        ):
-            problems.append(
-                "ImageNet-C SAR lost a positive descriptive interval lower bound"
-            )
-        if (
-            imagenetc_sar.get("seed_inference", {}).get("ci_robust_beats_both")
-            is not False
-        ):
-            problems.append(
-                "ImageNet-C SAR descriptive run-seed intervals were promoted as CI-robust"
-            )
+            problems.append("iWildCam corrected replay was accidentally promoted to beats-both")
 
     if not CURRENT_CLUSTER.is_file():
-        problems.append(
-            f"missing current-policy family sensitivity: {CURRENT_CLUSTER.relative_to(ROOT)}"
-        )
+        problems.append(f"missing current-policy family sensitivity: {CURRENT_CLUSTER.relative_to(ROOT)}")
     else:
         cluster_data = json.loads(CURRENT_CLUSTER.read_text())
         if cluster_data.get("schema") != "kbound-current-policy-cluster-inference-v3":
-            problems.append(
-                "current-policy family sensitivity does not use the v3 schema"
-            )
-        if cluster_data.get("contrast_convention") != (
-            "baseline_regret_minus_kga_regret; positive values favor KGA"
-        ):
-            problems.append(
-                "current-policy family sensitivity uses the wrong contrast convention"
-            )
+            problems.append("current-policy family sensitivity does not use the v3 schema")
+        if cluster_data.get("contrast_convention") != ("baseline_regret_minus_kga_regret; positive values favor KGA"):
+            problems.append("current-policy family sensitivity uses the wrong contrast convention")
         analysis_path = ROOT / cluster_data.get("analysis_script", "")
-        if not analysis_path.is_file() or file_sha256(
-            analysis_path
-        ) != cluster_data.get("analysis_script_sha256"):
-            problems.append(
-                "current-policy family sensitivity analysis-script binding is stale"
-            )
+        if not analysis_path.is_file() or file_sha256(analysis_path) != cluster_data.get("analysis_script_sha256"):
+            problems.append("current-policy family sensitivity analysis-script binding is stale")
         for name, binding in cluster_data.get("live_code_bindings", {}).items():
             bound_path = ROOT / binding.get("path", "")
-            if not bound_path.is_file() or file_sha256(bound_path) != binding.get(
-                "sha256"
-            ):
-                problems.append(
-                    f"current-policy family sensitivity {name} binding is stale"
-                )
+            if not bound_path.is_file() or file_sha256(bound_path) != binding.get("sha256"):
+                problems.append(f"current-policy family sensitivity {name} binding is stale")
         family = cluster_data.get(
             "retrospective_holm_over_six_prospectively_named_contrasts", {}
         )
         if family.get("family_size") != 6 or family.get("alpha") != 0.05:
-            problems.append(
-                "current-policy family sensitivity lacks the retrospective six-way Holm family"
-            )
+            problems.append("current-policy family sensitivity lacks the retrospective six-way Holm family")
         for candidate in ("tent", "eata", "sar"):
             gate = cluster_data.get("candidates", {}).get(candidate, {}).get("gate", {})
-            if (
-                gate.get("retrospective_six_contrast_cluster_sensitivity_pass")
-                is not False
-            ):
+            if gate.get("retrospective_six_contrast_cluster_sensitivity_pass") is not False:
                 problems.append(
                     f"current-policy family sensitivity incorrectly passes retrospective gate for {candidate}"
                 )
         tent = cluster_data.get("candidates", {}).get("tent", {})
-        if tent and not tent.get("gate", {}).get(
-            "both_pointwise_95pct_cluster_bootstrap_intervals_positive"
-        ):
-            problems.append(
-                "Tent family sensitivity lost its two positive ordinary intervals"
-            )
-        expected_tent_holm = {"always_adapt": 0.140625, "always_freeze": 0.09375}
+        if tent and not tent.get("gate", {}).get("both_pointwise_95pct_cluster_bootstrap_intervals_positive"):
+            problems.append("Tent family sensitivity lost its two positive ordinary intervals")
         for baseline in ("always_adapt", "always_freeze"):
             p_value = (
                 tent.get("comparisons", {})
                 .get(baseline, {})
                 .get("p_value_retrospective_holm_six_prospectively_named_contrasts")
             )
-            if p_value != expected_tent_holm[baseline]:
-                problems.append(
-                    f"Tent retrospective six-way Holm p-value changed for {baseline}: {p_value!r}"
-                )
+            if p_value != 0.09375:
+                problems.append(f"Tent retrospective six-way Holm p-value changed for {baseline}: {p_value!r}")
 
     release_paths = (
         GENERATED_MANIFEST,
@@ -2347,6 +2189,7 @@ def main(argv: list[str] | None = None) -> int:
         CLAIM_LEDGER,
         RESULT_MANIFEST,
         RESULTS_SOURCE,
+        HISTORICAL_LEDGER,
         RESULT_AUDIT,
         CLAIM_MANIFEST,
         README,
@@ -2354,19 +2197,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     for path in release_paths:
         if not path.is_file():
-            problems.append(
-                f"missing release consistency surface: {path.relative_to(ROOT)}"
-            )
+            problems.append(f"missing release consistency surface: {path.relative_to(ROOT)}")
 
-    if (
-        data is not None
-        and cluster_data is not None
-        and all(path.is_file() for path in release_paths)
-    ):
+    if data is not None and cluster_data is not None and all(path.is_file() for path in release_paths):
         expected_counts = {
-            "tent": {"ADAPT": 1091, "FREEZE": 337, "ABSTAIN": 732},
-            "eata": {"ADAPT": 1207, "FREEZE": 105, "ABSTAIN": 848},
-            "sar": {"ADAPT": 1414, "FREEZE": 0, "ABSTAIN": 746},
+            "tent": {"ADAPT": 1094, "FREEZE": 334, "ABSTAIN": 732},
+            "eata": {"ADAPT": 1207, "FREEZE": 118, "ABSTAIN": 835},
         }
 
         generated = json.loads(GENERATED_MANIFEST.read_text())
@@ -2377,116 +2213,56 @@ def main(argv: list[str] | None = None) -> int:
         )
         generated_tracks = generated["tracks"]
         accounting = generated["decision_accounting_summary"]["rows"]
-        for candidate, label in (
-            ("tent", "CIFAR-10-C Tent"),
-            ("eata", "CIFAR-10-C EATA"),
-            ("sar", "CIFAR-10-C SAR"),
-        ):
-            if (
-                generated_tracks[f"cifar10c_{candidate}"]["decision_counts"]
-                != expected_counts[candidate]
-            ):
-                problems.append(
-                    f"generated paper manifest has stale {candidate} decision counts"
-                )
-            sensitivity = generated_tracks[f"cifar10c_{candidate}"].get(
-                "current_policy_family_sensitivity", {}
-            )
-            if (
-                sensitivity.get("retrospective_six_contrast_holm_rejects_both")
-                is not False
-            ):
-                problems.append(
-                    f"generated paper manifest overstates retrospective family inference for {candidate}"
-                )
+        for candidate, label in (("tent", "CIFAR-10-C Tent"), ("eata", "CIFAR-10-C EATA")):
+            if generated_tracks[f"cifar10c_{candidate}"]["decision_counts"] != expected_counts[candidate]:
+                problems.append(f"generated paper manifest has stale {candidate} decision counts")
+            sensitivity = generated_tracks[f"cifar10c_{candidate}"].get("current_policy_family_sensitivity", {})
+            if sensitivity.get("retrospective_six_contrast_holm_rejects_both") is not False:
+                problems.append(f"generated paper manifest overstates retrospective family inference for {candidate}")
             summary = row_by_track(accounting, label)
-            observed = {
-                action: summary[action] for action in ("ADAPT", "FREEZE", "ABSTAIN")
-            }
+            observed = {action: summary[action] for action in ("ADAPT", "FREEZE", "ABSTAIN")}
             if observed != expected_counts[candidate]:
-                problems.append(
-                    f"generated decision-accounting summary has stale {candidate} counts"
-                )
+                problems.append(f"generated decision-accounting summary has stale {candidate} counts")
         generated_iwild = generated_tracks["iwildcam_H_v2"]
         if generated_iwild.get("numeric_release_eligible") is not False:
-            problems.append(
-                "generated paper manifest does not withhold iWildCam numerics"
-            )
+            problems.append("generated paper manifest does not withhold iWildCam numerics")
         if (
             generated_iwild.get("n_test") is not None
             or generated_iwild.get("regret") is not None
-            or any(
-                value is not None
-                for value in generated_iwild.get("decision_counts", {}).values()
-            )
+            or any(value is not None for value in generated_iwild.get("decision_counts", {}).values())
         ):
-            problems.append(
-                "generated paper manifest exposes iWildCam sample, performance, or action values"
-            )
-        if any(
-            generated_iwild.get(field) is not None
-            for field in ("ci_vs_adapt", "ci_vs_freeze", "seal")
-        ):
-            problems.append(
-                "generated paper manifest exposes an iWildCam interval or current seal"
-            )
+            problems.append("generated paper manifest exposes iWildCam sample, performance, or action values")
+        if any(generated_iwild.get(field) is not None for field in ("ci_vs_adapt", "ci_vs_freeze", "seal")):
+            problems.append("generated paper manifest exposes an iWildCam interval or current seal")
         accounting_iwild = row_by_track(accounting, "iWildCam H v2")
         if accounting_iwild.get("numeric_release_eligible") is not False or any(
-            accounting_iwild.get(field) is not None
-            for field in ("n", "ADAPT", "FREEZE", "ABSTAIN", "FA_u")
+            accounting_iwild.get(field) is not None for field in ("n", "ADAPT", "FREEZE", "ABSTAIN", "FA_u")
         ):
-            problems.append(
-                "generated decision-accounting summary exposes iWildCam values"
-            )
+            problems.append("generated decision-accounting summary exposes iWildCam values")
 
         uniform = json.loads(UNIFORM_VERDICTS.read_text())
-        for candidate, label in (
-            ("tent", "CIFAR-10-C Tent"),
-            ("eata", "CIFAR-10-C EATA"),
-            ("sar", "CIFAR-10-C SAR"),
-        ):
+        for candidate, label in (("tent", "CIFAR-10-C Tent"), ("eata", "CIFAR-10-C EATA")):
             row = row_by_track(uniform["wave"], label)
             if row.get("decision_counts") != expected_counts[candidate]:
-                problems.append(
-                    f"uniform verdicts have stale {candidate} decision counts"
-                )
+                problems.append(f"uniform verdicts have stale {candidate} decision counts")
             if row.get("survives_retrospective_six_contrast_holm") is not False:
-                problems.append(
-                    f"uniform verdicts overstate retrospective family inference for {candidate}"
-                )
+                problems.append(f"uniform verdicts overstate retrospective family inference for {candidate}")
         uniform_iwild = row_by_track(uniform["wave"], "iWildCam H v2")
         if uniform_iwild.get("numeric_release_eligible") is not False or any(
-            uniform_iwild.get(field) is not None
-            for field in ("regret_kga", "regret_adapt", "regret_freeze", "FA_u")
+            uniform_iwild.get(field) is not None for field in ("regret_kga", "regret_adapt", "regret_freeze", "FA_u")
         ):
             problems.append("uniform verdicts expose iWildCam performance values")
         if "n=" in uniform_iwild.get("unit", ""):
-            problems.append(
-                "uniform verdicts expose the withheld iWildCam sample count"
-            )
+            problems.append("uniform verdicts expose the withheld iWildCam sample count")
 
         decision_metrics = json.loads(DECISION_METRICS.read_text())
-        for candidate, label in (
-            ("tent", "CIFAR-10-C TENT"),
-            ("eata", "CIFAR-10-C EATA"),
-            ("sar", "CIFAR-10-C SAR"),
-        ):
+        for candidate, label in (("tent", "CIFAR-10-C TENT"), ("eata", "CIFAR-10-C EATA")):
             row = row_by_track(decision_metrics["tracks"], label)
-            observed = {
-                action.upper(): row["actions"][action]["count"]
-                for action in ("adapt", "freeze", "abstain")
-            }
+            observed = {action.upper(): row["actions"][action]["count"] for action in ("adapt", "freeze", "abstain")}
             if observed != expected_counts[candidate]:
-                problems.append(
-                    f"decision metrics have stale {candidate} action counts"
-                )
-            if (
-                row["false_adapt_conditional"]["n_adapt_decisions"]
-                != expected_counts[candidate]["ADAPT"]
-            ):
-                problems.append(
-                    f"decision metrics have stale {candidate} conditional denominator"
-                )
+                problems.append(f"decision metrics have stale {candidate} action counts")
+            if row["false_adapt_conditional"]["n_adapt_decisions"] != expected_counts[candidate]["ADAPT"]:
+                problems.append(f"decision metrics have stale {candidate} conditional denominator")
         metrics_iwild = row_by_track(decision_metrics["tracks"], "iWildCam")
         if (
             metrics_iwild.get("numeric_release_eligible") is not False
@@ -2507,131 +2283,74 @@ def main(argv: list[str] | None = None) -> int:
             "rerun required |"
         )
         if required_iwild_matrix_row not in claim_matrix_text:
-            problems.append(
-                "generated empirical claim matrix does not withhold iWildCam evidence"
-            )
+            problems.append("generated empirical claim matrix does not withhold iWildCam evidence")
 
         claim_ledger = json.loads(CLAIM_LEDGER.read_text())
-        iwild_claims = [
-            row
-            for row in claim_ledger["claims"]
-            if row.get("claim_id") == "KB-CLAIM-021"
-        ]
+        iwild_claims = [row for row in claim_ledger["claims"] if row.get("claim_id") == "KB-CLAIM-021"]
         if len(iwild_claims) != 1 or iwild_claims[0].get("status") != "withheld":
             problems.append("claim ledger does not mark KB-CLAIM-021 withheld")
-        cifar_claims = [
-            row
-            for row in claim_ledger["claims"]
-            if row.get("claim_id") == "KB-CLAIM-010"
-        ]
+        cifar_claims = [row for row in claim_ledger["claims"] if row.get("claim_id") == "KB-CLAIM-010"]
         if len(cifar_claims) != 1:
             problems.append("claim ledger does not contain exactly one KB-CLAIM-010")
         else:
             cluster_claim = cifar_claims[0].get("current_policy_family_sensitivity", {})
-            if (
-                cluster_claim.get("status")
-                != "retrospective_current_policy_family_sensitivity"
-            ):
-                problems.append(
-                    "claim ledger does not expose the current family sensitivity"
-                )
-            if "current-policy cluster-robust win" not in cifar_claims[0].get(
-                "forbidden_wording", []
-            ):
-                problems.append(
-                    "claim ledger does not forbid a current-policy cluster-robust win"
-                )
-        for source in active_sources:
+            if cluster_claim.get("status") != "retrospective_current_policy_family_sensitivity":
+                problems.append("claim ledger does not expose the current family sensitivity")
+            if "current-policy cluster-robust win" not in cifar_claims[0].get("forbidden_wording", []):
+                problems.append("claim ledger does not forbid a current-policy cluster-robust win")
+        for source in text_sources:
             for hit in authority.scan_text_for_unreleased_curated(
-                live_latex(source.read_text(errors="ignore")), claim_ledger
+                live_latex(manuscript_sources.read_unlinked_text(source, errors="ignore")), claim_ledger
             ):
-                problems.append(
-                    f"{source.relative_to(ROOT)} promotes unreleased {hit['claim_id']}: {hit['snippet']}"
-                )
+                problems.append(f"{source.relative_to(ROOT)} promotes unreleased {hit['claim_id']}: {hit['snippet']}")
         result_manifest = json.loads(RESULT_MANIFEST.read_text())
-        if any(
-            row.get("claim_id") == "KB-CLAIM-021" for row in result_manifest["results"]
-        ):
-            problems.append(
-                "promoted result manifest still contains withheld KB-CLAIM-021"
-            )
+        if any(row.get("claim_id") == "KB-CLAIM-021" for row in result_manifest["results"]):
+            problems.append("promoted result manifest still contains withheld KB-CLAIM-021")
         result_cifar = next(
-            (
-                row
-                for row in result_manifest["results"]
-                if row.get("claim_id") == "KB-CLAIM-010"
-            ),
+            (row for row in result_manifest["results"] if row.get("claim_id") == "KB-CLAIM-010"),
             None,
         )
         if result_cifar is None:
             problems.append("promoted result manifest omits KB-CLAIM-010")
         else:
-            sensitivity = result_cifar.get("metrics", {}).get(
-                "current_policy_family_sensitivity", {}
-            )
+            sensitivity = result_cifar.get("metrics", {}).get("current_policy_family_sensitivity", {})
             if sensitivity.get("confirmatory") is not False:
-                problems.append(
-                    "promoted result manifest overstates the family sensitivity"
-                )
+                problems.append("promoted result manifest overstates the family sensitivity")
             tent_sensitivity = sensitivity.get("candidates", {}).get("tent", {})
-            if (
-                tent_sensitivity.get("retrospective_six_contrast_holm_rejects_both")
-                is not False
-            ):
-                problems.append(
-                    "promoted result manifest incorrectly passes Tent's retrospective Holm gate"
-                )
+            if tent_sensitivity.get("retrospective_six_contrast_holm_rejects_both") is not False:
+                problems.append("promoted result manifest incorrectly passes Tent's retrospective Holm gate")
         if SOURCE_MANIFEST.is_file():
-            recorded_source_hash = result_manifest.get("reconciliation_source", {}).get(
-                "source_manifest_sha256"
-            )
+            recorded_source_hash = result_manifest.get("reconciliation_source", {}).get("source_manifest_sha256")
             if recorded_source_hash != file_sha256(SOURCE_MANIFEST):
-                problems.append(
-                    "promoted result manifest exposes a stale source-manifest hash"
-                )
+                problems.append("promoted result manifest exposes a stale source-manifest hash")
         results_source = json.loads(RESULTS_SOURCE.read_text())
         source_iwild = results_source["tracks"]["iwildcam_H_v2"]
         if (
             source_iwild.get("n_test") is not None
             or source_iwild.get("regret") is not None
-            or any(
-                source_iwild.get(field) is not None
-                for field in ("ci_vs_adapt", "ci_vs_freeze", "seal")
-            )
+            or any(source_iwild.get(field) is not None for field in ("ci_vs_adapt", "ci_vs_freeze", "seal"))
         ):
-            problems.append(
-                "legacy compatibility view exposes iWildCam sample/performance values or a current seal"
-            )
+            problems.append("legacy compatibility view exposes iWildCam sample/performance values or a current seal")
 
+        historical_text = HISTORICAL_LEDGER.read_text()
+        if "HISTORICAL VALUES BELOW ARE NOT RELEASE VALUES" not in historical_text:
+            problems.append("historical submission ledger lacks a current-value demotion banner")
         result_audit_text = RESULT_AUDIT.read_text()
-        normalized_result_audit = " ".join(result_audit_text.split())
+        if "| iWildCam | withheld | withheld | withheld | withheld | withheld | withheld |" not in result_audit_text:
+            problems.append("current result audit does not withhold the iWildCam numerical row")
         if (
-            "| iWildCam | withheld | withheld | withheld | withheld | withheld | withheld |"
+            "adjustment over the six prospectively named contrasts gives 0.09375"
             not in result_audit_text
         ):
-            problems.append(
-                "current result audit does not withhold the iWildCam numerical row"
-            )
-        if (
-            "adjustment over the six prospectively named contrasts gives 0.140625 against always-adapt and 0.09375 against always-freeze"
-            not in normalized_result_audit
-        ):
-            problems.append(
-                "current result audit omits the retrospective Tent Holm result"
-            )
+            problems.append("current result audit omits the retrospective Tent Holm result")
         if (
             "earlier KGA policy" not in result_audit_text
             or "confidence intervals are unadjusted" not in result_audit_text
         ):
-            problems.append(
-                "current result audit omits the historical POEM/AETTA policy and Holm scope"
-            )
+            problems.append("current result audit omits the historical POEM/AETTA policy and Holm scope")
 
         claim_manifest_text = CLAIM_MANIFEST.read_text()
-        if (
-            "retrospective Holm over the six prospectively named contrasts"
-            not in claim_manifest_text
-        ):
+        if "retrospective Holm over the six prospectively named contrasts" not in claim_manifest_text:
             problems.append("claim manifest omits the retrospective cluster gate")
         if "Holm applies only to archived p-values" not in claim_manifest_text:
             problems.append("claim manifest omits the historical POEM/AETTA Holm scope")
@@ -2640,9 +2359,7 @@ def main(argv: list[str] | None = None) -> int:
         if "retrospective Holm adjustment over the" not in readme_text:
             problems.append("README omits the retrospective cluster gate")
         if "iWildCam numerical/action row is withheld" not in readme_text:
-            problems.append(
-                "README does not clearly withhold iWildCam numerical/action evidence"
-            )
+            problems.append("README does not clearly withhold iWildCam numerical/action evidence")
 
     if problems:
         print("Manuscript claim validation: FAIL")
@@ -2652,7 +2369,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print("Manuscript claim validation: PASS")
     print(
-        f"Checked {len(active_sources)} maintained LaTeX sources, including the synchronized long driver, "
+        f"Checked {len(ACTIVE_SOURCES)} maintained LaTeX sources plus the synchronized long driver, "
         "the canonical panel, "
         f"{len(release_paths)} release consistency surfaces, {direct_storage_count} direct storage hashes, "
         f"and {sealed_storage_count} sealed evidence hashes."

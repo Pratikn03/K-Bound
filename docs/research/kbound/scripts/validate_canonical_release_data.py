@@ -166,14 +166,23 @@ def validate() -> list[str]:
         "docs/research/kbound/kbound_tmlr.tex",
     ):
         driver = ROOT / driver_rel
-        if not driver.is_file():
-            problems.append(f"missing maintained driver: {driver_rel}")
-        elif r"\input{paper/generated/so2sat_numbers.tex}" in driver.read_text(encoding="utf-8"):
-            problems.append(
-                f"maintained driver must not input protected So2Sat development numbers: {driver_rel}"
-            )
+        if not driver.is_file() or r"\input{paper/generated/so2sat_numbers.tex}" not in driver.read_text(
+            encoding="utf-8"
+        ):
+            problems.append(f"maintained driver does not input So2Sat numbers: {driver_rel}")
 
     current = strict_json(current_path)
+    try:
+        binding_spec = importlib.util.spec_from_file_location(
+            "kbound_current_policy_bindings", ROOT / "docs/research/kbound/scripts/build_result_manifest.py"
+        )
+        if binding_spec is None or binding_spec.loader is None:
+            raise RuntimeError("cannot load current-policy live binding validator")
+        binding_validator = importlib.util.module_from_spec(binding_spec)
+        binding_spec.loader.exec_module(binding_validator)
+        binding_validator.current_cluster_metrics()
+    except (OSError, UnicodeError, ValueError, RuntimeError) as exc:
+        problems.append(str(exc))
     if current.get("schema") != CURRENT_CLUSTER_SCHEMA:
         problems.append("current-policy authority has the wrong schema")
     family = current.get(FAMILY_FIELD) or {}

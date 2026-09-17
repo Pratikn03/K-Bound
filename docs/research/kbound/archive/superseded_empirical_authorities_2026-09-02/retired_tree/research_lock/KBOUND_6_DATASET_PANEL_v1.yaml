@@ -1,0 +1,157 @@
+protocol: KBOUND_6_DATASET_PANEL_v1
+status: locked_panel_manifest
+created: 2026-06-19
+purpose: >
+  Freeze the six-dataset empirical panel for the K-Bound paper so tables,
+  claims, and future training runs do not drift across exploratory datasets.
+
+selection_rule:
+  include_only:
+    - dataset has local data available in this workspace
+    - dataset has existing K-Bound artifacts or a runnable K-Bound path
+    - panel spans controlled corruption, natural shift, domain shift, WILDS,
+      and biomedical/cell-imaging regimes
+  exclude_from_core_panel:
+    - datasets with saved results but missing currently mounted data
+    - dry-run-only probes
+    - purely synthetic/theory validations
+
+datasets:
+  - id: officehome
+    name: OfficeHome
+    local_data:
+      present: true
+      root: experiments/kbound/data/office_home
+      size_checked: 5.2G
+      domains: [Art, Clipart, Product, Real_World]
+    paper_role: primary_clean_heldout_real_win
+    claim_status: verified_beats_both_dev_lock_v2
+    protocol: research_lock/OFFICEHOME_PROTOCOL_M_v2.yaml
+    key_artifacts:
+      - experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json
+      - experiments/kbound/results/officehome_protocol_m_repl_holdout/holdout_score.json
+    headline_use: main_table_positive_protocol_M_v2
+    notes: >
+      Protocol M v2 dev-locks sar_online_aggressive from six-arm panel.
+      Deployed eata_online_mild audit remains a separate helpful-dominated null.
+      M v1 (14-candidate finder) superseded.
+
+  - id: iwildcam
+    name: iWildCam
+    local_data:
+      present: true
+      root: experiments/kbound/data/wilds/iwildcam_v2.0
+      size_checked: 55G
+      required_subdirs: [train]
+    paper_role: independent_wilds_natural_shift_win
+    claim_status: verified_beats_both_dev_lock_v2_thin_margin
+    protocol: research_lock/IWILDCAM_PROTOCOL_H_v2.yaml
+    key_artifacts:
+      - experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json
+      - experiments/kbound/results/iwildcam_protocol_H_v1/analyze_F_results.json
+    headline_use: main_table_positive_with_honest_thin_margin_framing
+    notes: >
+      Protocol H v2 dev-locks tent_episodic from six-arm panel.
+      H v1 (fixed sar_online) superseded.
+
+  - id: cifar10c_stress
+    name: CIFAR-10-C stress grid
+    local_data:
+      present: true
+      root: experiments/kbound/cifar/CIFAR-10-C
+      size_checked: 2.7G
+      data_files: full_corruption_npy_set_plus_labels
+    paper_role: controlled_corruption_stress_grid
+    claim_status: verified_multiseed_beats_both_for_tent_and_eata
+    protocol: research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml
+    key_artifacts:
+      - experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_FINDINGS.md
+      - experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json
+    headline_use: mechanism_and_reliability_table
+
+  - id: cifar101
+    name: CIFAR-10.1
+    local_data:
+      present: true
+      root: experiments/kbound/cifar/CIFAR-10.1
+      size_checked: 6.4M
+      required_files:
+        - cifar10.1_v6_data.npy
+        - cifar10.1_v6_labels.npy
+    paper_role: low_margin_natural_shift_boundary_case
+    claim_status: not_cross_seed_beats_both
+    protocol: research_lock/CIFAR101_PROTOCOL_K_v1.yaml
+    key_artifacts:
+      - experiments/kbound/results/cifar101_protocol_K_v1/VERIFIED_FINDINGS.md
+      - experiments/kbound/results/cifar101_protocol_K_v1/analyze_F_results.json
+      - experiments/kbound/results/cifar101_multiseed_v1/pooled_summary.json
+    headline_use: honest_regime_map_or_appendix_not_primary_win
+
+  - id: imagenet_r
+    name: ImageNet-R
+    local_data:
+      present: true
+      root: experiments/kbound/data/imagenet-r
+      size_checked: 7.9G
+      class_dirs_checked: 200
+      file_count_checked: 60202
+    paper_role: hard_natural_shift_frontier_case
+    claim_status: split_specific_lead_not_replicated
+    protocol: research_lock/IMAGENETR_DIVERSE_PANEL_PROTOCOL_D_v1.yaml
+    key_artifacts:
+      - experiments/kbound/results/hard_dataset_win_loop_v1/hard_dataset_loop_report.md
+      - experiments/kbound/results/hard_dataset_win_loop_v1/hard_dataset_loop_results.json
+      - experiments/kbound/results/imagenetr_protocol_d_size_diverse_panel_v2/result_fb5afb1e.json
+      - experiments/kbound/results/imagenetr_kbound_light_mps_internal/result_f4a1293b.json
+    headline_use: frontier_hard_case_until_replicated
+
+  - id: rxrx1
+    name: RxRx1
+    local_data:
+      present: true
+      root: experiments/kbound/data/wilds/rxrx1_v1.0
+      size_checked: 31G
+      required_subdirs: [images]
+    paper_role: biomedical_wilds_hard_case
+    claim_status: modelseed0_lead_not_replicated
+    protocol: research_lock/RXRX1_PROTOCOL_J_v1.yaml
+    key_artifacts:
+      - experiments/kbound/results/hard_dataset_win_loop_v1/hard_dataset_loop_report.md
+      - experiments/kbound/results/hard_dataset_win_loop_v1/hard_dataset_loop_results.json
+      - experiments/kbound/results/rxrx1_protocol_c_9plus_modelseed0/result_3f579e72.json
+      - experiments/kbound/results/rxrx1_protocol_c_9plus_modelseed1/result_eef46aea.json
+      - experiments/kbound/results/rxrx1_protocol_c_9plus_modelseed2/result_6585f5b7.json
+    headline_use: biomedical_hard_case_or_appendix_until_replicated
+
+core_claiming_policy:
+  main_positive_claims:
+    - officehome
+    - iwildcam
+    - cifar10c_stress
+  natural_shift_headline_protocols:
+    - camelyon17_protocol_G_v1
+    - iwildcam_protocol_H_v2
+    - officehome_protocol_M_v2
+  headline_findings_manifest: research_lock/KBOUND_HEADLINE_FINDINGS.json
+  boundary_or_hard_case_claims:
+    - cifar101
+    - imagenet_r
+    - rxrx1
+  do_not_overclaim:
+    - imagenet_r has one split-specific win but no stability replication
+    - rxrx1 has one modelseed-specific win but no pooled/modelseed replication
+    - cifar101 is not cleared under the cross-seed heldout bar
+
+excluded_from_core_six:
+  camelyon17:
+    reason: saved result artifacts exist, but full local data folder is not currently mounted in experiments/kbound/data/wilds
+  imagenet_c_partial:
+    reason: large local data exists, but core six uses CIFAR-10-C as the controlled corruption stress benchmark
+  fmow:
+    reason: useful exploratory WILDS breadth dataset, but current saved results are null/diagnostic
+  poverty:
+    reason: useful exploratory WILDS breadth dataset, but not needed in the six-dataset core panel
+  acdc:
+    reason: local data exists, but current artifacts are dry-run/preview and modality differs from the current K-Bound table path
+  imagenette:
+    reason: local data exists, but it is a convenience dataset, not a primary shift benchmark for the paper

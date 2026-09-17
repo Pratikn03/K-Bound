@@ -2,12 +2,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
-# Configure an absolute executable path; no runtime autodiscovery.
-PY="${KBOUND_SAR_PYTHON:?Set KBOUND_SAR_PYTHON to the selected Python executable}"
-[[ "$PY" == /* && -f "$PY" && -x "$PY" ]] || { echo "Invalid KBOUND_SAR_PYTHON: $PY" >&2; exit 2; }
+PY="${KBOUND_SAR_PYTHON:-/opt/anaconda3/envs/ag311/bin/python}"
 DEVICE="${KB_DEVICE:-mps}"
-# KBOUND_CIFAR_ROOT must explicitly select the existing data for preflight/run.
-DATA="${KBOUND_CIFAR_ROOT:-}"
+DATA="${KBOUND_CIFAR_ROOT:-$ROOT/experiments/kbound/cifar}"
 OUT="${KBOUND_SAR_OUTPUT:-$ROOT/experiments/kbound/results/cifar10c_sar_rebuild_v2}"
 RUNNER="$ROOT/docs/research/kbound/scripts/cifar_tent_mps_v2.py"
 VALIDATOR="$ROOT/docs/research/kbound/scripts/validate_cifar10c_sar_rebuild.py"
@@ -24,8 +21,7 @@ check_hash() {
 }
 
 preflight() {
-  [[ -n "$DATA" ]] || { echo "Set KBOUND_CIFAR_ROOT to the existing CIFAR data root" >&2; exit 2; }
-  [[ "$DATA" == /* ]] || { echo "KBOUND_CIFAR_ROOT must be absolute" >&2; exit 2; }
+  [[ -x "$PY" ]] || { echo "Missing runtime: $PY" >&2; exit 2; }
   [[ -d "$DATA/CIFAR-10-C" ]] || { echo "Missing CIFAR-10-C under $DATA" >&2; exit 2; }
   check_hash f1687904d36114340ae7da055197f6bd44c08e2f617d17703a52824765e62dbc "$RUNNER"
   check_hash 43333456a795bbe679966c14812f9964d8b3bf060d30ca2b3d5051cb8c9d7491 "$DATA/resnet18_cifar.pt"

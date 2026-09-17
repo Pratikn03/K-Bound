@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-Aggregate per-seed natural-shift results into a multi-seed no-harm summary.
+Aggregate per-seed natural-shift results into a descriptive multi-seed summary.
 
 For each track, point it at the per-seed result JSONs (produced by re-running the locked
 WILDS/DomainBed protocol at seeds 0..4). Each file must expose the KGA / always-adapt /
-always-freeze regrets (defensive key search) and, if present, the false-adapt rate.
+always-freeze regrets (defensive key search) and a measured false-adapt rate.
 
 Outputs, per track:
   * across-seed mean +/- std of each policy's regret and of KGA's FA_u,
   * a seed-level paired bootstrap CI on the regret gap KGA-vs-worse and KGA-vs-better policy,
-  * a verdict: "stable no-harm" iff KGA ties the better fixed policy and beats the worse one
-    across every seed at FA_u <= alpha, else "unstable"/"beats-both"/"harmful".
+  * a descriptive verdict from nominal seed-bootstrap intervals. An interval
+    containing zero is inconclusive, not evidence of equivalence or no harm.
+    These summaries do not establish prospective validity or independent models.
   * a LaTeX table row.
 
 Usage:
@@ -26,7 +27,11 @@ def find(d, cands):
     for holder in (d, d.get("point",{}) if isinstance(d,dict) else {}, d.get("regret",{}) if isinstance(d,dict) else {}):
         if isinstance(holder, dict):
             for c in cands:
-                if c in holder: return float(holder[c])
+                if c in holder:
+                    value = holder[c]
+                    if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value):
+                        raise SystemExit(f"{c} must be a finite numeric value")
+                    return float(value)
     return None
 
 def load_seed(path):
@@ -36,7 +41,8 @@ def load_seed(path):
     frz  = find(d, ("regret_freeze","always_freeze","freeze"))
     fau  = find(d, ("false_adapt","FA_u","fa_u"))
     if None in (kga,adpt,frz): raise SystemExit(f"missing regret keys in {path}: kga={kga} adapt={adpt} freeze={frz}")
-    return dict(kga=kga, adapt=adpt, freeze=frz, fau=(0.0 if fau is None else fau), src=os.path.basename(path))
+    if fau is None: raise SystemExit(f"missing false_adapt rate in {path}")
+    return dict(kga=kga, adapt=adpt, freeze=frz, fau=fau, src=os.path.basename(path))
 
 def boot_gap(x, nb=5000, seed=0):
     rng=np.random.default_rng(seed); x=np.asarray(x); n=len(x); b=np.empty(nb)
@@ -49,12 +55,12 @@ def summarize(track, seeds, alpha=0.10):
     better = "freeze" if fr.mean()<=ad.mean() else "adapt"; worse = "adapt" if better=="freeze" else "freeze"
     gb_m, gb_ci = boot_gap((fr if better=="freeze" else ad) - kga)   # gap vs better (expect ~0)
     gw_m, gw_ci = boot_gap((ad if worse=="adapt" else fr) - kga)     # gap vs worse (expect >0)
-    ties_better = gb_ci[0] <= 0 <= gb_ci[1]
+    overlaps_zero = gb_ci[0] <= 0 <= gb_ci[1]
     beats_worse = gw_ci[0] > 0
     beats_both  = (gb_ci[0] > 0) and beats_worse
     fa_ok = bool(np.all(fau <= alpha))
     verdict = ("beats-both (multi-seed)" if beats_both and fa_ok else
-               "stable no-harm" if ties_better and beats_worse and fa_ok else
+               "inconclusive vs better; nominal improvement vs worse" if overlaps_zero and beats_worse and fa_ok else
                "unstable/other")
     return dict(track=track, seeds=len(seeds), alpha=alpha,
                 regret_kga=[round(float(kga.mean()),4),round(float(kga.std()),4)],

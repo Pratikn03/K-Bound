@@ -23,39 +23,57 @@ TABLE_PATH = ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest
 LEDGER_PATH = ROOT / "docs/research/kbound/claim_ledger.json"
 FRONTIER_PATH = ROOT / "experiments/kbound/frontier_sweep_v1/decision_value_results.json"
 UNIFORM_VERDICTS_PATH = ROOT / "docs/research/kbound/paper/generated/uniform_verdicts.json"
-DECISION_METRICS_PATH = ROOT / "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json"
+DECISION_METRICS_PATH = (
+    ROOT / "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json"
+)
 HISTORICAL_CLUSTER_PATH = ROOT / "research_lock/CIFAR10C_TENT_CORRUPTION_UNIT_CI_v1.json"
-CURRENT_CLUSTER_PATH = ROOT / "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
-CURRENT_CLUSTER_TABLE_PATH = ROOT / "docs/research/kbound/paper/generated/current_policy_family_sensitivity.tex"
+CURRENT_CLUSTER_PATH = (
+    ROOT
+    / "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
+)
+CURRENT_CLUSTER_TABLE_PATH = (
+    ROOT / "docs/research/kbound/paper/generated/current_policy_family_sensitivity.tex"
+)
 HISTORICAL_HEADTOHEAD_PATH = (
-    ROOT / "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
+    ROOT
+    / "experiments/kbound/results/mixed_headtohead_v1/HEADTOHEAD_RESULTS_cifar10c_tent_primary.json"
 )
 CCT20_RELEASE_PATH = ROOT / "docs/research/kbound/paper/generated/cct20_release_manifest.json"
 CCT20_RELEASE_RECEIPT_PATH = CCT20_RELEASE_PATH.with_suffix(".json.receipt.json")
-CCT20_RUNTIME_ADDENDUM_PATH = ROOT / "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml"
-SO2SAT_DEVELOPMENT_DIR = ROOT / "experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1"
+CCT20_RUNTIME_ADDENDUM_PATH = (
+    ROOT / "research_lock/KBOUND_CCT20_EXECUTION_RUNTIME_ADDENDUM_v2.yaml"
+)
+SO2SAT_DEVELOPMENT_DIR = (
+    ROOT
+    / "experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1"
+)
 SO2SAT_SELECTION_PATH = SO2SAT_DEVELOPMENT_DIR / "so2sat_candidate_selection.json"
 SO2SAT_SELECTION_RECEIPT_PATH = SO2SAT_SELECTION_PATH.with_suffix(".json.receipt.json")
-SO2SAT_TENT_GATE_FIT_PATH = SO2SAT_DEVELOPMENT_DIR / "so2sat_tent_adam_bn_affine_probe_transfer_v1.gate_fit.json"
-SO2SAT_SAR_GATE_FIT_PATH = SO2SAT_DEVELOPMENT_DIR / "so2sat_sar_sam_bn_affine_probe_transfer_v1.gate_fit.json"
-SO2SAT_RUNTIME_AMENDMENT_PATH = ROOT / "research_lock/KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1.json"
-FMOW_FINDINGS_PATH = ROOT / "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
-POVERTY_FINDINGS_PATH = ROOT / "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
+SO2SAT_TENT_GATE_FIT_PATH = (
+    SO2SAT_DEVELOPMENT_DIR / "so2sat_tent_adam_bn_affine_probe_transfer_v1.gate_fit.json"
+)
+SO2SAT_SAR_GATE_FIT_PATH = (
+    SO2SAT_DEVELOPMENT_DIR / "so2sat_sar_sam_bn_affine_probe_transfer_v1.gate_fit.json"
+)
+SO2SAT_RUNTIME_AMENDMENT_PATH = (
+    ROOT / "research_lock/KBOUND_SO2SAT_DEVELOPMENT_RUNTIME_AMENDMENT_v1.json"
+)
+FMOW_FINDINGS_PATH = (
+    ROOT / "experiments/kbound/results/fmow_protocol_L_v1/VERIFIED_FINDINGS.json"
+)
+POVERTY_FINDINGS_PATH = (
+    ROOT / "experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json"
+)
 
 CI_CONVENTION = "baseline_regret_minus_kga_regret; positive values favor KGA"
 CURRENT_POLICY_STATUS = "current_policy_exact_rank_replay"
 HISTORICAL_POLICY_STATUS = "historical_policy_only"
-HISTORICAL_NINE_TRACK_ARCHIVE_PREFIX = (
-    "docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02/retired_tree/"
-)
 CURRENT_CLUSTER_STATUS = "retrospective_current_policy_family_sensitivity"
 CURRENT_CLUSTER_SCHEMA = "kbound-current-policy-cluster-inference-v3"
 CURRENT_POLICY_BINDING_PATHS = {
-    "crossfit": "kga/crossfit.py",
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
-    "reconciliation": "scripts/reconcile_result_panels.py",
     "preregistered_protocol": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
 }
 FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
@@ -63,16 +81,10 @@ COMPARISON_P_FIELD = "p_value_retrospective_holm_six_prospectively_named_contras
 COMPARISON_REJECT_FIELD = "retrospective_holm_six_contrasts_reject_at_0_05"
 GATE_REJECTS_BOTH_FIELD = "both_sign_flip_tests_survive_retrospective_six_contrast_holm_0_05"
 GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
-THREE_SOURCE_HISTORICAL_WORDING = (
-    "historical researcher-constructed routing aggregate; rerun required under reconciled per-track decisions"
-)
 
 
 def _load(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text())
-    if not isinstance(payload, dict):
-        raise ValueError(f"Required authority must contain a JSON object: {path}")
-    return payload
+    return json.loads(path.read_text())
 
 
 def _write(path: Path, value: dict[str, Any]) -> None:
@@ -85,46 +97,6 @@ def _sha256(path: Path) -> str:
 
 def _relative(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
-
-
-def _set_manifest_authority_metadata(table: dict[str, Any]) -> None:
-    """Set semantic and provenance fields owned by this synchronizer.
-
-    The empirical rows score observed cells, whereas the population theorem uses a
-    separately justified population-risk target.  Keeping both meanings explicit
-    prevents a measured batch difference from being presented as population-risk
-    coverage.  A wall-clock generation time is deliberately not invented here;
-    ``regenerated_utc`` elsewhere in the manifest is the dated evidence refresh.
-    """
-
-    table["generated_for"] = (
-        "all five maintained drivers: kbound_submission.tex, kbound_tmlr.tex, "
-        "kbound_short_main.tex, kbound_short_supplement.tex, and kbound_full_report.tex"
-    )
-    table["generated_at"] = None
-    table["generation_identity"] = (
-        "Artifact-generation wall-clock time is not recorded; regenerated_utc is "
-        "the canonical evidence-refresh date, not the file-creation time."
-    )
-    table["definitions"] = {
-        "population_benefit": "Delta = R_T(f_0) - R_T(f_a)",
-        "measured_cell_benefit": (
-            "Delta^cell = S(f_a; E) - S(f_0; E), the observed adapt-minus-frozen score difference for one measured cell"
-        ),
-        "false_adapt_unconditional": (
-            "FA_u^cell = (# measured cells with g=ADAPT and Delta^cell<=0)/(# measured cells) "
-            "in the released empirical rows; this empirical fraction is not population risk"
-        ),
-        "false_adapt_conditional": (
-            "FA_c^cell = (# measured ADAPT cells with Delta^cell<=0)/(# measured ADAPT cells), "
-            "when the denominator is nonzero; descriptive only"
-        ),
-        "population_certificate_target": (
-            "A population certificate requires the interval and action to concern the same "
-            "declared scalar target B; measured-cell coverage alone does not establish "
-            "population-risk coverage"
-        ),
-    }
 
 
 def _validated_separate_natural_authorities() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -149,7 +121,9 @@ def _validated_separate_natural_authorities() -> tuple[dict[str, Any], dict[str,
     )
     missing = [_relative(path) for path in required if not path.is_file()]
     if missing:
-        raise FileNotFoundError("separate natural-study release authority is incomplete: " + ", ".join(missing))
+        raise FileNotFoundError(
+            "separate natural-study release authority is incomplete: " + ", ".join(missing)
+        )
 
     cct = _load(CCT20_RELEASE_PATH)
     cct_receipt = _load(CCT20_RELEASE_RECEIPT_PATH)
@@ -180,7 +154,8 @@ def _validated_separate_natural_authorities() -> tuple[dict[str, Any], dict[str,
         or so2sat.get("selected_candidate_id") is not None
         or set(so2sat.get("candidate_ids", [])) != expected_candidates
         or set(so2sat.get("candidate_summaries", {})) != expected_candidates
-        or so2sat.get("study_binding", {}).get("protocol_id") != "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1"
+        or so2sat.get("study_binding", {}).get("protocol_id")
+        != "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1"
         or so2sat.get("gate_cal_rows_read_before_selection") != 0
         or so2sat.get("target_inputs") != []
         or so2sat.get("target_pixels_read") != 0
@@ -190,7 +165,10 @@ def _validated_separate_natural_authorities() -> tuple[dict[str, Any], dict[str,
         or so2sat_receipt.get("artifact_bytes") != SO2SAT_SELECTION_PATH.stat().st_size
     ):
         raise ValueError("So2Sat selection manifest or receipt is stale or malformed")
-    if any(row.get("feasibility", {}).get("feasible") is not False for row in so2sat["candidate_summaries"].values()):
+    if any(
+        row.get("feasibility", {}).get("feasible") is not False
+        for row in so2sat["candidate_summaries"].values()
+    ):
         raise ValueError("So2Sat release authority no longer records a negative gate-fit")
 
     return cct, so2sat
@@ -205,9 +183,15 @@ def _validated_historical_natural_diagnostics() -> tuple[dict[str, Any], dict[st
     placing either record in the claim ledger.
     """
 
-    missing = [_relative(path) for path in (FMOW_FINDINGS_PATH, POVERTY_FINDINGS_PATH) if not path.is_file()]
+    missing = [
+        _relative(path)
+        for path in (FMOW_FINDINGS_PATH, POVERTY_FINDINGS_PATH)
+        if not path.is_file()
+    ]
     if missing:
-        raise FileNotFoundError("historical natural-shift diagnostic is incomplete: " + ", ".join(missing))
+        raise FileNotFoundError(
+            "historical natural-shift diagnostic is incomplete: " + ", ".join(missing)
+        )
 
     fmow = _load(FMOW_FINDINGS_PATH)
     fmow_score = fmow.get("analyze_F", {})
@@ -242,7 +226,9 @@ def _validated_historical_natural_diagnostics() -> tuple[dict[str, Any], dict[st
     return fmow, poverty
 
 
-def _separate_natural_release_claims(cct: dict[str, Any], so2sat: dict[str, Any]) -> list[dict[str, Any]]:
+def _separate_natural_release_claims(
+    cct: dict[str, Any], so2sat: dict[str, Any]
+) -> list[dict[str, Any]]:
     counts = cct["action_exposure"]["counts"]
     if counts != {"ABSTAIN": 1, "ADAPT": 0, "FREEZE": 44}:
         raise ValueError("CCT-20 action counts drifted from the released safe-utility result")
@@ -258,7 +244,9 @@ def _separate_natural_release_claims(cct: dict[str, Any], so2sat: dict[str, Any]
             "helpful_cities": len(feasibility["helpful_cities"]),
             "harmful_cities": len(feasibility["harmful_cities"]),
             "loco_sign_accuracy": feasibility["loco_sign_accuracy"],
-            "loco_gain_over_best_fixed": feasibility["loco_routed_gain_over_best_fixed"],
+            "loco_gain_over_best_fixed": feasibility[
+                "loco_routed_gain_over_best_fixed"
+            ],
             "oracle_routing_gap": feasibility["oracle_routing_gap"],
             "feasible": False,
         }
@@ -277,7 +265,9 @@ def _separate_natural_release_claims(cct: dict[str, Any], so2sat: dict[str, Any]
             "protocol": "KBOUND_CCT20_PROSPECTIVE_CONFIRMATION_v1",
             "dataset": "CCT-20",
             "candidate_adapter": "Tent",
-            "calibration_method": ("locked development ridge gate with location-level target inference"),
+            "calibration_method": (
+                "locked development ridge gate with location-level target inference"
+            ),
             "test_split": "prospective CCT-20 trans-test target",
             "status": "no-harm",
             "supporting_artifacts": [
@@ -323,7 +313,9 @@ def _separate_natural_release_claims(cct: dict[str, Any], so2sat: dict[str, Any]
             "protocol": "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v1",
             "dataset": "So2Sat-LCZ42",
             "candidate_adapter": "Tent and SAR",
-            "calibration_method": ("locked leave-one-city-out ridge gate fit on nine development cities"),
+            "calibration_method": (
+                "locked leave-one-city-out ridge gate fit on nine development cities"
+            ),
             "test_split": "development gate-fit only; Culture-10 target unopened",
             "status": "diagnostic",
             "supporting_artifacts": [
@@ -339,7 +331,10 @@ def _separate_natural_release_claims(cct: dict[str, Any], so2sat: dict[str, Any]
                 "five independent source checkpoints",
                 "nine gate-fit cities with locked west/east spatial partitions",
                 "development outcomes are now open and cannot be reused as fresh confirmation",
-                ("v1 target action-unit contract must be resolved before any future target execution"),
+                (
+                    "v1 target action-unit contract must be resolved before any future target "
+                    "execution"
+                ),
             ],
             "allowed_wording": (
                 "negative development-stage gate-fit; no feasible candidate; stopped before "
@@ -375,62 +370,6 @@ def _decision_counts(score: dict[str, Any]) -> dict[str, int]:
         "FREEZE": score["freeze_count"],
         "ABSTAIN": score["abstain_count"],
     }
-
-
-def _controlled_grid_method(score: dict[str, Any]) -> str:
-    """Describe a current controlled-grid method from its canonical protocols."""
-
-    files = score.get("per_file")
-    if not isinstance(files, list) or not files:
-        raise ValueError("controlled-grid score is missing per-file cross-fit protocols")
-    protocols = [row.get("crossfit_protocol") for row in files]
-    if any(
-        not isinstance(protocol, dict)
-        or protocol.get("schema") != "kga-controlled-grid-crossfit-v1"
-        or protocol.get("status") != "ok"
-        for protocol in protocols
-    ):
-        raise ValueError("controlled-grid score contains a missing or unsuccessful cross-fit protocol")
-    rules = {str(protocol["rule"]) for protocol in protocols}
-    if len(rules) != 1:
-        raise ValueError("controlled-grid score contains inconsistent cross-fit rules")
-    rule = rules.pop()
-    return (
-        "three-way cell-outcome-disjoint cross-fit "
-        f"({rule}); exact-rank residual calibration on the disjoint calibration role"
-    )
-
-
-def _descriptive_nonpromotion_reason(score: dict[str, Any]) -> str:
-    """Validate descriptive interval signs and return the canonical claim boundary."""
-
-    inference = score.get("seed_inference") or {}
-    bootstrap = inference.get("descriptive_seed_bootstrap") or {}
-    gaps = bootstrap.get("gaps") or {}
-    lower_bounds = [(gaps.get(baseline) or {}).get("ci95", [None])[0] for baseline in ("always_adapt", "always_freeze")]
-    both_positive = all(isinstance(value, (int, float)) and value > 0 for value in lower_bounds)
-    if bootstrap.get("both_lower_bounds_positive") is not both_positive:
-        raise ValueError("descriptive bootstrap interval-sign metadata is inconsistent")
-    reason = inference.get("reason")
-    if not isinstance(reason, str) or not reason.strip():
-        raise ValueError("descriptive seed inference is missing its non-promotion reason")
-    return reason.strip()
-
-
-def _tent_holm_values(current_cluster: dict[str, Any]) -> tuple[float, float]:
-    comparisons = current_cluster["candidates"]["tent"]["comparisons"]
-    return (
-        float(comparisons["always_adapt"][COMPARISON_P_FIELD]),
-        float(comparisons["always_freeze"][COMPARISON_P_FIELD]),
-    )
-
-
-def _tent_posthoc_holm_values(current_cluster: dict[str, Any]) -> tuple[float, float]:
-    comparisons = current_cluster["candidates"]["tent"]["comparisons"]
-    return (
-        float(comparisons["always_adapt"]["p_value_holm_within_candidate_posthoc"]),
-        float(comparisons["always_freeze"]["p_value_holm_within_candidate_posthoc"]),
-    )
 
 
 def _ci(score: dict[str, Any], baseline: str) -> list[float] | None:
@@ -530,7 +469,10 @@ def _normalized_historical_cluster() -> dict[str, Any]:
 def _validated_current_policy_bindings(bindings: object) -> dict[str, Any]:
     """Reject missing/substituted replay dependencies before promoting results."""
     if not isinstance(bindings, dict) or set(bindings) != set(CURRENT_POLICY_BINDING_PATHS):
-        raise ValueError("current-policy cluster artifact must bind exactly " + ", ".join(CURRENT_POLICY_BINDING_PATHS))
+        raise ValueError(
+            "current-policy cluster artifact must bind exactly "
+            + ", ".join(CURRENT_POLICY_BINDING_PATHS)
+        )
     for name, relative_path in CURRENT_POLICY_BINDING_PATHS.items():
         binding = bindings[name]
         if (
@@ -556,7 +498,8 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
     family = raw.get(FAMILY_FIELD, {})
     if family.get("family_size") != 6 or family.get("alpha") != 0.05:
         raise ValueError(
-            "current-policy cluster artifact must expose retrospective Holm over the six prospectively named contrasts"
+            "current-policy cluster artifact must expose retrospective Holm over the six "
+            "prospectively named contrasts"
         )
 
     bindings = _validated_current_policy_bindings(raw.get("live_code_bindings"))
@@ -568,7 +511,9 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
     if grain.get("inference_unit") != "corruption_family" or grain.get("n_inference_units") != 6:
         raise ValueError(f"current-policy cluster candidate {candidate!r} has the wrong inference unit")
     if row.get("gate", {}).get(GATE_PASS_FIELD) is not False:
-        raise ValueError(f"current-policy cluster candidate {candidate!r} must fail the retrospective gate")
+        raise ValueError(
+            f"current-policy cluster candidate {candidate!r} must fail the retrospective gate"
+        )
 
     comparisons: dict[str, Any] = {}
     for baseline in ("always_adapt", "always_freeze"):
@@ -577,8 +522,12 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
             "point": comparison["point"],
             "ci95_unadjusted_family_bootstrap": comparison["ci"],
             "family_effects": comparison["family_effects"],
-            "p_value_one_sided_exact_sign_flip": comparison["p_value_one_sided_exact_sign_flip"],
-            "p_value_holm_within_candidate_posthoc": comparison["p_value_holm_within_candidate_posthoc"],
+            "p_value_one_sided_exact_sign_flip": comparison[
+                "p_value_one_sided_exact_sign_flip"
+            ],
+            "p_value_holm_within_candidate_posthoc": comparison[
+                "p_value_holm_within_candidate_posthoc"
+            ],
             COMPARISON_P_FIELD: comparison[COMPARISON_P_FIELD],
             COMPARISON_REJECT_FIELD: comparison[COMPARISON_REJECT_FIELD],
         }
@@ -607,7 +556,9 @@ def _normalized_current_cluster(raw: dict[str, Any], candidate: str) -> dict[str
         "within_candidate_posthoc_holm_rejects_both": row["gate"][
             "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05"
         ],
-        "retrospective_six_contrast_holm_rejects_both": row["gate"][GATE_REJECTS_BOTH_FIELD],
+        "retrospective_six_contrast_holm_rejects_both": row["gate"][
+            GATE_REJECTS_BOTH_FIELD
+        ],
         "claim_boundary": raw["claim_boundary"],
         "claim_note": (
             "Retrospective sensitivity on six observed corruption families. Ordinary family-"
@@ -719,7 +670,10 @@ def _cp95_upper(events: int, n: int) -> float | None:
         return 1.0
 
     def cdf(p: float) -> float:
-        return sum(math.comb(n, i) * (p**i) * ((1.0 - p) ** (n - i)) for i in range(events + 1))
+        return sum(
+            math.comb(n, i) * (p**i) * ((1.0 - p) ** (n - i))
+            for i in range(events + 1)
+        )
 
     lo, hi = 0.0, 1.0
     for _ in range(100):
@@ -763,84 +717,11 @@ def _claim(ledger: dict[str, Any], claim_id: str) -> dict[str, Any]:
     return next(row for row in ledger["claims"] if row["claim_id"] == claim_id)
 
 
-def _sync_three_source_claim_authority(ledger: dict[str, Any]) -> None:
-    """Normalize the live claim boundary before projecting generated surfaces."""
-    authority = _claim(ledger, "KB-CLAIM-024")
-    authority.update(
-        {
-            "claim_text": THREE_SOURCE_HISTORICAL_WORDING,
-            "status": "diagnostic",
-            "allowed_wording": THREE_SOURCE_HISTORICAL_WORDING,
-            "forbidden_wording": [
-                "promoted beats-both claim",
-                "natural-shift win",
-                "transfer result",
-            ],
-        }
-    )
-
-
-def _sync_three_source_oof(row: dict[str, Any], ledger: dict[str, Any]) -> None:
-    """Project the live KB-CLAIM-024 boundary onto the retained numeric row."""
-
-    authority = _claim(ledger, "KB-CLAIM-024")
-    claim_text = authority.get("claim_text")
-    allowed_wording = authority.get("allowed_wording")
-    forbidden_wording = authority.get("forbidden_wording", [])
-    if (
-        authority.get("status") != "diagnostic"
-        or not isinstance(claim_text, str)
-        or not claim_text.strip()
-        or not isinstance(allowed_wording, str)
-        or not allowed_wording.strip()
-        or claim_text.strip() != allowed_wording.strip()
-        or not isinstance(forbidden_wording, list)
-        or not all(isinstance(term, str) and term for term in forbidden_wording)
-        or not all(
-            phrase in claim_text.lower()
-            for phrase in (
-                "historical researcher-constructed routing aggregate",
-                "rerun required under reconciled per-track decisions",
-            )
-        )
-        or "beats both" in claim_text.lower()
-        or "beats-both" in claim_text.lower()
-        or any(term.lower() in claim_text.lower() for term in forbidden_wording)
-    ):
-        raise ValueError("KB-CLAIM-024 authority is stale or malformed")
-
-    historical_audit_seal = row.get("historical_audit_seal") or row.get("seal")
-    if historical_audit_seal and historical_audit_seal.startswith("experiments/kbound/results/nine_track_lock_v1/"):
-        historical_audit_seal = HISTORICAL_NINE_TRACK_ARCHIVE_PREFIX + historical_audit_seal
-    row.pop("seal", None)
-    row.update(
-        {
-            "claim_id": authority["claim_id"],
-            "claim_status": authority["status"],
-            "status": HISTORICAL_POLICY_STATUS,
-            "policy_synchronized": False,
-            "current_policy_authority": False,
-            "numeric_release_eligible": False,
-            "headline_promotion_eligible": False,
-            "release_eligible_win": False,
-            "verdict": claim_text.strip(),
-            "historical_audit_seal": historical_audit_seal,
-        }
-    )
-
-
 def _sync_table(
-    panel: dict[str, Any],
-    table: dict[str, Any],
-    current_cluster: dict[str, Any],
-    ledger: dict[str, Any] | None = None,
+    panel: dict[str, Any], table: dict[str, Any], current_cluster: dict[str, Any]
 ) -> None:
-    _set_manifest_authority_metadata(table)
     panels = panel["panels"]
     tracks = table["tracks"]
-    authority_ledger = ledger if ledger is not None else _load(LEDGER_PATH)
-    _sync_three_source_claim_authority(authority_ledger)
-    _sync_three_source_oof(tracks["three_source_oof"], authority_ledger)
     source = PANEL_PATH.relative_to(ROOT).as_posix()
     source_manifest = SOURCE_MANIFEST.relative_to(ROOT).as_posix()
     table["quantile_provenance"] = {
@@ -850,8 +731,8 @@ def _sync_table(
         ),
         "current_policy_scope": (
             "Current rows use the per-track calibration and quantile_rule recorded in the "
-            "source-hashed canonical panel. Controlled-grid panels use deterministic three-way "
-            "cell-outcome-disjoint fit/calibrate/score cross-fitting; natural panels use the recorded "
+            "source-hashed canonical panel. Corruption panels use per-candidate/per-run-seed "
+            "leave-one-condition-out residual calibration; natural panels use the recorded "
             "calibration-record leave-one-out transfer radius."
         ),
         "historical_artifacts": (
@@ -884,11 +765,13 @@ def _sync_table(
                 "regret": _regret(score),
                 "false_adapt": score["fa_u"],
                 "false_adapt_count": score["false_adapt_count"],
-                "cp95_upper_fa_c": _cp95_upper(score["false_adapt_count"], score["adapt_count"]),
+                "cp95_upper_fa_c": _cp95_upper(
+                    score["false_adapt_count"], score["adapt_count"]
+                ),
                 "decision_counts": _decision_counts(score),
                 "n_cells": score["n"],
                 "seeds": panels["imagenetc"]["panel"]["seeds"],
-                "quantile_rule": _controlled_grid_method(score),
+                "quantile_rule": "per-candidate/per-seed exact-rank leave-one-condition-out residual calibration",
                 "point_beats_both": score["point_beats_both"],
                 "ci_robust_beats_both": score["seed_inference"]["ci_robust_beats_both"],
                 "comparison_inference": _comparison_inference(score),
@@ -899,11 +782,9 @@ def _sync_table(
                 "historical_audit_seal": historical_seal,
             }
         )
-    imagenetc_sar_reason = _descriptive_nonpromotion_reason(imagenetc["sar"])
     tracks["imagenetc_sar"]["verdict"] = (
-        f"Pooled point estimate is below both fixed policies, with {imagenetc['sar']['false_adapt_count']} "
-        f"false adaptations in {imagenetc['sar']['n']} cells; "
-        f"both descriptive run-seed gap intervals have positive lower bounds, but {imagenetc_sar_reason}."
+        "Pooled point estimate is below both fixed policies, with one false adaptation in 135 cells; "
+        "the seed bootstrap touches zero on the freeze side, so CI-robust beats-both is not claimed."
     )
 
     cifar_panel = panels["cifar10c"]["panel"]
@@ -939,7 +820,9 @@ def _sync_table(
                 "n_cells": score["n"],
                 "seeds": cifar_panel["seeds"],
                 "conditions_per_seed": score["n"] // len(cifar_panel["seeds"]),
-                "quantile_rule": _controlled_grid_method(score),
+                "quantile_rule": (
+                    "per-candidate/per-run-seed exact-rank leave-one-condition-out empirical residual calibration"
+                ),
                 "point_beats_both": score["point_beats_both"],
                 "ci_robust_beats_both": score["seed_inference"]["ci_robust_beats_both"],
                 "run_seed_inference": score["seed_inference"],
@@ -958,17 +841,15 @@ def _sync_table(
         )
         if candidate == "tent":
             row["historical_cluster_resampling"] = _normalized_historical_cluster()
-    tent_adapt_p, tent_freeze_p = _tent_holm_values(current_cluster)
     tracks["cifar10c_tent"]["verdict"] = (
-        "Current exact-rank point regret is lower than the regret of each fixed policy. In a retrospective "
+        "Current exact-rank point estimate beats both fixed policies. In a retrospective "
         "current-policy sensitivity over six corruption families, both ordinary family-bootstrap "
         "intervals are positive; however, p-values from retrospective Holm adjustment over the "
-        f"six prospectively named contrasts are {tent_adapt_p} versus always-adapt and "
-        f"{tent_freeze_p} versus always-freeze, so no cluster-robust, confirmatory, or "
+        "six prospectively named contrasts are 0.09375, so no cluster-robust, confirmatory, or "
         "independent-checkpoint win is claimed."
     )
     tracks["cifar10c_eata"]["verdict"] = (
-        "Current exact-rank point regret is lower than the regret of each fixed policy, but the ordinary adapt-side "
+        "Current exact-rank point estimate beats both fixed policies, but the ordinary adapt-side "
         "family-bootstrap interval crosses zero and the retrospective Holm analysis over the "
         "six prospectively named contrasts fails; no cluster-robust or independent-checkpoint "
         "claim is made."
@@ -992,7 +873,9 @@ def _sync_table(
             "n_test": office["n"],
             "seeds": office_panel["primary"]["test_seeds"],
             "decision_counts": _decision_counts(office),
-            "cp95_upper_fa_c": _cp95_upper(office["false_adapt_count"], office["adapt_count"]),
+            "cp95_upper_fa_c": _cp95_upper(
+                office["false_adapt_count"], office["adapt_count"]
+            ),
             "point_beats_both": office["point_beats_both"],
             "ci_robust_beats_both": office["seed_inference"]["ci_robust_beats_both"],
             "comparison_inference": _comparison_inference(office),
@@ -1074,7 +957,9 @@ def _sync_table(
             "false_adapt_count": camelyon["false_adapt_count"],
             "n_test": camelyon["n"],
             "decision_counts": _decision_counts(camelyon),
-            "cp95_upper_fa_c": _cp95_upper(camelyon["false_adapt_count"], camelyon["adapt_count"]),
+            "cp95_upper_fa_c": _cp95_upper(
+                camelyon["false_adapt_count"], camelyon["adapt_count"]
+            ),
             "guarantee_status": "exercised",
             "dev_seeds": camelyon_panel["replay"]["calibration_seeds"],
             "test_seeds": camelyon_panel["replay"]["test_seeds"],
@@ -1090,7 +975,7 @@ def _sync_table(
             "historical_audit_seal": camelyon_seal,
             "verdict": (
                 "Opened OOD diagnostic: KGA adapts on all 18 conditions and ties always-adapt; "
-                "it is not prospective and does not improve on both fixed-policy regrets."
+                "it is not prospective and not a beats-both result."
             ),
             "source_caveat": camelyon_panel["claim_scope"],
             "reproducibility_status": "REPRODUCIBLE_FROM_CANONICAL_COMPACT_SOURCE",
@@ -1125,11 +1010,8 @@ def _sync_table(
             "untouched_target_domain_evaluation": False,
             "independent_checkpoint_identities_recorded": False,
             "protocol": camelyon_b_v2_panel["protocol"],
-            "quantile_rule": _controlled_grid_method(camelyon_b_v2_sar),
             "verdict": (
-                f"Within-seed diagnostic: KGA point regret {camelyon_b_v2_sar['regret']['kga']} versus "
-                f"{camelyon_b_v2_sar['regret']['always_adapt']} for always-adapt and "
-                f"{camelyon_b_v2_sar['regret']['always_freeze']} for always-freeze; the run seeds do not record "
+                "Within-seed diagnostic point ordering only; the run seeds do not record "
                 "independent checkpoint identities and the study is not an untouched "
                 "hospital-domain evaluation."
             ),
@@ -1201,7 +1083,7 @@ def _sync_table(
             "cp95_upper_fa_c": None,
             "verdict": (
                 "Locked negative diagnostic: exact-rank KGA makes no ADAPT decisions and ties "
-                "always-freeze, so its regret is not lower than both fixed-policy regrets."
+                "always-freeze, so it does not beat both fixed policies."
             ),
             "source_note": cifar101_panel["claim_scope"],
         }
@@ -1214,11 +1096,6 @@ def _sync_table(
         "Current rows below are refreshed from the source-hashed canonical panel. "
         "The controlled multimodal D33 row is a separately sealed auxiliary result; "
         "iWildCam remains withheld. This block is not an independent inference authority."
-    )
-    accounting["fa_u_identity"] = (
-        "No in-sample rank identity is promoted. Current controlled-grid false-adapt counts "
-        "come from the cell-outcome-disjoint three-way cross-fit. In particular, CIFAR-10-C "
-        "Tent records 2/2160 false adaptations and ImageNet-C SAR records 0/135."
     )
     accounting_rows = accounting.setdefault("rows", [])
     # PACS has only aggregate seed summaries in the canonical authority; its archived
@@ -1242,17 +1119,15 @@ def _sync_table(
                 "ABSTAIN": score["abstain_count"],
                 "false_adapts": score["false_adapt_count"],
                 "FA_u": score["fa_u"],
-                "cp95_upper_fa_c": _cp95_upper(score["false_adapt_count"], score["adapt_count"]),
+                "cp95_upper_fa_c": _cp95_upper(
+                    score["false_adapt_count"], score["adapt_count"]
+                ),
                 "guarantee": "exercised",
             }
         )
 
     for track, score, guarantee in (
-        (
-            "ImageNet-C SAR",
-            imagenetc["sar"],
-            f"observed false-adapt count is {imagenetc['sar']['false_adapt_count']}/{imagenetc['sar']['n']}",
-        ),
+        ("ImageNet-C SAR", imagenetc["sar"], "observed false-adapt count is 1/135"),
         ("Office-Home M v2", office, "not exercised: zero ADAPT decisions"),
         ("Camelyon17 OOD", camelyon, "vacuous on an all-helpful opened diagnostic"),
         ("RxRx1 J", rxrx, "not exercised: zero ADAPT decisions"),
@@ -1332,11 +1207,10 @@ def _sync_table(
             "worse_than_always_adapt_backbones": f"{worse}/10",
             "source": source,
             "source_manifest": source_manifest,
-            "quantile_rule": _controlled_grid_method(next(iter(candidates.values()))),
+            "quantile_rule": "per-backbone/per-seed exact-rank leave-one-condition-out residual calibration",
             "verdict": (
                 f"Negative four-seed, ten-backbone diagnostic: KGA is worse than always-adapt on "
-                f"{worse}/10 backbones; no architecture has confidence-supported lower regret "
-                "than both fixed policies."
+                f"{worse}/10 backbones; no architecture has CI-robust beats-both."
             ),
             "per_backbone": {
                 name: {
@@ -1355,7 +1229,8 @@ def _sync_table(
 
     table["ci_convention"] = CI_CONVENTION
     normalized_cluster = {
-        candidate: _normalized_current_cluster(current_cluster, candidate) for candidate in ("tent", "eata", "sar")
+        candidate: _normalized_current_cluster(current_cluster, candidate)
+        for candidate in ("tent", "eata", "sar")
     }
     table["current_policy_family_sensitivity"] = {
         "status": CURRENT_CLUSTER_STATUS,
@@ -1373,8 +1248,7 @@ def _sync_table(
         "release_interpretation": (
             "Tent has positive ordinary family-bootstrap intervals against both fixed policies, "
             "but its two p-values from retrospective Holm adjustment over the six prospectively "
-            f"named contrasts are {tent_adapt_p} versus always-adapt and {tent_freeze_p} "
-            "versus always-freeze. EATA and SAR also fail the retrospective gate. No "
+            "named contrasts are 0.09375. EATA and SAR also fail the retrospective gate. No "
             "cluster-robust or confirmatory win is promoted."
         ),
     }
@@ -1412,7 +1286,9 @@ def _sync_table(
     }
 
 
-def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], current_cluster: dict[str, Any]) -> None:
+def _sync_uniform_verdicts(
+    panel: dict[str, Any], uniform: dict[str, Any], current_cluster: dict[str, Any]
+) -> None:
     source = PANEL_PATH.relative_to(ROOT).as_posix()
     source_manifest = SOURCE_MANIFEST.relative_to(ROOT).as_posix()
     panels = panel["panels"]
@@ -1458,7 +1334,9 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
                 "FA_u": score.get("fa_u"),
                 "better_policy": better,
                 "point_beats_both": score["point_beats_both"],
-                "ci_robust_beats_both": score.get("seed_inference", {}).get("ci_robust_beats_both", False),
+                "ci_robust_beats_both": score.get("seed_inference", {}).get(
+                    "ci_robust_beats_both", False
+                ),
                 "survives_wave_holm": None,
                 "verdict": verdict,
                 "evidence_tier": evidence_tier,
@@ -1472,7 +1350,9 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
         )
         if decision_counts:
             row["decision_counts"] = _decision_counts(score)
-            row["cp95_upper_fa_c"] = _cp95_upper(score["false_adapt_count"], score["adapt_count"])
+            row["cp95_upper_fa_c"] = _cp95_upper(
+                score["false_adapt_count"], score["adapt_count"]
+            )
 
     for candidate, track in (
         ("tent", "CIFAR-10-C Tent"),
@@ -1486,11 +1366,11 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
             score,
             unit=f"{len(cifar['seeds'])} run seeds x {score['n'] // len(cifar['seeds'])} cells",
             verdict=(
-                "current-policy point regret is lower than each fixed-policy regret; retrospective six-family sensitivity only; "
+                "current-policy point beats both; retrospective six-family sensitivity only; "
                 "retrospective six-named-contrast Holm gate fails"
                 if candidate == "tent"
                 else (
-                    "current-policy point regret is lower than each fixed-policy regret; adapt-side family interval crosses zero; "
+                    "current-policy point beats both; adapt-side family interval crosses zero; "
                     "retrospective six-named-contrast Holm gate fails"
                     if candidate == "eata"
                     else "negative arm: current-policy KGA has higher regret than always-adapt"
@@ -1521,7 +1401,7 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
             verdict=(
                 "point estimate below both fixed policies; not CI-robust"
                 if score["point_beats_both"]
-                else "point regret is not lower than both fixed-policy regrets"
+                else "does not beat both fixed policies"
             ),
             evidence_tier="source-hashed current exact-rank replay",
             note="Current canonical per-candidate exact-rank row.",
@@ -1542,10 +1422,7 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
         "Camelyon17 OOD",
         camelyon,
         unit=f"opened OOD test diagnostic n={camelyon['n']}",
-        verdict=(
-            "ties always-adapt on an all-helpful opened diagnostic; its regret is not lower "
-            "than both fixed-policy regrets"
-        ),
+        verdict="ties always-adapt on an all-helpful opened diagnostic; not beats-both",
         evidence_tier="source-hashed opened diagnostic",
         note=panels["camelyon17"]["ood"]["claim_scope"],
     )
@@ -1601,7 +1478,7 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
         unit="4 run seeds x 10 backbones x 12 conditions",
         verdict="negative architecture-panel diagnostic; KGA is worse than always-adapt on 8/10 backbones",
         evidence_tier="source-hashed current exact-rank replay",
-        note="No backbone has confidence-supported lower regret than both fixed policies.",
+        note="No backbone has a CI-robust beats-both result.",
     )
 
     historical_h2h = _row_by_track(rows, "Mixed head-to-head (CIFAR-10-C Tent primary)")
@@ -1665,8 +1542,7 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
         "are also unadjusted; Holm applies only to their archived p-values."
     )
     meta["rule"] = (
-        "The point_beats_both field means current KGA regret is lower than both fixed-policy "
-        "regrets; it is not an accuracy claim. No current "
+        "Point beats-both means current KGA regret is lower than both fixed policies. No current "
         "row is promoted as CI-robust unless its current-policy inference explicitly supports it."
     )
     meta["integrity"] = (
@@ -1674,9 +1550,8 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
         "withdrawn, and earlier-policy evidence is explicitly segregated."
     )
     meta["radius_rule"] = (
-        "Current controlled-grid rows use canonical three-way cell-outcome-disjoint cross-fit; "
-        "natural-transfer rows retain their recorded calibration-record leave-one-out radius. "
-        "Earlier clamped/interpolated policies "
+        "Current rows use the unclamped exact empirical rank and per-track leave-one-out "
+        "calibration recorded in the canonical panel. Earlier clamped/interpolated policies "
         "appear only in explicitly historical, non-release-eligible evidence."
     )
     meta["stale_rows_requiring_pipeline_regeneration"] = [
@@ -1702,7 +1577,9 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
         "source_manifest": source_manifest,
         "source_manifest_sha256": _sha256(SOURCE_MANIFEST),
         "scope": "Current rows are canonical; explicitly named earlier-policy fields are historical only.",
-        "current_policy_family_sensitivity_artifact": (CURRENT_CLUSTER_PATH.relative_to(ROOT).as_posix()),
+        "current_policy_family_sensitivity_artifact": (
+            CURRENT_CLUSTER_PATH.relative_to(ROOT).as_posix()
+        ),
         "current_policy_family_sensitivity_sha256": _sha256(CURRENT_CLUSTER_PATH),
     }
     meta["current_policy_family_sensitivity"] = {
@@ -1719,8 +1596,6 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
     # a generated release surface: Phase 2 must rebuild the family from a
     # policy-synchronized arm inventory.
     uniform["wave_holm"] = []
-    tent_adapt_p, tent_freeze_p = _tent_holm_values(current_cluster)
-    tent_adapt_posthoc, tent_freeze_posthoc = _tent_posthoc_holm_values(current_cluster)
     uniform["migration"] = {
         "status": "current_policy_reconciled_phase1",
         "current_policy_point_beats_both": [
@@ -1732,11 +1607,9 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
             "positive_unadjusted_intervals_vs_both": ["CIFAR-10-C Tent"],
             "retrospective_six_contrast_holm_rejects_both": [],
             "note": (
-                f"Tent's within-candidate two-contrast Holm p-values are {tent_adapt_posthoc} "
-                f"versus always-adapt and {tent_freeze_posthoc} versus always-freeze, but that "
+                "Tent's within-candidate two-contrast Holm p-values are 0.03125, but that "
                 "comparison family is post hoc. The p-values from retrospective Holm adjustment "
-                f"over the six prospectively named contrasts are {tent_adapt_p} versus "
-                f"always-adapt and {tent_freeze_p} versus always-freeze."
+                "over the six prospectively named contrasts are 0.09375 for both Tent baselines."
             ),
         },
         "current_policy_negative_or_tie_diagnostics": [
@@ -1764,7 +1637,9 @@ def _sync_uniform_verdicts(panel: dict[str, Any], uniform: dict[str, Any], curre
     }
 
 
-def _sync_decision_metrics(panel: dict[str, Any], metrics: dict[str, Any], current_cluster: dict[str, Any]) -> None:
+def _sync_decision_metrics(
+    panel: dict[str, Any], metrics: dict[str, Any], current_cluster: dict[str, Any]
+) -> None:
     source = PANEL_PATH.relative_to(ROOT).as_posix()
     source_manifest = SOURCE_MANIFEST.relative_to(ROOT).as_posix()
     panels = panel["panels"]
@@ -1773,15 +1648,15 @@ def _sync_decision_metrics(panel: dict[str, Any], metrics: dict[str, Any], curre
 
     def sync_score(track: str, score: dict[str, Any], *, seeds: list[int], note: str) -> None:
         matches = [row for row in rows if row.get("track") == track]
-        row: dict[str, Any] = matches[0] if matches else {"track": track}
+        row = matches[0] if matches else {"track": track}
         if not matches:
             rows.append(row)
-        actions: dict[str, Any] = row.setdefault("actions", {})
+        row.setdefault("actions", {})
         for stale in ("superseded_aggregate", "reproduction_script", "supplemental_multiseed_stability"):
             row.pop(stale, None)
         for action, field in (("adapt", "adapt_count"), ("freeze", "freeze_count"), ("abstain", "abstain_count")):
             count = score[field]
-            actions[action] = {
+            row["actions"][action] = {
                 "count": count,
                 "rate": count / score["n"],
                 "ci95_wilson": _wilson(count, score["n"]),
@@ -1803,13 +1678,6 @@ def _sync_decision_metrics(panel: dict[str, Any], metrics: dict[str, Any], curre
                 "note": note,
             }
         )
-        per_file = score.get("per_file")
-        if (
-            isinstance(per_file, list)
-            and per_file
-            and any(isinstance(item, dict) and "crossfit_protocol" in item for item in per_file)
-        ):
-            row["radius_rule"] = _controlled_grid_method(score)
         row["false_adapt_unconditional"] = {
             "count": score["false_adapt_count"],
             "n": score["n"],
@@ -1821,10 +1689,14 @@ def _sync_decision_metrics(panel: dict[str, Any], metrics: dict[str, Any], curre
             "false_adapts": score["false_adapt_count"],
             "n_adapt_decisions": score["adapt_count"],
             "rate": score["fa_c"],
-            "cp95_upper": _cp95_upper(score["false_adapt_count"], score["adapt_count"]),
+            "cp95_upper": _cp95_upper(
+                score["false_adapt_count"], score["adapt_count"]
+            ),
             "guarantee_status": "exercised" if score["adapt_count"] else "not_exercised_zero_adapt",
         }
-        row["interval_coverage_observed"] = {"status": "not_promoted_from_canonical_score_summary"}
+        row["interval_coverage_observed"] = {
+            "status": "not_promoted_from_canonical_score_summary"
+        }
         row["theoretical_coverage"] = {
             "status": "conditional_on_declared_premise",
             "note": "No theorem premise is inferred from an empirical score summary.",
@@ -1888,8 +1760,8 @@ def _sync_decision_metrics(panel: dict[str, Any], metrics: dict[str, Any], curre
                 "retrospective Holm gate over the six prospectively named contrasts."
             ),
         )
-        _row_by_track(rows, track)["current_policy_family_sensitivity"] = _normalized_current_cluster(
-            current_cluster, candidate
+        _row_by_track(rows, track)["current_policy_family_sensitivity"] = (
+            _normalized_current_cluster(current_cluster, candidate)
         )
 
     imagenetc = panels["imagenetc"]["panel"]
@@ -1928,10 +1800,7 @@ def _sync_decision_metrics(panel: dict[str, Any], metrics: dict[str, Any], curre
         "Camelyon17",
         camelyon,
         seeds=panels["camelyon17"]["ood"]["replay"]["test_seeds"],
-        note=(
-            "Opened all-helpful OOD diagnostic; not prospective, and its regret is not lower "
-            "than both fixed-policy regrets."
-        ),
+        note="Opened all-helpful OOD diagnostic; not prospective and not beats-both.",
     )
 
     rxrx = panels["rxrx1"]["primary_model_seed0"]["exact_rank_transfer_score"]
@@ -2060,39 +1929,25 @@ def _sync_ledger(
 
     certificate = _claim(ledger, "KB-CLAIM-003")
     certificate["claim_text"] = (
-        "For a fixed declared scalar target B at the declared evaluation unit, valid marginal "
-        "interval coverage P(|B_hat-B|<=epsilon)>=1-alpha makes the unconditional wrong-direction "
-        "commitment probability P(g=ADAPT and B<=0) at most alpha. This does not bound "
-        "P(B<=0 | g=ADAPT) without further conditions and does not identify an observed batch "
-        "outcome with population risk."
+        "If P(|Delta_hat-Delta| <= epsilon) >= 1-alpha, the KGA interval rule controls the "
+        "unconditional false-adapt event FA_u at level alpha."
     )
     certificate["assumptions"] = [
-        (
-            "valid marginal interval coverage for the declared scalar target on the common "
-            "probability space including fitting, candidate, and evaluation randomness"
-        ),
-        ("finite benefit and estimate, measurable nonnegative possibly infinite radius, and alpha in (0,1)"),
-        (
-            "estimate and radius available without the next evaluation unit's labels; "
-            "exchangeability of the actual scores or another justified calibration argument "
-            "is needed when using conformal calibration"
-        ),
+        "valid marginal interval coverage",
+        "exchangeability or another justified calibration argument is one route to coverage",
     ]
-    certificate["allowed_wording"] = "P(g=ADAPT and B<=0) <= alpha under marginal coverage for B"
+    certificate["allowed_wording"] = "FA_u <= alpha under interval coverage"
 
-    tent_adapt_p, tent_freeze_p = _tent_holm_values(current_cluster)
     cifar = _claim(ledger, "KB-CLAIM-010")
     cifar.update(
         {
             "claim_text": (
-                "CIFAR-10-C stress grid: Tent and EATA have lower pooled point regret than each "
-                "fixed policy under the current exact-rank replay, while SAR has higher regret "
-                "than always-adapt. "
+                "CIFAR-10-C stress grid: Tent and EATA beat both fixed policies in pooled point "
+                "estimates under the current exact-rank replay, while SAR loses to always-adapt. "
                 "A retrospective current-policy sensitivity over six corruption families gives "
                 "Tent positive ordinary family-bootstrap intervals against both baselines, but "
                 "the p-values from retrospective Holm adjustment over the six prospectively "
-                f"named contrasts are {tent_adapt_p} versus always-adapt and {tent_freeze_p} "
-                "versus always-freeze; EATA and SAR also fail the "
+                "named contrasts are 0.09375 for both Tent contrasts; EATA and SAR also fail the "
                 "two-baseline gate."
             ),
             "supporting_artifacts": [
@@ -2100,7 +1955,6 @@ def _sync_ledger(
                 source_manifest,
                 CURRENT_CLUSTER_PATH.relative_to(ROOT).as_posix(),
             ],
-            "calibration_method": _controlled_grid_method(panel["panels"]["cifar10c"]["panel"]["candidates"]["tent"]),
             "assumptions": [
                 "controlled cross-fitted grid",
                 "run seeds share the archived checkpoint/protocol",
@@ -2131,10 +1985,14 @@ def _sync_ledger(
                 FAMILY_FIELD: current_cluster[FAMILY_FIELD],
                 "candidates": {
                     candidate: {
-                        "pointwise_family_intervals_positive_vs_both": current_cluster["candidates"][candidate]["gate"][
+                        "pointwise_family_intervals_positive_vs_both": current_cluster[
+                            "candidates"
+                        ][candidate]["gate"][
                             "both_pointwise_95pct_cluster_bootstrap_intervals_positive"
                         ],
-                        "within_candidate_posthoc_holm_rejects_both": current_cluster["candidates"][candidate]["gate"][
+                        "within_candidate_posthoc_holm_rejects_both": current_cluster[
+                            "candidates"
+                        ][candidate]["gate"][
                             "both_one_sided_sign_flip_tests_survive_within_candidate_posthoc_holm_0.05"
                         ],
                         "retrospective_six_contrast_holm_rejects_both": False,
@@ -2155,7 +2013,8 @@ def _sync_ledger(
                 "Holm-adjusted p-values and unadjusted paired intervals are historical only."
             ),
             "calibration_method": (
-                "loo_gbr + conformal (KGA); protocol-matched, non-official historical POEM/AETTA ports"
+                "loo_gbr + conformal (KGA); protocol-matched, non-official historical "
+                "POEM/AETTA ports"
             ),
             "status": "diagnostic",
             "supporting_artifacts": [
@@ -2202,32 +2061,25 @@ def _sync_ledger(
             "artifact_pointer_correction_2026_08_27": (
                 "The sealed reconciliation result and verdict are present and hash-verified. "
                 "They support withdrawal of the pooled Protocol G headline; they do not turn "
-                "the separate opened OOD row into prospective evidence of lower regret than "
-                "both fixed policies."
+                "the separate opened OOD row into a prospective or beats-both result."
             ),
         }
     )
     camelyon_withdrawn.pop("artifact_pointer_correction_2026_07_26", None)
 
     imagenetc = _claim(ledger, "KB-CLAIM-011")
-    imagenetc_sar = panel["panels"]["imagenetc"]["panel"]["candidates"]["sar"]
-    imagenetc_reason = _descriptive_nonpromotion_reason(imagenetc_sar)
     imagenetc.update(
         {
             "claim_text": (
-                f"ImageNet-C SAR three-way cross-fit panel has a pooled point estimate below both fixed policies, "
-                "and both descriptive run-seed gap intervals have positive lower bounds; "
-                f"however, {imagenetc_reason}. FA_u is "
-                f"{imagenetc_sar['false_adapt_count']}/{imagenetc_sar['n']}."
+                "ImageNet-C SAR exact-LOO panel has a pooled point estimate below both fixed policies, "
+                "but the seed-level freeze comparison touches zero and FA_u is 1/135."
             ),
             "status": "no-harm",
             "supporting_artifacts": [source, source_manifest],
-            "calibration_method": _controlled_grid_method(imagenetc_sar),
+            "calibration_method": "exact_rank_leave_one_condition_out_residual_calibration",
             "test_split": "27 cross-fitted conditions per seed x 5 seeds",
             "assumptions": ["controlled grid", "seed is the primary inference unit"],
-            "allowed_wording": (
-                "pooled point-estimate no-harm; no confidence-supported two-baseline improvement claim"
-            ),
+            "allowed_wording": "pooled point-estimate no-harm; no CI-robust beats-both claim",
             "forbidden_wording": ["zero false adaptation", "CI-supported beats-both", "natural-shift win"],
         }
     )
@@ -2277,7 +2129,17 @@ def _sync_ledger(
         }
     )
 
-    _sync_three_source_claim_authority(ledger)
+    mixture = _claim(ledger, "KB-CLAIM-024")
+    mixture.update(
+        {
+            "status": "diagnostic",
+            "allowed_wording": (
+                "historical researcher-constructed routing aggregate; rerun required under reconciled "
+                "per-track decisions"
+            ),
+            "forbidden_wording": ["promoted beats-both claim", "natural-shift win", "transfer result"],
+        }
+    )
 
     pacs = _claim(ledger, "KB-CLAIM-041")
     pacs.update(
@@ -2297,14 +2159,13 @@ def _sync_ledger(
     )
 
     imagenetr = _claim(ledger, "KB-CLAIM-042")
-    imagenetr_candidate = next(iter(panel["panels"]["imagenet_r"]["panel"]["candidates"].values()))
     imagenetr.update(
         {
             "status": "diagnostic",
             "supporting_artifacts": [source, source_manifest],
-            "calibration_method": _controlled_grid_method(imagenetr_candidate),
+            "calibration_method": "per-backbone/per-seed exact-rank LOO residual calibration",
             "claim_text": (
-                "ImageNet-R Protocol D three-way cross-fit replay is a negative architecture-panel diagnostic: "
+                "ImageNet-R Protocol D exact-LOO replay is a negative architecture-panel diagnostic: "
                 "KGA is worse than always-adapt on 8/10 backbones."
             ),
             "allowed_wording": "negative four-seed architecture-panel diagnostic",
@@ -2391,28 +2252,26 @@ def _sync_ledger(
             "confidence_intervals": "ordinary unadjusted family-bootstrap intervals",
             "holm_scope": "six sign-flip p-values only",
             "tent_adjusted_p_values": {
-                "versus_always_adapt": tent_adapt_p,
-                "versus_always_freeze": tent_freeze_p,
+                "versus_always_adapt": 0.09375,
+                "versus_always_freeze": 0.09375,
             },
             "release_verdict": (
-                "no candidate passes both baselines at family-wise alpha 0.05; no cluster-robust or confirmatory win"
+                "no candidate passes both baselines at family-wise alpha 0.05; no "
+                "cluster-robust or confirmatory win"
             ),
             "separate_families": (
-                "CCT-20 two-comparison inference and archived POEM/AETTA p-values are not pooled with the CIFAR family"
+                "CCT-20 two-comparison inference and archived POEM/AETTA p-values are not "
+                "pooled with the CIFAR family"
             ),
         },
     }
     ledger["generated_at"] = "2026-08-29"
-    ledger["generation_identity"] = (
-        "generated_at is the historical evidence-synchronization date retained for downstream "
-        "compatibility; it is not an artifact-creation timestamp."
-    )
 
     camelyon_b_v2 = panel["panels"]["camelyon17"]["b_v2_diagnostic"]
     camelyon_b_v2_sar = camelyon_b_v2["panel"]["candidates"]["sar"]
     if (
         camelyon_b_v2["headline_promotion"].get("eligible") is not False
-        or camelyon_b_v2_sar.get("point_beats_both") is not False
+        or camelyon_b_v2_sar.get("point_beats_both") is not True
         or camelyon_b_v2_sar.get("seed_inference", {}).get("ci_robust_beats_both") is not False
     ):
         raise ValueError("Camelyon17 B-v2 SAR diagnostic scope drifted")
@@ -2439,7 +2298,9 @@ def _sync_ledger(
             "supporting_artifacts": [
                 "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json"
             ],
-            "allowed_wording": ("historical 2026-08-24 target-search audit, superseded for current project status"),
+            "allowed_wording": (
+                "historical 2026-08-24 target-search audit, superseded for current project status"
+            ),
             "forbidden_wording": [
                 "current natural panel is prospective",
                 "unopened target win",
@@ -2476,8 +2337,7 @@ def _sync_ledger(
             "claim_id": "KB-CLAIM-047",
             "claim_text": (
                 "Camelyon17 OOD exact-rank replay is an opened all-helpful diagnostic: KGA adapts "
-                "on all 18 conditions and ties always-adapt, so it is neither prospective nor "
-                "lower-regret than both fixed policies."
+                "on all 18 conditions and ties always-adapt, so it is neither prospective nor beats-both."
             ),
             "claim_type": "empirical",
             "claim_tier": "B",
@@ -2534,10 +2394,8 @@ def _sync_ledger(
         {
             "claim_id": "KB-CLAIM-053",
             "claim_text": (
-                f"Camelyon17 B-v2 SAR three-way cross-fit has point regret {camelyon_b_v2_sar['regret']['kga']}, "
-                f"versus {camelyon_b_v2_sar['regret']['always_adapt']} for always-adapt and "
-                f"{camelyon_b_v2_sar['regret']['always_freeze']} for always-freeze, in a "
-                "three-run within-seed replay; the run seeds do not record independent "
+                "Camelyon17 B-v2 SAR has lower point regret than both fixed policies in a "
+                "three-run within-seed replay, but the run seeds do not record independent "
                 "checkpoint identities and the study is not an untouched hospital-domain "
                 "evaluation."
             ),
@@ -2546,7 +2404,9 @@ def _sync_ledger(
             "protocol": "CAMELYON17_B_V2_ARCHIVED_DIAGNOSTIC",
             "dataset": "Camelyon17 B-v2",
             "candidate_adapter": "sar",
-            "calibration_method": (_controlled_grid_method(camelyon_b_v2_sar)),
+            "calibration_method": (
+                "per-candidate/per-run-seed exact-rank leave-one-condition-out residual calibration"
+            ),
             "test_split": "three opened within-seed 36-condition grids",
             "status": "diagnostic",
             "supporting_artifacts": [source, source_manifest],
@@ -2556,7 +2416,7 @@ def _sync_ledger(
                 "independent checkpoint identities are not recorded",
             ],
             "allowed_wording": (
-                "Camelyon17 B-v2 SAR within-seed diagnostic point values; no natural-domain "
+                "Camelyon17 B-v2 SAR within-seed diagnostic point ordering; no natural-domain "
                 "or independent-checkpoint promotion"
             ),
             "forbidden_wording": [
@@ -2588,7 +2448,9 @@ def _sync_ledger(
                 "historical result outside the source-hashed canonical panel",
                 "stored false_adapt=0.375 is conditional FA_c, not theorem-controlled FA_u",
             ],
-            "allowed_wording": ("historical FMoW non-clearance: KGA matches freeze and trails adapt"),
+            "allowed_wording": (
+                "historical FMoW non-clearance: KGA matches freeze and trails adapt"
+            ),
             "forbidden_wording": [
                 "canonical-panel FMoW result",
                 "FMoW routing win",
@@ -2617,7 +2479,9 @@ def _sync_ledger(
                 "development-only screen outside the source-hashed canonical panel",
                 "no held-out score exists",
             ],
-            "allowed_wording": ("PovertyMap development-screen stop; held-out evaluation did not run"),
+            "allowed_wording": (
+                "PovertyMap development-screen stop; held-out evaluation did not run"
+            ),
             "forbidden_wording": [
                 "PovertyMap target result",
                 "PovertyMap routing win",
@@ -2625,7 +2489,9 @@ def _sync_ledger(
             ],
         },
     ]
-    closure_claims.extend(_separate_natural_release_claims(cct20_authority, so2sat_authority))
+    closure_claims.extend(
+        _separate_natural_release_claims(cct20_authority, so2sat_authority)
+    )
     by_id = {row["claim_id"]: row for row in ledger["claims"]}
     for row in closure_claims:
         if row["claim_id"] in by_id:
@@ -2669,7 +2535,7 @@ def _sync_frontier(panel: dict[str, Any], frontier_data: dict[str, Any]) -> None
         frontier_data["abstention"]["per_cell_tracks"][key] = diagnostics
     frontier_data["reconciliation_source"] = {
         "canonical_panel": PANEL_PATH.relative_to(ROOT).as_posix(),
-        "note": "ImageNet-C and ImageNet-R kappa sweeps use canonical three-way cross-fit radii.",
+        "note": "ImageNet-C and ImageNet-R kappa sweeps use source-replayed exact-LOO radii.",
     }
 
 
@@ -2691,7 +2557,7 @@ def main() -> None:
     # Validate every candidate before writing any generated release surface.
     for candidate in ("tent", "eata", "sar"):
         _normalized_current_cluster(current_cluster, candidate)
-    _sync_table(panel, table, current_cluster, ledger)
+    _sync_table(panel, table, current_cluster)
     _sync_uniform_verdicts(panel, uniform, current_cluster)
     _sync_decision_metrics(panel, decision_metrics, current_cluster)
     _sync_ledger(ledger, current_cluster, panel)

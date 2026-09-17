@@ -1,6 +1,13 @@
 # K-Bound / KGA — Canonical Status & Open-Problem Ledger
 
-**This is the single source of truth.** Last reconciled: 2026-07-02 (Wave 4 strict-core closure).
+**This is the single source of truth.** Last reconciled: 2026-09-11.
+
+The older Wave 4/Wave 6 claims preserved below are historical snapshots. The
+current full-foundations receipt is
+`formal/formal_foundations_report.json`: the Lean build and kernel audit pass,
+but the stronger gate remains open for the historical one-bit/H/ratio-rate
+extension. Current Task 3 native-method and Task 4 reference-control status is
+recorded in `experiments/kbound/results/task_closure_20260911/STATUS.json`.
 
 ---
 
@@ -23,12 +30,12 @@
 | `thm:margin-compute-dichotomy` | Frontier margin computability dichotomy (`conj:dich-compute`). | **Closed** + `val_margin_computability.py`. |
 | `thm:reg-bracket-dichotomy` | Regression/general drift: bounded-drift iff + general impossibility. | **Closed** + `val_regression_bracketing_closure.py`. |
 
-> **Note:** Section B of `THEORY_100_PERCENT_CLOSURE_PLAN.md` is **fully closed** as of Wave 4 (2026-07-01).
-> Wave 6 (2026-07-15) closed the paper-faithful Lean foundation gaps: exchangeable-score
-> conformal reduction, discrete Ville / e-process step, two-point Le Cam packaging,
-> Hoeffding-radius commit bridge, and evidence-preserving swap involution.
-> `python3 formal_audit.py --build --full-foundations` exits 0 (53 theorem checks).
-> This is **not** a claim that all of Mathlib probability was rebuilt from axioms.
+> **Historical note (superseded):** The Wave 4/Wave 6 closure statements in this
+> section describe an earlier scoped snapshot. They do not establish the current
+> full-foundations gate. The current command
+> `python formal_audit.py --build --full-foundations` exits non-zero because the
+> historical one-bit/H/ratio-rate extension remains open; the maintained scoped
+> core still passes its Lean and kernel checks.
 
 ### GENUINELY OPEN (outside closure-plan scope)
 
@@ -116,10 +123,11 @@ Do not recreate them; update `PROJECT_STATUS_AND_OPEN_PROBLEMS.md` and `claim_le
 `realshift_win/PROTOCOL_realshift_win.md`, `edge/` docs, all `paper/sections/*`, the live
 `kbound.tex` / `kbound_short.tex`.
 
-## 2026-07-15: Lean Wave 6 — paper-faithful foundations closed
+## 2026-07-15: Lean Wave 6 — historical scoped foundations snapshot
 - New modules: `Exchangeable.lean`, `Ville.lean`, `LeCamMeasure.lean`; upgrades to
   `Dichotomy.lean`, `Rates.lean`.
-- `FOUNDATIONAL_PROBABILITY_LIMITS` cleared; `--full-foundations` PASS (53 checks).
+- `FOUNDATIONAL_PROBABILITY_LIMITS` was reported cleared in that historical
+  snapshot; the current full-foundations audit is authoritative and remains open.
 - Scope: paper-faithful cores, not a Mathlib probability textbook.
 
 

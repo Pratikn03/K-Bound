@@ -5,7 +5,9 @@ import Mathlib.Tactic.Linarith
 /-!
 # K-Bound certificate core (`thm:cert`)
 
-Paper: `paper/sections/theory_certificate.tex`, Theorem `thm:cert`.
+Paper: `paper/sections/theory_certificate.tex`, Proposition `thm:certificate`.
+This algebraic core uses real-valued inputs; the probability and random-radius
+assumptions are separate from these pointwise implications.
 -/
 
 namespace KBound

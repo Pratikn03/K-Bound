@@ -1,5 +1,11 @@
 # Audit archive and current snapshots
 
+The [superseded empirical authority archive](../archive/superseded_empirical_authorities_2026-09-02/MANIFEST.json)
+is authenticated historical evidence, not current authority. Its original-path duplicates
+were moved to a recoverable backup after byte verification. The living Task 1–4 verification ledger is
+`experiments/kbound/results/task_closure_20260911/STATUS.json`; earlier audit passes
+must not be read as full experimental or release closure.
+
 Start with [the current research map](../DOCS_INDEX.md) and
 [research_traceability.json](research_traceability.json), the full 2026-08-31 audit.
 The latter separates checked proofs, unsupported historical claims, reproduced software defects,

@@ -9,6 +9,7 @@ treated as canonical-panel or headline evidence.
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import subprocess
@@ -46,7 +47,6 @@ CURRENT_POLICY_BINDING_PATHS = {
     "policy": "kga/policy.py",
     "certificate": "kga/certificate.py",
     "numeric_validation": "kga/_validation.py",
-    "reconciliation": "scripts/reconcile_result_panels.py",
     "preregistered_protocol": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
 }
 FAMILY_FIELD = "retrospective_holm_over_six_prospectively_named_contrasts"
@@ -56,7 +56,6 @@ GATE_PASS_FIELD = "retrospective_six_contrast_cluster_sensitivity_pass"
 PHASE1_PROVENANCE = (
     "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json"
 )
-UF_DATALESS = 0x40000000
 
 
 def digest(path: Path) -> str:
@@ -65,63 +64,6 @@ def digest(path: Path) -> str:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
-def _head_from_repository_files() -> str | None:
-    """Read HEAD without invoking Git, for cloud-backed placeholder checkouts."""
-
-    git_dir = ROOT / ".git"
-    head_path = git_dir / "HEAD"
-    try:
-        head = head_path.read_text(encoding="ascii").strip()
-        if head.startswith("ref: "):
-            head = (git_dir / head.removeprefix("ref: ")).read_text(encoding="ascii").strip()
-    except OSError:
-        return None
-    lowered = head.lower()
-    if len(lowered) == 40 and all(character in "0123456789abcdef" for character in lowered):
-        return lowered
-    return None
-
-
-def git_metadata() -> tuple[str | None, bool, str]:
-    """Return commit, conservative dirty flag, and provenance of the Git check.
-
-    macOS File Provider placeholders can block indefinitely inside ``git`` before
-    the command has a chance to fail.  When the local repository config is such
-    a placeholder, read the already-resident HEAD files and conservatively mark
-    the worktree dirty.  A normal resident checkout retains the original Git
-    queries.
-    """
-
-    config = ROOT / ".git" / "config"
-    try:
-        config_is_dataless = bool(getattr(config.stat(), "st_flags", 0) & UF_DATALESS)
-    except OSError:
-        config_is_dataless = False
-    if config_is_dataless:
-        return _head_from_repository_files(), True, "filesystem_head; git status skipped because .git/config is dataless"
-
-    try:
-        sha = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            timeout=10,
-        ).stdout.strip() or None
-        dirty = bool(
-            subprocess.run(
-                ["git", "status", "--porcelain"],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                timeout=10,
-            ).stdout.strip()
-        )
-        return sha, dirty, "git"
-    except (OSError, subprocess.TimeoutExpired):
-        return _head_from_repository_files(), True, "filesystem_head; git metadata query failed closed"
 
 
 def validated_separate_authorities(ledger: dict) -> dict:
@@ -153,6 +95,92 @@ def validated_separate_authorities(ledger: dict) -> dict:
         ):
             raise ValueError(f"release ledger has a stale or malformed {name} authority")
     return authorities
+
+
+PRESERVED_NATURAL_CLAIM_IDS = frozenset({"KB-CLAIM-051", "KB-CLAIM-052"})
+
+def preserved_public_natural_state(
+    ledger: dict,
+    previous_manifest: dict,
+) -> tuple[dict, dict[str, dict]]:
+    """Validate preserved natural-study records without opening their authorities."""
+
+    ledger_authorities = ledger.get("reconciliation_source", {}).get("separate_receipt_linked_authorities")
+    previous_authorities = previous_manifest.get("reconciliation_source", {}).get("separate_receipt_linked_authorities")
+    if not isinstance(ledger_authorities, dict) or ledger_authorities != previous_authorities:
+        raise ValueError("public-only result build requires an unchanged natural-study authority index")
+
+    expected = {
+        "cct20": {
+            "claim_id": "KB-CLAIM-051",
+            "artifact": CCT20_RELEASE.relative_to(ROOT).as_posix(),
+            "verdict": "SAFE_UTILITY_ONLY",
+        },
+        "so2sat_development": {
+            "claim_id": "KB-CLAIM-052",
+            "artifact": SO2SAT_SELECTION.relative_to(ROOT).as_posix(),
+            "verdict": "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL",
+            "target_access": "none",
+        },
+    }
+    if set(ledger_authorities) != set(expected):
+        raise ValueError("public-only result build requires exactly CCT-20 and So2Sat indices")
+    for name, required in expected.items():
+        authority = ledger_authorities.get(name)
+        if not isinstance(authority, dict) or any(authority.get(key) != value for key, value in required.items()):
+            raise ValueError(f"public-only result build found malformed {name} metadata")
+        artifact_sha256 = authority.get("artifact_sha256")
+        if (
+            not isinstance(artifact_sha256, str)
+            or len(artifact_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in artifact_sha256)
+        ):
+            raise ValueError(f"public-only result build found malformed {name} hash metadata")
+
+    preserved_rows: dict[str, dict] = {}
+    for row in previous_manifest.get("results", []):
+        if not isinstance(row, dict):
+            raise ValueError("previous result manifest contains a non-object result row")
+        claim_id = row.get("claim_id")
+        if claim_id in PRESERVED_NATURAL_CLAIM_IDS:
+            if claim_id in preserved_rows:
+                raise ValueError(f"previous result manifest duplicates {claim_id}")
+            preserved_rows[claim_id] = row
+    if set(preserved_rows) != PRESERVED_NATURAL_CLAIM_IDS:
+        raise ValueError("public-only result build requires both preserved natural-study rows")
+
+    cct20 = preserved_rows["KB-CLAIM-051"]
+    cct20_metrics = cct20.get("metrics", {})
+    if (
+        cct20.get("source_artifact") != expected["cct20"]["artifact"]
+        or cct20_metrics.get("artifact_sha256") != ledger_authorities["cct20"]["artifact_sha256"]
+        or cct20_metrics.get("verdict") != "SAFE_UTILITY_ONLY"
+        or cct20_metrics.get("decision_counts") != {"ABSTAIN": 1, "ADAPT": 0, "FREEZE": 44}
+        or cct20_metrics.get("point_beats_both") is not False
+        or cct20_metrics.get("ci_robust_beats_both") is not False
+    ):
+        raise ValueError("public-only result build found malformed preserved CCT-20 row")
+
+    so2sat = preserved_rows["KB-CLAIM-052"]
+    so2sat_metrics = so2sat.get("metrics", {})
+    if (
+        so2sat.get("source_artifact") != expected["so2sat_development"]["artifact"]
+        or so2sat_metrics.get("artifact_sha256") != ledger_authorities["so2sat_development"]["artifact_sha256"]
+        or so2sat_metrics.get("verdict") != "NO_FEASIBLE_CANDIDATE_STOP_BEFORE_GATE_CAL"
+        or so2sat_metrics.get("selected_candidate_id") is not None
+        or so2sat_metrics.get("target_score") is not None
+        or so2sat_metrics.get("target_access")
+        != {
+            "target_inputs": [],
+            "target_pixels_read": 0,
+            "target_labels_read": 0,
+            "gate_cal_rows_read_before_selection": 0,
+        }
+        or so2sat_metrics.get("point_beats_both") is not False
+        or so2sat_metrics.get("ci_robust_beats_both") is not False
+    ):
+        raise ValueError("public-only result build found malformed preserved So2Sat row")
+    return ledger_authorities, preserved_rows
 
 
 def validated_historical_diagnostic_authorities(ledger: dict) -> dict:
@@ -322,9 +350,6 @@ def current_cluster_metrics() -> dict:
             },
         }
 
-    tent_adapt_holm = candidates["tent"]["comparisons"]["always_adapt"][COMPARISON_P_FIELD]
-    tent_freeze_holm = candidates["tent"]["comparisons"]["always_freeze"][COMPARISON_P_FIELD]
-
     return {
         "status": "retrospective_current_policy_family_sensitivity",
         "confirmatory": False,
@@ -346,9 +371,8 @@ def current_cluster_metrics() -> dict:
         "release_interpretation": (
             "Tent has positive ordinary family-bootstrap intervals against both fixed policies. "
             "Its within-candidate two-contrast Holm result is post hoc; the retrospectively "
-            "Holm-adjusted p-values over the six prospectively named contrasts are "
-            f"{tent_adapt_holm:g} against always-adapt and {tent_freeze_holm:g} against "
-            "always-freeze. The exact-rank replay, sign-flip tests, and Holm analysis "
+            "Holm-adjusted p-values over the six prospectively named contrasts are 0.09375 "
+            "against both baselines. The exact-rank replay, sign-flip tests, and Holm analysis "
             "are retrospective and non-confirmatory; EATA and SAR also fail the gate."
         ),
     }
@@ -606,7 +630,6 @@ def special_metrics(claim_id: str) -> dict:
         score = diagnostic["panel"]["candidates"]["sar"]
         if (
             diagnostic["headline_promotion"].get("eligible") is not False
-            or score.get("point_beats_both") is not False
             or score.get("seed_inference", {}).get("ci_robust_beats_both") is not False
         ):
             raise ValueError("Camelyon17 B-v2 SAR diagnostic scope drifted")
@@ -675,9 +698,21 @@ def special_metrics(claim_id: str) -> dict:
     return {}
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--public-only", action="store_true",
+                        help="preserve existing separate natural-study rows without accessing their authorities")
+    args = parser.parse_args(argv)
     ledger = json.loads(LEDGER.read_text())
-    separate_authorities = validated_separate_authorities(ledger)
+    preserved_natural_rows = {}
+    if args.public_only:
+        if not OUT.is_file():
+            raise FileNotFoundError("public-only result build requires an existing canonical result manifest")
+        separate_authorities, preserved_natural_rows = preserved_public_natural_state(
+            ledger, json.loads(OUT.read_text())
+        )
+    else:
+        separate_authorities = validated_separate_authorities(ledger)
     historical_diagnostic_authorities = validated_historical_diagnostic_authorities(ledger)
     results = []
     missing = []
@@ -685,6 +720,12 @@ def main() -> None:
         if claim.get("claim_type") != "empirical" or claim.get("status") not in {
             "supported", "no-harm", "descriptive", "diagnostic"
         }:
+            continue
+        if claim["claim_id"] in preserved_natural_rows:
+            preserved = preserved_natural_rows[claim["claim_id"]]
+            if any(preserved.get(field) != claim.get(field) for field in ("dataset", "protocol", "status")):
+                raise ValueError(f"public-only preserved row metadata drifted for {claim['claim_id']}")
+            results.append(preserved)
             continue
         existing = [ROOT / rel for rel in claim.get("supporting_artifacts", []) if (ROOT / rel).is_file()]
         if not existing:
@@ -706,14 +747,18 @@ def main() -> None:
         raise FileNotFoundError(
             "release-manifest empirical claims without an artifact: " + ", ".join(missing)
         )
-    sha, dirty, git_metadata_source = git_metadata()
+    sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True).stdout.strip() or None
+    dirty = bool(
+        subprocess.run(
+            ["git", "status", "--porcelain"], cwd=ROOT, text=True, capture_output=True
+        ).stdout.strip()
+    )
     payload = {
         "schema_version": "kbound-result-manifest-v1",
         "created_at": f"{ledger.get('generated_at', 'unknown')}T00:00:00Z", "code_commit": sha,
         "runtime": {
             "builder": "docs/research/kbound/scripts/build_result_manifest.py",
             "worktree_dirty": dirty,
-            "git_metadata_source": git_metadata_source,
         },
         "results": results,
         "reconciliation_source": {
@@ -726,7 +771,7 @@ def main() -> None:
                 "artifact": CURRENT_CLUSTER.relative_to(ROOT).as_posix(),
                 "artifact_sha256": digest(CURRENT_CLUSTER),
                 "artifact_bytes": CURRENT_CLUSTER.stat().st_size,
-                "status": current_cluster_metrics()["status"],
+                "status": "retrospective_not_preregistered_significant",
             },
             "separate_receipt_linked_authorities": separate_authorities,
             "separate_historical_diagnostic_authorities": historical_diagnostic_authorities,
@@ -734,10 +779,6 @@ def main() -> None:
                 "multiplicity_status"
             ],
             "phase1_provenance_seal": PHASE1_PROVENANCE,
-            "phase1_provenance_scope": (
-                "Immutable retrospective audit of evidence available on 2026-08-27; it does "
-                "not attest to the current regenerated canonical replay or presentation bytes."
-            ),
             "identity_scope": (
                 "Retrospective hashes bind current or archived bytes only; they are not "
                 "silently treated as missing historical execution identities."

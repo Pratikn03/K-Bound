@@ -27,63 +27,21 @@ ROOT = Path(__file__).resolve().parents[4]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+manuscript_sources = importlib.import_module("docs.research.kbound.kbound_repro.manuscript_sources")
+repository_verification = importlib.import_module("docs.research.kbound.scripts.run_repository_verification")
 verify_python_environment = importlib.import_module("docs.research.kbound.scripts.verify_python_environment")
 
 DEFAULT_OUTPUT = ROOT / "docs/research/kbound/audits/release_source_seal_2026_08_29.json"
 SCHEMA = "kbound-release-source-seal-v1"
-
-# The four role PDFs and their local checksum are the citation-facing release.
-# The identity JSON and generated TeX are finalized only after the source commit
-# is known, so they are outer-checksummed outputs rather than source-seal inputs.
-POST_SOURCE_RELEASE_OUTPUT_ALLOWLIST = frozenset(
-    {
-        "docs/research/kbound/release/current/kbound_short_main.pdf",
-        "docs/research/kbound/release/current/kbound_short_supplement.pdf",
-        "docs/research/kbound/release/current/kbound_tmlr.pdf",
-        "docs/research/kbound/release/current/kbound_full_report.pdf",
-        "docs/research/kbound/release/current/KBOUND_CURRENT_SHA256SUMS.txt",
-        "docs/research/kbound/paper/generated/current_release_identity.tex",
-        "docs/research/kbound/paper/release/current_release.json",
-        "docs/research/kbound/CURRENT_RELEASE.md",
-        "docs/research/kbound/paper/reports/KBOUND_SOURCE_OUTPUT_MAP.md",
-        "docs/research/kbound/paper/reports/TMLR_ANONYMITY_AUDIT.md",
-        "docs/research/kbound/paper/reports/KBOUND_CURRENT_RELEASE_REPAIR_REPORT.md",
-        "docs/research/kbound/archive/superseded_do_not_cite/originals/kbound_short.pdf",
-        "docs/research/kbound/archive/superseded_do_not_cite/originals/kbound.pdf",
-        "docs/research/kbound/archive/superseded_do_not_cite/originals/kbound_submission.pdf",
-        "docs/research/kbound/archive/superseded_do_not_cite/kbound_short_SUPERSEDED.pdf",
-        "docs/research/kbound/archive/superseded_do_not_cite/kbound_SUPERSEDED.pdf",
-        "docs/research/kbound/archive/superseded_do_not_cite/kbound_submission_SUPERSEDED.pdf",
-    }
-)
-
-# These files are local build products or byte-identical convenience mirrors.
-# They are deliberately permitted after the source freeze but never enter the
-# authoritative outer checksum inventory. In particular, the combined PDF and
-# DOCX are comparison artifacts, not a fifth release role.
-NONRELEASE_BUILD_OUTPUT_ALLOWLIST = frozenset(
-    {
-        "docs/research/kbound/kbound_short_final_draft.pdf",
-        "docs/research/kbound/kbound_short_final_draft.docx",
-        "docs/research/kbound/kbound_tmlr.pdf",
-        "docs/research/kbound/kbound_short_main.pdf",
-        "docs/research/kbound/kbound_short_supplement.pdf",
-        "docs/research/kbound/kbound_full_report.pdf",
-        "output/pdf/kbound_short_main.pdf",
-        "output/pdf/kbound_short_supplement.pdf",
-        "output/pdf/kbound_tmlr.pdf",
-        "output/pdf/kbound_full_report.pdf",
-        "output/pdf/KBOUND_CURRENT_SHA256SUMS.txt",
-    }
-)
+SO2SAT_SOURCE_PATHS = repository_verification.SO2SAT_SOURCE_PATHS
 
 
 def verify_release_python_content() -> None:
-    """Require portable locked-distribution content before source-seal semantics."""
+    """Require the sealed release interpreter before source-seal semantics."""
 
     verify_python_environment.verify_exact_content_profile(
         ROOT / "requirements-release-macos-arm64.lock.txt",
-        ROOT / "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
+        ROOT / "docs/research/kbound/release_python_environment_macos_arm64.json",
     )
 
 
@@ -91,22 +49,28 @@ def verify_release_python_content() -> None:
 # after the clean-HEAD release gate.  This is intentionally an exact-path list.
 GENERATED_OUTPUT_ALLOWLIST = frozenset(
     {
-        *POST_SOURCE_RELEASE_OUTPUT_ALLOWLIST,
-        *NONRELEASE_BUILD_OUTPUT_ALLOWLIST,
         "docs/research/kbound/KBOUND_RELEASE_SHA256SUMS.txt",
         "docs/research/kbound/KBOUND_POST_CHECKSUM_SHA256SUMS.txt",
         "docs/research/kbound/RESULT_MANIFEST.json",
         "docs/research/kbound/STORAGE_MANIFEST.json",
         "docs/research/kbound/audits/empirical_data_quality_2026_08_27/artifact.json",
         "docs/research/kbound/audits/empirical_data_quality_2026_08_27/audit_summary.json",
+        "docs/research/kbound/audits/empirical_data_quality_2026_08_27/findings.csv",
+        "docs/research/kbound/audits/empirical_data_quality_2026_08_27/remediation_status.csv",
         "docs/research/kbound/audits/empirical_data_quality_2026_08_27/reviewer_scorecard.csv",
         "docs/research/kbound/audits/release_source_seal_2026_08_29.json",
         "docs/research/kbound/audits/repository_test_inventory.json",
         "docs/research/kbound/audits/formal_foundations_2026_08_31.json",
         "docs/research/kbound/claim_ledger.json",
         "docs/research/kbound/dashboard/data/snapshot.json",
+        "docs/research/kbound/figures/fig_certificate.png",
         "docs/research/kbound/figures/fig_decision_value_frontier.png",
+        "docs/research/kbound/figures/fig_frontier_schematic.png",
         "docs/research/kbound/figures/fig_phase_diagram.png",
+        "docs/research/kbound/kbound_short_final_draft.docx",
+        "docs/research/kbound/kbound_short_final_draft.pdf",
+        "docs/research/kbound/kbound_tmlr.pdf",
+        "docs/research/kbound/notebooks/kbound_empirical_data_quality_audit_2026_08_27.ipynb",
         "docs/research/kbound/release/cct20_public_evidence_bundle.zip",
         "docs/research/kbound/release/kbound_anonymous_supplement.zip",
         "docs/research/kbound/paper/generated/current_policy_family_sensitivity.tex",
@@ -116,6 +80,8 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
         "docs/research/kbound/paper/generated/kbound_primary_accuracy_table.tex",
         "docs/research/kbound/paper/generated/kbound_auxiliary_accuracy_table.tex",
         "docs/research/kbound/paper/generated/kbound_auxiliary_balanced_accuracy_table.tex",
+        "docs/research/kbound/paper/generated/cct20_location_effects_display.tex",
+        "docs/research/kbound/paper/generated/cct20_primary_table_display.tex",
         "docs/research/kbound/paper/generated/cct20_safe_utility_display.tex",
         "docs/research/kbound/paper/generated/cct20_release_manifest.json",
         "docs/research/kbound/paper/generated/cct20_release_manifest.json.receipt.json",
@@ -123,6 +89,7 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
         "docs/research/kbound/paper/generated/cct20_primary_table.tex",
         "docs/research/kbound/paper/generated/cct20_location_effects.tex",
         "docs/research/kbound/paper/generated/empirical_audit/decision_metrics.json",
+        "docs/research/kbound/paper/generated/empirical_audit/claim_matrix.md",
         "docs/research/kbound/paper/generated/kbound_numbers.tex",
         "docs/research/kbound/paper/generated/kbound_result_manifest.json",
         "docs/research/kbound/paper/generated/uniform_verdicts.json",
@@ -130,6 +97,10 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
         "experiments/kbound/frontier_sweep_v1/decision_value_results.json",
         "experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json",
         "experiments/kbound/results/natural_target_provenance_v1/NATURAL_TARGET_PROVENANCE_AUDIT.json",
+        "experiments/kbound/results/task1_cct20_prospective_bridge_20260911_full/CCT20_PROSPECTIVE_EVIDENCE_RECEIPT.json",
+        "experiments/kbound/results/task1_cct20_prospective_bridge_20260911_full/CCT20_PROSPECTIVE_EVIDENCE_RECEIPT.json.receipt.json",
+        "experiments/kbound/results/task_closure_20260911/STATUS.json",
+        "experiments/kbound/results/task_closure_20260911/natural_target_provenance_current_v2.json",
         "experiments/kbound/results/official_repro_v1/OFFICIAL_BASELINE_AUDIT.json",
         "experiments/kbound/results/reconciled_panels_v1/CANONICAL_PANEL_RESULTS.md",
         "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
@@ -140,36 +111,42 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    "so2sat_source": SO2SAT_SOURCE_PATHS,
+    "reader_surface": (
+        "DATA.md",
+        "docs/research/kbound/REPRODUCE.md",
+        "docs/research/kbound/RELEASE_CHECKLIST.md",
+        "docs/research/kbound/KBOUND_SHORT_CLAIM_MANIFEST.md",
+        "docs/research/kbound/KBOUND_SHORT_RESULT_AUDIT.md",
+        "docs/research/kbound/KBOUND_SHORT_THEORY_AUDIT.md",
+        "docs/research/kbound/dashboard/README.md",
+    ),
     "formal_source": (
         "docs/research/kbound/formal/KBound.lean",
-        "docs/research/kbound/formal/ActualFibreRadiusExamples.lean",
-        "docs/research/kbound/formal/ActualWorldExamples.lean",
-        "docs/research/kbound/formal/EvidenceTransportExamples.lean",
-        "docs/research/kbound/formal/ExactConformalExamples.lean",
-        "docs/research/kbound/formal/ExposureProxyExamples.lean",
-        "docs/research/kbound/formal/FeatureRankExamples.lean",
-        "docs/research/kbound/formal/HeadlineEvidenceExamples.lean",
-        "docs/research/kbound/formal/InformationRefinementExamples.lean",
-        "docs/research/kbound/formal/JointKernelExamples.lean",
-        "docs/research/kbound/formal/PaperProofExamples.lean",
-        "docs/research/kbound/formal/PaperSubclassExamples.lean",
-        "docs/research/kbound/formal/RiskAlignmentExamples.lean",
-        "docs/research/kbound/formal/WeightedHelpfulExamples.lean",
         "docs/research/kbound/formal/README.md",
         "docs/research/kbound/formal/build.sh",
         "docs/research/kbound/formal/formal_audit.py",
         "docs/research/kbound/formal/lakefile.lean",
         "docs/research/kbound/formal/lake-manifest.json",
         "docs/research/kbound/formal/lean-toolchain",
+        "docs/research/multiclass_vector_capacity/formal/verification/theorem_inventory.json",
     ),
     "release_validation": (
         "docs/research/kbound/edge/conftest.py",
+        "docs/research/kbound/dashboard/tests/test_build_dashboard_snapshot.py",
+        "docs/research/kbound/scripts/test_hard_dataset_win_loop.py",
+        "docs/research/kbound/scripts/test_sar_faithful.py",
+        "docs/research/multiclass_vector_capacity/tests/test_exact_oracle.py",
+        "docs/research/multiclass_vector_capacity/tests/test_statement_bindings.py",
+        "experiments/kbound/test_3dadam_bootstrap.py",
+        "experiments/kbound/test_3dadam_namedcond.py",
         "tests/conftest.py",
         "tests/test_build_docx_pipeline.py",
         "tests/test_anonymous_supplement.py",
         "tests/test_cct20_manuscript_claim_validation.py",
         "tests/test_cct20_public_bundle.py",
         "tests/test_cct20_release_builder.py",
+        "tests/test_cct20_prospective_bridge.py",
         "tests/test_certificate_drift_guard.py",
         "tests/test_exact_confirmation_pipeline.py",
         "tests/test_independent_checkpoint_audit.py",
@@ -181,7 +158,6 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "tests/test_kbound_metric_display_tables.py",
         "tests/test_kbound_narrative_revision.py",
         "tests/test_kbound_pdf_build_isolation.py",
-        "tests/test_kbound_pdf_visual_verification.py",
         "tests/test_kbound_estimand_inference_wording.py",
         "tests/test_kbound_formal_audit.py",
         "tests/test_kbound_theory_scope.py",
@@ -198,53 +174,31 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "tests/test_manuscript_claim_consistency.py",
         "tests/test_natural_target_provenance.py",
         "tests/test_official_baseline_provenance.py",
-        "tests/test_release_provenance_integration.py",
         "tests/test_pacs_replay_artifact.py",
-        "tests/test_python_environment_lock.py",
         "tests/test_reconcile_no_implicit_cleanup.py",
         "tests/test_reconciled_panels.py",
         "tests/test_release_checksum_verifier.py",
         "tests/test_release_privacy.py",
         "tests/test_release_source_seal.py",
-        "tests/test_release_toolchain_lock.py",
-        "tests/test_tmlr_anonymity_audit.py",
         "tests/test_repository_verification_runner.py",
     ),
     "paper_source": (
-        "docs/research/kbound/kbound_submission.tex",
-        "docs/research/kbound/kbound_short_main.tex",
-        "docs/research/kbound/kbound_main_with_appendix.tex",
-        "docs/research/kbound/kbound_short_supplement.tex",
-        "docs/research/kbound/kbound_tmlr.tex",
-        "docs/research/kbound/kbound_full_report.tex",
+        *manuscript_sources.ACTIVE_DRIVER_RELATIVE_PATHS,
         "docs/research/kbound/kbound_submission_body.tex",
         "docs/research/kbound/kbound_submission_supplement.tex",
         "docs/research/kbound/kbound_abstract.tex",
         "docs/research/kbound/kbound_abstract_core.tex",
-        "docs/research/kbound/kbound_full_report_extensions.tex",
-        "docs/research/kbound/paper/figures/decision_flow.tex",
         "docs/research/kbound/paper/figure_fallback.tex",
         "docs/research/kbound/paper/float_params.tex",
-        "docs/research/kbound/paper/full_report/evidence_protocol_atlas.tex",
-        "docs/research/kbound/paper/full_report/formal_reproducibility_atlas.tex",
-        "docs/research/kbound/paper/full_report/theory_exposition.tex",
-        "docs/research/kbound/paper/generated/cct20_reporting_numbers.tex",
-        "docs/research/kbound/paper/generated/empirical_evidence_numbers.tex",
         "docs/research/kbound/paper/references_kbound_expanded.tex",
         "docs/research/kbound/paper/references_kbound_context_archive.tex",
         "docs/research/kbound/paper/references/refs.bib",
         "docs/research/kbound/paper/sections/theory_certificate.tex",
         "docs/research/kbound/paper/sections/theory_core_main.tex",
-        "docs/research/kbound/paper/sections/officehome_mechanism_check.tex",
-        "docs/research/kbound/paper/sections/proof_traceability.tex",
-        "docs/research/kbound/paper/generated/cct20_primary_table_display.tex",
-        "docs/research/kbound/paper/generated/cct20_location_effects_display.tex",
         "docs/research/kbound/paper/vendor/tmlr/LICENSE",
         "docs/research/kbound/paper/vendor/tmlr/README.md",
         "docs/research/kbound/paper/vendor/tmlr/tmlr.sty",
-        "docs/research/kbound/figures/fig_certificate.png",
         "docs/research/kbound/figures/fig_decision_flow.png",
-        "docs/research/kbound/figures/fig_frontier_schematic.png",
     ),
     "release_code": (
         "scripts/reconcile_result_panels.py",
@@ -254,41 +208,29 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/runbooks/convert_official_logs_to_decisions.py",
         "docs/research/kbound/runbooks/run_item11_official_baselines.sh",
         "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "docs/research/kbound/scripts/audit_current_kbound_release.py",
-        "docs/research/kbound/scripts/audit_publication_package.py",
-        "docs/research/kbound/scripts/audit_tmlr_anonymity.py",
         "docs/research/kbound/scripts/audit_empirical_data_quality_2026_08_27.py",
         "docs/research/kbound/scripts/audit_natural_target_provenance.py",
         "docs/research/kbound/scripts/audit_official_baselines.py",
         "docs/research/kbound/scripts/build_cct20_release.py",
+        "docs/research/kbound/scripts/verify_cct20_prospective_evidence.py",
         "docs/research/kbound/scripts/build_cct20_public_bundle.py",
         "docs/research/kbound/scripts/build_anonymous_supplement.py",
         "docs/research/kbound/scripts/build_current_policy_interval_diagnostics.py",
-        "docs/research/kbound/scripts/compare_pdf_renders.py",
-        "docs/research/kbound/scripts/empirical_closure.py",
-        "docs/research/kbound/scripts/empirical_macros.py",
-        "docs/research/kbound/scripts/extract_macro_bundle.py",
-        "docs/research/kbound/scripts/word_export.py",
-        "docs/research/kbound/scripts/project_proof_receipts.py",
-        "docs/research/kbound/scripts/project_historical_diagnostic_receipt.py",
-        "docs/research/kbound/scripts/project_domainnet_stop.py",
         "docs/research/kbound/scripts/build_dashboard_snapshot.py",
         "docs/research/kbound/scripts/build_docx.py",
+        "docs/research/kbound/scripts/build_empirical_data_quality_notebook.py",
         "docs/research/kbound/scripts/build_empirical_data_quality_report_artifact.py",
         "docs/research/kbound/scripts/build_pdfs.sh",
         "docs/research/kbound/scripts/build_release_source_seal.py",
         "docs/research/kbound/scripts/build_result_manifest.py",
         "docs/research/kbound/scripts/build_results_source_compat.py",
-        "docs/research/kbound/scripts/generate_release_identity.py",
         "docs/research/kbound/scripts/make_tables.py",
         "docs/research/kbound/scripts/official_baseline_provenance.py",
-        "docs/research/kbound/scripts/official_decision_artifact.py",
         "docs/research/kbound/scripts/official_baselines_headtohead.py",
         "docs/research/kbound/scripts/make_submission_figures.py",
         "docs/research/kbound/scripts/plot_canonical_decision_frontier.py",
         "docs/research/kbound/scripts/plot_conceptual_regime_geometry.py",
         "docs/research/kbound/scripts/plot_kga_interval_rule.py",
-        "docs/research/kbound/scripts/publish_current_pdfs.py",
         "docs/research/kbound/scripts/refresh_storage_manifest.py",
         "docs/research/kbound/scripts/release_privacy.py",
         "docs/research/kbound/scripts/render_pdf_pages.py",
@@ -298,7 +240,6 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/scripts/validate_canonical_release_data.py",
         "docs/research/kbound/scripts/validate_closure_protocol.py",
         "docs/research/kbound/scripts/verify_release_checksums.py",
-        "docs/research/kbound/scripts/verify_pdf_structure.py",
         "docs/research/kbound/scripts/verify_python_environment.py",
         "docs/research/kbound/scripts/verify_release_toolchain.py",
     ),
@@ -314,23 +255,6 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "deploy/api/kga_service.py",
     ),
     "configuration": (
-        "experiments/audit/historical_diagnostic_recovery_receipt.portable.json",
-        "experiments/audit/polarity_diagnostic_log.csv",
-        "experiments/audit/canonical_label_semantics.json",
-        "protocols/confirmatory_v2/DOMAINNET_DEV_PILOT_v1_STOP_PORTABLE.json",
-        "docs/research/kbound/paper/release/manuscript_revision.json",
-        "docs/research/kbound/paper/release/publication_package_v1.json",
-        "docs/research/kbound/formal/actual_fibre_radius_verification_20260907.portable.json",
-        "docs/research/kbound/formal/actual_fibre_radius_followon_20260907.portable.json",
-        "docs/research/kbound/formal/formal_full_report_bridges_audit_2026_09_08.json",
-        "docs/research/kbound/formal/full_report_bridges_semantic_20260908.portable.json",
-        "docs/research/kbound/formal/full_report_bridges_verification_20260908.portable.json",
-        "docs/research/kbound/paper/release/empirical-evidence-values.json",
-        "docs/research/kbound/paper/release/empirical_macro_inputs/manifest.json",
-        "docs/research/kbound/paper/release/empirical_macro_inputs/entropy.json",
-        "docs/research/kbound/paper/release/empirical_macro_inputs/bridge.json",
-        "docs/research/kbound/paper/release/empirical_macro_inputs/officehome.json",
-        "docs/research/kbound/paper/release/empirical_macro_inputs/smoke.json",
         ".dockerignore",
         ".pre-commit-config.yaml",
         ".python-version",
@@ -339,16 +263,6 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "README.md",
         "docs/research/kbound/README.md",
         "docs/research/kbound/DOCS_INDEX.md",
-        "docs/research/kbound/KBOUND_SHORT_CLAIM_MANIFEST.md",
-        "docs/research/kbound/KBOUND_SHORT_RESULT_AUDIT.md",
-        "docs/research/kbound/CIFAR10C_SAR_QUARANTINE.md",
-        "docs/research/kbound/G8_EXACTRANK_REGEN.md",
-        "docs/research/kbound/MIXED_BENCHMARK_PROTOCOL.md",
-        "docs/research/kbound/RELATED_WORK_POSITIONING.md",
-        "docs/research/kbound/REPRODUCE.md",
-        "docs/research/kbound/RELEASE_CHECKLIST.md",
-        "docs/research/kbound/paper/generated/empirical_audit/claim_matrix.md",
-        "docs/research/kbound/paper/RELEASE_TABLE_CROSSWALK.md",
         "docs/research/kbound/kbound_pkg/README.md",
         "CITATION.cff",
         "LICENSE",
@@ -369,9 +283,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "requirements-release.txt",
         "requirements-release-macos-arm64.lock.txt",
         "docs/research/kbound/release_python_environment_macos_arm64.json",
-        "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
         "docs/research/kbound/release_toolchain_macos_arm64.json",
-        "docs/research/kbound/release_toolchain_macos_arm64_v2.json",
         "requirements-paper.txt",
         "requirements-paper.lock.txt",
         "docs/research/kbound/kbound_pkg/pyproject.toml",
@@ -387,7 +299,6 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
     "verified_release_environment": (
         "docs/research/kbound/audits/python_environment_2026_09_02.json",
         "docs/research/kbound/audits/release_toolchain_2026_09_02.json",
-        "docs/research/kbound/audits/release_toolchain_2026_09_05_v2.json",
     ),
     "immutable_release_locks": (
         "research_lock/KBOUND_PROSPECTIVE_CLOSURE_v1.yaml",
@@ -419,11 +330,11 @@ SOURCE_PREFIX_RULES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("dashboard_source", "docs/research/kbound/dashboard/css/", (".css",)),
 )
 EXCLUDED_SOURCE_PARTS = frozenset({".lake", "build", "dist", "__pycache__"})
-DEFAULT_PROTECTED_COMPONENT = "so2sat"
-DEFAULT_PROTECTED_GIT_EXCLUDES = (
-    ":(exclude,icase,glob)**/*so2sat*",
-    ":(exclude,icase,glob)**/*so2sat*/**",
-)
+
+# Git inventories can enumerate only paths already committed at the selected
+# revision. This one bounded worktree scope ensures that a newly added test is
+# visible to the preflight without scanning experiments, results, or datasets.
+MAINTAINED_WORKTREE_SCOPES: tuple[str, ...] = ("tests",)
 
 
 def _git(*args: str, repo: Path = ROOT) -> str:
@@ -538,7 +449,64 @@ def _git_blob_oid(data: bytes, object_format: str) -> str:
     return digest.hexdigest()
 
 
-def _dirty_paths(repo: Path) -> set[str]:
+def _validated_manuscript_closure(repo: Path) -> tuple[str, ...]:
+    """Return the exact active manuscript closure or fail closed.
+
+    Small fixture repositories used by unit tests have no K-Bound drivers and
+    therefore no manuscript closure. A real K-Bound checkout must have every
+    declared driver and every literal input as an unredirected regular file.
+    Generated manuscript inputs remain outer-checksum outputs; all other
+    closure members are source-seal inputs.
+    """
+
+    root = repo.resolve()
+    driver_paths = tuple(root / relative for relative in manuscript_sources.ACTIVE_DRIVER_RELATIVE_PATHS)
+    present = tuple(path.is_file() for path in driver_paths)
+    if not any(present):
+        return ()
+    if not all(present):
+        missing = [
+            relative
+            for relative, exists in zip(manuscript_sources.ACTIVE_DRIVER_RELATIVE_PATHS, present, strict=True)
+            if not exists
+        ]
+        raise FileNotFoundError("active manuscript drivers are missing: " + ", ".join(missing))
+
+    relative_paths: list[str] = []
+    for path in manuscript_sources.active_source_paths(root):
+        resolved = path.resolve()
+        try:
+            relative = resolved.relative_to(root).as_posix()
+        except ValueError as exc:
+            raise ValueError(f"active manuscript input is outside the repository: {path}") from exc
+        _validate_relative_path(relative)
+        parts = Path(relative).parts
+        if any(root.joinpath(*parts[:index]).is_symlink() for index in range(1, len(parts) + 1)):
+            raise FileNotFoundError(f"active manuscript input is missing or a symlink: {relative}")
+        if not resolved.is_file():
+            raise FileNotFoundError(f"active manuscript input is missing or a symlink: {relative}")
+        relative_paths.append(relative)
+    if len(relative_paths) != len(set(relative_paths)):
+        raise ValueError("active manuscript closure contains duplicate paths")
+    return tuple(relative_paths)
+
+
+def _release_pathspecs(repo: Path, *revisions: str) -> tuple[str, ...]:
+    """Return positive source/output paths plus the bounded safe test scope."""
+
+    selected = set(GENERATED_OUTPUT_ALLOWLIST)
+    selected.update(MAINTAINED_WORKTREE_SCOPES)
+    for revision in revisions or ("HEAD",):
+        selected.update(path for _category, path in _inventory(repo, revision))
+    if not selected or any(path in {"", "."} for path in selected):
+        raise ValueError("release worktree gate requires exact non-root pathspecs")
+    for path in selected:
+        _validate_relative_path(path)
+    return tuple(sorted(selected))
+
+
+def _dirty_paths(repo: Path, revision: str = "HEAD", *additional_revisions: str) -> set[str]:
+    pathspecs = _release_pathspecs(repo, revision, *additional_revisions)
     raw = _git_bytes(
         "--no-optional-locks",
         "-c",
@@ -552,8 +520,7 @@ def _dirty_paths(repo: Path) -> set[str]:
         "-z",
         "--untracked-files=all",
         "--",
-        ".",
-        *DEFAULT_PROTECTED_GIT_EXCLUDES,
+        *pathspecs,
         repo=repo,
     )
     paths: set[str] = set()
@@ -576,7 +543,7 @@ def _dirty_paths(repo: Path) -> set[str]:
     return paths
 
 
-def _source_tree_pathspecs() -> tuple[str, ...]:
+def _source_tree_pathspecs(repo: Path = ROOT) -> tuple[str, ...]:
     """Return positive-only Git tree scopes for the portable source seal.
 
     ``git ls-tree`` does not implement exclusion pathspec magic.  A repository-
@@ -584,19 +551,14 @@ def _source_tree_pathspecs() -> tuple[str, ...]:
     natural-shift artifact names.  Positive source roots avoid that boundary.
     """
 
-    paths = {
-        path
-        for values in EXPLICIT_FILES.values()
-        for path in values
-        if DEFAULT_PROTECTED_COMPONENT not in path.casefold()
-    }
-    paths.update(
-        prefix
-        for _category, prefix, _suffixes in SOURCE_PREFIX_RULES
-        if DEFAULT_PROTECTED_COMPONENT not in prefix.casefold()
-    )
+    paths = {path for values in EXPLICIT_FILES.values() for path in values}
+    paths.update(prefix for _category, prefix, _suffixes in SOURCE_PREFIX_RULES)
+    paths.update(path for path in _validated_manuscript_closure(repo) if path not in GENERATED_OUTPUT_ALLOWLIST)
     paths.add("kga/")
-    return tuple(sorted(paths))
+    selected = tuple(sorted(paths))
+    if any(path == "experiments/kbound/so2sat" for path in selected):
+        raise ValueError("protected So2Sat ancestor cannot be a release source pathspec")
+    return selected
 
 
 def _tree_blobs(
@@ -610,7 +572,7 @@ def _tree_blobs(
     # Tree entries already contain every path and blob object ID needed to select
     # the maintained inventory; byte counts are derived only for selected blobs
     # after their contents are read below.
-    selected = _source_tree_pathspecs() if pathspecs is None else pathspecs
+    selected = _source_tree_pathspecs(repo) if pathspecs is None else pathspecs
     if not selected or any(path in {"", "."} for path in selected):
         raise ValueError("release source tree requires non-root positive pathspecs")
     raw = _git_bytes("ls-tree", "-r", "-z", commit, "--", *selected, repo=repo)
@@ -629,14 +591,11 @@ def _tree_blobs(
 
 def _inventory(repo: Path, commit: str) -> list[tuple[str, str]]:
     rows = [(category, path) for category, paths in EXPLICIT_FILES.items() for path in paths]
+    rows.extend(
+        ("paper_source", path) for path in _validated_manuscript_closure(repo) if path not in GENERATED_OUTPUT_ALLOWLIST
+    )
     tracked = _tree_blobs(repo, commit)
     for path in sorted(tracked):
-        # Natural-shift gate/target material is intentionally outside the
-        # portable default release authority.  Do not even select similarly
-        # named source/test inputs until an explicitly authorized workflow is
-        # introduced and reviewed separately.
-        if DEFAULT_PROTECTED_COMPONENT in path.casefold():
-            continue
         if EXCLUDED_SOURCE_PARTS.intersection(Path(path).parts):
             continue
         if path.startswith("kga/") and "__pycache__" not in path and not path.endswith(".pyc"):
@@ -691,9 +650,12 @@ def build_payload(repo: Path, source_commit: str, *, require_clean: bool = False
     head = _git("rev-parse", "--verify", "HEAD", repo=repo)
     if resolved != head:
         raise ValueError(f"source commit must equal HEAD: source={resolved}, HEAD={head}")
-    dirty = _dirty_paths(repo)
+    dirty = _dirty_paths(repo, resolved)
     if require_clean and dirty:
-        raise ValueError("release must start from a completely clean working tree: " + ", ".join(sorted(dirty)))
+        raise ValueError(
+            "release must start from a completely clean working tree within the exact release boundary: "
+            + ", ".join(sorted(dirty))
+        )
     maintained = {path for _, path in _inventory(repo, resolved)}
     dirty_maintained = sorted(dirty & maintained)
     if dirty_maintained:
@@ -710,15 +672,14 @@ def build_payload(repo: Path, source_commit: str, *, require_clean: bool = False
         "schema_version": SCHEMA,
         "source_commit": resolved,
         "source_tree": source_tree,
-        "working_tree_gate": "clean outside exact generated-output allowlist",
+        "working_tree_gate": "exact release source/output paths clean outside generated-output allowlist",
         "sealed_artifact_count": len(artifacts),
         "artifacts_sha256": _sha256(digest_input),
         "artifacts": artifacts,
         "exclusions": [
             "docs/research/kbound/audits/release_source_seal_2026_08_29.json",
             "release-generated canonical manifests and presentation assets (bound by the outer checksum file)",
-            "four current role PDFs, their local checksum, and finalized release identity (bound by the outer checksum file)",
-            "nonrelease build PDFs, combined DOCX, and convenience mirrors (excluded from the citation-facing checksum inventory)",
+            "built PDF and DOCX files (bound by the outer checksum file)",
             "docs/research/kbound/KBOUND_RELEASE_SHA256SUMS.txt",
         ],
     }
@@ -748,8 +709,7 @@ def _validate_artifact_head(repo: Path, source_commit: str) -> None:
         source_commit,
         head,
         "--",
-        ".",
-        *DEFAULT_PROTECTED_GIT_EXCLUDES,
+        *_release_pathspecs(repo, source_commit, head),
         repo=repo,
     )
     changed = {path.decode("utf-8") for path in raw.split(b"\0") if path}
@@ -779,7 +739,7 @@ def validate_seal(repo: Path, path: Path) -> dict[str, object]:
     rows = payload.get("artifacts")
     if not isinstance(rows, list) or rows != _artifact_rows(repo, commit):
         raise ValueError("release source/evidence artifact inventory or hashes have drifted")
-    dirty = _dirty_paths(repo)
+    dirty = _dirty_paths(repo, commit, _git("rev-parse", "--verify", "HEAD", repo=repo))
     maintained = {str(row["path"]) for row in rows}
     dirty_maintained = sorted(dirty & maintained)
     if dirty_maintained:

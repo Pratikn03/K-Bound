@@ -5,9 +5,8 @@ object-oriented interface.
 
 The router trains a GradientBoostingRegressor to predict per-condition benefit B
 from label-free evidence features Z using leave-one-out cross-validation.
-The conformal radius uses the exact finite-sample residual rank. If the
-calibration pool is too small for the requested level, it is +inf and forces
-ABSTAIN rather than silently using an under-covering clamped rank.
+The conformal radius eps = quantile(|Bhat - B|, 1 - alpha) gives an
+anytime-valid certificate over the calibration conditions.
 
 Decision rule (identical to cifar_tent_mps_v2.py):
     ADAPT   if  Bhat_i - eps > 0

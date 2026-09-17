@@ -1,0 +1,109 @@
+schema: target_label_light_probe_protocol_v1
+decision: D24_target_label_light_multimodal_guard
+date_locked: 2026-06-15
+status_at_lock: PRE_REGISTERED_BEFORE_PROBE_SCORING
+
+purpose: >
+  Validate the Target-Label-Light Multimodal Safety Guard: a micro-probe of
+  k in {8,16,32,64} held-out target labels removes calibration-drift bias in
+  B_hat(Z) and enables certified adapt/freeze decisions on multimodal fusion
+  routers and mixed-shift TTA panels. k=0 is the label-free baseline.
+  Motivated by Camelyon17 bias-variance diagnostic (eps bias-limited, ratio
+  2.55x over measurement floor) and preliminary multimodal KGA table.
+
+operating_point:
+  name: target-label-light
+  distinct_from: unconditional label-free core
+  label_budget: "8-64 target labels per condition or track, one-time deployment draw"
+  impossibility_scope: Prop thm:imp-quant applies only when no target labels observed
+
+frozen_parameters:
+  alpha: 0.10
+  decision_rule: "adapt if LB>0; freeze if UB<0; else abstain"
+  probe_sizes_k: [0, 8, 16, 32, 64]
+  certificate_method: empirical_bernstein
+  benefit_range_anomaly: 2.0
+  random_seed_probe_draw: 20260615
+  n_bootstrap: 10000
+  holm_correction: true
+
+probe_draw_rules:
+  source_pool: target validation or per-condition eval pool with labels
+  held_out_from: [unlabeled eval stream, B_hat(Z) estimator fitting, tau calibration]
+  stratification: class-balanced when labels are class labels; label-stratified for anomaly
+  draw_once: true
+  per_condition: true
+
+split_rules:
+  multimodal_tracks: leave-one-category-out over deployable categories (val-auc >= 0.6 on >=2 mods)
+  iwildcam: by location seed held-out; DEV locations fit nothing on TEST
+  imagenetc_sar: by corruption cell; cross-fit by seed
+  camelyon17: by seed DEV={0,1} TEST={2,3,4} identical to Protocol B
+  forbidden: tuning k alpha probe composition or eps on TEST
+
+benchmarks:
+  P0:
+    - name: Real-IAD-D3
+      cache: experiments/fusion/realiad_d3_score_cache
+      pattern: "*_v2_binpcd.npz"
+      hypothesis: probe confirms FREEZE at lower k than label-free pool
+    - name: Real-IAD-NatDeg
+      cache: experiments/fusion/realiad_natdeg_score_cache
+      pattern: "*.npz"
+      hypothesis: probe tightens ADAPT bracket
+  P1:
+    - name: iWildCam
+      results: experiments/kbound/results/iwildcam_probe_verify/result_ea514799.json
+      hypothesis: probe converts abstain to beats-both on mixed cells
+    - name: ImageNet-C-SAR
+      results: experiments/kbound/results/decision_baselines_sarfix/decision_baselines.json
+      hypothesis: probe certifies on harmful SAR cells
+  P2:
+    - name: Camelyon17
+      results: experiments/kbound/results/camelyon17_fullscale_B_v1/
+      hypothesis: bias-limited label-free to probe-fixed narrative
+    - name: RxRx1
+      results: experiments/kbound/results/rxrx1_kbound/
+      hypothesis: near-one-sided panel converges to always-freeze not fake win
+
+success_criteria:
+  WIN:
+    - held_out_false_adapt_le_alpha: true
+    - regret_le_always_freeze: true
+    - beats_always_adapt_on_mixed_benchmark: ">=1 at some k<=64"
+    paper_level: validated result
+  PARTIAL:
+    - held_out_false_adapt_le_alpha: true
+    - commit_rate_lt: 0.3
+    paper_level: honest partial
+  CONFIRM:
+    - multimodal_probe_agrees_with_label_free_action: true
+    - at_lower_k_than_full_pool: true
+    paper_level: strengthens tab:multimodal
+  FAILS:
+    - probe_k64_still_abstains_camelyon_mixed: true
+    paper_level: deepens negative
+
+metrics:
+  primary: [false_adapt_rate, regret_vs_oracle, commit_rate, beats_both]
+  secondary: [eps_probe, coverage, agreement_with_label_free_decision]
+  per_k_curve: true
+
+runner:
+  script: experiments/kbound/target_label_light_probe.py
+  output_dir: experiments/kbound/results/target_label_light_probe_v1/
+  guard_module: src/uais/kbound/multimodal_guard.py
+
+integrity:
+  used_test_labels_for_probe_draw_on_test_split: false
+  probe_labels_only_on_held_out_calibration_draw: true
+  one_shot: true
+  honest_note: >
+    k is swept for analysis curves but the deployment claim uses a single
+    pre-registered k (default 32) chosen BEFORE observing TEST outcomes.
+    Post-hoc k selection on test is forbidden.
+
+relationship_to_other_protocols:
+  protocol_F_rich_evidence: complementary label-free fallback not headline
+  multimodal_reliability_D23: provides fusion mechanism; this protocol adds probe certificate
+  camelyon17_protocol_B: provides bias-limited negative motivating probe path

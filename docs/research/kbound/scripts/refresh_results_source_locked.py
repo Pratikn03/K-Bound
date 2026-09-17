@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Merge locked CIFAR + head-to-head artifacts into results_source.json."""
+import hashlib
 import json
 import os
 import subprocess
@@ -15,6 +16,24 @@ H2H = os.path.join(
     "experiments/kbound/results/mixed_headtohead_v1/"
     "HEADTOHEAD_RESULTS_cifar10c_tent_primary.json",
 )
+
+
+def _refresh_current_policy_bindings(value):
+    """Refresh every nested current-policy hash/size binding after replay."""
+    rel = "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json"
+    path = os.path.join(ROOT, rel)
+    if not os.path.isfile(path):
+        return value
+    digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+    size = os.path.getsize(path)
+    if isinstance(value, dict):
+        if value.get("artifact_path") == rel:
+            value["artifact_sha256"] = digest
+            value["artifact_bytes"] = size
+        return {key: _refresh_current_policy_bindings(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_refresh_current_policy_bindings(item) for item in value]
+    return value
 
 
 def main():
@@ -52,6 +71,8 @@ def main():
         }
         prov["headtohead"] = d["headtohead"]["_source"]
 
+    d = _refresh_current_policy_bindings(d)
+    prov = d.setdefault("_provenance", {})
     prov["locked_refresh_utc"] = datetime.datetime.utcnow().isoformat() + "Z"
     prov["git_sha"] = subprocess.run(
         ["git", "-C", ROOT, "rev-parse", "--short", "HEAD"],

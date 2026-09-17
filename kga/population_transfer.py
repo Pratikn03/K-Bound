@@ -1,99 +1,77 @@
-"""Conditional interval composition from a cell target to a population target.
+"""kga.population_transfer -- Conditional population-benefit interval composition.
 
-This module performs one mathematical composition only.  It does not validate
-an experimental design, establish exchangeability, or issue a population
-deployment certificate.  Callers must supply both the existing cell radius
-``epsilon`` and a separately justified sampling radius ``r_samp``.
+This module implements the conservative bridge from cell-level empirical calibration
+to population-benefit bounds (Proposition 3 and Appendix A in the manuscript).
 
-For a new episode, ``U_e`` may construct the adapted candidate and ``V_e`` is
-the unlabeled decision window.  The scored sample ``E_e`` must be fresh IID
-*after* the candidate and decision are fixed for the Hoeffding helper below to
-apply.  Historical labelled residual-calibration environments are denoted
-``C``; they are not ``V_e``.  Merely making ``U_e``, ``V_e``, ``E_e``, and
-``C`` disjoint does not prove that ``E_e`` is IID or that cell coverage
-transfers.
+The interval is:
+    I_pop = [delta_hat - (epsilon + b), delta_hat + (epsilon + b)]
+
+where:
+    * delta_hat is the point prediction of benefit.
+    * epsilon is the exact-rank conformal residual radius at level alpha_cell.
+    * b is the fresh-sample Hoeffding paired-accuracy radius at level delta_sampling:
+          b = min(2.0, sqrt(2.0 * log(2.0 / delta_sampling) / m))
+    * alpha_cell + delta_sampling <= alpha_population.
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from numbers import Integral, Real
-from typing import Any
 
 from kga.policy import Decision
 
 
 @dataclass(frozen=True)
 class ConditionalPopulationInterval:
-    """Result of conditional interval composition, not a design certificate."""
+    """Represents a compound conformal-concentration population benefit interval."""
 
     delta_hat: float
-    cell_radius: float
-    sampling_radius: float
+    epsilon: float
+    r_samp: float
     population_radius: float
-    population_lower: float
-    population_upper: float
+    interval_lower: float
+    interval_upper: float
     action: Decision
     alpha_cell: float
     delta_sampling: float
     alpha_population: float
-    alpha_spent: float
-
-    @property
-    def population_interval(self) -> tuple[float, float]:
-        """Return the composed population-target interval endpoints."""
-
-        return self.population_lower, self.population_upper
-
-
-def _finite_real(value: Any, *, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, Real):
-        raise ValueError(f"{field} must be a finite numeric value, not bool")
-    result = float(value)
-    if not math.isfinite(result):
-        raise ValueError(f"{field} must be finite")
-    return result
-
-
-def _component_budget(value: Any, *, field: str) -> float:
-    result = _finite_real(value, field=field)
-    if not 0.0 <= result < 1.0:
-        raise ValueError(f"{field} must lie in [0, 1)")
-    return result
-
-
-def _population_budget(value: Any) -> float:
-    result = _finite_real(value, field="alpha_population")
-    if not 0.0 < result < 1.0:
-        raise ValueError("alpha_population must lie in (0, 1)")
-    return result
+    spent_budget: float
 
 
 def hoeffding_paired_accuracy_radius(*, n: int, delta: float) -> float:
-    """Return a two-sided Hoeffding radius for paired accuracy benefit.
+    """Compute the finite-sample Hoeffding paired-accuracy radius for m fresh samples.
 
-    Each paired correctness difference lies in ``[-1, 1]``, so its fixed
-    support width is 2.  For a fresh IID scored sample ``E_e`` of size ``n``
-    after the candidate and decision are fixed, the returned radius is
+    For paired 0-1 loss differences W_j in [-1, 1], the range of each observation is 2.
+    By Hoeffding's inequality, for any delta in (0, 1):
+        Pr[ |B - Delta| >= b ] <= 2 exp( - 2 * n^2 * b^2 / (n * 2^2) )
+                                = 2 exp( - n * b^2 / 2 )
+    Equating to delta yields:
+        b = min(2.0, sqrt(2.0 * ln(2.0 / delta) / n)).
 
-    ``min(2, sqrt(2 * log(2 / delta) / n))``.
+    Parameters
+    ----------
+    n : int
+        Fresh evaluation sample count (must be positive integer, not bool).
+    delta : float
+        Sampling error probability tolerance in (0, 1).
 
-    ``delta`` is a required sampling-error budget.  It is not estimated from
-    outcomes, and this function accepts no observations.  Disjoint unlabeled
-    ``U_e``/``V_e`` and scored ``E_e`` windows alone do not establish IID
-    sampling.
+    Returns
+    -------
+    float
+        Sampling radius b.
     """
+    if isinstance(n, bool) or not isinstance(n, int):
+        raise TypeError(f"Sample count n must be an integer, got {type(n).__name__}")
+    if n <= 0:
+        raise ValueError(f"Sample count n must be positive, got {n}")
+    if not isinstance(delta, (int, float)) or isinstance(delta, bool):
+        raise TypeError(f"Tolerance delta must be a float, got {type(delta).__name__}")
+    if math.isnan(delta) or delta <= 0.0 or delta >= 1.0:
+        raise ValueError(f"Tolerance delta must be in (0, 1), got {delta}")
 
-    if isinstance(n, bool) or not isinstance(n, Integral) or n < 1:
-        raise ValueError("n must be a positive integer")
-    delta_value = _finite_real(delta, field="delta")
-    if not 0.0 < delta_value < 1.0:
-        raise ValueError("delta must lie in (0, 1)")
-    width = 2.0
-    log_two_over_delta = math.log(2.0) - math.log(delta_value)
-    radius = width * math.sqrt(log_two_over_delta / (2.0 * int(n)))
-    return min(width, radius)
+    b_unbounded = math.sqrt(2.0 * math.log(2.0 / float(delta)) / float(n))
+    return min(2.0, b_unbounded)
 
 
 def compose_conditional_population_interval(
@@ -105,67 +83,100 @@ def compose_conditional_population_interval(
     delta_sampling: float,
     alpha_population: float,
 ) -> ConditionalPopulationInterval:
-    """Conditionally compose cell and sampling radii by a union bound.
+    """Compose a cell conformal radius and sampling radius into a population interval.
 
-    Given separately justified events
+    Parameters
+    ----------
+    delta_hat : float
+        Estimated benefit.
+    epsilon : float
+        Nonnegative or infinite cell calibration radius.
+    r_samp : float
+        Nonnegative sampling radius (e.g. from hoeffding_paired_accuracy_radius).
+    alpha_cell : float
+        Cell calibration error budget in (0, 1).
+    delta_sampling : float
+        Sampling error budget in (0, 1).
+    alpha_population : float
+        Total allowable population risk budget in (0, 1).
 
-    ``|delta_hat - delta_cell| <= epsilon`` with failure ``alpha_cell`` and
-    ``|delta_cell - delta_population| <= r_samp`` with failure
-    ``delta_sampling``, the triangle inequality gives radius
-    ``epsilon + r_samp`` with total failure at most their sum.  Independence
-    between those two events is not required.
-
-    This function checks only numeric inputs and the declared budget relation
-    ``alpha_cell + delta_sampling <= alpha_population``.  It cannot establish
-    either premise, IID sampling, metric alignment, or deployment validity.
-    ``r_samp`` has no default and is never inferred from target outcomes.
-
-    An existing ``epsilon=+inf`` remains maximally uncertain and therefore
-    forces ``ABSTAIN``.  Otherwise actions use strict interval signs.
+    Returns
+    -------
+    ConditionalPopulationInterval
+        The composed interval and strict trichotomy action.
     """
+    # Validate budgets
+    for name, val in [
+        ("alpha_cell", alpha_cell),
+        ("delta_sampling", delta_sampling),
+        ("alpha_population", alpha_population),
+    ]:
+        if isinstance(val, bool) or not isinstance(val, (int, float)):
+            raise TypeError(f"{name} must be a number, got {type(val).__name__}")
+        if math.isnan(val) or val <= 0.0 or val >= 1.0:
+            raise ValueError(f"{name} must be in (0, 1), got {val}")
 
-    estimate = _finite_real(delta_hat, field="delta_hat")
-    if isinstance(epsilon, bool) or not isinstance(epsilon, Real):
-        raise ValueError("epsilon must be a non-negative numeric value")
-    cell_radius = float(epsilon)
-    if math.isnan(cell_radius) or cell_radius < 0.0 or cell_radius == -math.inf:
-        raise ValueError("epsilon must be non-negative or +inf")
-    sampling_radius = _finite_real(r_samp, field="r_samp")
-    if sampling_radius < 0.0:
-        raise ValueError("r_samp must be non-negative")
+    spent_budget = float(alpha_cell) + float(delta_sampling)
+    if spent_budget > float(alpha_population) + 1e-12:
+        raise ValueError(
+            f"Budget overspent: alpha_cell ({alpha_cell}) + delta_sampling ({delta_sampling}) "
+            f"= {spent_budget} > alpha_population ({alpha_population})"
+        )
 
-    cell_budget = _component_budget(alpha_cell, field="alpha_cell")
-    sampling_budget = _component_budget(delta_sampling, field="delta_sampling")
-    population_budget = _population_budget(alpha_population)
-    spent = math.fsum((cell_budget, sampling_budget))
-    if spent > population_budget:
-        raise ValueError("alpha_cell + delta_sampling must be <= alpha_population")
+    # Validate delta_hat
+    if isinstance(delta_hat, bool) or not isinstance(delta_hat, (int, float)) or math.isnan(delta_hat):
+        raise ValueError(f"delta_hat must be a valid real number, got {delta_hat}")
 
-    population_radius = cell_radius + sampling_radius
-    if math.isinf(population_radius):
-        lower = -math.inf
-        upper = math.inf
-        action = Decision.ABSTAIN
+    # Validate epsilon
+    if isinstance(epsilon, bool) or not isinstance(epsilon, (int, float)) or math.isnan(epsilon):
+        raise ValueError(f"epsilon must be a valid number, got {epsilon}")
+    if epsilon < 0.0:
+        raise ValueError(f"epsilon cannot be negative, got {epsilon}")
+
+    # Validate r_samp
+    if isinstance(r_samp, bool) or not isinstance(r_samp, (int, float)) or math.isnan(r_samp):
+        raise ValueError(f"r_samp must be a valid number, got {r_samp}")
+    if r_samp < 0.0 or math.isinf(r_samp):
+        raise ValueError(f"r_samp must be finite and nonnegative, got {r_samp}")
+
+    # Infinite radius handling
+    if math.isinf(epsilon):
+        return ConditionalPopulationInterval(
+            delta_hat=float(delta_hat),
+            epsilon=float("inf"),
+            r_samp=float(r_samp),
+            population_radius=float("inf"),
+            interval_lower=float("-inf"),
+            interval_upper=float("inf"),
+            action=Decision.ABSTAIN,
+            alpha_cell=float(alpha_cell),
+            delta_sampling=float(delta_sampling),
+            alpha_population=float(alpha_population),
+            spent_budget=spent_budget,
+        )
+
+    pop_radius = float(epsilon) + float(r_samp)
+    lower = float(delta_hat) - pop_radius
+    upper = float(delta_hat) + pop_radius
+
+    # Strict trichotomy rules
+    if lower > 0.0:
+        action = Decision.ADAPT
+    elif upper < 0.0:
+        action = Decision.FREEZE
     else:
-        lower = estimate - population_radius
-        upper = estimate + population_radius
-        if lower > 0.0:
-            action = Decision.ADAPT
-        elif upper < 0.0:
-            action = Decision.FREEZE
-        else:
-            action = Decision.ABSTAIN
+        action = Decision.ABSTAIN
 
     return ConditionalPopulationInterval(
-        delta_hat=estimate,
-        cell_radius=cell_radius,
-        sampling_radius=sampling_radius,
-        population_radius=population_radius,
-        population_lower=lower,
-        population_upper=upper,
+        delta_hat=float(delta_hat),
+        epsilon=float(epsilon),
+        r_samp=float(r_samp),
+        population_radius=pop_radius,
+        interval_lower=lower,
+        interval_upper=upper,
         action=action,
-        alpha_cell=cell_budget,
-        delta_sampling=sampling_budget,
-        alpha_population=population_budget,
-        alpha_spent=spent,
+        alpha_cell=float(alpha_cell),
+        delta_sampling=float(delta_sampling),
+        alpha_population=float(alpha_population),
+        spent_budget=spent_budget,
     )

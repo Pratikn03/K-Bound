@@ -1,19 +1,5 @@
-"""Optional integrations for the KGA decision layer."""
+"""kga.integrations -- Integration adapters for machine learning frameworks."""
 
-from kga.integrations.claims import assess_promotion
-from kga.integrations.elara import (
-    ELARAKGAGuard,
-    ELARAKGAResult,
-    EvaluationMode,
-    FrozenLinearBenefitEstimator,
-    evaluate_result,
-)
+from kga.integrations.torch_adapter import TorchModelAdapter
 
-__all__ = [
-    "ELARAKGAGuard",
-    "ELARAKGAResult",
-    "EvaluationMode",
-    "FrozenLinearBenefitEstimator",
-    "assess_promotion",
-    "evaluate_result",
-]
+__all__ = ["TorchModelAdapter"]

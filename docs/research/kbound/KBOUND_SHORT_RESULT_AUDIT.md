@@ -2,8 +2,6 @@
 
 Date: 2026-08-29
 
-ImageNet-R row reconciled to the current canonical generation: 2026-09-06.
-
 ## Canonical Source
 
 Authoritative result artifact:
@@ -24,19 +22,16 @@ Authoritative result artifact:
 
 ## Authority Boundary for Later Studies
 
-The 106-artifact canonical panel predates two later, separately governed studies. They are not
+The 106-artifact canonical panel predates two later, prospectively governed studies. They are not
 silently merged into that panel:
 
 - **CCT-20 target:** `docs/research/kbound/paper/generated/cct20_release_manifest.json`
-  (SHA-256 `2ac7365df0f86eabb284fd0e0646986c4dc1f8f552b3a32f16a2072fdceaf26c`)
-  and its receipt are the authority. This was a cell-outcome-unopened, internally sealed execution:
-  individual cell outcomes remained unopened until one-shot scoring. Aggregate target-label
-  metadata had previously been inspected, so the study was not globally label-unopened or publicly
-  preregistered. The verdict is `SAFE_UTILITY_ONLY`: 0/44/1 ADAPT/FREEZE/ABSTAIN across 45
-  checkpoint--location cells. All 45 predictions used the frozen model, but the sole helpful cell
-  received FREEZE, yielding one false FREEZE among 44 FREEZE actions (1/45 overall). KGA matched
-  always-freeze and avoided the degradation from always-adapt, but failed the internally locked
-  strong-success action-exposure requirement.
+  (SHA-256 `722d2ebbe2d883c7eb173d72af9e4aa4c0a99b1ec320d913bf668f07d28eff48`)
+  and its receipt are the authority. The verdict is `SAFE_UTILITY_ONLY`: 44 FREEZE, zero ADAPT, one
+  ABSTAIN across 45 checkpoint-location cells. KGA ties always-freeze and avoids the degradation
+  from always-adapt, but fails the preregistered strong-success action-exposure requirement. Outcomes
+  were unopened before execution, but aggregate target metadata had been inspected during dataset
+  ranking; the study is therefore not described as literally label-unopened.
 - **So2Sat development gate-fit:**
   `experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1/so2sat_candidate_selection.json`
   (SHA-256 `8db11a797d98c5f104736a5ed982a422982f9f75fc8a7d1c6e13f07a826c0b79`)
@@ -52,29 +47,20 @@ silently merged into that panel:
 | Office-Home primary | 35 | .0158 | .0468 | .0158 | .0000 | .3143 | descriptive tie with freeze; zero adapts; A7 open |
 | Office-Home test-stream replication | 54 | .0215 | .0458 | .0217 | .0000 | .2778 | tiny point edge; test-seed CI includes zero |
 | iWildCam | withheld | withheld | withheld | withheld | withheld | withheld | official-metric, population-sealed rerun required |
-| ImageNet-C SAR | 135 | .0227 | .0529 | .0319 | .0000 | .2741 | point edge with two positive descriptive run-seed intervals; no independent checkpoint identities, so not CI-robust |
-| ImageNet-C Tent | 135 | .0154 | .0191 | .0145 | .0222 | .0370 | trails freeze; three observed false adaptations |
-| ImageNet-C EATA | 135 | .0024 | .0001 | .0342 | .0074 | .8074 | trails adapt; one observed false adaptation |
+| ImageNet-C SAR | 135 | .0289 | .0529 | .0319 | .0074 | .2074 | pooled point edge, not CI-robust |
+| ImageNet-C Tent | 135 | .0145 | .0191 | .0145 | .0000 | .0000 | ties freeze; no adapts |
+| ImageNet-C EATA | 135 | .0007 | .0001 | .0342 | .0074 | .8963 | trails adapt |
 | PACS | 12 domain-seed units | .0431 | .0176 | .0446 | .0093 | .8148 | favors always-adapt; per-cell replay incomplete |
-| ImageNet-R | 480 | .0137 | .0064 | .0325 | .0125 | .4437 | favors adaptation on 8/10 backbones; six false adaptations; current three-way cross-fit diagnostic |
-| CIFAR-10-C Tent | 2160 | .0019 | .0080 | .1239 | .0009 | .6611 | lower exact-rank point regret than each fixed policy; two observed false adaptations; retrospective six-contrast Holm is non-confirmatory |
-| CIFAR-10-C EATA | 2160 | .0016 | .0033 | .1313 | .0000 | .6074 | lower exact-rank point regret than each fixed policy; adapt-side family interval crosses zero; retrospective six-contrast Holm is non-confirmatory |
-| CIFAR-10-C SAR | 2160 | .0018 | .0003 | .1405 | .0000 | .6546 | always-adapt has lower regret |
+| ImageNet-R | 480 | .0150 | .0064 | .0325 | .0000 | .4042 | favors adaptation on 8/10 backbones |
+| CIFAR-10-C Tent | 2160 | .0016 | .0080 | .1239 | .0000 | .6787 | lower exact-rank point regret than each fixed policy; ordinary six-family intervals positive; retrospective six-contrast Holm is non-confirmatory |
+| CIFAR-10-C EATA | 2160 | .0013 | .0033 | .1313 | .0000 | .6356 | lower exact-rank point regret than each fixed policy; adapt-side family interval crosses zero; retrospective six-contrast Holm is non-confirmatory |
+| CIFAR-10-C SAR | 2160 | .0016 | .0003 | .1405 | .0000 | .6694 | always-adapt has lower regret |
 | Camelyon17 OOD | 18 | .0000 | .0000 | .1381 | .0000 | 1.0000 | reproduces always-adapt; one-sided |
-| Camelyon17 B-v2 Tent | 108 | .0446 | .0097 | .0820 | .0000 | .2500 | comparator-favoring diagnostic |
-| Camelyon17 B-v2 EATA | 108 | .0260 | .0040 | .0911 | .0278 | .4722 | comparator-favoring diagnostic |
-| Camelyon17 B-v2 SAR | 108 | .0289 | .0016 | .1001 | .0093 | .4815 | comparator-favoring diagnostic |
+| Camelyon17 B-v2 Tent | 108 | .0296 | .0097 | .0820 | .0093 | .3704 | comparator-favoring diagnostic |
+| Camelyon17 B-v2 EATA | 108 | .0083 | .0040 | .0911 | .0000 | .5648 | comparator-favoring diagnostic |
+| Camelyon17 B-v2 SAR | 108 | .0006 | .0016 | .1001 | .0000 | .6574 | within-seed diagnostic point result |
 | RxRx1 | 60 | .0000 | .2531 | .0000 | .0000 | 1.0000 | freezes throughout; endpoint no-harm |
 | CIFAR-10.1 | 48 | .0017 | .0190 | .0017 | .0000 | .4583 | ties freeze; no adapts |
-
-ImageNet-R generation note: the previous `.0150` regret, zero false adaptations and `.4042`
-coverage described archived-prediction exact-rank leave-one-condition-out calibration. The current
-canonical three-way cell-outcome-disjoint fit/calibrate/score replay has 179/34/267
-ADAPT/FREEZE/ABSTAIN actions, six false adaptations among 480 cells, and exact coverage
-213/480 = .44375 (displayed as `.4437` by the generated table's binary-float formatting).
-The current aggregate and maintained manuscript agree; the older LOO numbers remain historical,
-including in the explicitly superseded `kbound_short.tex` inputs. This reconciliation does not
-establish independent checkpoints, prospective status, or one deployable multi-backbone policy.
 
 Protocol note: these natural-shift candidate losses come from transductive TTA. Episodic updates
 read the unlabeled evaluation batch; online prediction uses evaluation-batch BatchNorm statistics
@@ -88,23 +74,22 @@ false-adapt denominator.
 
 ## CIFAR-10-C Action Audit
 
-- Tent: 1,091 adapt / 337 freeze / 732 abstain, with 2 observed false adaptations.
-- EATA: 1,207 adapt / 105 freeze / 848 abstain, with 0 observed false adaptations.
-- SAR: 1,414 adapt / 0 freeze / 746 abstain, with 0 observed false adaptations.
-- Aggregate: 4,154 strict decisions among 6,480 candidate-cell evaluations, 64.1 percent coverage,
-  and two observed false adaptations.
+- Tent: 1,107 adapt / 359 freeze / 694 abstain.
+- EATA: 1,241 adapt / 132 freeze / 787 abstain.
+- SAR: 1,446 adapt / 0 freeze / 714 abstain.
+- Aggregate: 4,285 strict decisions among 6,480 candidate-cell evaluations, 66.1 percent coverage,
+  and zero observed false adaptations.
 - Descriptive arithmetic across three separately calibrated candidates, not one policy or
-  inferential estimand: aggregate point regret is 0.00178 versus 0.00386 for always-adapt and
-  0.13191 for always-freeze, a 2.17x reduction relative to the better fixed policy.
+  inferential estimand: aggregate point regret is 0.00151 versus 0.00386 for always-adapt and
+  0.13191 for always-freeze, a 2.56x reduction relative to the better fixed policy.
 - Candidate inference remains separate. The retrospective current-policy analysis averages run seeds
-  and condition cells within six corruption families. For Tent, baseline-minus-KGA gaps are 0.00606
-  with ordinary 95 percent interval [0.00209, 0.00954] against always-adapt and 0.12202 with interval
-  [0.06282, 0.17757] against always-freeze. These confidence intervals are unadjusted. The
-  within-Tent two-contrast Holm values are 0.046875 against always-adapt and 0.03125 against
-  always-freeze and are explicitly post hoc. The retrospective Holm adjustment over the six
-  prospectively named contrasts gives 0.140625 against always-adapt and 0.09375 against always-freeze and
+  and condition cells within six corruption families. For Tent, baseline-minus-KGA gaps are 0.00633
+  with ordinary 95 percent interval [0.00254, 0.00954] against always-adapt and 0.12229 with interval
+  [0.06331, 0.17772] against always-freeze. These confidence intervals are unadjusted. The
+  within-Tent two-contrast Holm value is 0.03125 and is explicitly post hoc. The retrospective Holm
+  adjustment over the six prospectively named contrasts gives 0.09375 for both Tent contrasts and
   does not support a confirmatory claim.
-- EATA's ordinary family interval versus always-adapt [-0.00135, 0.00438] crosses zero, and SAR loses to
+- EATA's ordinary adapt-side family interval [-0.00052, 0.00438] crosses zero, and SAR loses to
   always-adapt. No candidate earns a cluster-robust or confirmatory routing-utility claim. The analysis is conditional
   on one archived checkpoint and is not independent-checkpoint, prospective, natural-shift, or
   official POEM/AETTA evidence.
@@ -117,7 +102,7 @@ The six candidate-by-fixed-policy contrasts for CIFAR-10-C were stated prospecti
 `research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml`. The later exact-rank policy replay,
 six-corruption-family bootstrap sensitivity, sign-flip p-values, and Holm adjustment are
 retrospective and non-confirmatory. Its ordinary confidence intervals are unadjusted. Under Holm
-over the six contrasts, Tent is `0.140625` against always-adapt and `0.09375` against always-freeze, and no candidate rejects both
+over the six contrasts, Tent is `0.09375` against both baselines, and no candidate rejects both
 comparisons at 0.05. The within-Tent
 two-contrast Holm value `0.03125` is post hoc and cannot replace the six-comparison result. The
 repository-wide search census, CCT-20's separate two-comparison family, and historical POEM/AETTA
@@ -137,9 +122,8 @@ p-values are different families and must not be pooled or used to promote the CI
 
 - Clean calibration/test splits use the exact finite-sample order statistic, returning an infinite
   radius when the requested rank is infeasible.
-- Controlled stress grids use deterministic three-way cell-outcome-disjoint cross-fit: estimator-fit,
-  residual-calibration, and scored cells are disjoint, with exact-rank residual calibration.
-  This removes direct and indirect score-cell outcome leakage but is not an independent validation design.
+- Controlled stress grids use leave-one-condition-out cross-fitted empirical residual calibration.
+  This removes direct self-fit leakage but is not exact split conformal and is not jackknife+.
 - Natural rows retain their archived development/calibration/test scope. A numerical replay does not
   create a transfer theorem that the original design did not support.
 - Canonical benefit-regressor replays are generated under the release lock
@@ -156,15 +140,12 @@ are absent. These values remain historical diagnostics pending a current-policy 
 
 ## Unresolved Evidence Gaps
 
-- No clean held-out natural single-dataset result has confidence-supported lower regret than both fixed policies.
-- The completed CCT-20 camera-location result is safe-utility-only and fails the locked
-  action-exposure requirement; the fresh physical-camera study remains pending.
+- No clean held-out natural single-dataset CI-robust beats-both result.
+- No completed physical-camera result.
 - The promoted PACS panel lacks archived per-cell benefit estimates and residuals for full gate
   replay. A one-domain, ten-cell MPS smoke run validates the new replay schema only.
 - Natural tracks need more independently trained checkpoints and prospectively locked transfer
   designs before a broad stability claim.
-- So2Sat v1 declares a target action per city while its dormant target implementation constructs
-  city-by-checkpoint actions; that mismatch did not affect the stopped development run. Prospective
-  v2 now resolves the action unit and has a source-complete runner, but remains NO-GO until a v2
-  pre-calibration seal and target authorization exist. Its 19-city calibration panel and all target
-  content remain unopened.
+- So2Sat v1 declares a target action per city while the dormant target implementation constructs
+  city-by-checkpoint actions. The mismatch did not affect the stopped development run, but v1 target
+  execution is disabled until a versioned protocol resolves the action unit.

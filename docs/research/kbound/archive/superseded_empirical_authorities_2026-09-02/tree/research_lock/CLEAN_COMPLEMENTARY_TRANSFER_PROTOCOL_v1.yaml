@@ -1,0 +1,99 @@
+schema: clean_complementary_transfer_protocol_v1
+decision: D19_clean_complementary_reliability_transfer_benchmark
+date_locked: 2026-06-02
+status_at_lock: PRE_REGISTERED_AWAITING_FRESH_HOLDOUT
+
+purpose: >
+  A new, separately-named clean-transfer benchmark scoped to the regime where
+  clean transfer is THEORETICALLY PLAUSIBLE: complementary modalities whose
+  confidence-weighted mean (CW) is provably suboptimal. This is NOT a rewrite of
+  strict clean Gate E and does NOT make it pass. T9 proves clean Gate E is
+  unpassable on near-ceiling/redundant data (eps_subopt -> 0); this benchmark
+  measures clean fusion only where eps_subopt > MDE, i.e. where a better rule can
+  legitimately win. A pass is a BOUNDED, scoped claim, never universal clean
+  superiority or SOTA.
+
+relationship_to_existing_gates:
+  strict_clean_gate_e: UNCHANGED, remains false / CLOSED_BY_PROOF_T9.
+  forbidden:
+    - claiming this benchmark IS strict clean Gate E or a pass of it
+    - rewriting strict Gate E or its comparator
+    - claiming universal clean-transfer superiority, SOTA, or production readiness
+    - using opened categories as an official confirmation
+    - tuning method/threshold on the held-out test outcomes
+
+scientific_scope:
+  claim_if_passed: >
+    "On naturally paired clean transfer in the COMPLEMENTARY-RELIABILITY regime
+    (modalities carry combinable information and CW is provably suboptimal),
+    reliability-gated fusion improves over CW with held-out statistical support."
+  not_claimed:
+    - superiority on redundant / near-ceiling clean data (T9 forbids it)
+    - superiority where only one modality is informative
+
+admissibility_criterion:   # frozen; computed on DEVELOPMENT data only, no test labels
+  runner: src/scripts/scenario_c/clean_complementary_admissibility.py
+  rule: >
+    A category is ADMISSIBLE iff, AFTER the degenerate-channel guard
+    (elara.evaluation.degenerate_channel_guard, validation-fit), the T9
+    certificate gate_e_unpassable_certificate(auc_cw, auc_oracle, ...) returns
+    FALSE on development data -- i.e. an unconstrained cross-fitted oracle
+    credibly recovers headroom above the minimum detectable effect over guarded
+    CW. True (redundant/near-ceiling) and None (inconclusive/underpowered oracle)
+    are EXCLUDED.
+  guard_first_rationale: >
+    The guard is applied before the certificate so admissibility reflects GENUINE
+    modality complementarity, not headroom an oracle recovers by routing around a
+    broken/inverted channel (that is a detector bug to fix, not transfer headroom
+    to claim). Without the guard, the degenerate lego_propeller channel falsely
+    reads admissible (eps 0.98); with the guard it is correctly excluded.
+
+frozen_method:
+  detectors:
+    rgb: deep PatchCore (ResNet-50 layer2+layer3) per-category memory bank
+    ps:  deep PatchCore (ResNet-50 layer2+layer3) per-category memory bank
+    xyz: dual-view, guard-selected per category -
+         {relief: pcd_to_geometry_image -> deep PatchCore,
+          covariance: point_cloud_covariance_features (multi-scale k=8,16,32) ->
+                      score_one_class_point_cloud}
+  channel_guard: elara.evaluation.degenerate_channel_guard (validation-only)
+  per_category_score_norm: monotone z-sigmoid on train-OK distances
+  fusion_rule: rel_x_sharp   # reliability x per-sample sharpness, over guarded channels
+  comparator_primary: confidence_weighted_mean (CW), over guarded channels
+  comparator_secondary: [equal_mean, SAR_score_adapter]
+  metric: pooled AUROC across admissible held-out categories
+  inference: paired bootstrap, 10000 iters, two-sided 95% CI
+
+primary_endpoint:
+  field: gate_clean_complementary_transfer_confirmed
+  pass_condition:
+    - admissible-set pooled gated vs guarded-CW delta >= 0.010
+    - admissible-set pooled gated vs guarded-CW 95% CI lower bound > 0
+  run_policy: ONE_SHOT
+
+freshness_requirement:
+  rule: >
+    Admissible categories for the OFFICIAL run must come from a never-opened
+    split/dataset, frozen before scoring. Real-IAD-D3, 3D-ADAM, Real-IAD, MulSen,
+    Eyecandies are all OPENED and are valid for the development admissibility scan
+    ONLY, not for an official pass.
+  official_holdout: TO_BE_NOMINATED   # fresh paired RGB+X split, never inspected
+
+development_demonstration_2026_06_02:
+  data: opened Real-IAD-D3 score cache (DEVELOPMENT ONLY, not a confirmation)
+  scanned: 11
+  admissible: 3
+  admissible_categories: [lattice_block_plug, purple_clay_pot, telephone_spring_switch]
+  note: >
+    Demonstrates the benchmark is non-vacuous: genuine complementary-regime
+    categories exist (>=2 reliable channels, guarded oracle headroom > MDE), while
+    redundant/near-ceiling (headphone, limit_switch) and artifact (lego_propeller)
+    categories are correctly excluded. These opened categories CANNOT be the
+    official holdout; they only validate the selection machinery.
+  result_json: experiments/fusion/clean_complementary_admissibility.json
+
+integrity:
+  used_test_labels_for_selection: false
+  admissibility_on: development data only
+  one_shot: true
+  preserves_strict_gate_e_false: true

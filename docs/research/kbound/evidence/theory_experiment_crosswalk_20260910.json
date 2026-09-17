@@ -1,0 +1,204 @@
+{
+  "schema_version": "kbound-crosswalk-v1",
+  "generated_at": "2026-09-10T19:26:00-05:00",
+  "version": "2026-09-10 / 1.0",
+  "description": "Traceability crosswalk mapping mathematical claims, underlying premises, proof locations, executable code, tests, and empirical evidence.",
+  "records": [
+    {
+      "claim_id": "KB-CLAIM-001",
+      "target": "Population benefit sign sgn(Delta) under rich class C_beta",
+      "units": "Population risk reduction Delta = R(f0) - R(fa) in [-1, 1]",
+      "probability_space_and_quantifiers": "Fixed target distribution P_T in C_beta; fixed hypothesis pair (f0, fa); marginal over target inputs X ~ P_T",
+      "premises": [
+        {
+          "statement": "Richness of admissible target class C_beta = {P_T: |gamma| <= beta}",
+          "classification": "established_by_construction"
+        },
+        {
+          "statement": "Nonzero disagreement mass d = P_T(f0(X) != fa(X)) > 0",
+          "classification": "established_by_construction"
+        },
+        {
+          "statement": "Binary 0-1 loss or multiclass target supported only on model predictions on disagreement region",
+          "classification": "established_by_construction"
+        }
+      ],
+      "proof_location": "docs/research/kbound/paper/sections/theory_core_main.tex, Theorem 1; docs/research/kbound/formal/KBound/Probability/MeasureFrontier.lean",
+      "executable_function": "kga.frontier.assess_frontier",
+      "test": "tests/test_kga_frontier_api.py",
+      "data_contract": "Fixed scalar M in [-1, 1], beta >= 0",
+      "result": "Strict action uniformly sound iff |M| > beta; in [-beta, beta] abstention is mandatory",
+      "permitted_conclusion": "Exact strict-commitment frontier relative to declared class C_beta",
+      "excluded_conclusion": "Does not prove empirical knowability on unlabeled finite batches without externally verified beta",
+      "evidence_status": "supported_formal_and_simulation"
+    },
+    {
+      "claim_id": "KB-CLAIM-002",
+      "target": "Minimax non-identifiability of benefit sign from unlabeled evidence",
+      "units": "TV distance and benefit sign",
+      "probability_space_and_quantifiers": "Two admissible distributions P_T^+, P_T^- with identical augmented-evidence law z but Delta(P_T^+) > 0 > Delta(P_T^-)",
+      "premises": [
+        {
+          "statement": "Fibre over observable law z contains opposite-sign distributions when |M| <= beta",
+          "classification": "established_by_construction"
+        }
+      ],
+      "proof_location": "docs/research/kbound/paper/sections/theory_beta_minimax.tex, Theorem 2; docs/research/kbound/formal/KBound/Probability/LeCamMeasure.lean",
+      "executable_function": "experiments/kbound/theory_validation/val_thm1_lecam.py",
+      "test": "tests/test_kbound_formal_audit.py",
+      "data_contract": "Witness pair construction with matched evidence law",
+      "result": "Minimax directional error probability is at least 1/2 without external constraints",
+      "permitted_conclusion": "Label-free abstention is an information-theoretic necessity, not an engineering shortfall",
+      "excluded_conclusion": "Does not rule out identification under narrower, restricted distribution families",
+      "evidence_status": "supported_formal_and_simulation"
+    },
+    {
+      "claim_id": "KB-CLAIM-003",
+      "target": "Cell-level decision risk under conformal interval coverage",
+      "units": "Empirical evaluation-cell benefit Delta^cell in [-1, 1]",
+      "probability_space_and_quantifiers": "Joint distribution over training, calibration episodes, and test cell; marginal over calibration and test randomness",
+      "premises": [
+        {
+          "statement": "Marginal interval coverage Pr[Delta^cell in [delta_hat - epsilon, delta_hat + epsilon]] >= 1 - alpha_cell",
+          "classification": "empirically_assessed"
+        },
+        {
+          "statement": "Exchangeability of calibration and test cell residuals",
+          "classification": "assumed_unverified"
+        }
+      ],
+      "proof_location": "docs/research/kbound/paper/sections/theory_certificate.tex, Proposition 2; docs/research/kbound/formal/KBound/Probability/MeasureCertificate.lean",
+      "executable_function": "kga.policy.decide, kga.certificate.split_conformal_rank_radius",
+      "test": "tests/test_kga_canonical_rule.py",
+      "data_contract": "Score-fold excluded calibration residuals, exact rank k = ceil((N+1)*(1-alpha))",
+      "result": "Unconditional wrong-direction probability Pr[ADAPT, Delta^cell <= 0] <= alpha_cell",
+      "permitted_conclusion": "Coverage-to-action implication for the declared measured cell target",
+      "excluded_conclusion": "Does not bound conditional false adaptation FA_c; does not imply population benefit coverage",
+      "evidence_status": "supported_formal_and_empirical"
+    },
+    {
+      "claim_id": "KB-CLAIM-004",
+      "target": "Conditional false adaptation FA_c",
+      "units": "Conditional probability Pr[Delta <= 0 | ADAPT]",
+      "probability_space_and_quantifiers": "Conditioned on the event {action = ADAPT}",
+      "premises": [],
+      "proof_location": "n/a",
+      "executable_function": "n/a",
+      "test": "tests/test_kbound_theory_scope.py",
+      "data_contract": "Empirical confusion matrix over evaluated cells",
+      "result": "Theoretical bound FA_c <= alpha is withdrawn; reported as descriptive empirical metric only",
+      "permitted_conclusion": "Descriptive accounting of harmful commitments among accepted updates",
+      "excluded_conclusion": "Cannot be claimed as a mathematical theorem guarantee under standard split conformal inference",
+      "evidence_status": "withdrawn_as_theorem_reported_descriptively"
+    },
+    {
+      "claim_id": "KB-CLAIM-005",
+      "target": "Population benefit Delta via compound cell-to-population bridge",
+      "units": "True population risk difference Delta = R(f0) - R(fa) in [-1, 1]",
+      "probability_space_and_quantifiers": "Joint distribution under episode law Q; conditional on realized frozen model pair and fresh IID evaluation sample E_e of size m",
+      "premises": [
+        {
+          "statement": "Cell residual coverage Pr[|delta_hat - B_e| <= epsilon] >= 1 - alpha_cell",
+          "classification": "assumed_unverified"
+        },
+        {
+          "statement": "Conditional IID evaluation sample of size m yielding Hoeffding concentration Pr[|B_e - Delta_e| <= b] >= 1 - delta_sampling",
+          "classification": "established_by_construction"
+        },
+        {
+          "statement": "Hoeffding paired-accuracy radius b(m, delta_sampling) = min(2, sqrt(2 ln(2/delta_sampling)/m))",
+          "classification": "established_by_proof"
+        }
+      ],
+      "proof_location": "docs/research/kbound/paper/sections/theory_certificate.tex, Proposition 3; docs/research/kbound/kbound_submission_supplement.tex, Appendix A",
+      "executable_function": "kga.population_transfer.compose_conditional_population_interval, kga.population_transfer.hoeffding_paired_accuracy_radius",
+      "test": "tests/test_kga_population_transfer.py, tests/test_population_transfer_integration.py",
+      "data_contract": "delta_hat, epsilon >= 0, m >= 1, alpha_cell + delta_sampling <= alpha_population",
+      "diagnostic_artifact": "experiments/kbound/results/synthetic_diagnostic/diagnostic_summary.json",
+      "result": "Pr[Delta_e in [delta_hat - (epsilon + b), delta_hat + (epsilon + b)]] >= 1 - (alpha_cell + delta_sampling); verified in exact-truth simulation (N in {18,19,39,99}, m in {32,128,512,2048}) with 100% population coverage and zero directional errors",
+      "permitted_conclusion": "Valid population coverage when cell coverage and fresh conditional IID evaluation hold",
+      "excluded_conclusion": "Not established for historical transductive benchmark panels where evaluation samples were used in adaptation",
+      "evidence_status": "supported_math_software_and_exact_truth_simulation"
+    },
+    {
+      "claim_id": "KB-CLAIM-006",
+      "target": "Development-based operational surrogate for population residual budget beta",
+      "units": "Dimensionless calibration-residual budget beta in [0, 1/2]",
+      "probability_space_and_quantifiers": "Empirical evaluation on 6,885 benchmark cells across CIFAR-10-C and ImageNet-C",
+      "premises": [
+        {
+          "statement": "Source-domain development proxy approximates target deployment residual",
+          "classification": "empirically_assessed"
+        }
+      ],
+      "proof_location": "docs/research/kbound/kbound_submission_body.tex, Section 9.1; docs/research/kbound/kbound_submission_supplement.tex, Appendix B.11",
+      "executable_function": "n/a (withdrawn)",
+      "test": "tests/test_manuscript_claim_consistency.py",
+      "data_contract": "Historical sweep records",
+      "result": "Surrogate was 1.4x-50x too small; 24-73% of evaluation cells violated proxy bounds; route withdrawn",
+      "permitted_conclusion": "Negative result demonstrating failure of development-proxy estimation; latent residuals unobserved; raw sweep artifact unavailable",
+      "excluded_conclusion": "Not a measurement of latent theoretical-class violations; does not invalidate KGA which does not use beta",
+      "evidence_status": "withdrawn_negative_result"
+    },
+    {
+      "claim_id": "KB-CLAIM-007",
+      "target": "Synchronized CIFAR-10-C baseline comparison (Task 3)",
+      "units": "Accuracy shortfall (regret) and unconditional false adaptation rate FA_u over 2,160 rows",
+      "probability_space_and_quantifiers": "5 source seeds across 432 CIFAR-10-C corruptions (2,160 evaluations); synchronized deterministic replay",
+      "premises": [
+        {
+          "statement": "Identical frozen baseline, adapted predictions, and 11D label-free feature vectors across all policies",
+          "classification": "established_by_construction"
+        }
+      ],
+      "proof_location": "docs/research/kbound/kbound_submission_body.tex, Section 8.3, Table 6",
+      "executable_function": "docs/research/kbound/scripts/run_decision_baselines.py",
+      "test": "tests/test_official_baseline_provenance.py",
+      "data_contract": "experiments/kbound/results/synchronized_dev_baselines_cifar10c.json",
+      "result": "KGA achieves FA_u = 0.000 vs 0.037 for uncalibrated regression, sacrificing 0.0012 regret for complete directional safety",
+      "permitted_conclusion": "Empirical validation of risk containment beyond heuristic threshold gates",
+      "excluded_conclusion": "Does not imply superiority on arbitrary uncalibrated distributions",
+      "evidence_status": "supported_reproducible_empirical"
+    },
+    {
+      "claim_id": "KB-CLAIM-008",
+      "target": "Synchronized ImageNet-C baseline comparison across Tent, EATA, and SAR (Task 3)",
+      "units": "Accuracy, regret, FA_u, FA_c, and decision coverage across 108 noise conditions",
+      "probability_space_and_quantifiers": "36 noise conditions each for Tent, EATA, and SAR on ImageNet-C (N=108)",
+      "premises": [
+        {
+          "statement": "Protocol-synchronized evaluation using identical sample streams and feature vectors",
+          "classification": "established_by_construction"
+        }
+      ],
+      "proof_location": "docs/research/kbound/kbound_submission_supplement.tex, Section B.3.1, Table 7",
+      "executable_function": "docs/research/kbound/scripts/run_decision_baselines.py",
+      "test": "tests/test_kga_canonical_rule.py",
+      "data_contract": "experiments/kbound/results/task3_imagenetc_local_internal_20260910/reconciliation_summary.json",
+      "result": "Under SAR (44% harmful base rate), all 1D heuristic gates suffer FA_c = 1.000; KGA achieves FA_u = 0.000 and FA_c = 0.000 with 0.33 coverage",
+      "permitted_conclusion": "Conformal 3-way abstention is necessary under severe distribution shift to prevent catastrophic false adaptation",
+      "excluded_conclusion": "Does not eliminate regret relative to condition oracle",
+      "evidence_status": "supported_reproducible_empirical"
+    },
+    {
+      "claim_id": "KB-CLAIM-009",
+      "target": "Historical ImageNet-C SAR hyperparameter confounder isolation (Task 4)",
+      "units": "Historical mean accuracy and regret over 5 reported arms on ImageNet-C noise",
+      "probability_space_and_quantifiers": "Historical 60 cells per arm; the raw cell records and reconciliation manifest are not resident in the current checkout",
+      "premises": [
+        {
+          "statement": "Matched 5-arm control isolating learning rate (4e-3 vs 2.5e-4), entropy margin, and BN statistics",
+          "classification": "reported_historical_not_currently_authenticated"
+        }
+      ],
+      "proof_location": "docs/research/kbound/kbound_submission_supplement.tex, Section B.3, Table 6",
+      "executable_function": null,
+      "test": "tests/test_manuscript_claim_consistency.py",
+      "data_contract": null,
+      "result": "The historical report stated that the 16x learning-rate arm degraded and that the reported reference arm had KGA accuracy 0.4086 versus 0.3953 Always Adapt and 0.3734 Always Freeze; current raw records are unavailable for re-authentication.",
+      "permitted_conclusion": "Historical descriptive context only; do not use this matrix as current reproducible evidence or as the sole authority for Task 4.",
+      "excluded_conclusion": "No current selective-routing or hyperparameter-causality claim is supported until the 60-cell records and manifest are recovered and independently re-run.",
+      "evidence_status": "historical_not_promotable"
+    }
+  ]
+}

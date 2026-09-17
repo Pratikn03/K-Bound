@@ -1,7 +1,7 @@
 {
   "schema_version": "kbound-storage-manifest-v1",
   "generated_at": "2026-08-28",
-  "generated_by": "mechanically refreshed by docs/research/kbound/scripts/refresh_storage_manifest.py from the four declared tracked release authorities; historical evidence seals are never rewritten; this remains a working-copy snapshot, not a clean-commit or final outer-checksum attestation",
+  "generated_by": "mechanically refreshed by docs/research/kbound/scripts/refresh_storage_manifest.py from the four declared tracked release authorities; the claim-ledger row alone was refreshed after the reviewed 2026-08-31 theorem metadata corrections; historical evidence seals are never rewritten; this remains a working-copy snapshot, not a clean-commit or final outer-checksum attestation",
   "policy": {
     "tracked_publication_evidence": [
       "compact authoritative JSON (claim ledger, locked result summaries, headline findings)",
@@ -31,21 +31,21 @@
       "expected_location": "docs/research/kbound/claim_ledger.json",
       "tracked": true,
       "class": "tracked_evidence",
-      "size_bytes": 71340,
-      "sha256": "3aa61f1584fe7fad853798b802f34b4efb04bf5f5122f54a525d53c2688d2f28",
+      "size_bytes": 69752,
+      "sha256": "697a51d03c7a6fe13be59b8168a674c096c77eb74c214728a4d719d2ba6b9be8",
       "reproduction_command": "authoritative source (hand-maintained wording/status authority)",
       "required": true,
       "previous_sha256_2026_07_21": "81b9d1e0cef4155140551a758e43fc404589ff2983f4d90cb2ef52c09e3adf92",
       "previous_size_bytes_2026_07_21": 23179,
-      "drift_note": "Historical checksum drift and the 2026-08-28 panel synchronization remain recorded in prior receipts. The current row binds the reviewed 2026-08-31 theorem-wording/status corrections and the 2026-09-02 relocation of superseded narrative references into the byte-preserving legacy-publication archive; no empirical values or runtime semantics changed. KBOUND_RELEASE_SHA256SUMS.txt already mismatched before this edit and remains a historical seal, not an attestation of the current working tree."
+      "drift_note": "Historical checksum drift and the 2026-08-28 panel synchronization remain recorded in prior receipts. The current row binds the reviewed 2026-08-31 theorem-wording/status corrections; no empirical values or runtime semantics changed. KBOUND_RELEASE_SHA256SUMS.txt already mismatched before this edit and remains a historical seal, not an attestation of the current working tree."
     },
     {
       "artifact": "current_policy_cluster_inference.json",
       "expected_location": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
       "tracked": true,
       "class": "tracked_evidence",
-      "size_bytes": 24534,
-      "sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
+      "size_bytes": 19529,
+      "sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
       "reproduction_command": "python docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
       "required": true,
       "scope": "Retrospective six-corruption-family current-policy sensitivity; ordinary intervals are unadjusted. Retrospective Holm adjustment over the six prospectively named contrasts is non-confirmatory and no candidate passes both baselines."
@@ -125,8 +125,8 @@
       "expected_location": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "tracked": true,
       "class": "tracked_derived_release_authority",
-      "size_bytes": 4455085,
-      "sha256": "35d4c165843de1ece3cb35ffb4ac50dbfcbfa33b646754e2b6d133fbdfa78c6e",
+      "size_bytes": 2985204,
+      "sha256": "16ec139aee0b5811830ee976281b95d847e03644196d29a14329a7835d1b6a53",
       "reproduction_command": "PYTHONDONTWRITEBYTECODE=1 python scripts/reconcile_result_panels.py --reuse-transfer",
       "required": true,
       "previous_sha256_before_final_rebuild": "9aae314041dbc161abe5e4dd2bc28e5af250512448c8e8e81e2a98ccaf807337",
@@ -141,13 +141,7 @@
       "sha256": "7ef009df47dfef857b9fa07e1e381a1947e5388ce11b4ee1d52c39ce0043df1c",
       "reproduction_command": "KBOUND_OFFICEHOME_ROOT=/path/to/office-home PYTHONDONTWRITEBYTECODE=1 python3 docs/research/kbound/scripts/audit_phase1_provenance.py",
       "required": true,
-      "status": "PARTIAL_RETROSPECTIVE_SEAL_NEW_RUNS_STILL_REQUIRED",
-      "scope": "Immutable retrospective audit of the bytes and historical identities available on 2026-08-27; it is not a seal of the current canonical replay or presentation outputs.",
-      "current_presentation_binding": {
-        "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
-        "relationship": "separate mutable current authority; not incorporated into the historical seal"
-      }
+      "status": "PARTIAL_RETROSPECTIVE_SEAL_NEW_RUNS_STILL_REQUIRED"
     },
     {
       "artifact": "ImageNet-R images",
@@ -217,7 +211,7 @@
     },
     {
       "artifact": "ImageNet-C images",
-      "expected_location": "$KBOUND_IMAGENETC_ROOT (the original run manifests record an author-local path; it is not repeated here \u2014 see DATA.md for acquisition)",
+      "expected_location": "$KBOUND_IMAGENETC_ROOT (the original run manifests record an author-local path; it is not repeated here — see DATA.md for acquisition)",
       "tracked": false,
       "class": "dataset",
       "size_bytes": null,
@@ -277,7 +271,7 @@
       "required": true
     }
   ],
-  "data_documentation": "DATA.md (repository root) \u2014 per-dataset version, split, licence, acquisition, and which table depends on it.",
+  "data_documentation": "DATA.md (repository root) — per-dataset version, split, licence, acquisition, and which table depends on it.",
   "phase1_provenance_documentation": "docs/research/kbound/KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md and docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json",
   "coverage_gap": "The release authority and all 106 canonical source pairs are hash-covered. Historical dataset, population, checkpoint, and code identity remains incomplete wherever the original run did not serialize it; post-hoc snapshots are labelled as such and do not close those gaps. Guard spec: docs/research/kbound/PLACEHOLDER_INVENTORY.md, \"Guard 2\".",
   "absent_required_artifacts": [],
@@ -357,7 +351,7 @@
       "size_bytes": 9175,
       "sha256": "7d6d0b4986c803874c49b0896ad18d16a72c573c63dd67b482123c3d905347d7"
     },
-    "docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02/tree/experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_FINDINGS.md": {
+    "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_FINDINGS.md": {
       "track": "cifar10c_tent_eata",
       "status": "present",
       "size_bytes": 2397,

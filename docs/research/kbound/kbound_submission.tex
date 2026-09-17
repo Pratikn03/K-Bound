@@ -1,36 +1,28 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% kbound_submission.tex -- maintained compact two-column K-Bound submission.
 %%
-%% This driver intentionally excludes the retired legacy body and appendix
-%% variants. Both maintained layouts share the corrected
+%% This driver intentionally does not input the superseded kbound_short_body.tex
+%% or kbound_short_appendix.tex. Both maintained layouts share the corrected
 %% abstract, scientific body, and separately input supplementary material.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass[11pt,twocolumn]{article}
-\ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
-\ifdefined\pdftrailerid\pdftrailerid{}\fi
-\ifdefined\pdfsuppressptexinfo\pdfsuppressptexinfo=-1\fi
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{microtype}
-\usepackage[letterpaper,top=0.74in,bottom=0.78in,left=0.74in,right=0.74in,
-            columnsep=0.25in]{geometry}
+\usepackage[letterpaper,top=0.60in,bottom=0.60in,left=0.68in,right=0.68in,
+            columnsep=0.22in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{float}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning}
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{url}
 \usepackage{xspace}
 \usepackage{seqsplit}
-\usepackage[authoryear,round]{natbib}
-\usepackage[section]{placeins}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 \hypersetup{
   pdftitle={K-Bound: When Is Label-Free Adaptation Knowable?},
@@ -60,7 +52,6 @@
 \newcommand{\abstain}{\textnormal{\textsc{abstain}}\xspace}
 \DeclareRobustCommand{\hashtext}[1]{{\ttfamily\expandafter\seqsplit\expandafter{#1}}}
 \providecommand{\path}[1]{\texttt{#1}}
-\newcommand{\KBoundAuthorYearCitations}{}
 
 \setlength{\emergencystretch}{3em}
 \setlist{nosep,leftmargin=*}
@@ -72,8 +63,7 @@
 \renewcommand{\dblfloatpagefraction}{0.75}
 \input{paper/generated/kbound_numbers}
 \input{paper/generated/cct20_numbers.tex}
-\input{paper/generated/cct20_reporting_numbers.tex}
-\input{paper/generated/current_release_identity.tex}
+\input{paper/generated/so2sat_numbers.tex}
 \input{paper/figure_fallback}
 
 \newif\ifanon
@@ -97,12 +87,12 @@
 \input{kbound_abstract}
 \end{abstract}
 
-\noindent\textbf{Keywords:} test-time adaptation; adaptation gating; abstention; partial
-identification; distribution shift; conformal calibration; selective decisions.
+\noindent\textbf{Keywords:} test-time adaptation; abstention; distribution shift;
+label-free risk estimation; conformal calibration; selective decisions.
 
 \input{kbound_submission_body}
 
-{\footnotesize\input{paper/references_kbound_expanded}}
+{\scriptsize\input{paper/references_kbound_expanded}}
 
 \clearpage
 \input{kbound_submission_supplement}

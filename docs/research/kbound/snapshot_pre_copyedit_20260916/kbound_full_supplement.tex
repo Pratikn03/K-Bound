@@ -1,0 +1,99 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Full-companion-only material. Every result here is controlled evidence and
+%% is excluded from the compact submission's headline empirical panel.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Controlled Population-to-KGA Bridge}
+\label{app:full-bridge}
+
+The population frontier and empirical KGA have related three-way action spaces but different
+inputs. The population rule acts on the identified set induced by $(M,\beta)$, where
+$\Delta=M-\gamma$ and $\beta$ is externally declared. KGA acts on an empirical interval built
+from $(\widehat\Delta,\varepsilon)$. The seven constructed cells below make the distinction
+concrete. They are an algebraic interface diagnostic, not evaluation evidence and not a method for
+estimating $\beta$.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Population side of the seven-example bridge. The strict population rule abstains on the
+closed band $|M|\le\beta$.}
+\label{tab:full-bridge-population}
+\begin{tabular}{lrrrrl}
+\toprule
+Cell & $M$ & $\gamma$ & $\Delta$ & $\beta$ & Population action \\
+\midrule
+bridge-00 & $-0.30$ & $ 0.04$ & $-0.26$ & $0.10$ & \freeze \\
+bridge-01 & $-0.10$ & $ 0.02$ & $-0.08$ & $0.10$ & \abstain \\
+bridge-02 & $-0.05$ & $-0.02$ & $-0.07$ & $0.10$ & \abstain \\
+bridge-03 & $ 0.00$ & $ 0.00$ & $ 0.00$ & $0.10$ & \abstain \\
+bridge-04 & $ 0.05$ & $ 0.02$ & $ 0.07$ & $0.10$ & \abstain \\
+bridge-05 & $ 0.10$ & $-0.02$ & $ 0.08$ & $0.10$ & \abstain \\
+bridge-06 & $ 0.30$ & $-0.04$ & $ 0.26$ & $0.10$ & \adapt \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Empirical side of the same bridge. Five actions agree with the population rule and two
+differ because $\varepsilon$ is not a substitute for $\beta$.}
+\label{tab:full-bridge-empirical}
+\begin{tabular}{lrrlc}
+\toprule
+Cell & $\widehat\Delta$ & $\varepsilon$ & Empirical action & Same action? \\
+\midrule
+bridge-00 & $-0.24$ & $0.05$ & \freeze  & yes \\
+bridge-01 & $-0.07$ & $0.08$ & \abstain & yes \\
+bridge-02 & $-0.09$ & $0.04$ & \freeze  & no \\
+bridge-03 & $ 0.01$ & $0.04$ & \abstain & yes \\
+bridge-04 & $ 0.09$ & $0.04$ & \adapt   & no \\
+bridge-05 & $ 0.07$ & $0.08$ & \abstain & yes \\
+bridge-06 & $ 0.24$ & $0.05$ & \adapt   & yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two disagreements are informative rather than erroneous. In bridge-02 and bridge-04, the
+declared population class still permits both benefit signs, while the constructed empirical
+interval excludes zero. That comparison shows why population non-identifiability does not imply
+empirical abstention on every realized cell, and why empirical interval commitment does not remove
+the population assumption. The authoritative artifact is
+\path{experiments/kbound/results/frontier_kga_bridge_v1/bridge_results.json}
+(claim \texttt{KB-CLAIM-043}).
+
+\section{Controlled Two-View MNIST Diagnostic}
+\label{app:full-d33}
+
+The D33 experiment studies a deliberately controlled two-view setting with injected corruption.
+Across 130 conditions, KGA makes 9 \adapt decisions, 119 \freeze decisions, and 2 \abstain
+decisions. Table~\ref{tab:full-d33-summary} reports the recorded aggregate outcomes.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Controlled two-view MNIST (D33). Accuracy is averaged over the 130 recorded conditions.}
+\label{tab:full-d33-summary}
+\begin{tabular}{lr}
+\toprule
+Quantity & Recorded value \\
+\midrule
+Conditions & 130 \\
+\adapt / \freeze / \abstain & 9 / 119 / 2 \\
+KGA mean accuracy & 85.6785\% \\
+Single-view A mean accuracy & 85.3554\% \\
+Always-fuse mean accuracy & 58.3231\% \\
+Oracle mean accuracy & 85.7308\% \\
+Observed false \adapt & 0 of 9 \adapt decisions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The recorded KGA-minus-single-A difference is 0.3231 percentage points, whereas the
+KGA-minus-always-fuse difference is 27.3554 percentage points. These values describe this finite,
+injected-corruption diagnostic only. In particular, zero observed false \adapt decisions among
+only nine \adapt decisions does not establish a small conditional error rate, and this experiment
+does not establish performance under a natural distribution shift. The authoritative artifact is
+\path{experiments/kbound/results/controlled_multimodal_d33/results.json}
+(claim \texttt{KB-CLAIM-027}).

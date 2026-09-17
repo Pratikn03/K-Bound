@@ -1,148 +1,185 @@
-# K-Bound
+# K-Bound Research Guide
 
-K-Bound studies when available evidence can support adapting a model, retaining the frozen model,
-or withholding a directional commitment. KGA implements the empirical benefit-interval gate.
-The contribution is a scoped characterization and decision framework, not a promise of universal
-accuracy improvement.
+This directory is the maintained research surface for K-Bound and KGA. It contains the manuscript,
+historical extended manuscript, formalization, canonical result manifest, dashboard, and
+physical-camera validation package.
 
-**Current research map:** [DOCS_INDEX.md](DOCS_INDEX.md). It links the actual findings to the
-maintained manuscript, Lean statements, implementation, and evidence. The
-[2026-08-31 full audit](audits/research_traceability.json) records coverage, counterexamples,
-reproduced software failures, and the recoverable documentation cleanup.
+> ## State of the project as of 2026-08-20 -- read this before anything else
+>
+> The maintained release now separates the compact submission, the complete manuscript, and
+> historical audit records. Older July status documents remain for provenance and do not override
+> the source-hashed reconciled panel. What a reader arriving today needs to know:
+>
+> - `kbound_submission.tex` builds the maintained compact paper; `kbound_tmlr.tex` builds the full
+>   manuscript and supplement. Both use the same canonical numbers and load-bearing theory files.
+> - The population frontier uses $(M,\gamma,\beta)$; empirical KGA uses
+>   $(\widehat\Delta,\varepsilon)$. Real-data KGA does not numerically receive $\beta$.
+> - The canonical empirical panel is
+>   `experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json`, generated from
+>   105 source-hashed compact records. Generated LaTeX tables and repeated numbers read this panel.
+> - CIFAR-10-C Tent is the strongest routing result. EATA is a point-estimate beats-both result whose
+>   adapt-side corruption-cluster interval includes zero. The completed SAR rebuild is negative.
+> - Office-Home, iWildCam, Camelyon17 OOD, and RxRx1 primarily support one-sided no-harm or endpoint
+>   reproduction. PACS, ImageNet-R, and CIFAR-10.1 are retained as null or negative diagnostics.
+> - No clean single-dataset natural-shift CI-robust beats-both claim and no real-camera result are
+>   made. The camera package is a prospective validation protocol.
+>
+> The single-sentence version: K-Bound has a strong theory and a coherent deployable controller,
+> one controlled mixed-regime routing result, and an intentionally narrow natural-shift claim.
 
-## What is established—and what is not
+## Start Here
 
-- The maintained population theory characterizes the strict frontier for its declared admissible
-  class under binary zero-one loss, or labels supported only on the two model predictions on
-  their disagreement region. The population variables are `M, gamma, beta`; gamma is a calibration
-  residual, not automatically distribution drift.
-- Empirical KGA uses `Delta_hat, epsilon`, not a numerical beta input. An interval-supported decision about a
-  measured batch outcome does not automatically protect population risk or repeated deployment.
-- The historical full Lean audit verified 238 authored theorem/lemma statements, including the then-142
-  registered capstones. The 2026-09-05 audit-floor addition raises the current registry to 150;
-  a fresh direct pinned compile of all 44 local modules and an actual 165-declaration axiom
-  audit passed independent review. These inventories have different scopes, not additive counts.
-  This is not a standard Lake build or final release verification. Five
-  foundational layers are mechanized under explicit assumptions; the historical sixth
-  one-bit/H/ratio-rate extension is not closed.
-- Controlled CIFAR-10-C Tent/EATA point estimates favor routing against both fixed policies.
-  For Tent, the retrospective Holm adjustment over the six prospectively named
-  candidate-by-baseline contrasts gives 0.140625 against always-adapt and 0.09375 against
-  always-freeze; neither value is confirmatory.
-  SAR favors always-adapt. Sign-flip inference needs joint invariance under each cluster sign
-  flip; exchangeability alone does not establish that premise.
-- CCT-20 was a cell-outcome-unopened, internally sealed execution, not a globally label-unopened or
-  publicly preregistered study. KGA made 0/44/1 ADAPT/FREEZE/ABSTAIN decisions. All 45 served
-  predictions used the frozen model, but the sole helpful cell received FREEZE: one false FREEZE
-  among 44 FREEZE actions (1/45 overall). It passes only the locked safe-utility check and does not
-  demonstrate selective routing or strong success.
-- So2Sat stopped at development with no feasible candidate, before gate calibration or target
-  access. It has no target natural-shift score.
-- The controlled two-view MNIST result and additional formal transfer/counterexample results
-  are now indexed explicitly. They must not be relabeled as natural-shift evidence.
-- No single natural dataset establishes confidence-supported selective routing against both fixed
-  policies. The iWildCam numerical/action row is withheld; no completed physical-camera
-  experiment is reported.
-
-The paper, evidence, and root decision core are not invalidated by every historical draft defect.
-Unsupported theorem-ledger closure claims have now been narrowed or withdrawn. Reproduced
-wrapper-validation failures and the unfinished clean-source release gate still mean the repository
-is **not yet a verified publication release**.
-
-## Read and reproduce
-
-| Purpose | Entry |
+| Goal | Entry point |
 |---|---|
-| Understand the research and remaining gaps | [Research map](DOCS_INDEX.md) |
-| Read the current four-document release | [Release identity and roles](CURRENT_RELEASE.md) |
-| Read the named compact main | [Source](kbound_short_main.tex), [PDF](release/current/kbound_short_main.pdf) |
-| Read the named standalone supplement | [Source](kbound_short_supplement.tex), [PDF](release/current/kbound_short_supplement.pdf) |
-| Read the anonymous integrated TMLR manuscript | [Source](kbound_tmlr.tex), [PDF](release/current/kbound_tmlr.pdf) |
-| Read the named full technical report | [Source](kbound_full_report.tex), [PDF](release/current/kbound_full_report.pdf) |
-| Inspect the current claim wording | [claim_ledger.json](claim_ledger.json) |
-| Inspect canonical empirical results | [Canonical panel](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json), [result audit](KBOUND_SHORT_RESULT_AUDIT.md) |
-| Verify proofs and scope | [Formal README](formal/README.md) |
-| Reproduce the publication artifacts | [REPRODUCE.md](REPRODUCE.md), [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md), [dataset acquisition](../../../DATA.md) |
-| Explore evidence or prepare the prospective camera study | [Dashboard](dashboard/README.md), [camera runbook](edge/PHYSICAL_STUDY_RUNBOOK.md) |
+| **Understand the current state and every open item** | **[SUBMISSION_LEDGER.md](SUBMISSION_LEDGER.md)** — canonical; overrides every other document |
+| Read the compact submission | [kbound_submission.tex](kbound_submission.tex) and [kbound_submission_body.tex](kbound_submission_body.tex) |
+| Read the full manuscript | [kbound_tmlr.tex](kbound_tmlr.tex), [kbound_short_body.tex](kbound_short_body.tex), and [kbound_short_appendix.tex](kbound_short_appendix.tex) |
+| Inspect every canonical panel number | [../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json) |
+| Audit claim-to-artifact links | [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
+| Obtain the datasets | [../../../DATA.md](../../../DATA.md) — per-dataset version, split, licence, acquisition |
+| Reproduce the submission | [REPRODUCE.md](REPRODUCE.md), then [REVIEWER_REPRO_PACKET.md](REVIEWER_REPRO_PACKET.md) (partially superseded) |
+| Run an independent replication | [INDEPENDENT_REPLICATION_PROTOCOL.md](INDEPENDENT_REPLICATION_PROTOCOL.md) |
+| See what is unreadable and why | [PLACEHOLDER_INVENTORY.md](PLACEHOLDER_INVENTORY.md) |
+| See the comparison family and arm inventory | [COMPARISON_FAMILY.md](COMPARISON_FAMILY.md) |
+| Read the corrected leakage audit | [PHASE6_LEAKAGE_AUDIT.md](PHASE6_LEAKAGE_AUDIT.md) |
+| Understand tracked vs external artifacts | [EXTERNAL_STORAGE_POLICY.md](EXTERNAL_STORAGE_POLICY.md) / [STORAGE_MANIFEST.json](STORAGE_MANIFEST.json) |
+| Inspect the historical CIFAR SAR quarantine | [CIFAR10C_SAR_QUARANTINE.md](CIFAR10C_SAR_QUARANTINE.md) -- superseded by the completed rebuild |
+| Inspect theory-to-code mapping | [THEORY_TO_CODE_MAP.md](THEORY_TO_CODE_MAP.md) |
+| Build the research dashboard | [dashboard/README.md](dashboard/README.md) |
+| Start the physical study | [edge/PHYSICAL_STUDY_RUNBOOK.md](edge/PHYSICAL_STUDY_RUNBOOK.md) |
+| Verify Lean files | [formal/README.md](formal/README.md) |
 
-The canonical panel binds 106 compact source artifacts. Later CCT-20 and So2Sat studies retain
-separate receipt-linked authorities; they are not silently inserted into that older panel.
-The [Phase-1 provenance audit](KBOUND_PHASE1_PROVENANCE_AUDIT_2026-08-27.md) is a dated snapshot,
-not proof that missing historical checkpoint or execution identities have been recovered.
+## Fixed Terminology
 
-## Implementation boundary
+- **K-Bound**: population theory and the adapt/freeze/abstain framework.
+- **KGA**: finite-sample empirical wrapper around a candidate adapter.
+- **Population frontier**: M, gamma, and beta.
+- **Empirical certificate**: Delta_hat and epsilon.
+- **Abstain**: do not commit the update; continue prediction with the frozen fallback.
 
-The root installation publishes only `kga` and `kga.*`; its command is `kga.cli:main`.
-The maintained core and HTTP tests pass their focused checks. Score-only `proxy` mode is
-diagnostic; `full` mode is a paired-benefit/external-estimate audit, not automatically the
-schema-bound label-free estimator.
+The population frontier and empirical certificate are related but distinct.
+Real-data KGA does not receive beta, and empirical abstention does not by itself
+prove structural non-identifiability.
 
-The full audit nevertheless reproduced problems in **shipped** surfaces:
-`kga.assumptions`, `kga.integrations.elara`, `kga.integrations.claims`, and the shared
-experiment shim. They can lose masked-input information, accept invalid certificate metadata,
-or perform an ineffective protocol/schema check. See the
-[exact failures and boundaries](DOCS_INDEX.md#current-software-and-release-gaps).
-Do not infer deployment readiness from passing core tests.
+## Evidence Tiers (reconciled 2026-08-20)
 
-The historical `kbound_pkg/kbound` implementation is excluded from the root installation.
-Its heuristic gate and gradient-scaling optimizer are not the maintained certified contract.
-A zero gradient does not prevent weight decay or optimizer momentum from moving parameters.
-Historical edge paths that use this prototype need the same caution.
+The canonical JSON and generated table are authoritative for current point estimates.
 
-**Decision semantics:** ABSTAIN means no certified directional commitment while retaining the
-frozen predictor. Certified FREEZE requires a valid negative interval; missing evidence is not
-a certified FREEZE. Malformed HTTP requests are rejected. CCT-20 missing/nonfinite live features
-produce ABSTAIN, while invalid sealed artifacts abort. So2Sat v1 aborts invalid/incomplete bundles
-and has no operational ABSTAIN continuation; its target path remains disabled until the
-city-versus-city/checkpoint action unit and fallback semantics are resolved under a new lock.
+- **CI-supported controlled routing:** CIFAR-10-C Tent, five model seeds and 432 cells per seed.
+  The comparison survives resampling down to six corruption-family clusters.
+- **Point-estimate controlled routing:** CIFAR-10-C EATA beats both fixed policies at the canonical
+  operating point, but its adapt-side corruption-family interval includes zero.
+- **Completed negative candidate:** CIFAR-10-C SAR has zero observed false adaptations but loses to
+  always-adapt. It is not pooled into a candidate-universal claim.
+- **Candidate-dependent large-scale corruption:** ImageNet-C SAR has a pooled point edge without a
+  promoted CI-robust claim; Tent ties freeze; EATA trails adapt.
+- **One-sided natural safety:** primary Office-Home and iWildCam reproduce freeze, Camelyon17 OOD
+  reproduces adapt, and RxRx1 freezes throughout. The separate Office-Home replication has a small
+  point edge whose seed interval includes zero.
+- **Negative diagnostics:** PACS loses to always-adapt, ImageNet-R is worse than adapt on eight of
+  ten backbones, and CIFAR-10.1 ties freeze with no adapt decisions.
+- **Constructed mixtures:** historical routing aggregates are not promoted as natural-shift wins or
+  evidence of transfer to unseen shift families.
 
-## Canonical build
+The CIFAR-10-C current-policy family sensitivity is retrospective: retrospective Holm adjustment over the six
+prospectively named contrasts gives adjusted Tent values of 0.09375 against both fixed policies,
+so the result is non-confirmatory. The iWildCam numerical/action row is withheld because the
+archived metric contract is not the official WILDS label-present contract; an official-metric,
+population-sealed rerun is required before any numerical iWildCam claim can be promoted.
 
-From the repository root, in the pinned Python 3.12 research environment:
+## Canonical Build
 
 ~~~bash
-KBOUND_PYTHON=.venv/bin/python bash docs/research/kbound/runbooks/release_candidate.sh all
+bash scripts/reproduce_submission.sh
+bash scripts/build_dashboard.sh
 ~~~
 
-This workflow requires a reviewed clean source commit. It validates evidence, regenerates derived
-surfaces, runs tests and Lean, builds all four current PDFs, renders every PDF page, and
-seals the release. It never launches training. Component checks and dirty-working-tree hashes are
-not substitutes for this gate.
-
-For a manuscript-only build after evidence validation:
+Build the compact submission, full manuscript, shared-source IEEE rendering, canonical tables, and
+figures:
 
 ~~~bash
-SOURCE_SNAPSHOT_COMMIT=<12-hex-source-commit> BUILD_LONG_TMLR=1 BUILD_SHORT_MAIN=1 \
-BUILD_SHORT_SUPPLEMENT=1 BUILD_FULL_REPORT=1 bash docs/research/kbound/scripts/build_pdfs.sh
+bash scripts/build_pdfs.sh
 ~~~
 
-Maintained release outputs are exactly `kbound_short_main.pdf`, `kbound_short_supplement.pdf`,
-`kbound_tmlr.pdf`, and `kbound_full_report.pdf` under `release/current/`. The all-four build is
-required to publish them as one synchronized set. `BUILD_HISTORICAL_TMLR=1` remains a compatibility
-alias for the TMLR build. Historical compatibility PDFs and the combined comparison build are not
-current deliveries.
-Their original bytes and source paths are recorded in the
-[2026-09-02 stale-build archive](archive/stale_publication_builds_2026-09-02/README.md).
+Primary outputs: `kbound_short_final_draft.pdf` (compact), `kbound_submission.pdf` (same compact
+build), `kbound_tmlr.pdf` (full manuscript), and `kbound_short.pdf` (shared-source IEEE rendering).
+Set `BUILD_DOCX=1` only when a Word export is needed.
 
-## Manuscript policy
+The generated result manifest is authoritative for repeated headline values.
+Historical notes and archived runs are provenance, not automatic evidence.
 
-The four current drivers consume the shared `kbound_submission_body.tex` and synchronized
-supplement according to their document roles. `kbound_submission.tex` remains a nonrelease combined
-comparison driver. Superseded drivers, body/appendix
-variants, and book-narrative sources are preserved only in the
-[legacy-publication archive](archive/legacy_publication_surfaces_2026-09-02/README.md). The actual
-dependency closure is computed by `kbound_repro.manuscript_sources.active_source_paths()`, not by a
-static list of every TeX file.
+**Caveat added 2026-07-26.** `bash scripts/reproduce_submission.sh` uses `set -euo pipefail`, so a
+failure in step 1 silently prevents steps 2-9 from running; and several of its checks reference
+files that are absent or unreadable. Read `REPRODUCE.md §1`'s "Known failures" box before treating
+a green run as a clean bill.
 
-Keep the main paper centered on the identification boundary, interval decision rule, controlled
-evidence, scoped natural diagnostics, and limitations. Additional valid results should enter only
-with their exact assumptions and evidence. Excluded drafts are not automatically valid simply
-because a numerical validator or old status file says “closed.”
+## Dashboard
 
-Eight obsolete process documents were recoverably removed during the earlier audit. A second
-byte-preserving pass archived 107 legacy publication surfaces under
-`archive/legacy_publication_surfaces_2026-09-02/`; its manifest distinguishes the three preserved
-dirty working-tree payloads from their base-commit blobs. Unique derivations, failed proof attempts,
-negative results, protocols, raw evidence, and reproduction/download scripts were kept live.
-The [audit-history index](audits/README.md) and [cleanup record](DOCS_INDEX.md#documentation-cleanup)
-explain the retained history. No dataset or checkpoint was deleted.
+~~~bash
+bash scripts/build_dashboard.sh
+python3 -m http.server 8765 --directory .
+~~~
+
+Open http://127.0.0.1:8765/kbound_dashboard.html.
+
+The dashboard reads the canonical paper manifest and the active
+experiments/kbound/results/edge_real_phone_v1 tree. It never reads
+archive/legacy_elara.
+
+## Physical Validation
+
+The edge code is a maintained, tested module rather than an informal demo. The
+publication workflow is:
+
+1. Prepare the protocol lock and deterministic checklists.
+2. Capture S01-S02 and pass the source-model quality gate.
+3. Capture S03-S06 and seal development plus conformal calibration.
+4. Open S07-S08 once for held-out Phone A evaluation.
+5. Capture S09-S10 on Phone B for replication.
+6. Run the strict anti-leakage and publication gates.
+7. Export camera tables and refresh the dashboard.
+
+Start with:
+
+~~~bash
+python edge/scripts/preflight_r2.py
+~~~
+
+Browser preview, simulation, pilot data, and mock captures are connectivity or
+software tests only. They cannot satisfy the publication gate.
+
+## Formalization
+
+~~~bash
+cd formal
+bash build.sh
+~~~
+
+The theorem map reports exactly which Lean declarations correspond to paper
+statements. Do not describe the repository as a full foundational Mathlib
+development: several measure-theoretic and deployment assumptions remain
+external.
+
+## Manuscript Policy
+
+The maintained compact submission is `kbound_submission.tex`; the complete single-column manuscript
+is `kbound_tmlr.tex`. `kbound.tex` is a compatibility wrapper for the complete manuscript, and
+`kbound_short.tex` checks that the shared full source also renders in IEEE two-column form.
+
+Because the venue is TMLR rather than a two-column conference, **no result is cut for length**. The
+eight meta-tables the review flagged (`tab:regime-summary`, `tab:data-access`,
+`tab:assumptions-role`, `tab:notation-main`, `tab:evidence-map`, `tab:failure-modes`,
+`tab:claim-status`, `tab:baseline-faithfulness`) may be merged for readability, not for page count.
+
+A balanced version should retain:
+
+- problem and validity boundary;
+- three core theory results plus the multiclass bridge;
+- KGA architecture and calibration protocol;
+- controlled beats-both evidence;
+- natural no-harm and negative evidence;
+- concise limitations and reproducibility.
+
+Keep extended minimax, one-bit, martingale, historical ELARA, and large
+diagnostic ladders in the supplement unless a venue explicitly allows them.
+The detailed keep/move policy is in [KBOUND_MANUSCRIPT_STRATEGY.md](KBOUND_MANUSCRIPT_STRATEGY.md).

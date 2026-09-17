@@ -95,3 +95,4 @@ theorem bool_decoder_iff_constant_on_fibres {W E : Type*}
       simp [hexists]
 
 end KBound
+

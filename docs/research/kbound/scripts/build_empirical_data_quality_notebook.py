@@ -4,24 +4,85 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
+import sys
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
-
-import nbformat as nbf
-from nbclient import NotebookClient
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_OUTPUT = ROOT / "docs/research/kbound/notebooks/kbound_empirical_data_quality_audit_2026_08_27.ipynb"
+EXACT_KERNEL_NAME = "kbound-release-exact-python"
 
 
-def markdown(source: str):
+def markdown(source: str) -> Any:
+    import nbformat as nbf
+
     return nbf.v4.new_markdown_cell(source.strip() + "\n")
 
 
-def code(source: str):
+def code(source: str) -> Any:
+    import nbformat as nbf
+
     return nbf.v4.new_code_cell(source.strip() + "\n")
 
 
-def build_notebook() -> nbf.NotebookNode:
+def exact_kernel_spec() -> dict[str, object]:
+    """Return a kernel spec bound to this process's exact Python executable."""
+
+    executable = sys.executable
+    if not executable or not os.path.isabs(executable):
+        raise RuntimeError("notebook execution requires an absolute sys.executable")
+    return {
+        "argv": [
+            executable,
+            "-m",
+            "ipykernel_launcher",
+            "-f",
+            "{connection_file}",
+        ],
+        "display_name": "KBOUND release (exact Python)",
+        "language": "python",
+        "env": {"KBOUND_NOTEBOOK_PYTHON": executable},
+    }
+
+
+@contextmanager
+def exact_interpreter_kernel_manager() -> Iterator[Any]:
+    """Yield a kernel manager that cannot fall back to a global kernelspec."""
+
+    from jupyter_client import AsyncKernelManager
+    from jupyter_client.kernelspec import KernelSpecManager
+
+    specification = exact_kernel_spec()
+    with tempfile.TemporaryDirectory(prefix="kbound-notebook-kernel-") as temporary:
+        temporary_root = Path(temporary)
+        os.chmod(temporary_root, 0o700)
+        kernels_root = temporary_root / "kernels"
+        kernel_dir = kernels_root / EXACT_KERNEL_NAME
+        kernel_dir.mkdir(parents=True, mode=0o700)
+        kernel_json = kernel_dir / "kernel.json"
+        kernel_json.write_text(
+            json.dumps(specification, sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+
+        spec_manager = KernelSpecManager(kernel_dirs=[str(kernels_root)])
+        loaded = spec_manager.get_kernel_spec(EXACT_KERNEL_NAME)
+        if list(loaded.argv) != specification["argv"] or dict(loaded.env or {}) != specification["env"]:
+            raise RuntimeError("temporary notebook kernelspec changed the exact interpreter binding")
+        yield AsyncKernelManager(
+            kernel_name=EXACT_KERNEL_NAME,
+            kernel_spec_manager=spec_manager,
+        )
+
+
+def build_notebook() -> Any:
+    import nbformat as nbf
+
     cells = [
         markdown(
             """
@@ -43,6 +104,7 @@ The initial audit found five critical defects that could corrupt or manufacture 
             """
 from pathlib import Path
 import json
+import os
 import subprocess
 import sys
 
@@ -55,6 +117,11 @@ from scipy import stats
 ROOT = Path.cwd().resolve()
 if not (ROOT / "docs/research/kbound").exists():
     raise RuntimeError(f"Run from the repository root; cwd={ROOT}")
+expected_python = os.environ.get("KBOUND_NOTEBOOK_PYTHON")
+if expected_python is None or sys.executable != expected_python:
+    raise RuntimeError(
+        f"Notebook kernel interpreter drift: expected={expected_python!r}, actual={sys.executable!r}"
+    )
 
 AUDIT_SCRIPT = ROOT / "docs/research/kbound/scripts/audit_empirical_data_quality_2026_08_27.py"
 AUDIT_DIR = ROOT / "docs/research/kbound/audits/empirical_data_quality_2026_08_27"
@@ -278,7 +345,7 @@ print(
 2. **The repaired paths now fail closed.** Scientific-config resume hashes, official metric parity, strict error/completeness ledgers, candidate rank and feasibility checks, atomic lineage, strict JSON, and explicit inference-unit fields protect fresh runs.
 3. **Historical evidence remains historical.** Old Route-B, contaminated resume, iWildCam metric, and infeasible-calibration results stay non-promotable until rerun under the new contract.
 4. **No natural win is claimed.** All current natural targets are opened, so they support only transparent diagnostic, null, or boundary statements. The natural-shift evidence score remains **4.0/10**.
-5. **Preserve the bounded controlled result.** CIFAR-10-C Tent has a beats-both point estimate and positive ordinary six-family intervals, but p-values from retrospective Holm adjustment over the six prospectively named contrasts are both 0.09375. It is not a cluster-robust or confirmatory win.
+5. **Preserve the bounded controlled result.** CIFAR-10-C Tent has lower observed point regret than each fixed policy and positive ordinary six-family intervals, but p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.140625 versus always-adapt and 0.09375 versus always-freeze. It is not a cluster-robust or confirmatory result.
 6. **A new overall score is withheld.** The initial **5.8/10** readiness judgment is retained as a historical baseline, not relabeled as current. A 9–9.5 rigor score would require complete hardened reruns, a final checksum seal, and a genuinely new or hidden-label natural evaluation.
 """
         ),
@@ -303,6 +370,9 @@ print(
 
 
 def main() -> int:
+    import nbformat as nbf
+    from nbclient import NotebookClient
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--timeout", type=int, default=180)
@@ -310,14 +380,16 @@ def main() -> int:
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     notebook = build_notebook()
-    client = NotebookClient(
-        notebook,
-        timeout=args.timeout,
-        kernel_name="python3",
-        resources={"metadata": {"path": str(ROOT)}},
-        allow_errors=False,
-    )
-    client.execute(cwd=str(ROOT))
+    with exact_interpreter_kernel_manager() as kernel_manager:
+        client = NotebookClient(
+            notebook,
+            km=kernel_manager,
+            timeout=args.timeout,
+            kernel_name=EXACT_KERNEL_NAME,
+            resources={"metadata": {"path": str(ROOT)}},
+            allow_errors=False,
+        )
+        client.execute(cwd=str(ROOT))
     nbf.write(notebook, output)
     print(output)
     return 0

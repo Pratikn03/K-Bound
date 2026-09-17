@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Legacy K-Bound mixed-protocol launcher. Run from ANY folder, e.g.:
+# Foolproof K-Bound training launcher. Run from ANY folder, e.g.:
 #   bash "$KB_REPO_ROOT"/docs/research/kbound/scripts/kbtrain.sh noise
 #
-# Activates KBOUND_VENV when supplied (legacy fallback: ~/.venv_wilds), verifies
-# dependencies and stops on a failed stage. Modes may reuse checkpoints or saved
-# records; "final-all" does not mean fresh source training for all nine datasets.
+# It always: cd's to the repo, activates ~/.venv_wilds (the one WITH torch+wilds),
+# sets TMPDIR/TORCH_HOME to T9, wraps in caffeinate, and verifies the venv first.
 # --- external (git-excluded) data volume: ONE documented variable, no default.
 # --- defect D8: portable roots. No machine-local absolute paths in tracked code
 # --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
@@ -23,9 +22,9 @@ KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
 : "${KBOUND_EXTERNAL_ROOT:?set KBOUND_EXTERNAL_ROOT to the volume holding the git-excluded datasets/checkpoints/caches (layout: docs/research/kbound/kbound_repro/paths.py, acquisition: DATA.md)}"
 KB_EXTERNAL_ROOT="$KBOUND_EXTERNAL_ROOT"
 
-set -euo pipefail
+set -uo pipefail
 REPO="$KB_REPO_ROOT"
-VENV="${KBOUND_VENV:-$HOME/.venv_wilds}"
+VENV="$HOME/.venv_wilds"
 IC=experiments/kbound/data/imagenet-c
 IC_FAST="$HOME/kbound_inc"            # fast internal-SSD copy of ImageNet-C noise (prep_internal_noise.sh)
 CAM_FAST="$HOME/kbound_cam/wilds"     # fast internal-SSD copy of Camelyon17 (prep_internal_camelyon.sh)

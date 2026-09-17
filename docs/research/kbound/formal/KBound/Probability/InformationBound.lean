@@ -79,3 +79,4 @@ theorem binary_bretagnolle_huber {p q : ℝ}
   nlinarith
 
 end KBound
+

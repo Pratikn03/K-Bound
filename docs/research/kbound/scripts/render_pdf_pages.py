@@ -13,12 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CURRENT_PDF_NAMES = (
-    "kbound_short_main.pdf",
-    "kbound_short_supplement.pdf",
+    "kbound_short_final_draft.pdf",
     "kbound_tmlr.pdf",
-    "kbound_full_report.pdf",
 )
-DEFAULT_DPI = 192
 
 
 def require_binary(name: str) -> str:
@@ -53,9 +50,7 @@ def page_count(pdf: Path) -> int:
     raise RuntimeError(f"pdfinfo did not report a page count for {pdf}")
 
 
-def render(pdf: Path, destination: Path, *, dpi: int = DEFAULT_DPI) -> None:
-    if dpi <= 0:
-        raise ValueError("DPI must be positive")
+def render(pdf: Path, destination: Path) -> None:
     expected = page_count(pdf)
     destination.mkdir(parents=True, exist_ok=True)
     # The output directory is stable across release runs; remove only this
@@ -63,14 +58,7 @@ def render(pdf: Path, destination: Path, *, dpi: int = DEFAULT_DPI) -> None:
     for stale_page in destination.glob("page-*.png"):
         stale_page.unlink()
     subprocess.run(
-        [
-            require_binary("pdftoppm"),
-            "-png",
-            "-r",
-            str(dpi),
-            str(pdf),
-            str(destination / "page"),
-        ],
+        [require_binary("pdftoppm"), "-png", "-r", "144", str(pdf), str(destination / "page")],
         check=True,
     )
     pages = sorted(destination.glob("page-*.png"))
@@ -88,33 +76,18 @@ def main() -> None:
         type=Path,
         default=Path(tempfile.gettempdir()) / "kbound_release_pdf_pages",
     )
-    parser.add_argument(
-        "--pdf-root",
-        type=Path,
-        default=ROOT / "release/current",
-        help="directory containing the four current release-role PDFs",
-    )
-    parser.add_argument(
-        "--dpi",
-        type=int,
-        default=DEFAULT_DPI,
-        help=f"rendering resolution in dots per inch (default: {DEFAULT_DPI})",
-    )
     args = parser.parse_args()
-    if args.dpi <= 0:
-        parser.error("--dpi must be positive")
     for tool in ("pdfinfo", "pdftoppm"):
         try:
             require_binary(tool)
         except RuntimeError as exc:
             raise SystemExit(f"ERROR: {exc}") from exc
     output_root = args.output_root.resolve()
-    pdf_root = args.pdf_root.resolve()
     for name in CURRENT_PDF_NAMES:
-        pdf = pdf_root / name
+        pdf = ROOT / name
         if not pdf.is_file():
             raise SystemExit(f"ERROR: missing release PDF: {pdf}")
-        render(pdf, output_root / pdf.stem, dpi=args.dpi)
+        render(pdf, output_root / pdf.stem)
 
 
 if __name__ == "__main__":

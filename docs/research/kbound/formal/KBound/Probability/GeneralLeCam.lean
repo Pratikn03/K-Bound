@@ -532,3 +532,4 @@ theorem general_lecam_iid_exponential_regret_floor {Ω : Type*} [MeasurableSpace
       (iidObservationLaw ν n) φ hLambda
 
 end KBound
+

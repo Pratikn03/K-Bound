@@ -31,7 +31,10 @@ INVOCATION_SCHEMA = "kbound-official-native-invocation-v1"
 RUNNER_RECEIPT_SCHEMA = "kbound-official-native-runner-receipt-v2"
 PRODUCER_RELATIVE_PATH = "docs/research/kbound/scripts/run_official_native.py"
 CONTROL_FILENAMES = NATIVE_TRACE_CONTROL_FILENAMES
-METHOD_SOURCES = {"aetta": Path("AETTA"), "poem": Path("external/poem")}
+# The pinned POEM checkout used by Task 3 lives beside the pinned AETTA tree.
+# Keep this path explicit so a damaged legacy checkout cannot be launched by
+# the native-evidence wrapper accidentally.
+METHOD_SOURCES = {"aetta": Path("external/aetta_official"), "poem": Path("external/poem_official")}
 METHOD_OUTPUTS = {"aetta": "aetta_native", "poem": "poem_imagenetc"}
 
 

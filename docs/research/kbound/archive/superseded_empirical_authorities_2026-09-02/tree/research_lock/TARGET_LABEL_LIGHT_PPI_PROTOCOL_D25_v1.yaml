@@ -1,0 +1,75 @@
+schema: target_label_light_ppi_protocol_v1
+decision: D25_ppi_micro_probe_corrected_harness
+date_locked: 2026-06-15
+status_at_lock: SEALED_BEFORE_ANY_RESULT
+supersedes_note: >
+  Replaces the D24 harness (target_label_light_probe_v1), which was MIS-SPECIFIED:
+  its k=0 baseline used the full test-label benefit vector and k>0 merely subsampled
+  it, so the "k-sweep" was a sample-size ablation with no label-free baseline and could
+  neither confirm nor refute the micro-probe hypothesis. D25 fixes this with a genuine
+  label-free biased baseline + prediction-powered (PPI) debiasing from k labels.
+
+hypothesis: >
+  On natural-shift multimodal anomaly caches, a purely label-free benefit-sign
+  certificate is BIAS-LIMITED (val->test drift biases the benefit estimate; the abstain
+  radius does not shrink with more unlabeled test data). Spending a small labeled probe
+  of k in {8,16,32,64} target examples to PPI-debias the label-free estimate will (a)
+  increase the certified commit rate, (b) hold false-adapt <= alpha, and (c) reduce
+  mean regret-to-oracle, converging to the oracle decision as k grows. Reported
+  regardless of sign (honest negative is a publishable outcome).
+
+datasets:  # every real multimodal cache with val+test+labels; NO outcome-based selection
+  - experiments/fusion/realiad_d3_score_cache     # 20 categories, 3 modalities, n_test=115
+  - experiments/fusion/realiad_natdeg_score_cache # 19 categories, 3 modalities
+  - experiments/fusion/mvtec3d_score_cache        # 8 categories, 2 modalities
+  - experiments/fusion/3d_adam_score_cache        # 23 categories, 2 modalities
+  - experiments/fusion/mulsen_score_cache         # 15 categories, 3 modalities
+  total_categories_expected: 85
+  inclusion_rule: ">=2 modalities AND both val and test contain both classes; ALL such categories used."
+
+frozen_method:  # all choices fixed here, before results
+  calibration: "per-modality min-max fit on VAL scores -> clip test to [0,1] (probabilities)."
+  fused: "ELARA confidence-weighted mean (_cw): weight_m = 2*|p_m-0.5|, fused = sum(p*w)/sum(w)."
+  frozen: "best single modality chosen by VAL AUROC (label-free choice)."
+  per_sample_benefit: "B_i = (p_frozen,i - y_i)^2 - (p_fused,i - y_i)^2  (Brier loss reduction; positive => fusion helps). Mean over test = true risk reduction (mean-decomposable => PPI valid)."
+  label_free_predictor:
+    model: "GradientBoostingRegressor(n_estimators=200, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=0)  # FIXED"
+    features_label_free: "[p_fused, p_frozen, |p_fused-p_frozen|, mean_m p_m, std_m p_m]  (no labels)."
+    train: "fit on VAL (features_val -> B_i^val); apply to TEST -> B_hat_i^lf (NO test labels)."
+  alpha: 0.10
+  probe_sizes: [0, 8, 16, 32, 64]
+  probe_seed: 20260615
+  probe_draw: "without replacement from the deployed category's test set; deterministic given seed."
+
+estimators:
+  k0_label_free:
+    point: "theta_lf = mean_i B_hat_i^lf over the deployed category's test (label-free)."
+    radius: "eps_lf = (1-alpha) quantile over the OTHER categories of |theta_lf,c - theta_true,c| (leave-one-category-out conformal; Theorem-3 convention-2). Uses only held-out labeled tasks, none from the deployed category."
+  kpos_ppi:
+    point: "theta_ppi = theta_lf - mean_{i in probe}(B_hat_i^lf - B_i^true)   (PPI rectifier removes the bias)."
+    radius: "eps_ppi = empirical-Bernstein(alpha) on the k rectifier residuals r_i = B_hat_i^lf - B_i^true, plus Var(theta_lf)~s_lf^2/n_test (negligible-but-included). As k->inf, theta_ppi->true benefit, eps_ppi->0."
+  decision_rule: "ADAPT if (point - eps) > 0; FREEZE if (point + eps) < 0; else ABSTAIN.  (false-adapt controlled at alpha by Theorem 3.)"
+
+metrics:
+  oracle: "sign of true mean test benefit (deploy fused if B>0 else frozen)."
+  commit_rate: "fraction of categories with decision != ABSTAIN."
+  false_adapt_rate: "among committed decisions, fraction that commit the WRONG sign (ADAPT when true B<0, or FREEZE when true B>0)."
+  mean_regret_to_oracle: "mean over categories of |B| when committed wrong or abstained-with-signal, 0 when correct."
+
+success_criteria_stated_in_advance:
+  S1_commit_increases: "commit_rate(k=64) > commit_rate(k=0)."
+  S2_false_adapt_controlled: "false_adapt_rate <= alpha (0.10) at EVERY k."
+  S3_regret_drops: "mean_regret_to_oracle(k=64) < mean_regret_to_oracle(k=0)."
+  S4_sign_accuracy: "among committed at k=64, sign-accuracy >= 1-alpha."
+  verdict_rule: "STRONG if S1&S2&S3&S4; STANDS if S2 and (S1 or S3); else HONEST_NEGATIVE (report as-is)."
+
+integrity:
+  pre_registered: true
+  forbidden:
+    - changing the predictor model/config/features after observing results
+    - changing the decision rule, alpha, k-grid, or probe seed after observing results
+    - adding/removing datasets or per-category selection by outcome
+    - reporting only favorable caches/categories
+    - presenting an HONEST_NEGATIVE as a win
+  reported_regardless_of_sign: true
+  paper_use: "Result may update the kbound.tex preliminary-progress paragraph ONLY if verdict is STANDS or STRONG; otherwise the simulation claim is scoped down to 'pending a correct real-label harness'."

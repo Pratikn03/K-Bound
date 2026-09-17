@@ -20,8 +20,18 @@ from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+    sys.path.insert(0, str(Path(__file__).absolute().parents[4]))
 
+from docs.research.kbound.kbound_repro.manuscript_sources import (
+    SourceBoundaryError,
+    probe_public_file,
+    read_public_bytes,
+    read_public_text,
+    read_unlinked_bytes,
+    require_unlinked_file,
+    validate_source_reference,
+    validated_root,
+)
 from docs.research.kbound.scripts import build_release_source_seal as source_seal
 from docs.research.kbound.scripts import verify_python_environment
 from docs.research.kbound.scripts.build_cct20_public_bundle import verify_public_bundle
@@ -65,6 +75,7 @@ _FORBIDDEN_NAMED_INPUTS = frozenset(
     }
 )
 _TEX_INPUT_RE = re.compile(r"\\(?:input|include)\{([^}]+)\}")
+_TEX_INPUT_COMMAND_RE = re.compile(r"\\(?:input|include)\b")
 _TEX_GRAPHIC_RE = re.compile(r"\\(?:kbgraphics|includegraphics)(?:\[[^]]*\])?\{([^}]+)\}")
 _TEX_PACKAGE_RE = re.compile(r"\\usepackage(?:\[[^]]*\])?\{([^}]+)\}")
 _LITERAL_TEX_PATH_RE = re.compile(r"[A-Za-z0-9_./-]+")
@@ -185,6 +196,34 @@ _TEX_IDENTITY_MACRO_RE = re.compile(
 )
 
 
+def _source_boundary(operation: Any) -> Any:
+    """Translate the shared manuscript boundary error into a release privacy error."""
+
+    try:
+        return operation()
+    except SourceBoundaryError as exc:
+        raise PrivacyError(str(exc)) from exc
+
+
+def _validate_source_reference(value: str, *, label: str) -> str:
+    return cast(str, _source_boundary(lambda: validate_source_reference(value, label=label)))
+
+
+def _validated_root(path: Path) -> Path:
+    return cast(Path, _source_boundary(lambda: validated_root(path)))
+
+
+def _read_public_source_bytes(root: Path, relative: str, *, label: str) -> bytes:
+    return cast(bytes, _source_boundary(lambda: read_public_bytes(root, relative, label=label)))
+
+
+def _read_public_source_text(root: Path, relative: str, *, label: str) -> str:
+    return cast(
+        str,
+        _source_boundary(lambda: read_public_text(root, relative, encoding="utf-8", label=label)),
+    )
+
+
 def _sha(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
@@ -278,8 +317,10 @@ def _parse_checksum_payload(payload: bytes) -> dict[str, str]:
     if missing:
         raise PrivacyError("required checksum entries are missing: " + ", ".join(missing))
     required = list(REQUIRED_RELEASE_PATHS)
-    extras = sorted(set(order) - set(REQUIRED_RELEASE_PATHS))
-    if order != required + extras:
+    extras = [relative for relative in order if relative not in set(REQUIRED_RELEASE_PATHS)]
+    if extras:
+        raise PrivacyError("unexpected checksum entries: " + ", ".join(extras))
+    if order != required:
         raise PrivacyError("release checksum entries are not in canonical inventory order")
     return entries
 
@@ -579,21 +620,20 @@ def _verify_pinned_portable_file(
 ) -> Path:
     if path_text is None:
         raise PrivacyError(f"{label} must name a hash-bound absolute path")
-    unresolved = Path(path_text).expanduser()
+    unresolved = Path(path_text)
+    if not unresolved.is_absolute() or os.path.normpath(path_text) != path_text:
+        raise PrivacyError(f"{label} must name an absolute non-symlink{' executable' if executable else ''} realpath")
     try:
-        resolved = unresolved.resolve(strict=True)
-    except OSError as exc:
-        raise PrivacyError(f"{label} is not a resident file") from exc
-    if (
-        not unresolved.is_absolute()
-        or unresolved.is_symlink()
-        or unresolved != resolved
-        or not resolved.is_file()
-        or (executable and not os.access(resolved, os.X_OK))
-    ):
+        resolved = cast(Path, _source_boundary(lambda: require_unlinked_file(unresolved, label=label)))
+    except PrivacyError as exc:
+        raise PrivacyError(
+            f"{label} must name an absolute non-symlink{' executable' if executable else ''} realpath: {exc}"
+        ) from exc
+    mode = os.lstat(resolved).st_mode
+    if executable and mode & 0o111 == 0:
         raise PrivacyError(f"{label} must name an absolute non-symlink{' executable' if executable else ''} realpath")
     before = _path_identity(resolved)
-    observed = _sha(resolved.read_bytes())
+    observed = _sha(cast(bytes, _source_boundary(lambda: read_unlinked_bytes(resolved, label=label))))
     if _path_identity(resolved) != before:
         raise PrivacyError(f"{label} changed while its digest was verified")
     if observed != expected_sha256:
@@ -633,18 +673,17 @@ def verify_pdf_anonymity(relative: str, payload: bytes) -> None:
             raise PrivacyError(f"{name} is required for anonymous PDF verification")
         if not override:
             return candidate
-        unresolved = Path(override).expanduser()
+        unresolved = Path(override)
+        if not unresolved.is_absolute() or os.path.normpath(override) != override:
+            raise PrivacyError(f"{override_name} must name an absolute non-symlink executable realpath")
         try:
-            resolved = unresolved.resolve(strict=True)
-        except OSError as exc:
-            raise PrivacyError(f"{override_name} is not a resident executable") from exc
-        if (
-            not unresolved.is_absolute()
-            or unresolved.is_symlink()
-            or unresolved != resolved
-            or not resolved.is_file()
-            or not os.access(resolved, os.X_OK)
-        ):
+            resolved = cast(
+                Path,
+                _source_boundary(lambda: require_unlinked_file(unresolved, label=override_name)),
+            )
+        except PrivacyError as exc:
+            raise PrivacyError(f"{override_name} must name an absolute non-symlink executable realpath: {exc}") from exc
+        if os.lstat(resolved).st_mode & 0o111 == 0:
             raise PrivacyError(f"{override_name} must name an absolute non-symlink executable realpath")
         return str(resolved)
 
@@ -713,16 +752,13 @@ def verify_pdf_anonymity(relative: str, payload: bytes) -> None:
 
 
 def _tex_reference(root: Path, reference: str, *, suffix: str) -> str | None:
-    latex_root = root / "docs/research/kbound"
-    candidate = latex_root / reference
-    if not Path(reference).suffix:
-        candidate = candidate.with_suffix(suffix)
-    if not candidate.is_file():
-        return None
-    try:
-        return candidate.relative_to(root).as_posix()
-    except ValueError as exc:
-        raise PrivacyError(f"TMLR dependency escapes the repository: {reference}") from exc
+    canonical = _validate_source_reference(reference.strip(), label="TMLR dependency")
+    relative = PurePosixPath("docs/research/kbound") / PurePosixPath(canonical)
+    if not PurePosixPath(canonical).suffix:
+        relative = relative.with_suffix(suffix)
+    relative_text = _validate_source_reference(relative.as_posix(), label="TMLR dependency")
+    candidate = _source_boundary(lambda: probe_public_file(root, relative_text, label="TMLR dependency"))
+    return relative_text if candidate is not None else None
 
 
 def _tex_graphic_reference(root: Path, reference: str) -> str | None:
@@ -736,13 +772,20 @@ def _tex_graphic_reference(root: Path, reference: str) -> str | None:
     return matches[0] if matches else None
 
 
+def _validate_anonymous_input_name(relative: str) -> str:
+    value = validate_public_member_path(relative)
+    _validate_source_reference(value, label="anonymous supplementary input")
+    parts = PurePosixPath(value).parts
+    name = parts[-1]
+    if ".git" in parts or name == ".DS_Store" or name.startswith(("._", "~$")):
+        raise PrivacyError(f"forbidden supplementary input name: {value}")
+    if value in _FORBIDDEN_NAMED_INPUTS:
+        raise PrivacyError(f"forbidden named-release input in anonymous package: {value}")
+    return value
+
+
 def validate_anonymous_inventory(paths: list[str] | tuple[str, ...]) -> list[str]:
-    canonical: list[str] = []
-    for relative in paths:
-        value = validate_public_member_path(relative)
-        if value in _FORBIDDEN_NAMED_INPUTS:
-            raise PrivacyError(f"forbidden named-release input in anonymous package: {value}")
-        canonical.append(value)
+    canonical = [_validate_anonymous_input_name(relative) for relative in paths]
     if len(canonical) != len(set(canonical)):
         raise PrivacyError("anonymous package input inventory contains duplicates")
     return sorted(canonical)
@@ -773,17 +816,23 @@ def _live_tex(text: str) -> str:
 def anonymous_tmlr_inventory(root: Path) -> list[str]:
     """Derive the exact live TeX, generated-table, style, bibliography and figure closure."""
 
-    root = root.resolve()
+    root = _validated_root(root)
     pending = [_TMLR_DRIVER]
     selected = {_TMLR_PDF, "docs/research/kbound/paper/vendor/tmlr/LICENSE"}
     while pending:
         relative = pending.pop()
         if relative in selected:
             continue
-        source = _safe_input(root, relative)
-        text = _live_tex(source.read_text(encoding="utf-8"))
+        _safe_input(root, relative)
+        text = _live_tex(_read_public_source_text(root, relative, label="TMLR source"))
         selected.add(relative)
-        for reference in _TEX_INPUT_RE.findall(text):
+        input_matches = tuple(_TEX_INPUT_RE.finditer(text))
+        input_starts = {match.start() for match in input_matches}
+        for command in _TEX_INPUT_COMMAND_RE.finditer(text):
+            if command.start() not in input_starts:
+                raise PrivacyError("unsupported unbraced TMLR input is outside the public dependency closure")
+        for match in input_matches:
+            reference = match.group(1)
             dependency = _tex_reference(root, reference, suffix=".tex")
             if dependency is None:
                 raise PrivacyError(f"live TMLR input is missing: {reference}")
@@ -794,7 +843,9 @@ def anonymous_tmlr_inventory(root: Path) -> list[str]:
                 selected.add(dependency)
         for reference in _TEX_GRAPHIC_RE.findall(text):
             if _LITERAL_TEX_PATH_RE.fullmatch(reference) is None:
-                continue
+                if re.fullmatch(r"#\d+", reference):
+                    continue
+                raise PrivacyError(f"dynamic TMLR graphic is outside the public dependency closure: {reference}")
             dependency = _tex_graphic_reference(root, reference)
             if dependency is None:
                 raise PrivacyError(f"live TMLR graphic is missing: {reference}")
@@ -824,7 +875,7 @@ def prepare_anonymous_payload(relative: str, payload: bytes) -> tuple[bytes, str
     # Check the public name independently before type classification. This
     # guarantees VCS/editor metadata is reported as forbidden, never disguised
     # as an unsupported extension or silently skipped.
-    scan_member(relative, b"")
+    relative = _validate_anonymous_input_name(relative)
     suffix = PurePosixPath(relative).suffix.lower()
     is_tmlr_license = relative == "docs/research/kbound/paper/vendor/tmlr/LICENSE"
     if suffix not in _ALLOWED_SUFFIXES and not is_tmlr_license:
@@ -845,23 +896,16 @@ def prepare_anonymous_payload(relative: str, payload: bytes) -> tuple[bytes, str
 
 
 def _safe_input(root: Path, relative: str) -> Path:
-    validate_public_member_path(relative)
-    parts = PurePosixPath(relative).parts
-    candidate = root.joinpath(*parts)
-    if any(root.joinpath(*parts[:index]).is_symlink() for index in range(1, len(parts) + 1)):
-        raise PrivacyError(f"supplementary input traverses a symlink: {relative}")
-    if not candidate.is_file():
+    canonical = validate_public_member_path(relative)
+    _validate_source_reference(canonical, label="supplementary input")
+    candidate = _source_boundary(lambda: probe_public_file(root, canonical, label="supplementary input"))
+    if candidate is None:
         raise PrivacyError(f"supplementary input is missing: {relative}")
-    return candidate
+    return cast(Path, candidate)
 
 
 def _require_regular_unlinked(path: Path, *, label: str) -> None:
-    absolute = path.absolute()
-    parts = absolute.parts
-    if any(Path(*parts[:index]).is_symlink() for index in range(1, len(parts) + 1)):
-        raise PrivacyError(f"{label} traverses a symlink: {path}")
-    if not absolute.is_file():
-        raise PrivacyError(f"{label} is missing: {path}")
+    _source_boundary(lambda: require_unlinked_file(path, label=label))
 
 
 def _path_identity(path: Path) -> tuple[int, int, int, int]:
@@ -877,11 +921,7 @@ def _has_identity(path: Path, expected: tuple[int, int, int, int]) -> bool:
 
 
 def _stream_file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return _sha(cast(bytes, _source_boundary(lambda: read_unlinked_bytes(path, label="release input"))))
 
 
 def _publish_verified_candidate(
@@ -964,6 +1004,10 @@ def build_anonymous_supplement(
 ) -> dict[str, Any]:
     """Build only from an explicit, completely classified input inventory."""
 
+    # Reject every metadata-derived name before touching the output, repository
+    # root, controls, or any candidate input.
+    inventory = validate_anonymous_inventory(include_paths)
+    root = _validated_root(root)
     output_exists = output_path.exists() or output_path.is_symlink()
     if output_exists and not replace_verified:
         raise PrivacyError(f"anonymous supplement output already exists: {output_path}")
@@ -977,16 +1021,12 @@ def build_anonymous_supplement(
         if _path_identity(output_path) != prior_identity:
             raise PrivacyError("anonymous supplement changed while existing output was verified")
 
-    root = root.resolve()
-    inventory = validate_anonymous_inventory(include_paths)
-    for relative in inventory:
-        # Reject unsafe public names before interpreting repository-control
-        # directories (for example an attempted .git/config input) as state.
-        scan_member(relative, b"")
     _require_regular_unlinked(source_seal_path, label="release source seal")
     _require_regular_unlinked(checksum_path, label="release checksum file")
     _require_regular_unlinked(public_bundle_path, label="CCT-20 public bundle")
-    seal_source = source_seal_path.read_bytes()
+    seal_source = cast(
+        bytes, _source_boundary(lambda: read_unlinked_bytes(source_seal_path, label="release source seal"))
+    )
     seal = strict_json_loads(seal_source)
     try:
         seal = source_seal.validate_seal_document(seal)
@@ -1005,13 +1045,17 @@ def build_anonymous_supplement(
     commit = seal.get("source_commit")
     if not isinstance(commit, str) or len(commit) != 40 or any(c not in "0123456789abcdef" for c in commit):
         raise PrivacyError("release source seal lacks a full immutable source commit")
-    checksum_payload = checksum_path.read_bytes()
+    checksum_payload = cast(
+        bytes,
+        _source_boundary(lambda: read_unlinked_bytes(checksum_path, label="release checksum file")),
+    )
     checksum_entries = _parse_checksum_payload(checksum_payload)
     try:
         verify_checksum_file(
             checksum_path,
             root=root,
             required_paths=REQUIRED_RELEASE_PATHS,
+            exact_paths=True,
         )
     except (OSError, ValueError) as exc:
         raise PrivacyError(f"release checksum verification failed: {exc}") from exc
@@ -1021,7 +1065,10 @@ def build_anonymous_supplement(
     if checksum_entries.get(seal_relative) != _sha(seal_source):
         raise PrivacyError("release source seal is not bound by the checksum receipt")
     verify_public_bundle(public_bundle_path)
-    public_payload = public_bundle_path.read_bytes()
+    public_payload = cast(
+        bytes,
+        _source_boundary(lambda: read_unlinked_bytes(public_bundle_path, label="CCT-20 public bundle")),
+    )
     if checksum_entries.get(public_relative) != _sha(public_payload):
         raise PrivacyError("CCT-20 public bundle is not bound by the checksum receipt")
 
@@ -1033,8 +1080,8 @@ def build_anonymous_supplement(
         if canonical in seen:
             raise PrivacyError(f"duplicate supplementary input: {canonical}")
         seen.add(canonical)
-        source = _safe_input(root, canonical)
-        source_payload = source.read_bytes()
+        _safe_input(root, canonical)
+        source_payload = _read_public_source_bytes(root, canonical, label="supplementary input")
         source_digest = _sha(source_payload)
         _require_source_binding(
             relative=canonical,
@@ -1127,15 +1174,23 @@ def build_anonymous_supplement(
         candidate.unlink(missing_ok=True)
 
 
-def _declared_verified_pdf_members(path: Path) -> frozenset[str]:
+def _read_anonymous_archive(path: Path) -> bytes:
+    """Read one archive through the shared no-follow source boundary."""
+
+    archive_payload = cast(
+        bytes,
+        _source_boundary(lambda: read_unlinked_bytes(path, label="anonymous archive")),
+    )
+    if len(archive_payload) > MAX_TOTAL_BYTES:
+        raise PrivacyError("anonymous archive exceeds the compressed-size safety limit")
+    return archive_payload
+
+
+def _declared_verified_pdf_members(archive_payload: bytes) -> frozenset[str]:
     """Read only the bounded manifest needed to select type-verified PDFs."""
 
-    if path.is_symlink() or not path.is_file():
-        raise PrivacyError(f"anonymous archive is missing or a symlink: {path}")
-    if path.stat().st_size > MAX_TOTAL_BYTES:
-        raise PrivacyError("anonymous archive exceeds the compressed-size safety limit")
     try:
-        with zipfile.ZipFile(path) as archive:
+        with zipfile.ZipFile(io.BytesIO(archive_payload)) as archive:
             info = archive.getinfo("manifest.json")
             if info.file_size > _MAX_MANIFEST_BYTES:
                 raise PrivacyError("anonymous-supplement manifest exceeds the safety limit")
@@ -1162,13 +1217,18 @@ def _declared_verified_pdf_members(path: Path) -> frozenset[str]:
     return frozenset(verified)
 
 
-def verify_anonymous_supplement(path: Path) -> dict[str, Any]:
-    verified_pdf_paths = _declared_verified_pdf_members(path)
-    raw_receipt = verify_anonymous_zip(path, verified_pdf_members=verified_pdf_paths)
+def _verify_anonymous_supplement_payload(archive_payload: bytes) -> dict[str, Any]:
+    """Verify the exact immutable bytes returned by the public source boundary."""
+
+    verified_pdf_paths = _declared_verified_pdf_members(archive_payload)
+    with tempfile.TemporaryDirectory(prefix="kbound-anonymous-verify-") as temporary:
+        stable_path = Path(temporary) / "anonymous.zip"
+        stable_path.write_bytes(archive_payload)
+        raw_receipt = verify_anonymous_zip(stable_path, verified_pdf_members=verified_pdf_paths)
     if not isinstance(raw_receipt, dict):
         raise PrivacyError("anonymous archive verifier returned a malformed receipt")
     receipt = cast(dict[str, Any], raw_receipt)
-    with zipfile.ZipFile(path) as archive:
+    with zipfile.ZipFile(io.BytesIO(archive_payload)) as archive:
         names = archive.namelist()
         if "manifest.json" not in names:
             raise PrivacyError("anonymous supplement has no manifest")
@@ -1294,13 +1354,12 @@ def verify_anonymous_supplement(path: Path) -> dict[str, Any]:
     return receipt
 
 
+def verify_anonymous_supplement(path: Path) -> dict[str, Any]:
+    return _verify_anonymous_supplement_payload(_read_anonymous_archive(path))
+
+
 def _stable_control_bytes(path: Path, *, label: str) -> bytes:
-    _require_regular_unlinked(path, label=label)
-    before = _path_identity(path)
-    payload = path.read_bytes()
-    if _path_identity(path) != before:
-        raise PrivacyError(f"{label} changed while being read")
-    return payload
+    return cast(bytes, _source_boundary(lambda: read_unlinked_bytes(path, label=label)))
 
 
 def verify_anonymous_release_bindings(
@@ -1312,56 +1371,23 @@ def verify_anonymous_release_bindings(
 ) -> dict[str, Any]:
     """Cross-bind a verified archive to the external portable release controls."""
 
-    _require_regular_unlinked(path, label="anonymous archive")
-    archive_identity = _path_identity(path)
     receipt = verify_anonymous_supplement(path)
-    if path.is_symlink() or not path.is_file() or _path_identity(path) != archive_identity:
+    archive_payload = _read_anonymous_archive(path)
+    if len(archive_payload) != receipt.get("archive_bytes") or _sha(archive_payload) != receipt.get("archive_sha256"):
         raise PrivacyError("anonymous archive changed after it was semantically verified")
     checksum_payload = _stable_control_bytes(checksum_path, label="external release checksum")
     source_seal_payload = _stable_control_bytes(source_seal_path, label="external release source seal")
     public_receipt = verify_public_bundle(public_bundle_path)
     public_payload = _stable_control_bytes(public_bundle_path, label="external CCT-20 public bundle")
     try:
-        with path.open("rb") as archive_handle, tempfile.TemporaryFile() as stable_archive:
-            descriptor_state = os.fstat(archive_handle.fileno())
-            descriptor_identity = (
-                descriptor_state.st_dev,
-                descriptor_state.st_ino,
-                descriptor_state.st_size,
-                descriptor_state.st_mtime_ns,
-            )
-            if descriptor_identity != archive_identity:
-                raise PrivacyError("anonymous archive changed before external bindings were read")
-            digest = hashlib.sha256()
-            copied_bytes = 0
-            for chunk in iter(lambda: archive_handle.read(1024 * 1024), b""):
-                copied_bytes += len(chunk)
-                if copied_bytes > MAX_TOTAL_BYTES:
-                    raise PrivacyError("anonymous archive changed beyond the verified size limit")
-                digest.update(chunk)
-                stable_archive.write(chunk)
-            if copied_bytes != receipt.get("archive_bytes") or digest.hexdigest() != receipt.get("archive_sha256"):
-                raise PrivacyError("anonymous archive bytes changed after semantic verification")
-            stable_archive.seek(0)
-            with zipfile.ZipFile(stable_archive) as archive:
-                if archive.read("receipts/KBOUND_RELEASE_SHA256SUMS.txt") != checksum_payload:
-                    raise PrivacyError("anonymous package does not embed the external release checksum bytes")
-                if archive.read("receipts/release_source_seal.json") != source_seal_payload:
-                    raise PrivacyError("anonymous package does not embed the external release source seal bytes")
-                manifest = strict_json_loads(archive.read("manifest.json"))
-            final_descriptor_state = os.fstat(archive_handle.fileno())
-            final_descriptor_identity = (
-                final_descriptor_state.st_dev,
-                final_descriptor_state.st_ino,
-                final_descriptor_state.st_size,
-                final_descriptor_state.st_mtime_ns,
-            )
-            if final_descriptor_identity != archive_identity:
-                raise PrivacyError("anonymous archive changed while external bindings were read")
+        with zipfile.ZipFile(io.BytesIO(archive_payload)) as archive:
+            if archive.read("receipts/KBOUND_RELEASE_SHA256SUMS.txt") != checksum_payload:
+                raise PrivacyError("anonymous package does not embed the external release checksum bytes")
+            if archive.read("receipts/release_source_seal.json") != source_seal_payload:
+                raise PrivacyError("anonymous package does not embed the external release source seal bytes")
+            manifest = strict_json_loads(archive.read("manifest.json"))
     except (KeyError, NotImplementedError, OSError, RuntimeError, zipfile.BadZipFile) as exc:
         raise PrivacyError(f"cannot read verified anonymous archive bindings: {exc}") from exc
-    if path.is_symlink() or not path.is_file() or _path_identity(path) != archive_identity:
-        raise PrivacyError("anonymous archive changed while external bindings were verified")
     if not isinstance(manifest, dict):  # pragma: no cover - enforced by the archive verifier
         raise PrivacyError("anonymous package manifest is malformed")
     commitments = manifest.get("commitments")
@@ -1377,12 +1403,12 @@ def verify_anonymous_release_bindings(
 
 
 def verify_release_python_content() -> None:
-    """Require portable locked-distribution content before archive processing."""
+    """Require the sealed release Python content before archive processing."""
 
-    root = Path(__file__).resolve().parents[4]
+    root = Path(__file__).absolute().parents[4]
     verify_python_environment.verify_exact_content_profile(
         root / "requirements-release-macos-arm64.lock.txt",
-        root / "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
+        root / "docs/research/kbound/release_python_environment_macos_arm64.json",
     )
 
 

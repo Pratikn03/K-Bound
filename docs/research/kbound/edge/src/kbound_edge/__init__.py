@@ -41,16 +41,16 @@ recorded clips (see ``README.md``).
 from __future__ import annotations
 
 __version__ = "0.1.0"
-SCHEMA_VERSION = "kbound-edge-v2"
+SCHEMA_VERSION = "kbound-edge-v1"
 
 # Re-export the reused certificate surface so callers can do
 #   from kbound_edge import decide, conformal_radius, evidence_vector
 from kbound_edge._bridge import (  # noqa: E402,F401
-    PAPER_EVIDENCE_NAMES,
-    BenefitRouter,
-    conformal_radius,
     decide,
+    conformal_radius,
     evidence_vector,
+    BenefitRouter,
+    PAPER_EVIDENCE_NAMES,
 )
 
 __all__ = [

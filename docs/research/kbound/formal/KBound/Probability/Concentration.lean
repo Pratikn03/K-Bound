@@ -277,3 +277,4 @@ theorem bounded_martingale_difference_tail [IsProbabilityMeasure μ] [StandardBo
     h_adapted.stronglyMeasurable.measurable (h_bounds (i + 1)) (h_cond_zero i)
 
 end KBound
+

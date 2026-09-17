@@ -3,8 +3,8 @@ import KBound.Basics
 /-!
 # Plug-in regret identity
 
-Paper context: `kbound_submission_body.tex`, Section `sec:compact-kga`. This auxiliary
-plug-in identity is not separately stated as an active paper theorem.
+Paper context: `kbound_submission_body.tex`, Section `sec:compact-kga`.
+This supporting algebraic identity is not separately stated as an active paper theorem.
 
 For a committal gate that commits to adapt on `{Δ̂ > 0}` and freeze otherwise,
 wrong-sign regret equals `|Δ|` on the error event. This is the algebraic spine
@@ -21,7 +21,7 @@ noncomputable def plugInGate (dhat : ℝ) : Decision :=
 noncomputable def wrongSignRegret (delta dhat : ℝ) : ℝ :=
   if signReal delta ≠ signReal dhat then |delta| else 0
 
-/-- Paper `thm:gate` pointwise identity: regret equals `|Δ|` on wrong-sign commits. -/
+/-- Supporting pointwise identity: regret equals `|Δ|` on wrong-sign commits. -/
 theorem gate_regret_identity (delta dhat : ℝ) :
     wrongSignRegret delta dhat =
       if signReal delta ≠ signReal dhat then |delta| else 0 := rfl

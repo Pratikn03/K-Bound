@@ -160,13 +160,15 @@ def conformal_radius(residuals, alpha=ALPHA) -> float:
     because it made this shim implement a second, under-covering rule.
     """
     arr = np.abs(np.asarray(residuals, dtype=float))
-    if arr.size == 0:
+    if not 0.0 < float(alpha) < 1.0:
+        raise ValueError("alpha must lie strictly between zero and one")
+    if arr.size == 0 or not np.isfinite(arr).all():
         return float("inf")
     if _kga_radius is not None:
         try:
             return float(_kga_radius(arr, alpha))
-        except Exception:  # noqa: BLE001 - a bare checkout must still run
-            pass
+        except Exception:  # an available backend failure is not evidence
+            return float("inf")
     return _rank_radius_local(arr, alpha=alpha)
 
 
@@ -192,6 +194,8 @@ def radii_loo(residuals, alpha=ALPHA) -> np.ndarray:
     """
     arr = np.abs(np.asarray(residuals, dtype=float))
     n = arr.size
+    if not np.isfinite(arr).all():
+        return np.full(n, float("inf"))
     out = np.empty(n, dtype=float)
     for i in range(n):
         out[i] = conformal_radius(np.delete(arr, i), alpha)
@@ -228,13 +232,15 @@ def decide(bhat, eps, alpha=ALPHA) -> np.ndarray:
     ``eps`` may be a scalar or a per-cell array.  A non-finite radius (the
     infeasible small-n case) always yields ABSTAIN.
     """
+    if not 0.0 < float(alpha) < 1.0:
+        raise ValueError("alpha must lie strictly between zero and one")
     bh = np.asarray(bhat, dtype=float)
     ep = np.broadcast_to(np.asarray(eps, dtype=float), bh.shape)
     out = np.full(bh.shape, "ABSTAIN", dtype=object)
     for i in range(bh.size):
         e = float(ep.flat[i])
         b = float(bh.flat[i])
-        if not math.isfinite(e):
+        if not math.isfinite(e) or e < 0 or not math.isfinite(b):
             continue  # no finite radius => nothing is certifiable => ABSTAIN
         if _kga_decide is not None and _Certificate is not None:
             try:
@@ -242,8 +248,8 @@ def decide(bhat, eps, alpha=ALPHA) -> np.ndarray:
                                     alpha=alpha, n=bh.size)
                 out.flat[i] = str(_kga_decide(cert, alpha=alpha))
                 continue
-            except Exception:  # noqa: BLE001 - fall through to the local rule
-                pass
+            except Exception:  # keep ABSTAIN when the available backend fails
+                continue
         out.flat[i] = "ADAPT" if b - e > 0 else ("FREEZE" if b + e < 0 else "ABSTAIN")
     # Decision is a plain str in every artifact schema in this repo.
     return np.asarray([str(x).replace("Decision.", "") for x in out.ravel()],
@@ -412,6 +418,13 @@ def decide_kga(Z, B, alpha=ALPHA, n_estimators=250, max_depth=2, lr=0.05, seed=0
         raise ValueError(f"calibration must be one of {sorted(CALIBRATIONS)}, got {calibration!r}")
     Z = np.asarray(Z, dtype=float)
     B = np.asarray(B, dtype=float)
+    # A one-cell smoke panel has no leave-one-out training or calibration
+    # observations.  Fail closed before sklearn sees an empty fit matrix;
+    # this is a valid smoke result, not evidence for a benchmark claim.
+    if B.ndim == 1 and B.size < 2:
+        bh = np.full(B.shape, np.nan, dtype=float)
+        eps = np.full(B.shape, float("inf"), dtype=float)
+        return bh, eps, decide(bh, eps, alpha=alpha)
     bh = loo_bhat(Z, B, n_estimators=n_estimators, max_depth=max_depth, lr=lr, seed=seed)
     resid = np.abs(bh - B)
     eps = CALIBRATIONS[calibration](resid, alpha=alpha)
@@ -443,6 +456,12 @@ def false_adapt(dec, B):
     """
     dec = np.asarray(dec, dtype=object)
     Bv = np.asarray(B, dtype=float)
+    if dec.shape != Bv.shape:
+        raise ValueError("decisions and outcomes must have matching shapes")
+    if not np.isfinite(Bv).all():
+        raise ValueError("outcomes must be finite")
+    if not np.isin(dec, ["ADAPT", "FREEZE", "ABSTAIN"]).all():
+        raise ValueError("unknown decision value")
     is_adapt = dec == "ADAPT"
     n = int(Bv.size)
     n_adapt = int(is_adapt.sum())
@@ -498,13 +517,26 @@ def read_json(path):
             f"  -> {len(raw)} bytes, NUL-filled (iCloud 'Optimise Mac Storage').\n"
             f"     Run 'Download Now' on the source machine, or regenerate it."
         )
-    return json.loads(raw)
+    def reject_constant(value):
+        raise ValueError(f"nonfinite JSON value: {value}")
+
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"duplicate JSON key: {key}")
+            result[key] = value
+        return result
+
+    return json.loads(raw, parse_constant=reject_constant, object_pairs_hook=unique_pairs)
 
 
 def records(path):
     d = read_json(path)
     if isinstance(d, dict) and "records" in d:
-        return d["records"]
+        d = d["records"]
+    if not isinstance(d, list):
+        raise ValueError("records must be an explicit list")
     return d
 
 

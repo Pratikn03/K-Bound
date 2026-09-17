@@ -251,7 +251,9 @@ def validate_promotable_audit(
     if logs.get("unavailable") not in ([], None) or logs.get("failure_markers") not in ([], None):
         raise ValueError("official provenance native logs are incomplete or failed")
     log_hashes = logs.get("sha256")
-    if not isinstance(log_hashes, dict) or source_log_sha256 not in log_hashes.values():
+    if not isinstance(log_hashes, dict) or source_log_sha256 not in [
+        value for key, value in log_hashes.items() if not is_native_trace_control_file(key)
+    ]:
         raise ValueError("official provenance does not bind the converted source log")
     _require_sha(source_log_sha256, "source log")
     completion = logs.get("completion")
@@ -302,8 +304,32 @@ def validate_promotable_audit(
     ):
         raise ValueError("official provenance native execution attestation is invalid")
 
+    # The witness signs the receipt, which signs the invocation.  Audit flags
+    # cannot substitute for checking that chain or bind a different source tree
+    # to an otherwise authentic run.  The argv is authenticated as recorded;
+    # deciding whether it executes the official method remains the witness's job.
+    invocation = logs.get("invocation")
+    expected_source_path = f"external/{method}_official"
+    if (
+        not isinstance(invocation, dict)
+        or set(invocation) != {"command", "method", "producer", "schema", "source", "working_directory"}
+        or invocation.get("schema") != "kbound-official-native-invocation-v1"
+        or invocation.get("method") != method
+        or not isinstance(invocation.get("command"), list)
+        or not invocation["command"]
+        or not all(isinstance(arg, str) and arg for arg in invocation["command"])
+        or invocation.get("producer") != runner_receipt["producer"]
+        or not isinstance(invocation.get("source"), dict)
+        or set(invocation["source"]) != {"path", "tree_sha256"}
+        or invocation["source"].get("path") != expected_source_path
+        or invocation.get("working_directory") != expected_source_path
+        or invocation["source"].get("tree_sha256") != method_record.get("source_tree_sha256")
+        or _canonical_json_sha256(invocation) != runner_receipt["invocation_sha256"]
+    ):
+        raise ValueError("official provenance native invocation or source binding is invalid")
+    _require_sha(method_record.get("source_tree_sha256"), f"{method.upper()} source tree")
+
     if method == "aetta":
-        _require_sha(method_record.get("source_tree_sha256"), "AETTA source tree")
         upstream = method_record.get("upstream_commit")
         if not isinstance(upstream, str) or re.fullmatch(r"[0-9a-f]{40}", upstream) is None:
             raise ValueError("official provenance AETTA upstream commit is missing")

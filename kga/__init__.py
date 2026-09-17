@@ -10,21 +10,19 @@ on a disjoint split.  Deployment maps label-free evidence ``Z`` to a certificate
     ABSTAIN otherwise
 
 with false-adapt probability bounded by ``alpha`` conditional on the stated
-coverage/transfer assumptions (the paper's conditional certificate criterion).
+coverage/transfer assumptions (Theorem 3 of the K-Bound paper).
 
 Controlled-grid replay rule
 ---------------------------
 The controlled-grid re-scoring path routes through
-:func:`kga.crossfit.controlled_grid_crossfit`.  It deterministically partitions
-stable cell identifiers into score folds and then partitions each fold's
-complement into disjoint estimator-fit and residual-calibration subsets:
+:func:`kga.policy.decide_kga`. That function pins the degrees of freedom that
+used to vary between copy-pasted historical scripts:
 
 * the radius is the **exact split-conformal rank** quantile
   ``eps = r_(k)``, ``k = ceil((n + 1)(1 - alpha))`` -- never an interpolated
   ``np.quantile``, and ``+inf`` (forced ABSTAIN) when ``k > n``;
-* a scored cell's outcome enters neither its predictor fit nor its residual
-  calibration, so changing that outcome cannot change its prediction, radius,
-  or action;
+* the pool is **leave-one-out-of-pool**: cell ``i``'s radius excludes its own
+  labelled residual;
 * the trichotomy uses **strict** inequalities, matching the ``|M| > beta``
   commitment convention of the knowability frontier.
 
@@ -36,8 +34,7 @@ FrozenLinearBenefitEstimator -- auditable reference estimator artifact.
 Decision                   -- the ADAPT/FREEZE/ABSTAIN enum.
 Certificate                -- a finite-sample certificate ``Delta_hat +/- eps``.
 Evidence                   -- the label-free evidence ``Z`` container.
-controlled_grid_crossfit   -- the canonical controlled-grid rule (see above).
-decide_kga                 -- historical stored-prediction replay compatibility.
+decide_kga                 -- the canonical end-to-end rule (see above).
 decide_batch               -- vectorised trichotomy over stored arrays.
 split_conformal_rank_radius / conformal_radii_loo / min_calibration_size
                            -- the radius primitives.
@@ -68,11 +65,17 @@ from kga.assumptions import (
     run_gate,
     write_report,
 )
-from kga.benefit import (
-    BenefitEstimator,
-    FrozenLinearBenefitEstimator,
-    fit_frozen_linear_benefit_estimator,
-)
+
+try:
+    from kga.benefit import (
+        BenefitEstimator,
+        FrozenLinearBenefitEstimator,
+        fit_frozen_linear_benefit_estimator,
+    )
+except ImportError:
+    BenefitEstimator = None  # type: ignore
+    FrozenLinearBenefitEstimator = None  # type: ignore
+    fit_frozen_linear_benefit_estimator = None  # type: ignore
 from kga.certificate import (
     Certificate,
     InsufficientCalibrationError,
@@ -97,6 +100,11 @@ from kga.frontier import (
 )
 from kga.kga import KGA
 from kga.policy import Decision, decide, decide_batch, decide_kga
+from kga.population_transfer import (
+    ConditionalPopulationInterval,
+    compose_conditional_population_interval,
+    hoeffding_paired_accuracy_radius,
+)
 from kga.routing import (
     AnytimeMulticandidatePanel,
     CandidateCertificate,
@@ -105,6 +113,28 @@ from kga.routing import (
     multiclass_benefit,
     route_panel,
 )
+from kga.gateway import (
+    AsyncSafeInferenceGateway,
+    DeploymentMode,
+    FallbackReason,
+    GatewayDecision,
+    SafeInferenceGateway,
+)
+from kga.guards import (
+    CircuitBreaker,
+    CircuitBreakerStatus,
+    CircuitState,
+    DistributedCircuitState,
+    EvidenceSupportGuard,
+    FileStateBackend,
+    InMemoryStateBackend,
+    NumericalHealthGuard,
+    StateBackend,
+    StreamingDriftMonitor,
+)
+from kga.integrations import TorchModelAdapter
+from kga.registry import ProtocolIntegrityError, SealedProtocolManifest
+from kga.observability import AuditLogger, METRICS
 
 __all__ = [
     "KGA",
@@ -154,5 +184,25 @@ __all__ = [
     "risk_alignment_audit",
     "run_gate",
     "write_report",
+    "DeploymentMode",
+    "FallbackReason",
+    "GatewayDecision",
+    "SafeInferenceGateway",
+    "AsyncSafeInferenceGateway",
+    "CircuitBreaker",
+    "CircuitBreakerStatus",
+    "CircuitState",
+    "DistributedCircuitState",
+    "StateBackend",
+    "InMemoryStateBackend",
+    "FileStateBackend",
+    "EvidenceSupportGuard",
+    "NumericalHealthGuard",
+    "StreamingDriftMonitor",
+    "TorchModelAdapter",
+    "ProtocolIntegrityError",
+    "SealedProtocolManifest",
+    "AuditLogger",
+    "METRICS",
     "__version__",
 ]

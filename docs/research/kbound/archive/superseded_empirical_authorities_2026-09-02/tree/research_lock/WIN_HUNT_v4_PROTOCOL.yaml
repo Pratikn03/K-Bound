@@ -1,0 +1,74 @@
+# WIN_HUNT_v4 — Wave 6 method upgrades. Pre-registered BEFORE any arm was scored
+# (2026-07-04). Bars and replacement policy frozen at registration. Report-all-arms.
+registered: 2026-07-04
+status: PARTIAL_EXECUTED_2026-07-04 — validators all PASS (A/B/C). Scored once, final:
+  A camelyon FAIL bar(ii) (jk+ valid FA_u=0 but abstains 95.4%, regret 0.0508 > incumbent
+  0.0292 — jk+ intervals wider than signed-Mondrian incumbent on this panel);
+  A imagenet-r PASS/no-change (tie, CI [0,0]);
+  B camelyon FAIL (abstention 99.5%, regret worse; validity holds);
+  C camelyon NO_WIN (abstention 94.0% >= 0.595 bar; FA_u=0).
+  Consistent 6th measurement: Camelyon single-dataset is evidence-limited — better-calibrated
+  instruments (all synthetically valid+tighter) do not cross the frontier. D and E pending GPU.
+author: Pratik (+ Claude session)
+
+integrity_rules:
+  - Executed v1-v3 verdicts (incl. FAILs and NO_WINs) are FINAL and remain in the paper.
+  - v4 arms are ADDITIONS evaluated once against the bars below; no re-tuning after unblinding.
+  - Headline REPLACEMENT policy (frozen now): a v4 result replaces a corresponding v1-v3
+    headline in the paper ONLY if it is a CI-robust improvement on the SAME split and metric
+    (both 95% bootstrap CIs of the improvement exclude zero) AND FA_u <= alpha holds.
+    Otherwise v4 rows are reported alongside the existing rows, labeled KGA-v2.
+  - All CPU re-analysis arms run on LOGGED data only (no new fitting on held-out labels);
+    calibration remains dev/cal-split-only, identical splits as the original protocols.
+  - CPU validators (synthetic, frozen bars inside each val_* script) must PASS before any
+    logged-data or GPU arm is scored.
+
+arm_A_jackknife_plus_radius:
+  name: Jackknife+ radius (Barber et al. 2021), analysis-layer upgrade
+  method: per-point interval from LOO residuals and LOO predictions
+    [q^-_{alpha}(bhat_{-i}(Z) - R_i), q^+_{alpha}(bhat_{-i}(Z) + R_i)]; decision commits only
+    if the whole interval clears zero. Finite-sample coverage >= 1-2*alpha distribution-free.
+  data: existing logged per-condition JSONs (stress grid seeds 0-4; natural protocols G/H/M).
+  bar: (i) synthetic validator PASS (coverage >= 1-2alpha at alpha=0.05 over 500 reps, and
+    median width <= LOO-quantile width); (ii) on logged grids: FA_u <= alpha AND regret <=
+    existing KGA regret; CI_ROBUST_IMPROVEMENT iff regret-gap CI vs existing KGA excludes zero.
+arm_B_estimator_v2:
+  name: Cross-fitted calibrated ensemble benefit estimator
+  method: K-fold cross-fitted gradient-boosted ensemble (fixed hyperparameter grid declared in
+    code before scoring) with isotonic residual calibration; radius from out-of-fold residuals.
+  data: logged per-condition JSONs, same splits.
+  bar: validator PASS (no leakage: spy-fold test; coverage holds) ; scored once per dataset;
+    CI_ROBUST_IMPROVEMENT as in arm A.
+arm_C_adaptive_tau:
+  name: Drift-conditioned self-normalized tau' null
+  method: bootstrap null conditioned on drift tercile of the panel (nulls calibrated per
+    tercile on dev only); replaces global null.
+  data: synthetic power/level suite + ImageNet-R panels + Camelyon v2 logged records.
+  bar: level <= 0.07 at nominal 0.05 on independent synthetic panels AND power >= 0.9 on
+    co-adapted panels; on Camelyon v2 logged records: abstention rate must DROP vs 59.5%
+    while FA_u <= alpha. WIN iff KGA-v2 regret beats always-adapt on camelyon v2 records
+    with CI excluding zero (single pre-registered attempt).
+arm_D_official_persample_headtohead:
+  name: Official-algorithm per-sample POEM + dropout-AETTA head-to-head (GPU)
+  method: faithful per-sample implementations from the published algorithms (POEM: per-sample
+    betting martingale on entropy stream; AETTA: MC-dropout accuracy estimate), consuming
+    per-sample streams logged by the patched stress runner; KGA unchanged.
+  data: NEW GPU run stress_persample_v1, CIFAR-10-C stress grid, Tent, seeds 0-4, identical
+    conditions to Protocol A; per-sample streams logged.
+  bar: report KGA vs official-POEM vs dropout-AETTA regret + FA; WIN iff both regret-gap CIs
+    below zero with Holm; TIE/LOSS reported as-is. This arm exists to close the
+    "protocol-matched ports" caveat regardless of verdict.
+arm_E_seed_extension:
+  name: Stress-grid seed extension 5-9 (GPU)
+  method: identical Protocol-A runner, seeds 5,6,7,8,9; pooled with seeds 0-4 for 10-seed CIs.
+  bar: report pooled 10-seed CIs for all policies; no selection (all seeds enter the pool
+    regardless of outcome).
+arm_F_composite_natural:
+  name: KGA-v2 composite (jk+ radius + estimator v2) on natural protocols, logged
+  method: arms A+B instruments applied jointly to G/H/M v2 and the pooled universal-gate
+    stream, same frozen splits; scored once.
+  bar: FA_u <= alpha everywhere; per-protocol and pooled CI_ROBUST_IMPROVEMENT vs existing
+    KGA rows as in arm A. Universal-gate stream: WIN iff still beats both with CIs excluding
+    zero and regret <= 0.0183 (existing) with improvement CI excluding zero.
+prohibited_after_unblinding: any re-tuning, seed selection, bar changes; all six arms
+  reported together with verdict JSONs in research_lock/.

@@ -21,10 +21,11 @@ Usage:
   python3 baseline_decisions_adapter.py --method aetta --input aetta_out.csv  --out aetta_decisions.json
   python3 baseline_decisions_adapter.py --method poem  --input poem_out.json  --out poem_decisions.json
 """
-import argparse, csv, json, os, sys
+import argparse, csv, json, os, sys, math
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CANON = os.path.join(HERE, "..", "experiments", "kbound", "results", "per_condition_cifar10c_tent_seed0.json")
+CANON = str(Path(__file__).resolve().parents[4] / "experiments/kbound/results/per_condition_cifar10c_tent_seed0.json")
 
 def canonical_conditions():
     return [r.get("condition","") for r in json.load(open(CANON))["records"]]
@@ -49,7 +50,13 @@ def to_decision(method, row):
         af = get(row, ("est_acc_adapted","acc_adapted_est","adapted_est","est_adapted","yhat_adapted"))
         f0 = get(row, ("est_acc_frozen","acc_frozen_est","frozen_est","est_frozen","yhat_frozen"))
         if af is None or f0 is None: return cond, None
-        return cond, ("adapt" if float(af) > float(f0) else "freeze")
+        try:
+            if isinstance(af, bool) or isinstance(f0, bool): return cond, None
+            af, f0 = float(af), float(f0)
+        except (TypeError, ValueError, OverflowError):
+            return cond, None
+        if not math.isfinite(af) or not math.isfinite(f0): return cond, None
+        return cond, ("adapt" if af > f0 else "freeze")
     # poem
     act = get(row, ("action","decision","poem_action"))
     if act is not None:
@@ -58,7 +65,10 @@ def to_decision(method, row):
         if a in ("freeze","protect","skip","0","false"): return cond, "freeze"
         if a in ("abstain","none"):                      return cond, "abstain"
     upd = get(row, ("updated","did_update","adapted"))
-    if upd is not None: return cond, ("adapt" if str(upd).lower() in ("1","true","yes") else "freeze")
+    if upd is not None:
+        value = str(upd).lower()
+        if value in ("1", "true", "yes"): return cond, "adapt"
+        if value in ("0", "false", "no"): return cond, "freeze"
     return cond, None
 
 def main():
@@ -81,9 +91,8 @@ def main():
     print(f"[{a.method}] mapped {len(dec)} decisions; {unmapped} rows unmapped; "
           f"{len(missing)} canonical conditions missing; {len(extra)} extra keys")
     if missing[:3]: print("  e.g. missing:", missing[:3])
-    if missing:
-        print("WARNING: not all 432 conditions covered — the head-to-head will error until every "
-              "condition has a decision. Check that the official run used the same conditions/order.", file=sys.stderr)
+    if missing or extra or unmapped:
+        raise SystemExit("incomplete or invalid baseline panel; refusing to write decisions")
     json.dump(dec, open(a.out,"w"), indent=2)
     print("wrote", a.out)
 

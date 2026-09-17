@@ -220,3 +220,4 @@ theorem measurable_open_band_opposite_targets (μ : Measure X) [IsProbabilityMea
   · exact fun g hg => (hevidencePos g hg).trans (hevidenceNeg g hg).symm
 
 end KBound
+

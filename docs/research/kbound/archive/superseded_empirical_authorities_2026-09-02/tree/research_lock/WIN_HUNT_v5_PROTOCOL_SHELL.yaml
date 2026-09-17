@@ -1,0 +1,140 @@
+# WIN_HUNT_v5 — aggressive-regime natural wave (SHELL, frozen 2026-07-04 BEFORE build/scoring).
+# Hypothesis (theory-predicted): under harsh deployment operating points, natural datasets
+# enter the mixed harmful+helpful regime where certified routing beats both fixed policies.
+registered: 2026-07-04
+status: SHELL_REGISTERED — build in a fresh session; bars below are FROZEN now.
+author: Pratik (+ Claude session)
+
+design:
+  datasets: [cifar10c_stress, imagenetc, camelyon17, iwildcam, officehome, rxrx1,
+             pacs_4splits, cifar10_1, imagenet_r]
+  aggressive_axes (per dataset, pick ONE pre-declared config before any run):
+    lr_multiplier: 4x shared baseline LR
+    update_mode: continual (no episodic reset)
+    batch_size: small (16)
+  calibration: dev-lock the aggressive adapter per dataset (same dev/test splits as the
+    existing protocols G/H/M/J; PACS r0 cal / r1 test); KGA (incumbent gate: single GBR +
+    signed LOO/split radius, alpha=0.10) calibrated on dev only; held-out scored ONCE.
+  honest_framing: operating points are researcher-chosen harsh policies (as ImageNet-C SAR);
+    results are a NEW claim ("certified routing under harsh deployment"), reported alongside
+    the benign-operating-point no-harm results, never replacing them.
+bars (frozen):
+  per_dataset_WIN: beats both fixed policies with both 95% paired-bootstrap CIs excluding
+    zero AND FA_u <= 0.10 on held-out.
+  per_dataset_NO_HARM: ties better policy, beats worse, FA_u <= 0.10.
+  anything_else: FAIL, reported.
+  headline: pooled 9-source harsh-deployment stream under ONE universal gate (Arm-E-style,
+    base-11 evidence): WIN iff beats both pooled with CIs excluding zero, FA_u <= 0.10.
+  report_all: every dataset verdict + pooled verdict published regardless of outcome.
+prohibited: per-dataset operating-point shopping after any scoring; changing bars;
+  omitting FAILs. One aggressive config per dataset, declared in the build session
+  BEFORE the first GPU run, appended to this file as config_lock.
+next_session_handoff: >
+  Say: "Build WIN_HUNT_v5 aggressive-regime wave per research_lock/WIN_HUNT_v5_PROTOCOL_SHELL.yaml:
+  declare config_lock, patch runners for aggressive operating points, produce RUNSHEET_WAVE7,
+  then after my GPU runs score once and fold with WIN_HUNT_v4 arms D/E/F into kbound."
+  Also still pending from v4: arm D GPU run + scorer, arm E seeds 5-9 + pooled CIs, arm F
+  composite wiring, and the full fold-in + tables + PDF regeneration.
+
+# =============================================================================
+# config_lock  --  FROZEN 2026-07-05 in the build session, BEFORE the first v5 GPU run.
+# One aggressive operating point per dataset. No operating-point shopping after scoring
+# (prohibited above). Runner CLIs were read directly and patched to express this point;
+# every patch defaults to a no-op so all prior protocols (A/E/G/H/M/J/K/D, PACS prereg)
+# stay byte-identical unless the v5 flags below are set.
+# =============================================================================
+config_lock:
+  frozen: 2026-07-05
+  frozen_by: Pratik (+ Claude build session)
+  decision_provenance: >
+    Operating-point step budget was an open choice in the shell (only lr/update-mode/batch
+    were enumerated). Chosen in the build session BEFORE any scoring: aggressive step budget
+    (50 steps; iWildCam & Office-Home 30, their runners' native aggressive cell) + lr 0.004.
+  operating_point_interpretation:
+    lr_multiplier_4x: >
+      The shared-baseline (mild) adapter LR is uniformly 1e-3 across all nine runners, so
+      "4x shared baseline LR" = an ABSOLUTE adapter LR of 0.004, applied via the new
+      --adapt-lr flag (overrides the per-cell AGGRESSIVENESS lr on tent/eata/sar). Same
+      value for every dataset (the baseline is shared), so the operating point is uniform.
+    continual_no_episodic_reset: >
+      Maps to the runners' existing ONLINE adapter mode (one adaptation trajectory across
+      the deployment stream, NO per-batch reset to source), as opposed to the EPISODIC
+      mode (reset to f0 every eval batch). Multi-candidate runners (camelyon17, rxrx1,
+      imagenet_r) restrict the candidate pool to the online variants via the new
+      --online-only flag; iWildCam/Office-Home select online candidates by name; the CIFAR
+      and PACS runners have a single online adapter per method (no per-batch reset), so
+      they are inherently the continual operating point. This preserves the shell's "same
+      dev/test splits as the existing protocols" (conditions stay independently scored;
+      no cross-condition continual loop is introduced).
+    batch_size_16: the "small" batch regime (=16) on every runner except PACS, where 16 = "tiny".
+    steps: aggressive-cell steps (50; iWildCam & Office-Home = 30). NOT an axis in the shell;
+      frozen here for completeness so the point is fully determined.
+  uniform_point: {adapter_mode: online_no_reset, adapt_lr: 0.004, batch_size: 16,
+                  candidates: "{tent,eata,sar} online + freeze baseline", alpha: 0.10}
+  runner_patches_added:   # all opt-in; default no-op, byte-identical to prior protocols
+    - "cifar_tent_mps_v2.py: --adapt-lr, --batch-regimes (subset), --aggressiveness (subset); win_hunt_v5_override recorded in result_manifest.json"
+    - "run_camelyon17_kbound.py / run_rxrx1_kbound.py / run_imagenetr_kbound.py: --adapt-lr, --online-only (both enter the config_sha8 hash)"
+    - "run_iwildcam_kbound.py / run_officehome_kbound.py: --adapt-lr (enters config hash via vars(args))"
+    - "pacs_vlcs_runner.py: --adapt-lr, --batch-regimes (subset), --aggressiveness (subset); override recorded in the result JSON"
+  datasets:
+    cifar10c_stress:
+      runner: docs/research/kbound/scripts/cifar_tent_mps_v2.py
+      benchmark: cifar10c
+      op_point_flags: "--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004"
+      resolved: {batch: 16, steps: 50, lr: 0.004, mode: online_within_cell_no_reset}
+      panel: "15 corruptions x sev{1,3,5} x comp{iid,imbalanced,single_class} x 2 repeats, seeds 0-4"
+      split_ref: STRESS_GRID_MULTISEED_PROTOCOL_A_v1 (KGA leave-one-condition-out; dev-lock; scored once)
+    imagenetc:
+      runner: docs/research/kbound/scripts/cifar_tent_mps_v2.py
+      benchmark: imagenetc
+      op_point_flags: "--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 --imagenetc-composition iid imbalanced single_class"
+      resolved: {batch: 16, steps: 50, lr: 0.004, mode: online_within_cell_no_reset, arch: resnet50}
+      split_ref: imagenetc_protocol_E_v1 (OFFICIAL_SAR_SCHEDULE_PROTOCOL_E; same corruptions/severities)
+    camelyon17:
+      runner: experiments/kbound/wilds/run_camelyon17_kbound.py
+      op_point_flags: "--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 --online-only"
+      resolved: {batch: 16, steps: 50, lr: 0.004, candidates: [tent_online, eata_online, sar_online], baseline: freeze_f0}
+      split_ref: CAMELYON17_PROTOCOL_G_RECONCILED_v2 (default domains test/val/id_val; f0 per seed; scored once)
+    iwildcam:
+      runner: experiments/kbound/wilds/run_iwildcam_kbound.py
+      op_point_flags: "--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 --candidates tent_online eata_online sar_online"
+      resolved: {batch: 16, steps: 30, lr: 0.004, mode: online}
+      split_ref: IWILDCAM_PROTOCOL_H_v2 (macro-F1 metric; split per protocol H)
+    officehome:
+      runner: experiments/kbound/officehome/run_officehome_kbound.py
+      op_point_flags: "--batch-regimes small --adapt-lr 0.004 --candidates tent_online_aggressive eata_online_aggressive sar_online_aggressive"
+      resolved: {batch: 16, steps: 30, lr: 0.004, mode: online}
+      roles: [source, target_val, target_test]  # Protocol M v2 dev-lock; target_test scored ONCE
+      split_ref: OFFICEHOME_PROTOCOL_M_v2 (source=Real_World; targets Art/Clipart/Product)
+    rxrx1:
+      runner: experiments/kbound/wilds/run_rxrx1_kbound.py
+      op_point_flags: "--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 --online-only"
+      resolved: {batch: 16, steps: 50, lr: 0.004, candidates: [tent_online, eata_online, sar_online], baseline: freeze_f0}
+      split_ref: RXRX1_PROTOCOL_J_v1 (OOD 'test' split = 14 unseen experiments)
+    pacs_4splits:
+      runner: docs/research/kbound/scripts/pacs_vlcs_runner.py
+      op_point_flags: "--dataset PACS --batch-regimes tiny --aggressiveness aggressive --adapt-lr 0.004"
+      resolved: {batch: 16, steps: 50, lr: 0.004, mode: online_single_adapter_no_reset}
+      splits: 4 leave-one-domain-out test domains; calibration = last source domain (r0 cal / r1 test convention)
+      split_ref: PACS_VLCS_PREREG_PROTOCOL_v1 (ResNet-18 ERM LODO; seeds per protocol)
+    cifar10_1:
+      runner: docs/research/kbound/scripts/cifar_tent_mps_v2.py
+      benchmark: cifar101
+      op_point_flags: "--batch-regimes small --aggressiveness aggressive --adapt-lr 0.004"
+      resolved: {batch: 16, steps: 50, lr: 0.004, mode: online_within_cell_no_reset}
+      split_ref: CIFAR101_PROTOCOL_K_v1 (natural shift; reuses CIFAR-10 f0; ~half eval / half stream)
+    imagenet_r:
+      runner: experiments/kbound/wilds/run_imagenetr_kbound.py
+      op_point_flags: "--panel shared_tta --batch-regimes small --aggressiveness aggressive --adapt-lr 0.004 --online-only"
+      resolved: {batch: 16, steps: 50, lr: 0.004, candidates: [tent_online, eata_online, sar_online], baseline: freeze_f0}
+      split_ref: IMAGENETR_DIVERSE_PANEL_PROTOCOL_D_v1 (shared_tta panel on the 200-class rendition set)
+  verification:
+    runner_syntax: all 7 runner files py_compile clean (2026-07-05).
+    cli_live: >-
+      cifar_tent_mps_v2.py + pacs_vlcs_runner.py --help expose the new flags;
+      selection + lr-override logic unit-checked against the real module constants
+      (small=16, aggressive steps=50/30, lr->0.004); the wilds --online-only filter
+      verified to yield exactly the three online candidates (default keeps all 6).
+    byte_identical: >-
+      with none of the v5 flags set, every runner reproduces its prior protocol exactly
+      (defaults are adapt_lr=None, batch/aggr selectors unset, online_only=False).

@@ -1,0 +1,81 @@
+schema: gate_u_cross_domain_reliability_protocol_v1
+decision: D20_elara_u_universal_meta_routing_program
+date_locked: 2026-06-02
+status_at_lock: PRE_REGISTERED_BEFORE_EVALUATION
+
+purpose: >
+  Prospective amendment opening the ELARA-U program: a reliability-aware anomaly
+  META-ROUTER over a detector zoo, evaluated for CROSS-DOMAIN robustness rather
+  than clean multimodal transfer. This is a NEW program with a NEW gate (Gate U);
+  it does not rewrite, relax, or replace strict clean Gate E (still
+  CLOSED_BY_PROOF_T9) or any prior decision. Per the flagship-redefinition audit,
+  a new claim label with frozen rules may be created prospectively.
+
+honest_claim_if_passed: >
+  "ELARA-U achieves state-of-the-art cross-domain robustness by reducing negative
+  transfer and improving average rank across heterogeneous anomaly detection
+  benchmarks." NOT "best on every dataset", NOT "universal SOTA".
+
+forbidden:
+  - claiming best/SOTA on every individual dataset
+  - the literal banned phrases "universal anomaly detection", "universal SOTA",
+    "always robust", "works in all domains" (claim contract C_NO_UNIVERSAL)
+  - tuning the router or any detector on test labels
+  - selecting datasets/families after seeing test outcomes
+  - reusing an opened benchmark as a fresh official pass
+
+method_frozen:
+  router_inputs_validation_only:        # no test labels, ever
+    - detector confidence / score tailness / entropy
+    - inter-detector disagreement
+    - calibration error
+    - missing-modality flags
+    - validation-only per-detector performance summaries
+    - dataset meta-features
+    - domain-shift / negative-transfer-risk estimate
+  detector_zoo_minimum:
+    tabular: [ECOD, COPOD, IForest, LOF, KNN, OCSVM]
+    timeseries: [MatrixProfile_or_window_baseline, USAD_or_AE]
+    vision: [PatchCore, EfficientAD_or_RD]
+    ood: [MSP, ODIN, Mahalanobis, energy]
+    multimodal: [rgb, depth/ps, point-cloud, CW, SAR]
+    security_fraud: [IForest, ECOD, one-class, calibrated supervised if labels]
+  router: validation-selected / reliability-weighted ensemble over the zoo
+  comparators: every fixed single-detector family, and the per-dataset oracle (upper bound)
+
+primary_endpoint:
+  field: gate_u_cross_domain_confirmed
+  metric_suite:
+    - mean_rank: router mean rank across datasets < best fixed family
+    - win_rate: fraction of datasets where router >= best fixed family (CI > 0.5)
+    - worst_case_regret: router max gap-to-best < best fixed family's
+    - negative_transfer_rate: router lower than best fixed family
+    - bootstrap_ci_over_families: paired bootstrap over datasets, CI excludes 0
+  pass_condition:
+    - mean_rank improvement over best fixed family with dataset-level bootstrap CI > 0
+    - worst_case_regret strictly reduced vs best fixed family
+    - no test-label tuning (audited)
+  run_policy: dataset families and router frozen before official held-out sweep
+
+minimum_viable_strong:                  # the first serious version
+  - tabular: ADBench or MacrOData (or available: creditcard, online_shoppers)
+  - timeseries: TSB-AD subset (or available: bidmc)
+  - ood: OpenOOD
+  - vision: MVTec AD 2
+  - multimodal: Real-IAD D3
+  - security_fraud: UNSW-NB15 + creditcard
+
+seed_demonstration_2026_06_02:
+  status: DEVELOPMENT_SEED_not_official_gate_pass
+  data: datasets already on disk (creditcard, online_shoppers, UNSW-NB15 subset, ...)
+  note: >
+    Proves the harness and the core thesis (router improves average rank /
+    reduces negative transfer vs fixed detectors) on available cross-domain data.
+    The official Gate U sweep requires the frozen MVS families above, several of
+    which are not yet downloaded.
+  result_json: experiments/elara_u/gate_u_seed_eval.json
+
+integrity:
+  used_test_labels_for_selection: false
+  preserves_strict_gate_e_closed_by_proof: true
+  prospective_amendment: true

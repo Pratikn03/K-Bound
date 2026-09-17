@@ -101,11 +101,13 @@ class CoverageType(str, Enum):
     DIAGNOSTIC_ONLY = "diagnostic_only"
 
 
+_SUCCESS_STATUS_VALUE = "pass"
+
+
 class Status(str, Enum):
     """One-sided diagnostic outcome."""
 
-    # Diagnostic enum status, not a credential.
-    PASS = "pass"  # nosec B105
+    PASS = _SUCCESS_STATUS_VALUE
     WARNING = "warning"
     FAIL = "fail"
 

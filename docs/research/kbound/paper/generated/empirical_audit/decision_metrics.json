@@ -17,19 +17,19 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 1091,
-          "rate": 0.5050925925925925,
+          "count": 1094,
+          "rate": 0.5064814814814815,
           "ci95_wilson": [
-            0.48401751248544456,
-            0.526149590982473
+            0.48540461184161243,
+            0.5275353380266465
           ]
         },
         "freeze": {
-          "count": 337,
-          "rate": 0.15601851851851853,
+          "count": 334,
+          "rate": 0.15462962962962962,
           "ci95_wilson": [
-            0.14132761590838971,
-            0.17193075894044124
+            0.13999673584651676,
+            0.170488792601973
           ]
         },
         "abstain": {
@@ -42,12 +42,12 @@
         }
       },
       "false_adapt_unconditional": {
-        "count": 2,
+        "count": 0,
         "n": 2160,
-        "rate": 0.000925925925925926,
+        "rate": 0.0,
         "ci95_wilson": [
-          0.00025395902104768074,
-          0.0033699011230165546
+          0.0,
+          0.001775295877170106
         ]
       },
       "interval_coverage_observed": {
@@ -59,15 +59,15 @@
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 2,
-        "n_adapt_decisions": 1091,
-        "rate": 0.0018331805682859762,
-        "cp95_upper": 0.005759312825714236,
+        "false_adapts": 0,
+        "n_adapt_decisions": 1094,
+        "rate": 0.0,
+        "cp95_upper": 0.002734583513826605,
         "guarantee_status": "exercised"
       },
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool (identical to in-pool here: 0 of 2160 decisions differ)",
       "regret_kga_adapt_freeze": [
-        0.0019159718796058938,
+        0.0017925923621212995,
         0.007975694592352266,
         0.12393680485310378
       ],
@@ -78,17 +78,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": 0.006059722712746372,
+            "point": 0.006183102230230967,
             "ci95": [
-              0.005765741290869536,
-              0.006371528517316889
+              0.005718056167717333,
+              0.006757639320912184
             ]
           },
           "always_freeze": {
-            "point": 0.12202083297349789,
+            "point": 0.12214421249098248,
             "ci95": [
-              0.12152685128428317,
-              0.12253310144361522
+              0.1218990730949574,
+              0.12241203643519569
             ]
           }
         },
@@ -108,13 +108,13 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
-        "artifact_bytes": 24534,
+        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-03T06:44:03.645730+00:00",
-        "git_head": null,
+        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
+        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "f46bd4ca6bf681a0066bd07ec2e7ba0a4ee55e54d78ee4e7a1c3690604922bda",
+        "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
           "python": "3.12.13",
           "numpy": "2.4.4",
@@ -123,7 +123,7 @@
         "live_code_bindings": {
           "crossfit": {
             "path": "kga/crossfit.py",
-            "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+            "sha256": "a82b16337e12f469f09b732caaa7c8305ff05edac8713fe2f4b2d12ff33ec5ac"
           },
           "policy": {
             "path": "kga/policy.py",
@@ -135,11 +135,7 @@
           },
           "numeric_validation": {
             "path": "kga/_validation.py",
-            "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
-          },
-          "reconciliation": {
-            "path": "scripts/reconcile_result_panels.py",
-            "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
+            "sha256": "937e21419b8335c24fde86de74ecc67c65e63c5ae41a960bfefa493cc291ef9f"
           },
           "preregistered_protocol": {
             "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -165,36 +161,36 @@
         },
         "comparisons": {
           "always_adapt": {
-            "point": 0.006059722712746373,
+            "point": 0.006183102230230968,
             "ci95_unadjusted_family_bootstrap": [
-              0.0020870375136534374,
+              0.0023120371555840533,
               0.009536807073487174
             ],
             "family_effects": {
               "contrast": 0.008229167262713114,
               "defocus_blur": 0.010590276949935489,
               "fog": 0.010380557345019446,
-              "gaussian_noise": -0.002508333490954505,
-              "jpeg_compression": 0.002197222411632538,
+              "gaussian_noise": -0.0022041675117280748,
+              "jpeg_compression": 0.0026333335373136734,
               "pixelate": 0.007469445798132155
             },
-            "p_value_one_sided_exact_sign_flip": 0.046875,
-            "p_value_holm_within_candidate_posthoc": 0.046875,
-            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.140625,
+            "p_value_one_sided_exact_sign_flip": 0.03125,
+            "p_value_holm_within_candidate_posthoc": 0.03125,
+            "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.09375,
             "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
-            "point": 0.12202083297349788,
+            "point": 0.12214421249098247,
             "ci95_unadjusted_family_bootstrap": [
-              0.06282222179902924,
-              0.17757268545252305
+              0.06304027736186982,
+              0.1776740741122652
             ],
             "family_effects": {
               "contrast": 0.22884583324193955,
               "defocus_blur": 0.12017222195863723,
               "fog": 0.06325694289472368,
-              "gaussian_noise": 0.1731944461663564,
-              "jpeg_compression": 0.005472221639421251,
+              "gaussian_noise": 0.17349861214558285,
+              "jpeg_compression": 0.0059083327651023865,
               "pixelate": 0.1411833319399092
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
@@ -244,19 +240,19 @@
           ]
         },
         "freeze": {
-          "count": 105,
-          "rate": 0.04861111111111111,
+          "count": 118,
+          "rate": 0.05462962962962963,
           "ci95_wilson": [
-            0.04031596777975328,
-            0.05850895210935863
+            0.04581244704914071,
+            0.06502814057478304
           ]
         },
         "abstain": {
-          "count": 848,
-          "rate": 0.3925925925925926,
+          "count": 835,
+          "rate": 0.38657407407407407,
           "ci95_wilson": [
-            0.37220707531403013,
-            0.41335946972625087
+            0.36625655580783256,
+            0.40729432149763656
           ]
         }
       },
@@ -284,9 +280,9 @@
         "cp95_upper": 0.0024788879000591235,
         "guarantee_status": "exercised"
       },
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool (identical to in-pool here: 0 of 2160 decisions differ)",
       "regret_kga_adapt_freeze": [
-        0.0016335646587389487,
+        0.0016030091930318761,
         0.003276389064612212,
         0.13133703588887496
       ],
@@ -297,17 +293,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": 0.0016428244058732634,
+            "point": 0.001673379871580336,
             "ci95": [
-              0.0012719906866550446,
-              0.00204513939442458
+              0.0013145832275902782,
+              0.002112268794465948
             ]
           },
           "always_freeze": {
-            "point": 0.129703471230136,
+            "point": 0.12973402669584308,
             "ci95": [
-              0.12930370268446428,
-              0.13007592520228137
+              0.12927916543213308,
+              0.1301254620982541
             ]
           }
         },
@@ -327,13 +323,13 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
-        "artifact_bytes": 24534,
+        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-03T06:44:03.645730+00:00",
-        "git_head": null,
+        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
+        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "f46bd4ca6bf681a0066bd07ec2e7ba0a4ee55e54d78ee4e7a1c3690604922bda",
+        "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
           "python": "3.12.13",
           "numpy": "2.4.4",
@@ -342,7 +338,7 @@
         "live_code_bindings": {
           "crossfit": {
             "path": "kga/crossfit.py",
-            "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+            "sha256": "a82b16337e12f469f09b732caaa7c8305ff05edac8713fe2f4b2d12ff33ec5ac"
           },
           "policy": {
             "path": "kga/policy.py",
@@ -354,11 +350,7 @@
           },
           "numeric_validation": {
             "path": "kga/_validation.py",
-            "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
-          },
-          "reconciliation": {
-            "path": "scripts/reconcile_result_panels.py",
-            "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
+            "sha256": "937e21419b8335c24fde86de74ecc67c65e63c5ae41a960bfefa493cc291ef9f"
           },
           "preregistered_protocol": {
             "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -384,17 +376,17 @@
         },
         "comparisons": {
           "always_adapt": {
-            "point": 0.001642824405873263,
+            "point": 0.0016733798715803355,
             "ci95_unadjusted_family_bootstrap": [
-              -0.001347915800633254,
+              -0.0012715271777576872,
               0.004381944708250187
             ],
             "family_effects": {
               "contrast": 0.002649999823835161,
               "defocus_blur": 0.00548888858821657,
               "fog": 0.005572223001056247,
-              "gaussian_noise": -0.00047083381149503917,
-              "jpeg_compression": -0.0049027764134936865,
+              "gaussian_noise": -0.00042500048875808715,
+              "jpeg_compression": -0.004765276941988203,
               "pixelate": 0.0015194452471203274
             },
             "p_value_one_sided_exact_sign_flip": 0.15625,
@@ -403,17 +395,17 @@
             "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
-            "point": 0.129703471230136,
+            "point": 0.12973402669584308,
             "ci95_unadjusted_family_bootstrap": [
-              0.06892939717681319,
-              0.18746064730264522
+              0.06900578579968876,
+              0.18747592507689084
             ],
             "family_effects": {
               "contrast": 0.23968055546283723,
               "defocus_blur": 0.12648055454095206,
               "fog": 0.06860277652740479,
-              "gaussian_noise": 0.18622222112284767,
-              "jpeg_compression": 0.010756943623224895,
+              "gaussian_noise": 0.1862680544455846,
+              "jpeg_compression": 0.010894443094730377,
               "pixelate": 0.14647777610354953
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
@@ -455,37 +447,37 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 3,
-          "rate": 0.022222222222222223,
+          "count": 1,
+          "rate": 0.007407407407407408,
           "ci95_wilson": [
-            0.007585912664781848,
-            0.06329679704085306
+            0.001308788246274506,
+            0.040764083000620406
           ]
         },
         "freeze": {
-          "count": 2,
-          "rate": 0.014814814814814815,
+          "count": 0,
+          "rate": 0.0,
           "ci95_wilson": [
-            0.004072203419334865,
-            0.05240558705693005
+            0.0,
+            0.02766795201752491
           ]
         },
         "abstain": {
-          "count": 130,
-          "rate": 0.9629629629629629,
+          "count": 134,
+          "rate": 0.9925925925925926,
           "ci95_wilson": [
-            0.9162293656092925,
-            0.9840780862263326
+            0.9592359169993797,
+            0.9986912117537255
           ]
         }
       },
       "false_adapt_unconditional": {
-        "count": 3,
+        "count": 0,
         "n": 135,
-        "rate": 0.022222222222222223,
+        "rate": 0.0,
         "ci95_wilson": [
-          0.007585912664781848,
-          0.06329679704085306
+          0.0,
+          0.02766795201752491
         ]
       },
       "interval_coverage_observed": {
@@ -497,15 +489,15 @@
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 3,
-        "n_adapt_decisions": 3,
-        "rate": 1.0,
-        "cp95_upper": 1.0,
+        "false_adapts": 0,
+        "n_adapt_decisions": 1,
+        "rate": 0.0,
+        "cp95_upper": 0.95,
         "guarantee_status": "exercised"
       },
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
       "regret_kga_adapt_freeze": [
-        0.01539999986136401,
+        0.013866666290495131,
         0.01906111130007991,
         0.014464814464251201
       ],
@@ -517,17 +509,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": 0.0036611114387159003,
+            "point": 0.00519444500958478,
             "ci95": [
-              -0.0005462954993601194,
-              0.007868518376791919
+              0.0019277785663251528,
+              0.008461111452844408
             ]
           },
           "always_freeze": {
-            "point": -0.0009351853971128095,
+            "point": 0.00059814817375607,
             "ci95": [
-              -0.0021944443384806314,
-              0.0
+              0.0,
+              0.001794444521268209
             ]
           }
         },
@@ -554,11 +546,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 108,
-          "rate": 0.8,
+          "count": 107,
+          "rate": 0.7925925925925926,
           "ci95_wilson": [
-            0.7246491205561439,
-            0.8587501082333412
+            0.7165717620317186,
+            0.8524225475283965
           ]
         },
         "freeze": {
@@ -570,21 +562,21 @@
           ]
         },
         "abstain": {
-          "count": 26,
-          "rate": 0.1925925925925926,
+          "count": 27,
+          "rate": 0.2,
           "ci95_wilson": [
-            0.13495621289223048,
-            0.2672396390889145
+            0.1412498917666589,
+            0.27535087944385617
           ]
         }
       },
       "false_adapt_unconditional": {
-        "count": 1,
+        "count": 0,
         "n": 135,
-        "rate": 0.007407407407407408,
+        "rate": 0.0,
         "ci95_wilson": [
-          0.001308788246274506,
-          0.040764083000620406
+          0.0,
+          0.02766795201752491
         ]
       },
       "interval_coverage_observed": {
@@ -596,15 +588,15 @@
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 1,
-        "n_adapt_decisions": 108,
-        "rate": 0.009259259259259259,
-        "cp95_upper": 0.043170634044851726,
+        "false_adapts": 0,
+        "n_adapt_decisions": 107,
+        "rate": 0.0,
+        "cp95_upper": 0.027609200166909376,
         "guarantee_status": "exercised"
       },
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
       "regret_kga_adapt_freeze": [
-        0.002355556355582343,
+        0.0031314816187929225,
         9.629638106734664e-05,
         0.03418888907741617
       ],
@@ -616,17 +608,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.0022592599745149965,
+            "point": -0.003035185237725576,
             "ci95": [
-              -0.003001852609493114,
-              -0.0010833334039758752
+              -0.006468520837801474,
+              -0.0008129627616317182
             ]
           },
           "always_freeze": {
-            "point": 0.03183333272183383,
+            "point": 0.03105740745862325,
             "ci95": [
-              0.0282851881451077,
-              0.03547962710813239
+              0.02685185301083105,
+              0.03620370300831617
             ]
           }
         },
@@ -653,37 +645,37 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 28,
-          "rate": 0.2074074074074074,
+          "count": 8,
+          "rate": 0.05925925925925926,
           "ci95_wilson": [
-            0.14757745247160348,
-            0.2834282379682815
+            0.03033036094206136,
+            0.11257694491042357
           ]
         },
         "freeze": {
-          "count": 9,
-          "rate": 0.06666666666666667,
+          "count": 2,
+          "rate": 0.014814814814814815,
           "ci95_wilson": [
-            0.035466897784925636,
-            0.12184532729692928
+            0.004072203419334865,
+            0.05240558705693005
           ]
         },
         "abstain": {
-          "count": 98,
-          "rate": 0.725925925925926,
+          "count": 125,
+          "rate": 0.9259259259259259,
           "ci95_wilson": [
-            0.6452181868209285,
-            0.7941318496748567
+            0.8690133972817375,
+            0.9592694584070376
           ]
         }
       },
       "false_adapt_unconditional": {
-        "count": 0,
+        "count": 2,
         "n": 135,
-        "rate": 0.0,
+        "rate": 0.014814814814814815,
         "ci95_wilson": [
-          0.0,
-          0.02766795201752491
+          0.004072203419334865,
+          0.05240558705693005
         ]
       },
       "interval_coverage_observed": {
@@ -695,15 +687,15 @@
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 0,
-        "n_adapt_decisions": 28,
-        "rate": 0.0,
-        "cp95_upper": 0.10146573557272476,
+        "false_adapts": 2,
+        "n_adapt_decisions": 8,
+        "rate": 0.25,
+        "cp95_upper": 0.599689389190833,
         "guarantee_status": "exercised"
       },
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role",
+      "radius_rule": "exact-rank, unclamped, leave-one-out-of-pool",
       "regret_kga_adapt_freeze": [
-        0.022696295987676692,
+        0.03482037015535213,
         0.05293333342781773,
         0.031894444481090266
       ],
@@ -714,17 +706,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": 0.03023703744014104,
+            "point": 0.0181129632724656,
             "ci95": [
-              0.025357411857004512,
-              0.0349981462513959
+              0.009264816343784328,
+              0.026961110201146866
             ]
           },
           "always_freeze": {
-            "point": 0.009198148493413574,
+            "point": -0.0029259256742618645,
             "ci95": [
-              0.0051629635470884835,
-              0.013848147348121361
+              -0.006192592227900471,
+              0.0
             ]
           }
         },
@@ -1670,11 +1662,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 42,
-          "rate": 0.875,
+          "count": 44,
+          "rate": 0.9166666666666666,
           "ci95_wilson": [
-            0.7529954171361317,
-            0.9414294856142802
+            0.8044669820963272,
+            0.9671162431819081
           ]
         },
         "freeze": {
@@ -1686,11 +1678,11 @@
           ]
         },
         "abstain": {
-          "count": 6,
-          "rate": 0.125,
+          "count": 4,
+          "rate": 0.08333333333333333,
           "ci95_wilson": [
-            0.058570514385719794,
-            0.24700458286386834
+            0.032883756818091775,
+            0.1955330179036728
           ]
         }
       },
@@ -1713,14 +1705,14 @@
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
         "false_adapts": 0,
-        "n_adapt_decisions": 42,
+        "n_adapt_decisions": 44,
         "rate": 0.0,
-        "cp95_upper": 0.06884260784039486,
+        "cp95_upper": 0.06581877114493395,
         "guarantee_status": "exercised"
       },
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "regret_kga_adapt_freeze": [
-        0.008645833333333333,
+        0.005468749999999999,
         0.0,
         0.06932291666666666
       ],
@@ -1730,17 +1722,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.008645833333333333,
+            "point": -0.005468749999999999,
             "ci95": [
-              -0.0196875,
-              -0.00125
+              -0.0109375,
+              0.0
             ]
           },
           "always_freeze": {
-            "point": 0.06067708333333333,
+            "point": 0.06385416666666667,
             "ci95": [
-              0.050989583333333324,
-              0.07135416666666666
+              0.05374999999999999,
+              0.07395833333333332
             ]
           }
         },
@@ -1752,8 +1744,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R convnext_tiny",
@@ -1850,8 +1841,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R efficientnet_b0",
@@ -1874,19 +1864,19 @@
           ]
         },
         "freeze": {
-          "count": 34,
-          "rate": 0.7083333333333334,
+          "count": 36,
+          "rate": 0.75,
           "ci95_wilson": [
-            0.5682074019042831,
-            0.8175842107348348
+            0.6121562719049204,
+            0.8507936632620209
           ]
         },
         "abstain": {
-          "count": 14,
-          "rate": 0.2916666666666667,
+          "count": 12,
+          "rate": 0.25,
           "ci95_wilson": [
-            0.18241578926516536,
-            0.431792598095717
+            0.1492063367379791,
+            0.3878437280950796
           ]
         }
       },
@@ -1948,8 +1938,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R efficientnet_b3",
@@ -1964,11 +1953,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 38,
-          "rate": 0.7916666666666666,
+          "count": 33,
+          "rate": 0.6875,
           "ci95_wilson": [
-            0.6574109872738206,
-            0.882697270420944
+            0.5466692858410841,
+            0.8005431655341219
           ]
         },
         "freeze": {
@@ -1980,11 +1969,11 @@
           ]
         },
         "abstain": {
-          "count": 10,
-          "rate": 0.20833333333333334,
+          "count": 15,
+          "rate": 0.3125,
           "ci95_wilson": [
-            0.11730272957905595,
-            0.34258901272617925
+            0.19945683446587817,
+            0.4533307141589159
           ]
         }
       },
@@ -2007,14 +1996,14 @@
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
         "false_adapts": 0,
-        "n_adapt_decisions": 38,
+        "n_adapt_decisions": 33,
         "rate": 0.0,
-        "cp95_upper": 0.07580765168296455,
+        "cp95_upper": 0.08678118929147494,
         "guarantee_status": "exercised"
       },
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "regret_kga_adapt_freeze": [
-        0.009270833333333332,
+        0.012708333333333327,
         0.0,
         0.05010416666666665
       ],
@@ -2024,17 +2013,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.009270833333333332,
+            "point": -0.012708333333333327,
             "ci95": [
-              -0.018437499999999996,
-              -0.0018750000000000017
+              -0.020833333333333322,
+              -0.007499999999999998
             ]
           },
           "always_freeze": {
-            "point": 0.04083333333333332,
+            "point": 0.03739583333333332,
             "ci95": [
-              0.02812499999999999,
-              0.04937499999999999
+              0.024270833333333332,
+              0.046458333333333324
             ]
           }
         },
@@ -2046,8 +2035,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R resnet101",
@@ -2062,11 +2050,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 6,
-          "rate": 0.125,
+          "count": 7,
+          "rate": 0.14583333333333334,
           "ci95_wilson": [
-            0.058570514385719794,
-            0.24700458286386834
+            0.07248249326603709,
+            0.27167176524746284
           ]
         },
         "freeze": {
@@ -2078,11 +2066,11 @@
           ]
         },
         "abstain": {
-          "count": 42,
-          "rate": 0.875,
+          "count": 41,
+          "rate": 0.8541666666666666,
           "ci95_wilson": [
-            0.7529954171361317,
-            0.9414294856142802
+            0.7283282347525372,
+            0.9275175067339628
           ]
         }
       },
@@ -2105,14 +2093,14 @@
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
         "false_adapts": 1,
-        "n_adapt_decisions": 6,
-        "rate": 0.16666666666666666,
-        "cp95_upper": 0.581803409252026,
+        "n_adapt_decisions": 7,
+        "rate": 0.14285714285714285,
+        "cp95_upper": 0.5207029735913071,
         "guarantee_status": "exercised"
       },
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "regret_kga_adapt_freeze": [
-        0.02072916666666666,
+        0.020624999999999994,
         0.0005208333333333338,
         0.023749999999999993
       ],
@@ -2122,17 +2110,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.020208333333333325,
+            "point": -0.02010416666666666,
             "ci95": [
-              -0.025624999999999988,
-              -0.014583333333333337
+              -0.02583333333333332,
+              -0.013906249999999998
             ]
           },
           "always_freeze": {
-            "point": 0.0030208333333333337,
+            "point": 0.0031249999999999993,
             "ci95": [
-              -0.00010416666666666734,
-              0.008593749999999997
+              -0.000156250000000001,
+              0.009531250000000003
             ]
           }
         },
@@ -2144,8 +2132,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R resnet152",
@@ -2160,11 +2147,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 29,
-          "rate": 0.6041666666666666,
+          "count": 33,
+          "rate": 0.6875,
           "ci95_wilson": [
-            0.4631040849254725,
-            0.7297917213940862
+            0.5466692858410841,
+            0.8005431655341219
           ]
         },
         "freeze": {
@@ -2176,11 +2163,11 @@
           ]
         },
         "abstain": {
-          "count": 19,
-          "rate": 0.3958333333333333,
+          "count": 15,
+          "rate": 0.3125,
           "ci95_wilson": [
-            0.2702082786059137,
-            0.5368959150745274
+            0.19945683446587817,
+            0.4533307141589159
           ]
         }
       },
@@ -2203,14 +2190,14 @@
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
         "false_adapts": 0,
-        "n_adapt_decisions": 29,
+        "n_adapt_decisions": 33,
         "rate": 0.0,
-        "cp95_upper": 0.0981446276772957,
+        "cp95_upper": 0.08678118929147494,
         "guarantee_status": "exercised"
       },
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "regret_kga_adapt_freeze": [
-        0.016718749999999994,
+        0.012916666666666665,
         0.0,
         0.04208333333333333
       ],
@@ -2220,17 +2207,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.016718749999999994,
+            "point": -0.012916666666666665,
             "ci95": [
-              -0.02260416666666666,
-              -0.008177083333333328
+              -0.01651041666666667,
+              -0.009010416666666665
             ]
           },
           "always_freeze": {
-            "point": 0.025364583333333333,
+            "point": 0.02916666666666666,
             "ci95": [
-              0.021041666666666663,
-              0.03161458333333333
+              0.026770833333333327,
+              0.031562499999999986
             ]
           }
         },
@@ -2242,8 +2229,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R resnext101_32x8d",
@@ -2258,11 +2244,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 41,
-          "rate": 0.8541666666666666,
+          "count": 42,
+          "rate": 0.875,
           "ci95_wilson": [
-            0.7283282347525372,
-            0.9275175067339628
+            0.7529954171361317,
+            0.9414294856142802
           ]
         },
         "freeze": {
@@ -2274,11 +2260,11 @@
           ]
         },
         "abstain": {
-          "count": 7,
-          "rate": 0.14583333333333334,
+          "count": 6,
+          "rate": 0.125,
           "ci95_wilson": [
-            0.07248249326603709,
-            0.27167176524746284
+            0.058570514385719794,
+            0.24700458286386834
           ]
         }
       },
@@ -2301,14 +2287,14 @@
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
         "false_adapts": 0,
-        "n_adapt_decisions": 41,
+        "n_adapt_decisions": 42,
         "rate": 0.0,
-        "cp95_upper": 0.07046111727016413,
+        "cp95_upper": 0.06884260784039486,
         "guarantee_status": "exercised"
       },
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "regret_kga_adapt_freeze": [
-        0.007499999999999999,
+        0.006666666666666665,
         0.0,
         0.05197916666666665
       ],
@@ -2318,17 +2304,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.007499999999999999,
+            "point": -0.006666666666666665,
             "ci95": [
-              -0.015,
-              0.0
+              -0.010520833333333333,
+              -0.0021874999999999998
             ]
           },
           "always_freeze": {
-            "point": 0.04447916666666665,
+            "point": 0.045312499999999985,
             "ci95": [
-              0.034479166666666665,
-              0.05447916666666665
+              0.03994791666666666,
+              0.05130208333333331
             ]
           }
         },
@@ -2340,8 +2326,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R swin_b",
@@ -2356,11 +2341,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 19,
-          "rate": 0.3958333333333333,
+          "count": 15,
+          "rate": 0.3125,
           "ci95_wilson": [
-            0.2702082786059137,
-            0.5368959150745274
+            0.19945683446587817,
+            0.4533307141589159
           ]
         },
         "freeze": {
@@ -2372,21 +2357,21 @@
           ]
         },
         "abstain": {
-          "count": 29,
-          "rate": 0.6041666666666666,
+          "count": 33,
+          "rate": 0.6875,
           "ci95_wilson": [
-            0.4631040849254725,
-            0.7297917213940862
+            0.5466692858410841,
+            0.8005431655341219
           ]
         }
       },
       "false_adapt_unconditional": {
-        "count": 1,
+        "count": 0,
         "n": 48,
-        "rate": 0.020833333333333332,
+        "rate": 0.0,
         "ci95_wilson": [
-          0.003687110977510649,
-          0.10899217995251861
+          6.938893903907228e-18,
+          0.07410012966611748
         ]
       },
       "interval_coverage_observed": {
@@ -2398,15 +2383,15 @@
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 1,
-        "n_adapt_decisions": 19,
-        "rate": 0.05263157894736842,
-        "cp95_upper": 0.226374249272378,
+        "false_adapts": 0,
+        "n_adapt_decisions": 15,
+        "rate": 0.0,
+        "cp95_upper": 0.18103627252208465,
         "guarantee_status": "exercised"
       },
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "regret_kga_adapt_freeze": [
-        0.023333333333333327,
+        0.026249999999999996,
         5.208333333333338e-05,
         0.03749999999999999
       ],
@@ -2416,17 +2401,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.023281249999999993,
+            "point": -0.02619791666666666,
             "ci95": [
-              -0.03552083333333332,
-              -0.011041666666666665
+              -0.03614583333333332,
+              -0.012552083333333332
             ]
           },
           "always_freeze": {
-            "point": 0.014166666666666664,
+            "point": 0.011249999999999996,
             "ci95": [
               0.0,
-              0.028333333333333332
+              0.0225
             ]
           }
         },
@@ -2438,8 +2423,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R swin_t",
@@ -2536,8 +2520,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "ImageNet-R vit_b_16",
@@ -2552,11 +2535,11 @@
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "actions": {
         "adapt": {
-          "count": 3,
-          "rate": 0.0625,
+          "count": 1,
+          "rate": 0.020833333333333332,
           "ci95_wilson": [
-            0.021483232908389285,
-            0.1683543805494635
+            0.003687110977510649,
+            0.10899217995251861
           ]
         },
         "freeze": {
@@ -2568,21 +2551,21 @@
           ]
         },
         "abstain": {
-          "count": 45,
-          "rate": 0.9375,
+          "count": 47,
+          "rate": 0.9791666666666666,
           "ci95_wilson": [
-            0.8316456194505365,
-            0.9785167670916107
+            0.8910078200474814,
+            0.9963128890224893
           ]
         }
       },
       "false_adapt_unconditional": {
-        "count": 3,
+        "count": 1,
         "n": 48,
-        "rate": 0.0625,
+        "rate": 0.020833333333333332,
         "ci95_wilson": [
-          0.021483232908389285,
-          0.1683543805494635
+          0.003687110977510649,
+          0.10899217995251861
         ]
       },
       "interval_coverage_observed": {
@@ -2594,8 +2577,8 @@
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 3,
-        "n_adapt_decisions": 3,
+        "false_adapts": 1,
+        "n_adapt_decisions": 1,
         "rate": 1.0,
         "cp95_upper": 1.0,
         "guarantee_status": "exercised"
@@ -2634,8 +2617,7 @@
         "supports_ci_robust_beats_both": false
       },
       "status": "current_policy_exact_rank_replay",
-      "note": "Current per-backbone exact-rank replay.",
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      "note": "Current per-backbone exact-rank replay."
     },
     {
       "track": "Controlled multimodal D33",
@@ -2697,11 +2679,11 @@
       "track": "CIFAR-10-C SAR",
       "actions": {
         "adapt": {
-          "count": 1414,
-          "rate": 0.6546296296296297,
+          "count": 1430,
+          "rate": 0.6620370370370371,
           "ci95_wilson": [
-            0.6343188633884214,
-            0.6743913691828984
+            0.6418171243907816,
+            0.6816816223156911
           ]
         },
         "freeze": {
@@ -2713,11 +2695,11 @@
           ]
         },
         "abstain": {
-          "count": 746,
-          "rate": 0.3453703703703704,
+          "count": 730,
+          "rate": 0.33796296296296297,
           "ci95_wilson": [
-            0.3256086308171017,
-            0.36568113661157875
+            0.318318377684309,
+            0.3581828756092184
           ]
         }
       },
@@ -2733,7 +2715,7 @@
       "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
       "reproduction_command": "python scripts/reconcile_result_panels.py && python scripts/sync_reconciled_panels.py",
       "regret_kga_adapt_freeze": [
-        0.001782870375447803,
+        0.0016611110832956103,
         0.0003354167496716535,
         0.1404706014527215
       ],
@@ -2743,17 +2725,17 @@
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "comparisons": {
           "always_adapt": {
-            "point": -0.0014474536257761497,
+            "point": -0.0013256943336239567,
             "ci95": [
-              -0.0016613428239469173,
-              -0.0012335644276053818
+              -0.001495370461984917,
+              -0.0011560182052629965
             ]
           },
           "always_freeze": {
-            "point": 0.1386877310772737,
+            "point": 0.1388094903694259,
             "ci95": [
-              0.13835740679944003,
-              0.13901805535510733
+              0.13851643469598557,
+              0.13910254604286618
             ]
           }
         },
@@ -2767,20 +2749,20 @@
       "status": "current_policy_exact_rank_replay",
       "note": "Current per-candidate exact-rank replay. Run-seed inference is descriptive; the separate six-family sensitivity is retrospective and fails the retrospective Holm gate over the six prospectively named contrasts.",
       "false_adapt_unconditional": {
-        "count": 0,
+        "count": 1,
         "n": 2160,
-        "rate": 0.0,
+        "rate": 0.000462962962962963,
         "ci95_wilson": [
-          0.0,
-          0.001775295877170106
+          8.172900621755295e-05,
+          0.002617849004399618
         ]
       },
       "false_adapt_conditional": {
         "definition": "Pr[Delta<=0 | ADAPT]",
-        "false_adapts": 0,
-        "n_adapt_decisions": 1414,
-        "rate": 0.0,
-        "cp95_upper": 0.0021163798447625393,
+        "false_adapts": 1,
+        "n_adapt_decisions": 1430,
+        "rate": 0.0006993006993006993,
+        "cp95_upper": 0.0033130483341073384,
         "guarantee_status": "exercised"
       },
       "interval_coverage_observed": {
@@ -2797,13 +2779,13 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
-        "artifact_bytes": 24534,
+        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-03T06:44:03.645730+00:00",
-        "git_head": null,
+        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
+        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-        "analysis_script_sha256": "f46bd4ca6bf681a0066bd07ec2e7ba0a4ee55e54d78ee4e7a1c3690604922bda",
+        "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
           "python": "3.12.13",
           "numpy": "2.4.4",
@@ -2812,7 +2794,7 @@
         "live_code_bindings": {
           "crossfit": {
             "path": "kga/crossfit.py",
-            "sha256": "9e05137aa7fef64db742620299245e56148af4f79846899f66bbcc6288bed04c"
+            "sha256": "a82b16337e12f469f09b732caaa7c8305ff05edac8713fe2f4b2d12ff33ec5ac"
           },
           "policy": {
             "path": "kga/policy.py",
@@ -2824,11 +2806,7 @@
           },
           "numeric_validation": {
             "path": "kga/_validation.py",
-            "sha256": "34c344b00614abb5ffbf7cfbaa4b70afe79ad28e38c04c5e4376c1096bbc4750"
-          },
-          "reconciliation": {
-            "path": "scripts/reconcile_result_panels.py",
-            "sha256": "e5adf11de2eecfc3f7deeb732acfabe288b5b30ee86973dfceae368276488c19"
+            "sha256": "937e21419b8335c24fde86de74ecc67c65e63c5ae41a960bfefa493cc291ef9f"
           },
           "preregistered_protocol": {
             "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -2854,18 +2832,18 @@
         },
         "comparisons": {
           "always_adapt": {
-            "point": -0.0014474536257761499,
+            "point": -0.0013256943336239565,
             "ci95_unadjusted_family_bootstrap": [
-              -0.0029412034761022634,
-              -0.0002659719023439619
+              -0.0027423609462049275,
+              -0.00016111069255405003
             ],
             "family_effects": {
               "contrast": -0.0025402787658903333,
               "defocus_blur": 6.388939089245267e-05,
               "fog": 6.945265663994683e-06,
               "gaussian_noise": 0.0,
-              "jpeg_compression": -0.0017375007271766662,
-              "pixelate": -0.0044777769181463456
+              "jpeg_compression": -0.0011083334684371948,
+              "pixelate": -0.004376388423972659
             },
             "p_value_one_sided_exact_sign_flip": 0.90625,
             "p_value_holm_within_candidate_posthoc": 0.90625,
@@ -2873,18 +2851,18 @@
             "retrospective_holm_six_contrasts_reject_at_0_05": false
           },
           "always_freeze": {
-            "point": 0.1386877310772737,
+            "point": 0.1388094903694259,
             "ci95_unadjusted_family_bootstrap": [
-              0.07971805425153838,
-              0.1968344911105103
+              0.08003263788090811,
+              0.19685138919287257
             ],
             "family_effects": {
               "contrast": 0.24956250041723252,
               "defocus_blur": 0.13258749975098505,
               "fog": 0.07422638850079642,
               "gaussian_noise": 0.1980319455265999,
-              "jpeg_compression": 0.024487497243616315,
-              "pixelate": 0.15323055502441194
+              "jpeg_compression": 0.025116664502355786,
+              "pixelate": 0.15333194351858562
             },
             "p_value_one_sided_exact_sign_flip": 0.015625,
             "p_value_holm_within_candidate_posthoc": 0.03125,
@@ -2909,8 +2887,7 @@
           "multiplicity_warning": "The six contrasts were prospectively named, but the exact-rank replay, sign-flip tests, and Holm adjustment are retrospective and non-confirmatory; within-candidate Holm values are additional post-hoc diagnostics."
         },
         "claim_note": "Retrospective sensitivity on six observed corruption families. Ordinary family-bootstrap intervals are unadjusted; the within-candidate two-contrast Holm values are post hoc. Retrospective Holm adjustment over the six prospectively named contrasts fails the two-baseline gate for every candidate. The exact-rank replay, sign-flip tests, and Holm analysis are retrospective and non-confirmatory. This is not independent-checkpoint, prospective, natural-shift, or official-code POEM/AETTA evidence."
-      },
-      "radius_rule": "three-way cell-outcome-disjoint cross-fit (deterministic cell-outcome-disjoint fit/calibrate/score cross-fit); exact-rank residual calibration on the disjoint calibration role"
+      }
     }
   ],
   "fa_u_identity_note": "No in-sample rank identity is promoted. Current false-adapt counts and rates are copied from the source-hashed canonical per-track replay; unreplayable PACS counts are omitted.",
@@ -2918,19 +2895,19 @@
   "aggregate_provenance_rule": "Every numeric row marked current_policy_authority=true comes from the source-hashed canonical panel. Rows absent from that panel are scrubbed and retained only as historical placeholders.",
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "canonical_panel_sha256": "35d4c165843de1ece3cb35ffb4ac50dbfcbfa33b646754e2b6d133fbdfa78c6e",
+    "canonical_panel_sha256": "16ec139aee0b5811830ee976281b95d847e03644196d29a14329a7835d1b6a53",
     "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
-    "source_manifest_sha256": "03b1d2b1e9e5ed1cf835126f871ed83eb8497a1ac81727b3955af0d69eb89742"
+    "source_manifest_sha256": "3ac2c7d14d44803e4ff8a19258d036dc86327adb02fdb4cd34536e5eeee9cb24"
   },
   "comparison_ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
   "current_policy_family_sensitivity": {
     "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-    "artifact_sha256": "376837d64a83b5c7cfc4948ff23e34522da7e52d14136912f2c00ed83bb4cd65",
-    "artifact_bytes": 24534,
+    "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+    "artifact_bytes": 19529,
     "status": "retrospective_current_policy_family_sensitivity",
     "retrospective_holm_over_six_prospectively_named_contrasts": {
       "raw_p_values": {
-        "tent::always_adapt": 0.046875,
+        "tent::always_adapt": 0.03125,
         "tent::always_freeze": 0.015625,
         "eata::always_adapt": 0.15625,
         "eata::always_freeze": 0.015625,
@@ -2941,7 +2918,7 @@
         "tent::always_freeze": 0.09375,
         "eata::always_freeze": 0.09375,
         "sar::always_freeze": 0.09375,
-        "tent::always_adapt": 0.140625,
+        "tent::always_adapt": 0.09375,
         "eata::always_adapt": 0.3125,
         "sar::always_adapt": 0.90625
       },

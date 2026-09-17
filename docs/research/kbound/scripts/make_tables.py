@@ -30,14 +30,6 @@ CCT_LOCATION_DISPLAY_OUT = os.path.join(
     KBOUND,
     "paper/generated/cct20_location_effects_display.tex",
 )
-CCT_REPORTING_NUMBERS_OUT = os.path.join(
-    KBOUND,
-    "paper/generated/cct20_reporting_numbers.tex",
-)
-CURRENT_POLICY_INTERVAL_DIAGNOSTICS = os.path.join(
-    KBOUND,
-    "paper/generated/current_policy_interval_diagnostics.json",
-)
 LOCKED_DEFAULT = os.path.join(ROOT, "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json")
 H2H_DEFAULT = os.path.join(
     ROOT,
@@ -59,21 +51,13 @@ def pct(x):
     return f"{x * 100:.0f}"
 
 
-def pct_one_decimal(x):
-    """Format small diagnostic rates without rounding nonzero events to zero."""
-    return f"{x * 100:.1f}"
-
-
 def zero_event_cp95(n):
     """Upper Clopper-Pearson bound for zero events, undefined at zero exposure."""
     return r"\textnormal{not defined}" if n <= 0 else f(1.0 - 0.05 ** (1.0 / n))
 
 
 def _load_json(path):
-    if not os.path.exists(path):
-        return {}
-    with open(path, encoding="utf-8") as stream:
-        return json.load(stream)
+    return json.load(open(path)) if os.path.exists(path) else {}
 
 
 def _locked():
@@ -93,45 +77,34 @@ def _headtohead():
     if not raw:
         return {}
     h = raw.get("headtohead", raw)
-    if not isinstance(h, dict) or h.get("VERDICT") not in {"WIN", "TIE", "LOSE"}:
-        raise ValueError("head-to-head fallback is missing a valid verdict")
-
-    def required_number(container, key, *, rate=False):
+    def metric(container, key):
         values = raw.get(container)
-        value = values.get(key) if isinstance(values, dict) else None
-        if (
-            isinstance(value, bool)
-            or not isinstance(value, (int, float))
-            or not math.isfinite(value)
-            or value < 0
-            or (rate and value > 1)
-        ):
-            raise ValueError(f"head-to-head fallback has missing or invalid {container}.{key}")
+        if not isinstance(values, dict) or key not in values:
+            raise ValueError(f"missing head-to-head metric: {container}.{key}")
+        value = values[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            raise ValueError(f"invalid head-to-head metric: {container}.{key}")
         return float(value)
-
     return {
-        "verdict": h["VERDICT"],
-        "kga_regret": required_number("policy_mean_regret", "kga"),
-        "adapt_regret": required_number("policy_mean_regret", "always_adapt"),
-        "freeze_regret": required_number("policy_mean_regret", "always_freeze"),
-        "poem_regret": required_number("policy_mean_regret", "poem"),
-        "aetta_regret": required_number("policy_mean_regret", "aetta"),
-        "kga_fa": required_number("policy_false_adapt_rate", "kga", rate=True),
-        "kga_decisive": required_number("policy_decisive_rate", "kga", rate=True),
+        "verdict": h.get("VERDICT", "—"),
+        "kga_regret": metric("policy_mean_regret", "kga"),
+        "adapt_regret": metric("policy_mean_regret", "always_adapt"),
+        "freeze_regret": metric("policy_mean_regret", "always_freeze"),
+        "poem_regret": metric("policy_mean_regret", "poem"),
+        "aetta_regret": metric("policy_mean_regret", "aetta"),
+        "kga_fa": metric("policy_false_adapt_rate", "kga"),
+        "kga_decisive": metric("policy_decisive_rate", "kga"),
     }
 
 
 d = _load_json(SRC)
 tracks = d.get("tracks", {})
 canonical = _load_json(RECONCILED)
-current_policy_diagnostics = _load_json(CURRENT_POLICY_INTERVAL_DIAGNOSTICS)
 iwild_release_eligible = False
 if canonical:
     source_manifest_sha256 = canonical.get("source_manifest_sha256")
     if not isinstance(source_manifest_sha256, str) or len(source_manifest_sha256) != 64:
         raise ValueError("canonical panel is missing a valid source_manifest_sha256")
-    with open(RECONCILED, "rb") as handle:
-        canonical_panel_sha256 = hashlib.sha256(handle.read()).hexdigest()
     panels = canonical["panels"]
     iwild_release_eligible = panels["iwildcam"].get("release_promotion", {}).get("eligible", False)
 
@@ -140,7 +113,6 @@ if canonical:
         return {
             "regret": [regret["kga"], regret["always_adapt"], regret["always_freeze"]],
             "false_adapt": score["fa_u"],
-            "false_adapt_count": score["false_adapt_count"],
         }
 
     tracks = {
@@ -169,7 +141,6 @@ if canonical:
     generated_macros.update(
         {
             "SourceManifestSHA": source_manifest_sha256,
-            "CanonicalPanelSHA": canonical_panel_sha256,
             "OHRepKga": f(office_replication["regret"]["kga"]),
             "OHRepAdapt": f(office_replication["regret"]["always_adapt"]),
             "OHRepFreeze": f(office_replication["regret"]["always_freeze"]),
@@ -234,15 +205,9 @@ if tracks:
         "cifar10c_stress": {
             "candidates": {
                 "tent": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_tent"]["regret"]))
-                | {
-                    "false_adapt": tracks["cifar10c_tent"]["false_adapt"],
-                    "false_adapt_count": tracks["cifar10c_tent"]["false_adapt_count"],
-                },
+                | {"false_adapt": tracks["cifar10c_tent"]["false_adapt"]},
                 "eata": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["cifar10c_eata"]["regret"]))
-                | {
-                    "false_adapt": tracks["cifar10c_eata"]["false_adapt"],
-                    "false_adapt_count": tracks["cifar10c_eata"]["false_adapt_count"],
-                },
+                | {"false_adapt": tracks["cifar10c_eata"]["false_adapt"]},
             }
         },
         "imagenetc_sar": dict(zip(("regret_kga", "regret_adapt", "regret_freeze"), tracks["imagenetc_sar"]["regret"])),
@@ -268,10 +233,7 @@ for cand in ("tent", "eata"):
         M[f"CIFAR{cand}Kga"] = f(c.get("regret_kga", c.get("kga_mean_regret")))
         M[f"CIFAR{cand}Adapt"] = f(c.get("regret_adapt", c.get("adapt_mean_regret")))
         M[f"CIFAR{cand}Freeze"] = f(c.get("regret_freeze", c.get("freeze_mean_regret")))
-        false_adapt_rate = c.get("false_adapt", c.get("false_adapt_rate_pooled", 0))
-        M[f"CIFAR{cand}FA"] = pct_one_decimal(false_adapt_rate)
-        if "false_adapt_count" in c:
-            M[f"CIFAR{cand}FACount"] = str(c["false_adapt_count"])
+        M[f"CIFAR{cand}FA"] = pct(c.get("false_adapt", c.get("false_adapt_rate_pooled", 0)))
 
 hh = _headtohead()
 if hh:
@@ -394,60 +356,6 @@ def _write_cct20_primary_display_table():
     print("wrote", CCT_PRIMARY_DISPLAY_OUT)
 
 
-def _write_cct20_reporting_numbers():
-    """Derive manuscript-only false-FREEZE counts from the sealed CCT manifest.
-
-    The receipt-bound ``cct20_numbers.tex`` remains byte-for-byte unchanged.
-    This presentation include supplies only the reporting quantities that the
-    sealed generator did not expose, and fails closed if the current release
-    no longer matches the audited 45-cell action/effect record.
-    """
-
-    release = _load_json(CCT_RELEASE)
-    actions = release["action_exposure"]["counts"]
-    mix = release["adaptation_effect_mix"]
-    design = release["design"]
-    effect_rows = [row for sign_rows in release["adaptation_effect_cells_by_sign"].values() for row in sign_rows]
-    false_freeze = sum(row["decision"] == "FREEZE" and row["adaptation_benefit"] >= 0 for row in effect_rows)
-    observed = {
-        "cells": design["cell_count"],
-        "helpful": mix["helpful_cells_strictly_positive"],
-        "tied": mix["neutral_cells_exactly_zero"],
-        "harmful": mix["harmful_cells_strictly_negative"],
-        "adapt": actions["ADAPT"],
-        "freeze": actions["FREEZE"],
-        "abstain": actions["ABSTAIN"],
-        "false_freeze": false_freeze,
-    }
-    expected = {
-        "cells": 45,
-        "helpful": 1,
-        "tied": 0,
-        "harmful": 44,
-        "adapt": 0,
-        "freeze": 44,
-        "abstain": 1,
-        "false_freeze": 1,
-    }
-    if observed != expected or len(effect_rows) != observed["cells"]:
-        raise ValueError(
-            "CCT-20 manifest no longer implies the audited 1/0/44 effect mix, 0/44/1 actions, and one false FREEZE"
-        )
-    source = "\n".join(
-        [
-            "% AUTO-GENERATED by scripts/make_tables.py from the sealed CCT-20 manifest.",
-            "% Reporting-only additions; receipt-bound authorities are unchanged.",
-            rf"\newcommand{{\CCTFalseFreezeCount}}{{{false_freeze}}}",
-            r"\newcommand{\CCTFalseFreezeCountWord}{one}",
-            rf"\newcommand{{\CCTFalseFreezeConditionalDenominator}}{{{actions['FREEZE']}}}",
-            rf"\newcommand{{\CCTFalseFreezeOverallDenominator}}{{{design['cell_count']}}}",
-            "",
-        ]
-    )
-    with open(CCT_REPORTING_NUMBERS_OUT, "w", encoding="ascii") as handle:
-        handle.write(source)
-    print("wrote", CCT_REPORTING_NUMBERS_OUT)
-
 
 def _display_score_fields(score, *, aggregate=False):
     """Read exact recorded fields; never infer a decision unit from a score unit."""
@@ -457,10 +365,8 @@ def _display_score_fields(score, *, aggregate=False):
         raise ValueError("Display row must declare a positive evaluation-unit count")
     values = [score["regret"][key] for key in ("kga", "always_adapt", "always_freeze")]
     values.extend((score["fa_u"], score["decision_coverage"]))
-    if any(
-        isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0
-        for value in values
-    ):
+    if any(isinstance(value, bool) or not isinstance(value, (int, float))
+           or not math.isfinite(value) or value < 0 for value in values):
         raise ValueError("Display row has an invalid recorded score")
     if any(value > 1 for value in values[-2:]):
         raise ValueError("Display frequencies must lie in [0, 1]")
@@ -475,74 +381,26 @@ def _display_score_fields(score, *, aggregate=False):
     return n, values
 
 
-def _render_metric_table(rows, *, primary=False, primary_diagnostics=None, statuses=None):
+def _render_metric_table(rows, *, primary=False):
     """Format one explicitly named metric; no pooling or favorable-row filtering."""
-    show_status = not primary and statuses is not None
     header = (
-        r"Candidate & $n$ & KGA & Adapt & Freeze & A/F/U & False A/A & False F/F & Commitment \\"
-        if primary
-        else (
-            r"Protocol & Status & $n$ & KGA & Adapt & Freeze & $\mathrm{FA}_{\mathrm u}$ & Commitment rate \\"
-            if show_status
-            else r"Protocol & $n$ & KGA & Adapt & Freeze & $\mathrm{FA}_{\mathrm u}$ & Commitment rate \\"
-        )
+        r"Candidate & $n$ & KGA & Adapt & Freeze & A/F/U & $\mathrm{FA}_{\mathrm u}$ & Commitment rate \\"
+        if primary else
+        r"Protocol & $n$ & KGA & Adapt & Freeze & $\mathrm{FA}_{\mathrm u}$ & Commitment rate \\"
     )
     rendered = []
     for label, score, aggregate in rows:
         n, values = _display_score_fields(score, aggregate=aggregate)
-        parts = [label]
-        if show_status:
-            status = statuses.get(label)
-            if not isinstance(status, str) or not status.strip():
-                raise ValueError(f"Auxiliary display is missing a status for {label}")
-            parts.append(status)
-        parts.extend([str(n), *(f(value) for value in values[:3])])
+        parts = [label, str(n), *(f(value) for value in values[:3])]
         if primary:
             parts.append("/".join(str(score[key]) for key in ("adapt_count", "freeze_count", "abstain_count")))
-            key = label.lower()
-            if not isinstance(primary_diagnostics, dict) or key not in primary_diagnostics:
-                raise ValueError(f"Primary display is missing interval diagnostics for {label}")
-            summary = primary_diagnostics[key].get("summary", {})
-            if summary.get("n") != n:
-                raise ValueError(f"Primary interval diagnostics disagree on n for {label}")
-            directional = []
-            for event, action_key in (("false_adapt", "adapt_count"), ("false_freeze", "freeze_count")):
-                conditional = summary.get(event, {}).get("conditional", {})
-                numerator = conditional.get("numerator")
-                denominator = conditional.get("denominator")
-                if (
-                    isinstance(numerator, bool)
-                    or not isinstance(numerator, int)
-                    or numerator < 0
-                    or isinstance(denominator, bool)
-                    or not isinstance(denominator, int)
-                    or denominator != score[action_key]
-                    or numerator > denominator
-                ):
-                    raise ValueError(f"Primary directional-error diagnostics are malformed for {label}")
-                if event == "false_adapt" and numerator != score["false_adapt_count"]:
-                    raise ValueError(f"Primary false-ADAPT count disagrees with canonical data for {label}")
-                directional.append("--" if denominator == 0 else f"{numerator}/{denominator}")
-            parts.extend(directional)
-            parts.append(f(values[-1]))
-        else:
-            parts.extend(f(value) for value in values[3:])
+        parts.extend(f(value) for value in values[3:])
         rendered.append(" & ".join(parts) + r" \\")
-    return "\n".join(
-        [
-            "% AUTO-GENERATED by scripts/make_tables.py. Display only; authorities unchanged.",
-            r"\begin{tabular}{@{}lrrrrcrrr@{}}"
-            if primary
-            else (r"\begin{tabular}{@{}llrrrrrr@{}}" if show_status else r"\begin{tabular}{@{}lrrrrrr@{}}"),
-            r"\toprule",
-            header,
-            r"\midrule",
-            *rendered,
-            r"\bottomrule",
-            r"\end{tabular}",
-            "",
-        ]
-    )
+    return "\n".join([
+        "% AUTO-GENERATED by scripts/make_tables.py. Display only; authorities unchanged.",
+        r"\begin{tabular}{@{}lrrrrcrr@{}}" if primary else r"\begin{tabular}{@{}lrrrrrr@{}}",
+        r"\toprule", header, r"\midrule", *rendered, r"\bottomrule", r"\end{tabular}", "",
+    ])
 
 
 def _write_metric_separated_display_tables():
@@ -550,71 +408,31 @@ def _write_metric_separated_display_tables():
     if not canonical:
         raise ValueError("Metric-separated tables require the reconciled canonical authority")
     panel = canonical["panels"]
-    primary = [
-        (
-            candidate.upper() if candidate != "tent" else "Tent",
-            panel["cifar10c"]["panel"]["candidates"][candidate],
-            False,
-        )
-        for candidate in ("tent", "eata", "sar")
-    ]
+    primary = [(candidate.upper() if candidate != "tent" else "Tent",
+                panel["cifar10c"]["panel"]["candidates"][candidate], False)
+               for candidate in ("tent", "eata", "sar")]
     accuracy = [
         ("Office-Home primary", panel["officehome"]["primary"]["exact_rank_transfer_score"], False),
-        (
-            "Office-Home stream seeds",
-            panel["officehome"]["test_stream_seed_replication"]["exact_rank_transfer_score"],
-            False,
-        ),
-        *[
-            (
-                f"ImageNet-C {candidate.upper() if candidate != 'tent' else 'Tent'}",
-                panel["imagenetc"]["panel"]["candidates"][candidate],
-                False,
-            )
-            for candidate in ("tent", "eata", "sar")
-        ],
+        ("Office-Home stream seeds", panel["officehome"]["test_stream_seed_replication"]["exact_rank_transfer_score"], False),
+        *[(f"ImageNet-C {candidate.upper() if candidate != 'tent' else 'Tent'}",
+           panel["imagenetc"]["panel"]["candidates"][candidate], False)
+          for candidate in ("tent", "eata", "sar")],
         ("PACS (aggregate)", panel["pacs"]["pooled_domain_seed_mean"], True),
         ("CIFAR-10.1", panel["cifar101"]["replay"]["exact_rank_transfer_score"], False),
     ]
     balanced = [
         ("ImageNet-R backbones", panel["imagenet_r"]["panel"]["architecture_panel_aggregate"], False),
         ("Camelyon17 OOD", panel["camelyon17"]["ood"]["replay"]["exact_rank_transfer_score"], False),
-        *[
-            (
-                f"Camelyon17 B--v2 {candidate.upper() if candidate != 'tent' else 'Tent'}",
-                panel["camelyon17"]["b_v2_diagnostic"]["panel"]["candidates"][candidate],
-                False,
-            )
-            for candidate in ("tent", "eata", "sar")
-        ],
+        *[(f"Camelyon17 B--v2 {candidate.upper() if candidate != 'tent' else 'Tent'}",
+           panel["camelyon17"]["b_v2_diagnostic"]["panel"]["candidates"][candidate], False)
+          for candidate in ("tent", "eata", "sar")],
         ("RxRx1 model seed 0", panel["rxrx1"]["primary_model_seed0"]["exact_rank_transfer_score"], False),
     ]
-    accuracy_statuses = {
-        "Office-Home primary": "retrospective retention",
-        "Office-Home stream seeds": "descriptive replication",
-        "ImageNet-C Tent": "candidate-specific",
-        "ImageNet-C EATA": "candidate-specific",
-        "ImageNet-C SAR": "candidate-specific",
-        "PACS (aggregate)": "partial diagnostic",
-        "CIFAR-10.1": "locked diagnostic",
-    }
-    balanced_statuses = {
-        "ImageNet-R backbones": "architecture panel",
-        "Camelyon17 OOD": "opened one-sided",
-        "Camelyon17 B--v2 Tent": "opened diagnostic",
-        "Camelyon17 B--v2 EATA": "opened diagnostic",
-        "Camelyon17 B--v2 SAR": "opened diagnostic",
-        "RxRx1 model seed 0": "retention diagnostic",
-    }
     # Render and validate every row before replacing any presentation output.
     outputs = {
-        "kbound_primary_accuracy_table.tex": _render_metric_table(
-            primary,
-            primary=True,
-            primary_diagnostics=current_policy_diagnostics.get("candidates", {}),
-        ),
-        "kbound_auxiliary_accuracy_table.tex": _render_metric_table(accuracy, statuses=accuracy_statuses),
-        "kbound_auxiliary_balanced_accuracy_table.tex": _render_metric_table(balanced, statuses=balanced_statuses),
+        "kbound_primary_accuracy_table.tex": _render_metric_table(primary, primary=True),
+        "kbound_auxiliary_accuracy_table.tex": _render_metric_table(accuracy),
+        "kbound_auxiliary_balanced_accuracy_table.tex": _render_metric_table(balanced),
     }
     for name, source in outputs.items():
         path = os.path.join(KBOUND, "paper", "generated", name)
@@ -642,41 +460,32 @@ def _write_cct20_safe_utility_display_table():
         row = safe[key]
         point = row["point_estimate"]
         interval = row["pointwise_95_ci"]
-        if (
-            len(interval) != 2
-            or any(
-                isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
-                for value in [point, *interval]
-            )
-            or interval[0] > interval[1]
-        ):
+        if len(interval) != 2 or any(
+            isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+            for value in [point, *interval]
+        ) or interval[0] > interval[1]:
             raise ValueError("CCT-20 safe-utility interval is malformed")
         endpoints[key] = interval[0]
-        rows.append(f"{label} & {f(point)} & [{f(interval[0])}, {f(interval[1])}] & $L>{f(threshold)}$ " + r"\\")
+        rows.append(
+            f"{label} & {f(point)} & [{f(interval[0])}, {f(interval[1])}] & "
+            f"$L>{f(threshold)}$ " + r"\\"
+        )
     passed = endpoints["versus_always_adapt"] > 0 and endpoints["versus_always_freeze"] > margin
     if not isinstance(safe["passes"], bool) or passed is not safe["passes"]:
         raise ValueError("CCT-20 recorded safe-utility flag contradicts its strict rule")
     path = os.path.join(KBOUND, "paper", "generated", "cct20_safe_utility_display.tex")
-    source = "\n".join(
-        [
-            "% AUTO-GENERATED by scripts/make_tables.py. Sealed endpoint, display rounding only.",
-            r"\begin{tabular}{@{}lrrl@{}}",
-            r"\toprule",
-            r"Comparator & Mean contrast & Nominal 95\% CI & Required lower bound \\",
-            r"\midrule",
-            *rows,
-            r"\bottomrule",
-            r"\end{tabular}",
-            "",
-        ]
-    )
+    source = "\n".join([
+        "% AUTO-GENERATED by scripts/make_tables.py. Sealed endpoint, display rounding only.",
+        r"\begin{tabular}{@{}lrrl@{}}",
+        r"\toprule",
+        r"Comparator & Mean contrast & Nominal 95\% CI & Required lower bound \\",
+        r"\midrule", *rows, r"\bottomrule", r"\end{tabular}", "",
+    ])
     with open(path, "w", encoding="ascii") as handle:
         handle.write(source)
     print("wrote", path)
 
-
 _write_metric_separated_display_tables()
-_write_cct20_reporting_numbers()
 _write_cct20_safe_utility_display_table()
 _write_cct20_location_display_table()
 _write_cct20_primary_display_table()

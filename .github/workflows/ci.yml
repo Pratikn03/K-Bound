@@ -47,10 +47,8 @@ jobs:
           python-version-file: ".python-version"
       - name: Install core package and test/lint deps
         run: |
-          python -m pip --version
-          python -m pip install --only-binary=:all: --require-hashes \
-            --extra-index-url https://download.pytorch.org/whl/cpu \
-            -r requirements-ci-py312-linux.lock.txt
+          python -m pip install --upgrade pip
+          python -m pip install . pytest scikit-learn matplotlib ruff mypy
       - name: Ruff + mypy on the typed kga core
         run: |
           ruff check kga

@@ -1,21 +1,20 @@
-% Shared abstract for the synchronized publication candidates.
-An unlabeled adaptation procedure can produce an update without establishing that deploying it
-will help. We study when the available evidence supports ADAPT, FREEZE, or ABSTAIN for a fixed
-model pair. For binary $0/1$ loss and positive disagreement mass, K-Bound characterizes the exact
-compatible-benefit interval under a declared bound $\beta$ on a hidden target calibration residual.
-In the full label-kernel class, a strict direction is uniformly justified exactly when
-$|M|>\beta$, where $M$ is the observable disagreement margin. A complementary evidence-fibre
-theorem gives the smallest residual bound that any uniformly valid audit of the same information
-must cover. Additional processing cannot remove ambiguity left by that information.
-Knowability-Guided Adaptation (\KGA) addresses a separate empirical target: the measured score
-difference between a candidate and its frozen baseline on an evaluation cell. Labeled development
-and disjoint residual-calibration cells fit its benefit predictor and error interval; the action
-uses no scored-cell outcome. On the opened, dependent six-family CIFAR-10-C diagnostic, Tent and EATA have
-lower point regret than both fixed policies. Tent makes 2 false ADAPT decisions among 1,091
-ADAPT actions and 1 false FREEZE among 337 FREEZE actions; EATA makes neither error among
-1,207 ADAPT and 105 FREEZE actions. SAR instead favors always-adapt. On CCT-20, all
-\CCTCellCount{} cells retain the frozen model, including one false FREEZE; five-checkpoint
-DomainNet development evaluation yields universal abstention. Thus these natural-shift studies
-support conservative retention, not useful selective routing. The theory distinguishes structural
-ambiguity from prediction uncertainty; the experiments do not establish coverage or population
-protection on unseen shifts.
+% Shared abstract text for both maintained drivers.
+Test-time adaptation updates a model without new target labels, but an update can help or harm.
+We ask when the available evidence supports replacing a frozen predictor with a fixed adapted
+candidate. K-Bound answers this question for a binary population model under an exogenous bound
+$\beta$ on target calibration residual. We construct target label laws that preserve all
+label-free observations and derive the exact feasible interval for paired population benefit. A strict
+decision is justified precisely when $|M|>\beta$, where $M$ is the observable correctness margin on the
+disagreement region; inside the closed band $|M|\le\beta$, no strict direction is uniformly justified.
+Furthermore, an evidence-fibre audit theorem characterizes the smallest residual bound that
+any uniformly valid audit based on the same observable law must cover at its declared confidence level;
+additional processing of unchanged evidence cannot reduce the unresolved residual range. Addressing this problem under a complementary inductive
+regime with historical shift benchmarks, Knowability-Guided Adaptation (\KGA) learns to predict
+observed evaluation-cell benefit, choosing \adapt, \freeze, or \abstain via calibrated residual intervals.
+On cross-fitted CIFAR-10-C, Tent and EATA achieve lower point regret than either fixed policy, while
+SAR favors always-adapt due to high baseline benefit under noise. On real-camera natural shift (CCT-20),
+KGA served the frozen model across all 45 cells, avoiding the measured degradation of always-adapt
+without issuing any \adapt decisions. These results demonstrate conservative retention in this setting
+and candidate-specific commitment control on synthetic shifts, while showing that selective opportunistic
+routing on unseen natural shifts remains an open empirical challenge.
+
