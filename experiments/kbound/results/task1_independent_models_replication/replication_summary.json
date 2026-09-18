@@ -1,0 +1,175 @@
+{
+  "execution_timestamp": "2026-09-17 03:03:52",
+  "device": "mps",
+  "epochs_per_model": 12,
+  "models": {
+    "model_0_canonical": {
+      "seed": 0,
+      "is_canonical": true,
+      "path": "/Users/pratik_n/Documents/AutoML_Flagship_V8 2/experiments/kbound/cifar/resnet18_cifar.pt",
+      "sha256": "43333456a795bbe679966c14812f9964d8b3bf060d30ca2b3d5051cb8c9d7491",
+      "clean_test_acc": 0.8737000226974487
+    },
+    "model_seed_101": {
+      "seed": 101,
+      "epochs": 12,
+      "training_time_sec": 1080.7,
+      "best_val_acc": 0.903,
+      "checkpoint_path": "/Users/pratik_n/Documents/AutoML_Flagship_V8 2/experiments/kbound/results/task1_independent_models_replication/resnet18_seed101.pt",
+      "checkpoint_sha256": "71eca7b9f9a85687da98f39e46ed82af4ea741b70f25fcc865d50823f1d3d12b",
+      "clean_test_acc": 0.8952999711036682,
+      "is_canonical": false
+    },
+    "model_seed_102": {
+      "seed": 102,
+      "epochs": 12,
+      "training_time_sec": 974.9,
+      "best_val_acc": 0.904,
+      "checkpoint_path": "/Users/pratik_n/Documents/AutoML_Flagship_V8 2/experiments/kbound/results/task1_independent_models_replication/resnet18_seed102.pt",
+      "checkpoint_sha256": "6270962977da0097ed7fa73b6062ec86c2ef3b5680011d3b665902bf24a942b3",
+      "clean_test_acc": 0.8956000208854675,
+      "is_canonical": false
+    }
+  },
+  "variance_decomposition": {
+    "mean_std_between_models": 0.021081333174808474,
+    "mean_std_within_stream_seeds": 0.001350993915117206,
+    "ratio_between_over_within": 15.604198432674098,
+    "interpretation": "Between-model variation measures effect changes across newly initialized source checkpoints. Within-model variation measures effect changes across test-time streaming order permutations. Source checkpoint initialization contributes 15.60x the standard deviation of streaming permutations."
+  },
+  "condition_summaries": [
+    {
+      "condition": "gaussian_noise_sev3",
+      "mean_acc_frozen": 0.49203334252039593,
+      "mean_acc_adapted": 0.7687777744399177,
+      "mean_delta": 0.27674443191952175,
+      "var_between_models": 0.0003448993260938486,
+      "std_between_models": 0.018571465372819902,
+      "var_within_streams": 2.1544044667760113e-06,
+      "std_within_streams": 0.0014677889721536987,
+      "std_ratio_between_over_within": 12.65259461625731
+    },
+    {
+      "condition": "gaussian_noise_sev5",
+      "mean_acc_frozen": 0.36643333236376446,
+      "mean_acc_adapted": 0.7229555514123704,
+      "mean_delta": 0.35652221904860604,
+      "var_between_models": 0.00036729170087571473,
+      "std_between_models": 0.019164855879335873,
+      "var_within_streams": 2.0878044194224303e-06,
+      "std_within_streams": 0.0014449236725247567,
+      "std_ratio_between_over_within": 13.263484853148174
+    },
+    {
+      "condition": "gaussian_blur_sev3",
+      "mean_acc_frozen": 0.7229666709899902,
+      "mean_acc_adapted": 0.8682222233878242,
+      "mean_delta": 0.14525555239783394,
+      "var_between_models": 0.00012116627516684173,
+      "std_between_models": 0.01100755536742113,
+      "var_within_streams": 1.2044507834553367e-06,
+      "std_within_streams": 0.0010974747302126536,
+      "std_ratio_between_over_within": 10.029802752051282
+    },
+    {
+      "condition": "gaussian_blur_sev5",
+      "mean_acc_frozen": 0.41813333829243976,
+      "mean_acc_adapted": 0.8186666634347703,
+      "mean_delta": 0.4005333251423306,
+      "var_between_models": 0.0028611874647998907,
+      "std_between_models": 0.05349006884272903,
+      "var_within_streams": 1.4988498967404164e-06,
+      "std_within_streams": 0.0012242752536665994,
+      "std_ratio_between_over_within": 43.69085446592791
+    },
+    {
+      "condition": "fog_sev3",
+      "mean_acc_frozen": 0.8367666602134705,
+      "mean_acc_adapted": 0.8616666661368476,
+      "mean_delta": 0.02490000592337714,
+      "var_between_models": 1.2309986613595818e-05,
+      "std_between_models": 0.0035085590508919496,
+      "var_within_streams": 5.700143310447302e-07,
+      "std_within_streams": 0.0007549929344336477,
+      "std_ratio_between_over_within": 4.647080018998647
+    },
+    {
+      "condition": "fog_sev5",
+      "mean_acc_frozen": 0.6367666721343994,
+      "mean_acc_adapted": 0.7780777745776706,
+      "mean_delta": 0.14131110244327122,
+      "var_between_models": 0.0001300052801815724,
+      "std_between_models": 0.011401985799919785,
+      "var_within_streams": 1.829984138544837e-06,
+      "std_within_streams": 0.0013527690632716425,
+      "std_ratio_between_over_within": 8.428564655890323
+    },
+    {
+      "condition": "contrast_sev3",
+      "mean_acc_frozen": 0.7405333121617635,
+      "mean_acc_adapted": 0.8578999903466966,
+      "mean_delta": 0.11736667818493313,
+      "var_between_models": 0.0001128574567671172,
+      "std_between_models": 0.010623439027316776,
+      "var_within_streams": 1.6555559743854549e-06,
+      "std_within_streams": 0.0012866841004634567,
+      "std_ratio_between_over_within": 8.256382790198774
+    },
+    {
+      "condition": "contrast_sev5",
+      "mean_acc_frozen": 0.25666667024294537,
+      "mean_acc_adapted": 0.7820444504419962,
+      "mean_delta": 0.5253777801990509,
+      "var_between_models": 0.00048539643616813625,
+      "std_between_models": 0.0220317143265824,
+      "var_within_streams": 3.1333579543336832e-06,
+      "std_within_streams": 0.0017701293609037965,
+      "std_ratio_between_over_within": 12.446316269321
+    },
+    {
+      "condition": "pixelate_sev3",
+      "mean_acc_frozen": 0.7610999941825867,
+      "mean_acc_adapted": 0.8506999942991469,
+      "mean_delta": 0.08960000011656019,
+      "var_between_models": 0.00012955113935943886,
+      "std_between_models": 0.0113820533894126,
+      "var_within_streams": 2.2555590687053004e-06,
+      "std_within_streams": 0.0015018518797488987,
+      "std_ratio_between_over_within": 7.57862859620327
+    },
+    {
+      "condition": "pixelate_sev5",
+      "mean_acc_frozen": 0.42800000309944153,
+      "mean_acc_adapted": 0.7637666662534078,
+      "mean_delta": 0.33576666315396625,
+      "var_between_models": 0.0007002743212811944,
+      "std_between_models": 0.02646269678776512,
+      "var_within_streams": 8.188871419968615e-07,
+      "std_within_streams": 0.0009049238321521108,
+      "std_ratio_between_over_within": 29.242686976164453
+    },
+    {
+      "condition": "jpeg_compression_sev3",
+      "mean_acc_frozen": 0.7751333514849345,
+      "mean_acc_adapted": 0.7999444537692599,
+      "mean_delta": 0.024811102284325495,
+      "var_between_models": 1.3584840172808516e-05,
+      "std_between_models": 0.0036857618171564637,
+      "var_within_streams": 1.2566817275683206e-06,
+      "std_within_streams": 0.0011210181655835559,
+      "std_ratio_between_over_within": 3.2878405113379334
+    },
+    {
+      "condition": "jpeg_compression_sev5",
+      "mean_acc_frozen": 0.7379666566848755,
+      "mean_acc_adapted": 0.7670222189691331,
+      "mean_delta": 0.029055562284257676,
+      "var_between_models": 5.454707364720504e-05,
+      "std_between_models": 0.007385599071653229,
+      "var_within_streams": 3.43666480123122e-06,
+      "std_within_streams": 0.0018538243717329912,
+      "std_ratio_between_over_within": 3.983958429225295
+    }
+  ],
+  "raw_cell_results_count": 108
+}

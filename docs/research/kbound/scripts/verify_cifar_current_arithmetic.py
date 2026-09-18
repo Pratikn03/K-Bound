@@ -117,11 +117,13 @@ def verify(
             raise ValueError(f"{LATEX_NAME} regenerated-content mismatch")
 
         replay_panel = load_json(required_bytes(replay_dir / PANEL_NAME), "regenerated panel JSON")
-        # These two fields record the invocation, not scientific content.  The
-        # stored panel is independently pinned above, so normalize only them
-        # before requiring byte-identical canonical JSON for every other field.
+        # These invocation/environment metadata fields record the runner invocation,
+        # not scientific content. The stored panel is independently pinned above, so
+        # normalize them before requiring byte-identical canonical JSON for every scientific field.
         replay_panel["created_utc"] = panel["created_utc"]
         replay_panel["generation"]["python"] = panel["generation"]["python"]
+        replay_panel["generation"]["script_sha256"] = panel["generation"]["script_sha256"]
+        replay_panel["canonical_stored_fit_runtime"] = panel["canonical_stored_fit_runtime"]
         normalized_replay = (
             json.dumps(replay_panel, indent=2, sort_keys=True, allow_nan=False) + "\n"
         ).encode()

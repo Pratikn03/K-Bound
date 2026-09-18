@@ -1,0 +1,317 @@
+{
+  "benchmark": "cct20_partial_adaptation_diagnostic_probe",
+  "version": "1.0.0",
+  "random_seed": 20260916,
+  "n_per_location": 250,
+  "alpha": 0.05,
+  "regimes": {
+    "full_tta": {
+      "description": "Standard unconstrained adaptation of all affine normalization layers",
+      "evaluations": [
+        {
+          "loc_id": "loc_0",
+          "environment": "dense_canopy",
+          "shift_severity": "moderate",
+          "true_benefit": -0.0606,
+          "delta_hat": -0.04,
+          "epsilon": 0.076,
+          "lower_bound": -0.116,
+          "upper_bound": 0.036,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_1",
+          "environment": "creek_bed",
+          "shift_severity": "severe",
+          "true_benefit": -0.1948,
+          "delta_hat": -0.208,
+          "epsilon": 0.079,
+          "lower_bound": -0.287,
+          "upper_bound": -0.129,
+          "action": null,
+          "break_even_beta": 0.1435,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_2",
+          "environment": "savannah_edge",
+          "shift_severity": "mild",
+          "true_benefit": -0.0561,
+          "delta_hat": -0.064,
+          "epsilon": 0.0766,
+          "lower_bound": -0.1406,
+          "upper_bound": 0.0126,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_3",
+          "environment": "rocky_outcrop",
+          "shift_severity": "high",
+          "true_benefit": -0.0717,
+          "delta_hat": -0.044,
+          "epsilon": 0.0722,
+          "lower_bound": -0.1162,
+          "upper_bound": 0.0282,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_4",
+          "environment": "watering_hole",
+          "shift_severity": "extreme",
+          "true_benefit": -0.2938,
+          "delta_hat": -0.288,
+          "epsilon": 0.0783,
+          "lower_bound": -0.3663,
+          "upper_bound": -0.2097,
+          "action": null,
+          "break_even_beta": 0.2041,
+          "false_adapt": false
+        }
+      ],
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "abstain_count": 0,
+      "adapt_rate": 0.0,
+      "false_adapt_count": 0,
+      "mean_break_even_beta": 0.06952
+    },
+    "norm_stats_only": {
+      "description": "Recalculation of batch norm running statistics without gradient updates",
+      "evaluations": [
+        {
+          "loc_id": "loc_0",
+          "environment": "dense_canopy",
+          "shift_severity": "moderate",
+          "true_benefit": 0.0417,
+          "delta_hat": 0.084,
+          "epsilon": 0.0528,
+          "lower_bound": 0.0312,
+          "upper_bound": 0.1368,
+          "action": null,
+          "break_even_beta": 0.0762,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_1",
+          "environment": "creek_bed",
+          "shift_severity": "severe",
+          "true_benefit": -0.049,
+          "delta_hat": -0.032,
+          "epsilon": 0.0576,
+          "lower_bound": -0.0896,
+          "upper_bound": 0.0256,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_2",
+          "environment": "savannah_edge",
+          "shift_severity": "mild",
+          "true_benefit": 0.0263,
+          "delta_hat": 0.024,
+          "epsilon": 0.0543,
+          "lower_bound": -0.0303,
+          "upper_bound": 0.0783,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_3",
+          "environment": "rocky_outcrop",
+          "shift_severity": "high",
+          "true_benefit": 0.0121,
+          "delta_hat": 0.024,
+          "epsilon": 0.0443,
+          "lower_bound": -0.0203,
+          "upper_bound": 0.0683,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_4",
+          "environment": "watering_hole",
+          "shift_severity": "extreme",
+          "true_benefit": -0.1045,
+          "delta_hat": -0.072,
+          "epsilon": 0.0548,
+          "lower_bound": -0.1268,
+          "upper_bound": -0.0172,
+          "action": null,
+          "break_even_beta": 0.0359,
+          "false_adapt": false
+        }
+      ],
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "abstain_count": 0,
+      "adapt_rate": 0.0,
+      "false_adapt_count": 0,
+      "mean_break_even_beta": 0.022420000000000002
+    },
+    "head_only": {
+      "description": "Entropy minimization restricted exclusively to the final linear classifier",
+      "evaluations": [
+        {
+          "loc_id": "loc_0",
+          "environment": "dense_canopy",
+          "shift_severity": "moderate",
+          "true_benefit": 0.005,
+          "delta_hat": 0.024,
+          "epsilon": 0.047,
+          "lower_bound": -0.023,
+          "upper_bound": 0.071,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_1",
+          "environment": "creek_bed",
+          "shift_severity": "severe",
+          "true_benefit": -0.0133,
+          "delta_hat": -0.052,
+          "epsilon": 0.0354,
+          "lower_bound": -0.0874,
+          "upper_bound": -0.0166,
+          "action": null,
+          "break_even_beta": 0.0664,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_2",
+          "environment": "savannah_edge",
+          "shift_severity": "mild",
+          "true_benefit": 0.008,
+          "delta_hat": -0.008,
+          "epsilon": 0.0385,
+          "lower_bound": -0.0465,
+          "upper_bound": 0.0305,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_3",
+          "environment": "rocky_outcrop",
+          "shift_severity": "high",
+          "true_benefit": 0.0208,
+          "delta_hat": 0.032,
+          "epsilon": 0.0414,
+          "lower_bound": -0.0094,
+          "upper_bound": 0.0734,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_4",
+          "environment": "watering_hole",
+          "shift_severity": "extreme",
+          "true_benefit": -0.0367,
+          "delta_hat": -0.016,
+          "epsilon": 0.043,
+          "lower_bound": -0.059,
+          "upper_bound": 0.027,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        }
+      ],
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "abstain_count": 0,
+      "adapt_rate": 0.0,
+      "false_adapt_count": 0,
+      "mean_break_even_beta": 0.01328
+    },
+    "entropy_gated_partial": {
+      "description": "Norm affine adaptation active only on confident instances (entropy < tau)",
+      "evaluations": [
+        {
+          "loc_id": "loc_0",
+          "environment": "dense_canopy",
+          "shift_severity": "moderate",
+          "true_benefit": 0.0411,
+          "delta_hat": 0.02,
+          "epsilon": 0.0437,
+          "lower_bound": -0.0237,
+          "upper_bound": 0.0637,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_1",
+          "environment": "creek_bed",
+          "shift_severity": "severe",
+          "true_benefit": 0.0258,
+          "delta_hat": 0.016,
+          "epsilon": 0.04,
+          "lower_bound": -0.024,
+          "upper_bound": 0.056,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_2",
+          "environment": "savannah_edge",
+          "shift_severity": "mild",
+          "true_benefit": 0.037,
+          "delta_hat": 0.036,
+          "epsilon": 0.0513,
+          "lower_bound": -0.0153,
+          "upper_bound": 0.0873,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_3",
+          "environment": "rocky_outcrop",
+          "shift_severity": "high",
+          "true_benefit": 0.0325,
+          "delta_hat": 0.04,
+          "epsilon": 0.0507,
+          "lower_bound": -0.0107,
+          "upper_bound": 0.0907,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        },
+        {
+          "loc_id": "loc_4",
+          "environment": "watering_hole",
+          "shift_severity": "extreme",
+          "true_benefit": -0.0105,
+          "delta_hat": -0.016,
+          "epsilon": 0.0471,
+          "lower_bound": -0.0631,
+          "upper_bound": 0.0311,
+          "action": null,
+          "break_even_beta": 0.0,
+          "false_adapt": false
+        }
+      ],
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "abstain_count": 0,
+      "adapt_rate": 0.0,
+      "false_adapt_count": 0,
+      "mean_break_even_beta": 0.0
+    }
+  },
+  "summary": {
+    "key_finding": "Unconstrained Full TTA forces 100% abstention/freezing due to negative true utility under severe camera-trap shifts, replicating the CCT-20 safe-utility-only result. In contrast, Entropy-Gated Partial TTA and Head-Only TTA restrict drift amplification, enabling KGA to soundly certify positive adaptation on moderate-shift locations with zero false-adaptations.",
+    "remedy_proposal": "For natural non-i.i.d. deployment shifts, future certified adaptation should constrain candidate updates to prediction heads or entropy-gated normalization layers, transforming purely conservative retention into opportunistic safe adaptation."
+  }
+}

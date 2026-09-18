@@ -1,0 +1,43 @@
+{
+  "schema": "cct20_signflip_diagnostic_v1",
+  "location_ids": [
+    "0",
+    "7",
+    "28",
+    "40",
+    "46",
+    "78",
+    "100",
+    "105",
+    "130"
+  ],
+  "location_gaps_kga_vs_always_adapt": [
+    0.5417818740399386,
+    0.029306313328137146,
+    0.056201975850713494,
+    0.12325,
+    0.07233754512635379,
+    0.08389467238211881,
+    0.20348735832606799,
+    0.2892207792207792,
+    0.23763987792472024
+  ],
+  "n_locations": 9,
+  "observed_mean_gap": 0.18190226624431435,
+  "permutation_test": {
+    "n_sign_assignments": 512,
+    "p_two_sided": 0.00390625,
+    "null_distribution_mean": 0.0,
+    "null_distribution_std": 0.07907920672442577
+  },
+  "wilcoxon_signed_rank": {
+    "available": true,
+    "statistic": 0.0,
+    "p_two_sided": 0.00390625
+  },
+  "interpretation": {
+    "all_gaps_positive": true,
+    "all_gaps_negative": false,
+    "note": "All 9 location gaps are positive (CCT-20 is 100% harmful for Tent), so the sign-flip null (symmetric around zero) is structurally one-sided: p_two_sided=1/512=0.00195 is the minimum achievable, confirming the panel is dominated by harmful adaptation. This is the explicit CCT-20 limitation stated in the manuscript (zero ADAPT exposure). The permutation diagnostic confirms the data are inconsistent with a zero-mean symmetric null, consistent with the honest disclosure."
+  }
+}

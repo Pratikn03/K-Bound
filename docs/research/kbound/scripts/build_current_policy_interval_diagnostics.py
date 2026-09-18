@@ -103,12 +103,14 @@ def read_json(path: Path, root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 
 
 def _released_policy():
-    # Importing kga executes its public package initializer. Preflight package
-    # files as well as the three numerical dependencies before that import.
-    package_files = sorted((ROOT / "kga").glob("*.py"))
-    if not package_files:
-        raise ValueError("released kga package is unavailable")
-    for path in package_files:
+    core_files = [
+        ROOT / "kga/__init__.py",
+        ROOT / CODE_PATHS["crossfit"],
+        ROOT / CODE_PATHS["policy"],
+        ROOT / CODE_PATHS["certificate"],
+        ROOT / CODE_PATHS["numeric_validation"],
+    ]
+    for path in core_files:
         require_resident(path)
     from kga.policy import decide_kga
 
@@ -123,10 +125,14 @@ def _released_crossfit():
     ``B`` through the same three-way cross-fit authority used by the canonical
     panel; otherwise the report can silently reintroduce outcome dependence.
     """
-    package_files = sorted((ROOT / "kga").glob("*.py"))
-    if not package_files:
-        raise ValueError("released kga package is unavailable")
-    for path in package_files:
+    core_files = [
+        ROOT / "kga/__init__.py",
+        ROOT / CODE_PATHS["crossfit"],
+        ROOT / CODE_PATHS["policy"],
+        ROOT / CODE_PATHS["certificate"],
+        ROOT / CODE_PATHS["numeric_validation"],
+    ]
+    for path in core_files:
         require_resident(path)
     from kga.crossfit import controlled_grid_crossfit
 

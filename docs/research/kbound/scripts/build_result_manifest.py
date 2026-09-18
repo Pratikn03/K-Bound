@@ -748,11 +748,13 @@ def main(argv: list[str] | None = None) -> None:
             "release-manifest empirical claims without an artifact: " + ", ".join(missing)
         )
     sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True).stdout.strip() or None
-    dirty = bool(
-        subprocess.run(
-            ["git", "status", "--porcelain"], cwd=ROOT, text=True, capture_output=True
-        ).stdout.strip()
-    )
+    try:
+        dirty_proc = subprocess.run(
+            ["git", "status", "--porcelain"], cwd=ROOT, text=True, capture_output=True, timeout=2
+        )
+        dirty = bool(dirty_proc.stdout.strip())
+    except (subprocess.TimeoutExpired, OSError):
+        dirty = True
     payload = {
         "schema_version": "kbound-result-manifest-v1",
         "created_at": f"{ledger.get('generated_at', 'unknown')}T00:00:00Z", "code_commit": sha,

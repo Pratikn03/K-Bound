@@ -1,0 +1,71 @@
+{
+  "schema": "kbound_external_baseline_reconciliation_v1",
+  "audit_timestamp_utc": "2026-09-17T23:45:00Z",
+  "auditor": "K-Bound Editorial Closeout Team",
+  "status": "RECONCILED_AND_FULLY_DISCLOSED",
+  "summary": "Formal status reconciliation of four external published baselines evaluated in the K-Bound study across native codebases, shared feature panels, and manuscript disclosures.",
+  "baselines": {
+    "kim_ttaline": {
+      "method_name": "Kim TTA/ALine",
+      "citation": "Kim et al., NeurIPS 2024",
+      "claimed_url": "https://github.com/EungyeupKim/TTALine",
+      "upstream_http_status": 404,
+      "classification": "BLOCKED_NATIVE",
+      "authenticated_score_cells": 0,
+      "total_panel_cells": 15,
+      "evidence_receipt": "experiments/kbound/results/task_closure_20260911/KIM_TTALINE_SOURCE_IDENTITY_20260913T032825Z.json",
+      "manuscript_disclosure": {
+        "body_limitations": "Section 9.2 (line 1099): upstream repository HTTP 404 prevented verified local native execution (0/15 available).",
+        "table_28": "Supplementary Table 28 (line 972): marked UNAVAILABLE (0/15 available).",
+        "appendix_f": "Appendix F (line 848): documented as BLOCKED_NATIVE with no silent substitution."
+      }
+    },
+    "baek_aline": {
+      "method_name": "Baek Agreement-on-the-Line (ALine)",
+      "citation": "Baek et al., NeurIPS 2022",
+      "source_repository": "external/ttaline_official",
+      "pinned_commit": "99cb46ee1b50960c04b11d8e2f27943e68cbfbec",
+      "wrapper": "docs/research/kbound/scripts/aline_native_estimator.py",
+      "classification": "PARTIAL_NATIVE_AVAILABLE",
+      "authenticated_score_cells": 11,
+      "total_panel_cells": 15,
+      "missing_score_cells": 4,
+      "cause_of_missing_cells": "Native agreement pair filtering (.05 <= ca <= .98 and .05 <= ta <= .98) and rank condition (matrix_rank(A) == len(ids)) fail on 4 extreme/identical noise condition cells. Rather than silently imputing or repairing native code, these 4 cells fail-closed as unavailable.",
+      "manuscript_disclosure": {
+        "body_limitations": "Section 9.2 (line 1099): documented partial component availability (11/15 available).",
+        "table_28": "Supplementary Table 28 (line 971): marked UNAVAILABLE (11/15 available) to prevent partial-subset bias.",
+        "narrative": "Supplement line 983: Baek ALine controller available on 11 of 15 cells; retained with explicit counts rather than imputed."
+      }
+    },
+    "poem": {
+      "method_name": "POEM",
+      "citation": "Bar et al., 2024",
+      "implementation": "experiments/kbound/poem_aetta/poem_official.py",
+      "smoke_receipt": "docs/research/kbound/scripts/run_poem_real_image_smoke.py",
+      "classification": "NATIVE_SMOKE_VERIFIED_AND_SHARED_PANEL",
+      "panel_integration": "Integrated as reference decision rule on shared feature streams and 108-cell ImageNet-C panel (Table 24); historical rows preserved as non-native diagnostics.",
+      "manuscript_disclosure": {
+        "appendix_f": "Appendix F (line 848): documented as native PyTorch CPU smoke-test implementation with shared panel comparison."
+      }
+    },
+    "aetta": {
+      "method_name": "AETTA",
+      "citation": "Lee et al., 2024",
+      "implementation": "experiments/kbound/poem_aetta/aetta_dropout.py",
+      "smoke_receipt": "experiments/kbound/results/task_closure_20260911/aetta_real_bn_v2_smoke_20260912",
+      "classification": "NATIVE_CONTROLLER_EVALUATED",
+      "authenticated_score_cells": 15,
+      "total_panel_cells": 15,
+      "metrics_15_cell": {
+        "accuracy": 0.2953,
+        "commitment": 1.0,
+        "fa_u": 0.8667,
+        "fa_c": 0.8667
+      },
+      "manuscript_disclosure": {
+        "table_28": "Supplementary Table 28 (line 964): AVAILABLE on 15/15 cells, accuracy 0.2953, FA-U 0.8667.",
+        "narrative": "Supplement line 981: Evaluates an explicit controller over native component estimates, demonstrating need for formal decision gating."
+      }
+    }
+  }
+}

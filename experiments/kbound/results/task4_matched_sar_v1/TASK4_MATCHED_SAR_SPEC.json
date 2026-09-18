@@ -1,0 +1,122 @@
+{
+  "schema_version": "kbound_task4_matched_sar_spec_v1",
+  "created_at": "2026-09-17 06:52:32",
+  "source_model": {
+    "architecture": "resnet50",
+    "weights": "ResNet50_Weights.IMAGENET1K_V2",
+    "checkpoint_path": "/Users/pratik_n/.cache/torch/hub/checkpoints/resnet50-11ad3fa6.pth",
+    "checkpoint_sha256": "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
+  },
+  "git": {
+    "head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
+    "dirty_state_note": "working tree includes Task 1-4 completed replication suite and closeout documents"
+  },
+  "data_panel": {
+    "root": "/Users/pratik_n/imagenetc_local",
+    "corruptions": [
+      "gaussian_noise",
+      "shot_noise",
+      "impulse_noise"
+    ],
+    "severities": [
+      1,
+      3,
+      5
+    ],
+    "compositions": [
+      "iid",
+      "imbalanced",
+      "single_class"
+    ],
+    "batch_regime": "small",
+    "stream_batch_size": 16,
+    "stream_steps": 1,
+    "stream_length": 128,
+    "eval_sample_size": 4000,
+    "seed": 0,
+    "expected_cells_per_arm": 27
+  },
+  "arms": {
+    "arm1": {
+      "arm_id": 1,
+      "name": "arm1_bn_only",
+      "description": "BN-statistics only (test batch stats, zero gradient steps)",
+      "learning_rate": 0.0,
+      "steps": 0,
+      "adapted_layers": "none",
+      "freeze_layer4": true,
+      "bn_statistics": "test_batch_stats",
+      "gradient_updates": false,
+      "output_file": "raw/arm1_bn_only.jsonl"
+    },
+    "arm2": {
+      "arm_id": 2,
+      "name": "arm2_reference_sar",
+      "description": "Reference SAR (lr=2.5e-4, adapt layers 1-3, freeze layer 4)",
+      "learning_rate": 0.00025,
+      "steps": 1,
+      "adapted_layers": "layers1_3_affine",
+      "freeze_layer4": true,
+      "bn_statistics": "test_batch_stats",
+      "gradient_updates": true,
+      "output_file": "raw/arm2_reference_sar.jsonl"
+    },
+    "arm3": {
+      "arm_id": 3,
+      "name": "arm3_rate_only",
+      "description": "Rate only (lr=4.0e-3, adapt layers 1-3, freeze layer 4)",
+      "learning_rate": 0.004,
+      "steps": 1,
+      "adapted_layers": "layers1_3_affine",
+      "freeze_layer4": true,
+      "bn_statistics": "test_batch_stats",
+      "gradient_updates": true,
+      "output_file": "raw/arm3_rate_only.jsonl"
+    },
+    "arm4": {
+      "arm_id": 4,
+      "name": "arm4_mask_only",
+      "description": "Mask only (lr=2.5e-4, adapt layers 1-4 including layer 4)",
+      "learning_rate": 0.00025,
+      "steps": 1,
+      "adapted_layers": "layers1_4_affine",
+      "freeze_layer4": false,
+      "bn_statistics": "test_batch_stats",
+      "gradient_updates": true,
+      "output_file": "raw/arm4_mask_only.jsonl"
+    },
+    "arm5": {
+      "arm_id": 5,
+      "name": "arm5_combined",
+      "description": "Historical combined (lr=4.0e-3, adapt layers 1-4 including layer 4)",
+      "learning_rate": 0.004,
+      "steps": 1,
+      "adapted_layers": "layers1_4_affine",
+      "freeze_layer4": false,
+      "bn_statistics": "test_batch_stats",
+      "gradient_updates": true,
+      "output_file": "raw/arm5_combined.jsonl"
+    }
+  },
+  "kga_protocol": {
+    "protocol": "Protocol B",
+    "method": "controlled_grid_crossfit",
+    "n_folds": 3,
+    "alpha": 0.1,
+    "rank_rule": "ceil((n_cal + 1) * (1 - alpha))",
+    "decision_threshold": 0.0
+  },
+  "planned_outputs": {
+    "raw_dir": "raw/",
+    "manifest": "TASK4_MATCHED_SAR_MANIFEST.json",
+    "summary_md": "TASK4_MATCHED_SAR_SUMMARY.md",
+    "tex_table": "docs/research/kbound/paper/generated/tab_task4_matched_sar.tex",
+    "arm_kga_outputs": [
+      "arm1_kga.json",
+      "arm2_kga.json",
+      "arm3_kga.json",
+      "arm4_kga.json",
+      "arm5_kga.json"
+    ]
+  }
+}

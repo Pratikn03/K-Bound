@@ -1,0 +1,1273 @@
+{
+  "allowed_pytest_warnings": [
+    {
+      "filter": "ignore:Using `httpx` with `starlette.testclient` is deprecated:UserWarning",
+      "rationale": "the production API and offline container gates do not use TestClient",
+      "scope": "third-party FastAPI/Starlette TestClient compatibility import"
+    },
+    {
+      "filter": "ignore:Warning:UserWarning:numpy.ma.core",
+      "rationale": "the warning is the intentionally malformed value being rejected by the tests",
+      "scope": "adversarial masked-array rejection tests"
+    },
+    {
+      "filter": "ignore:'crypt' is deprecated and slated for removal in Python 3.13:DeprecationWarning",
+      "rationale": "the production API is Python 3.11-pinned and this third-party warning is not emitted by KGA code",
+      "scope": "third-party passlib import used only by API authentication tests"
+    }
+  ],
+  "classified_count": 140,
+  "excluded_count": 8,
+  "excluded_paths": [
+    {
+      "path": "AETTA/tests/test_dnn_state_initialization.py",
+      "reason": "third_party_baseline_outside_kbound_release_contract"
+    },
+    {
+      "path": "docs/research/kbound/theory_v2/timing_test.py",
+      "reason": "timing_utility_without_assertions"
+    },
+    {
+      "path": "experiments/kbound/test_3dadam_bootstrap.py",
+      "reason": "historical_target_analysis_writer"
+    },
+    {
+      "path": "experiments/kbound/test_3dadam_namedcond.py",
+      "reason": "historical_target_analysis_writer"
+    },
+    {
+      "path": "tests/test_canonical_release_data.py",
+      "reason": "requires_explicit_protected_so2sat_authority"
+    },
+    {
+      "path": "tests/test_empirical_data_quality_audit_remediation.py",
+      "reason": "requires_explicit_protected_so2sat_authority"
+    },
+    {
+      "path": "tests/test_reconciled_panels.py",
+      "reason": "requires_explicit_protected_so2sat_authority"
+    },
+    {
+      "path": "tests/test_so2sat_numbers_builder.py",
+      "reason": "requires_explicit_protected_so2sat_authority"
+    }
+  ],
+  "excluded_validator_count": 3,
+  "excluded_validators": [
+    {
+      "path": "docs/research/kbound/scripts/validate_canonical_release_data.py",
+      "reason": "requires_explicit_protected_so2sat_authority"
+    },
+    {
+      "path": "docs/research/kbound/scripts/validate_closure_seed.py",
+      "reason": "requires_run_specific_input"
+    },
+    {
+      "path": "docs/research/kbound/scripts/validate_pacs_replay.py",
+      "reason": "requires_run_specific_input"
+    }
+  ],
+  "execution_status": "NOT_RUN",
+  "immutable_hook_configuration": {
+    "config_path": ".pre-commit-config.yaml",
+    "execution": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "inventory_sha256": "80b08af7dafd06fb45fdd9f6d68082f2171835d570ffcb82fed12a295443c368",
+  "private_path_scan": {
+    "scope_roots": [
+      "deploy/api",
+      "docs/research/kbound/runbooks",
+      "kga",
+      "scripts",
+      "src/scripts"
+    ],
+    "status": "NOT_RUN"
+  },
+  "protected_so2sat_authorized": false,
+  "pytest_count": 132,
+  "pytest_paths": [
+    "docs/research/kbound/dashboard/tests/test_build_dashboard_snapshot.py",
+    "docs/research/kbound/edge/tests/test_candidate_isolation.py",
+    "docs/research/kbound/edge/tests/test_conformal.py",
+    "docs/research/kbound/edge/tests/test_dashboard_render.py",
+    "docs/research/kbound/edge/tests/test_features.py",
+    "docs/research/kbound/edge/tests/test_log_integrity.py",
+    "docs/research/kbound/edge/tests/test_no_live_labels.py",
+    "docs/research/kbound/edge/tests/test_policy.py",
+    "docs/research/kbound/edge/tests/test_protocol_inventory_reporting.py",
+    "docs/research/kbound/edge/tests/test_publication_gate.py",
+    "docs/research/kbound/edge/tests/test_real_ablations.py",
+    "docs/research/kbound/edge/tests/test_real_calibration.py",
+    "docs/research/kbound/edge/tests/test_real_dataset.py",
+    "docs/research/kbound/edge/tests/test_real_evaluation.py",
+    "docs/research/kbound/edge/tests/test_real_integrity.py",
+    "docs/research/kbound/edge/tests/test_real_manifest.py",
+    "docs/research/kbound/edge/tests/test_real_recording.py",
+    "docs/research/kbound/edge/tests/test_real_reporting.py",
+    "docs/research/kbound/edge/tests/test_real_source_training.py",
+    "docs/research/kbound/edge/tests/test_runtime_profile.py",
+    "docs/research/kbound/kbound_pkg/tests/test_certificate.py",
+    "docs/research/kbound/kbound_pkg/tests/test_eprocess.py",
+    "docs/research/kbound/kbound_pkg/tests/test_evidence.py",
+    "docs/research/kbound/kbound_pkg/tests/test_kga.py",
+    "docs/research/kbound/kbound_pkg/tests/test_router.py",
+    "docs/research/kbound/kbound_repro/tests/test_authority.py",
+    "docs/research/kbound/kbound_repro/tests/test_metrics.py",
+    "docs/research/kbound/kbound_repro/tests/test_runbook_relocation.py",
+    "docs/research/kbound/kbound_repro/tests/test_runtime_paths_deps.py",
+    "docs/research/kbound/kbound_repro/tests/test_schema.py",
+    "docs/research/kbound/kbound_repro/tests/test_storage.py",
+    "docs/research/kbound/scripts/test_hard_dataset_win_loop.py",
+    "docs/research/kbound/scripts/test_sar_faithful.py",
+    "docs/research/kbound/tests/test_calibration_split_integrity.py",
+    "docs/research/kbound/tests/test_certificate_bounds.py",
+    "docs/research/kbound/tests/test_cifar_tent_collection.py",
+    "docs/research/kbound/tests/test_claim_metric_semantics.py",
+    "docs/research/kbound/tests/test_kga_decision_rule.py",
+    "docs/research/kbound/tests/test_no_leakage_protocols.py",
+    "docs/research/kbound/tests/test_nonidentifiability_witness.py",
+    "docs/research/kbound/tests/test_results_present.py",
+    "docs/research/kbound/tests/test_theorem_registry.py",
+    "docs/research/kbound/tests/test_theory_t9.py",
+    "docs/research/kbound/tests/test_unified_result_audit.py",
+    "docs/research/multiclass_vector_capacity/formal/tests/test_export_inventory.py",
+    "docs/research/multiclass_vector_capacity/tests/test_exact_oracle.py",
+    "docs/research/multiclass_vector_capacity/tests/test_statement_bindings.py",
+    "tests/test_api_payloads.py",
+    "tests/test_api_production_security.py",
+    "tests/test_assumption_reports_current.py",
+    "tests/test_assumptions.py",
+    "tests/test_audit_gate_decision_rule_e2e.py",
+    "tests/test_build_docx_pipeline.py",
+    "tests/test_camelyon_imagenetr_runner_integrity.py",
+    "tests/test_camelyon_protocol_f.py",
+    "tests/test_canonical_label_semantics.py",
+    "tests/test_cct20_end_to_end_runners.py",
+    "tests/test_cct20_gate_execution.py",
+    "tests/test_cct20_manuscript_claim_validation.py",
+    "tests/test_cct20_prospective_pipeline.py",
+    "tests/test_cct20_release_builder.py",
+    "tests/test_certificate_drift_guard.py",
+    "tests/test_comparator_selection_from_validation_only.py",
+    "tests/test_current_policy_cluster_inference.py",
+    "tests/test_distributed_and_async_gateway.py",
+    "tests/test_ensemble_inference_label.py",
+    "tests/test_exact_confirmation_pipeline.py",
+    "tests/test_gate_p_and_scope_guard.py",
+    "tests/test_imagenetr_protocol_d.py",
+    "tests/test_independent_checkpoint_audit.py",
+    "tests/test_iwildcam_router_nonpromotable_guard.py",
+    "tests/test_kbound_bibliography.py",
+    "tests/test_kbound_build_flags.py",
+    "tests/test_kbound_current_policy_bindings.py",
+    "tests/test_kbound_dashboard_metadata.py",
+    "tests/test_kbound_estimand_inference_wording.py",
+    "tests/test_kbound_formal_audit.py",
+    "tests/test_kbound_interval_diagnostics.py",
+    "tests/test_kbound_metric_display_tables.py",
+    "tests/test_kbound_narrative_revision.py",
+    "tests/test_kbound_pdf_build_isolation.py",
+    "tests/test_kbound_theory_scope.py",
+    "tests/test_kga_api_routes.py",
+    "tests/test_kga_benefit_estimator.py",
+    "tests/test_kga_canonical_rule.py",
+    "tests/test_kga_experiment_contract.py",
+    "tests/test_kga_frontier_api.py",
+    "tests/test_kga_masked_inputs.py",
+    "tests/test_kga_package.py",
+    "tests/test_kga_routing.py",
+    "tests/test_kga_unavailable_api.py",
+    "tests/test_kga_unavailable_runtime.py",
+    "tests/test_manuscript_claim_consistency.py",
+    "tests/test_model_governance.py",
+    "tests/test_multiseed_natural_extraction_lineage.py",
+    "tests/test_multiseed_natural_forest_lineage.py",
+    "tests/test_multiseed_runbook_safety.py",
+    "tests/test_natural_crossfit_no_leakage.py",
+    "tests/test_natural_runner_integrity.py",
+    "tests/test_natural_target_provenance.py",
+    "tests/test_no_fisher_seed_combination.py",
+    "tests/test_no_retroactive_confirmatory_language.py",
+    "tests/test_no_test_selected_comparator.py",
+    "tests/test_no_test_selected_rga_plus.py",
+    "tests/test_official_baseline_provenance.py",
+    "tests/test_one_radius_rule.py",
+    "tests/test_pacs_replay_artifact.py",
+    "tests/test_polarity_probe_diagnostic_only.py",
+    "tests/test_positive_transfer_protocol_lock.py",
+    "tests/test_production_gateway.py",
+    "tests/test_production_release_hygiene.py",
+    "tests/test_reconcile_no_implicit_cleanup.py",
+    "tests/test_release_checksum_verifier.py",
+    "tests/test_release_source_seal.py",
+    "tests/test_remaining_wilds_runner_integrity.py",
+    "tests/test_reproducibility_hygiene.py",
+    "tests/test_research_naming.py",
+    "tests/test_rxrx1_9plus_launcher.py",
+    "tests/test_smoke_trichotomy.py",
+    "tests/test_so2sat_development_selection.py",
+    "tests/test_so2sat_gate.py",
+    "tests/test_so2sat_integrity_receipts.py",
+    "tests/test_so2sat_prospective_protocol.py",
+    "tests/test_so2sat_source_acceptance.py",
+    "tests/test_so2sat_source_preflight.py",
+    "tests/test_so2sat_source_training.py",
+    "tests/test_so2sat_target_boundary.py",
+    "tests/test_target_label_light_probe.py",
+    "tests/test_tta_protocol_semantics.py",
+    "tests/test_validation_frozen_rga_plus.py",
+    "tests/test_wilds_multicandidate_route_hardening.py",
+    "tests/test_wilds_run_integrity.py"
+  ],
+  "pytest_process_coverage_status": "PLANNED_COMPLETE_EXACTLY_ONCE",
+  "pytest_process_group_count": 132,
+  "pytest_process_groups": [
+    {
+      "group_id": "pytest-module-0001-b2e595a129db5775",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/dashboard/tests/test_build_dashboard_snapshot.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0002-2ee70eba37c87afa",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_candidate_isolation.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0003-2e67042168619e30",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_conformal.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0004-96bdeaaeb6b648d7",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_dashboard_render.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0005-9ae88b1f120cf699",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_features.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0006-3f65db2105713796",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_log_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0007-06a052a46b8d8041",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_no_live_labels.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0008-c82710a83ae44a6b",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_policy.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0009-5e623f77b4803dfc",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_protocol_inventory_reporting.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0010-acf0b91cc875053a",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_publication_gate.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0011-bcc3dfb93a748485",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_ablations.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0012-638b19f714b21395",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_calibration.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0013-1de5ecab8dd02825",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_dataset.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0014-fbe2dcf03c162bde",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_evaluation.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0015-17acea28c55ee071",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0016-e2c6157644a88192",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_manifest.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0017-c2aaa4f6e6be15b1",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_recording.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0018-2f24654adc044608",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_reporting.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0019-2649d835005f21e1",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_real_source_training.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0020-a28d99dd2d37997c",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/edge/tests/test_runtime_profile.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0021-7a2b1eb6b5c2ea1d",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_pkg/tests/test_certificate.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0022-33231c13355f1299",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_pkg/tests/test_eprocess.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0023-08200cad5f15866c",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_pkg/tests/test_evidence.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0024-da44d92300549532",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_pkg/tests/test_kga.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0025-1ce27ceed665938d",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_pkg/tests/test_router.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0026-86b91948dd494956",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_repro/tests/test_authority.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0027-9014499c0a827b33",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_repro/tests/test_metrics.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0028-96bd668037d40eca",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_repro/tests/test_runbook_relocation.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0029-84f1375a0a9918e9",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_repro/tests/test_runtime_paths_deps.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0030-ddf8973bb69c127a",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_repro/tests/test_schema.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0031-3a8cfa6863407fe0",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/kbound_repro/tests/test_storage.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0032-db220c81577651a3",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/scripts/test_hard_dataset_win_loop.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0033-877206aa49284c0d",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/scripts/test_sar_faithful.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0034-74cdbad0646143b0",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_calibration_split_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0035-e9def32918e03906",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_certificate_bounds.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0036-45d70789195b22c6",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_cifar_tent_collection.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0037-ca563fe1ffbb2cf8",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_claim_metric_semantics.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0038-c1bbb08c8037afb5",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_kga_decision_rule.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0039-6abf22b759802381",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_no_leakage_protocols.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0040-803c005dd7ac8bdf",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_nonidentifiability_witness.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0041-d5157a34be1529a1",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_results_present.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0042-393a2f9ab226f635",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_theorem_registry.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0043-725772a97a21be08",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_theory_t9.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0044-395be3f970887b44",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/kbound/tests/test_unified_result_audit.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0045-86bcf587caac9a14",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/multiclass_vector_capacity/formal/tests/test_export_inventory.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0046-7e9e7eb3721687fd",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/multiclass_vector_capacity/tests/test_exact_oracle.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0047-5eef501a97c54e4a",
+      "module_count": 1,
+      "pytest_paths": [
+        "docs/research/multiclass_vector_capacity/tests/test_statement_bindings.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0048-610dff85892572fb",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_api_payloads.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0049-8e030ab8ad8c9f70",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_api_production_security.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0050-71bc1b4d6a4f633b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_assumption_reports_current.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0051-932bd500d14c87b2",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_assumptions.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0052-eba10abe87e4f402",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_audit_gate_decision_rule_e2e.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0053-ccf38b6ba60bd7d9",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_build_docx_pipeline.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0054-0f002fb2560f4877",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_camelyon_imagenetr_runner_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0055-ef3ba4b0f655ab08",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_camelyon_protocol_f.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0056-199ee459a36f9b33",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_canonical_label_semantics.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0057-1bc2c9541897501d",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_end_to_end_runners.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0058-c179c0558c0ca868",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_gate_execution.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0059-528f8cce8d50461b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_manuscript_claim_validation.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0060-aefb5d8dd93e815c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_prospective_pipeline.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0061-d7ac11541b0e4620",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_release_builder.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0062-ce622a4234e5995c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_certificate_drift_guard.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0063-4f95023869f284ba",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_comparator_selection_from_validation_only.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0064-29aaa893738c7f6b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_current_policy_cluster_inference.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0065-66b8572b3502c2de",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_distributed_and_async_gateway.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0066-4a2bfc5ebf779802",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_ensemble_inference_label.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0067-0795df6d6e166381",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_exact_confirmation_pipeline.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0068-db477c1c3f428f9a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_gate_p_and_scope_guard.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0069-01af26e7742da107",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_imagenetr_protocol_d.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0070-0d6a1f53be644556",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_independent_checkpoint_audit.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0071-857b134fbcf257f9",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_iwildcam_router_nonpromotable_guard.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0072-abf1e0b3d7ef698c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_bibliography.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0073-83adaea9b6fb5dd0",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_build_flags.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0074-1af708a88046af0e",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_current_policy_bindings.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0075-1582e7b0c305019f",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_dashboard_metadata.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0076-a2873d173220f05b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_estimand_inference_wording.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0077-263baa8f1caf37a9",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_formal_audit.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0078-82654f3152e85fcf",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_interval_diagnostics.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0079-c219668701583776",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_metric_display_tables.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0080-6b473df5b4fb21cc",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_narrative_revision.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0081-e20b34a131a76d09",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_pdf_build_isolation.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0082-5b846afa65420cc4",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_theory_scope.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0083-c0242d46b212d442",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_api_routes.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0084-20153217e5d88b24",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_benefit_estimator.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0085-1f98cba2922d6bc0",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_canonical_rule.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0086-09a1e39d0166ca30",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_experiment_contract.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0087-9d472e4ca2ff419c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_frontier_api.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0088-a0913e857afb77b7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_masked_inputs.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0089-84b70d5bd235ef37",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_package.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0090-dbc0d910fbe6b295",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_routing.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0091-58551e5948c57e1e",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_unavailable_api.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0092-298c7c3c67c4c7ff",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_unavailable_runtime.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0093-fe927155d5fb26f6",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_manuscript_claim_consistency.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0094-1d6aa86f9c9008d4",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_model_governance.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0095-38adbf510b44577c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_multiseed_natural_extraction_lineage.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0096-d86629219a93bcd8",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_multiseed_natural_forest_lineage.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0097-db9fd7f5906372ee",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_multiseed_runbook_safety.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0098-d18777dbe4740aba",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_natural_crossfit_no_leakage.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0099-ace4d61a6dbb2eda",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_natural_runner_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0100-ff305f64e9ddb3b0",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_natural_target_provenance.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0101-748eb0ccd4de42e0",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_no_fisher_seed_combination.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0102-4abd883985488164",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_no_retroactive_confirmatory_language.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0103-7c7c181def69da5d",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_no_test_selected_comparator.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0104-d50c0dc75c96c584",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_no_test_selected_rga_plus.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0105-73794b6a454b0e5c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_official_baseline_provenance.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0106-bfac9f0e7f78b417",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_one_radius_rule.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0107-27a14c00b197faa7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_pacs_replay_artifact.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0108-52cf3b27ab2c95e5",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_polarity_probe_diagnostic_only.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0109-8cba413c19436adc",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_positive_transfer_protocol_lock.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0110-d98ba9f22220e317",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_production_gateway.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0111-d5c7e3c89c269a82",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_production_release_hygiene.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0112-95f96bf63c3e5977",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_reconcile_no_implicit_cleanup.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0113-36ad653f4121316b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_checksum_verifier.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0114-65a4826427f4e860",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_source_seal.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0115-b9501230b8060ac9",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_remaining_wilds_runner_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0116-260121a07ea0ecba",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_reproducibility_hygiene.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0117-226157d2c0acd6de",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_research_naming.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0118-1eba4b04b4214afe",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_rxrx1_9plus_launcher.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0119-ed3f26e04a730dd3",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_smoke_trichotomy.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0120-5a116f33e26a0208",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_development_selection.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0121-c0502b5bbb4b71a7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_gate.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0122-a00188be16e557a5",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_integrity_receipts.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0123-c0f789bc47c16d49",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_prospective_protocol.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0124-53dadc9d11de8b3f",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_source_acceptance.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0125-709af21327830cb1",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_source_preflight.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0126-18c67d08039cd2a7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_source_training.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0127-885b24f50c181060",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_target_boundary.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0128-056454066364298e",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_target_label_light_probe.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0129-fe7430bf6a98fa2b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_tta_protocol_semantics.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0130-e75554b9c2cdc82a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_validation_frozen_rga_plus.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0131-36cdf5d380cc5bdd",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_wilds_multicandidate_route_hardening.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0132-b0ea4627e4c4fe99",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_wilds_run_integrity.py"
+      ]
+    }
+  ],
+  "pytest_process_model": "one_module_per_fresh_interpreter",
+  "release_gates": [
+    {
+      "name": "pytest",
+      "required": true
+    },
+    {
+      "name": "standalone-validators",
+      "required": true
+    },
+    {
+      "name": "immutable-hook-configuration",
+      "required": true
+    },
+    {
+      "name": "ruff-critical",
+      "required": true
+    },
+    {
+      "name": "ruff-lint",
+      "required": true
+    },
+    {
+      "name": "ruff-format",
+      "required": true
+    },
+    {
+      "name": "mypy",
+      "required": true
+    },
+    {
+      "name": "bandit",
+      "required": true
+    },
+    {
+      "name": "private-path-scan",
+      "required": true
+    },
+    {
+      "name": "package-build-install-cli",
+      "required": true
+    },
+    {
+      "name": "dashboard-lockfile-build",
+      "required": true
+    },
+    {
+      "name": "lean-kbound",
+      "required": true
+    },
+    {
+      "name": "lean-multiclass-vector-capacity",
+      "required": true
+    },
+    {
+      "name": "docker-build",
+      "required": true
+    },
+    {
+      "name": "docker-health-network-none",
+      "required": true
+    },
+    {
+      "name": "docker-content-network-none",
+      "required": true
+    }
+  ],
+  "schema": "kbound-repository-test-inventory-v2",
+  "source_commit": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
+  "source_tree": "b7eea4431f78be6ec297eed1114e64b2f39501d5",
+  "status": "COMPLETE_CLASSIFICATION",
+  "test_shaped_count": 140,
+  "unexpected_skips": [],
+  "unexpected_warnings": [],
+  "validator_candidate_count": 47,
+  "validator_count": 44,
+  "validator_paths": [
+    "docs/research/kbound/audit_validation/val_audited_drift.py",
+    "docs/research/kbound/gapclose_wave5/val_estimator_v2.py",
+    "docs/research/kbound/gapclose_wave5/val_gapA_radius.py",
+    "docs/research/kbound/gapclose_wave5/val_gapB_tau.py",
+    "docs/research/kbound/gapclose_wave5/val_gapC_evidence.py",
+    "docs/research/kbound/gapclose_wave5/val_jackknife_plus.py",
+    "docs/research/kbound/gapclose_wave5/val_tau_adaptive.py",
+    "docs/research/kbound/scripts/validate_cifar10c_sar_rebuild.py",
+    "docs/research/kbound/scripts/validate_closure_protocol.py",
+    "docs/research/kbound/theory_v2/minimax_frontier/validate_minimax_frontier.py",
+    "docs/research/kbound/theory_v2/minimax_frontier/validate_v2.py",
+    "docs/research/kbound/theory_v2/val_anytime_multicandidate.py",
+    "docs/research/kbound/theory_v2/val_conj1_closure.py",
+    "docs/research/kbound/theory_v2/val_margin_computability.py",
+    "docs/research/kbound/theory_v2/val_minimax_optimality.py",
+    "docs/research/kbound/theory_v2/val_multicandidate.py",
+    "docs/research/kbound/theory_v2/val_multiclass_capacity.py",
+    "docs/research/kbound/theory_v2/val_multiclass_multicandidate.py",
+    "docs/research/kbound/theory_v2/val_regression_bracketing_closure.py",
+    "docs/research/kbound/theory_v2/val_sequential_anytime.py",
+    "docs/research/kbound/theory_v2/val_tight_constants.py",
+    "docs/research/kbound/theory_v2/val_unconditional_weakest.py",
+    "docs/research/kbound/ttc_extension/val_ktc_routing.py",
+    "experiments/kbound/conj1_validator.py",
+    "experiments/kbound/theory_validation/val_agl.py",
+    "experiments/kbound/theory_validation/val_benefit_frontier.py",
+    "experiments/kbound/theory_validation/val_conj1_caltransfer.py",
+    "experiments/kbound/theory_validation/val_conj1_gamma_meter.py",
+    "experiments/kbound/theory_validation/val_conj1_genpos.py",
+    "experiments/kbound/theory_validation/val_frontier.py",
+    "experiments/kbound/theory_validation/val_knowability_capacity.py",
+    "experiments/kbound/theory_validation/val_knowability_capacity_general.py",
+    "experiments/kbound/theory_validation/val_knowability_dichotomy.py",
+    "experiments/kbound/theory_validation/val_multicandidate_residual.py",
+    "experiments/kbound/theory_validation/val_rademacher_router.py",
+    "experiments/kbound/theory_validation/val_reach_unification.py",
+    "experiments/kbound/theory_validation/val_smooth_drift.py",
+    "experiments/kbound/theory_validation/val_thm1_lecam.py",
+    "experiments/kbound/theory_validation/val_thm2_lecam_finite_n.py",
+    "experiments/kbound/theory_validation/val_thm2_regret.py",
+    "experiments/kbound/theory_validation/val_thm3_evalue.py",
+    "experiments/kbound/theory_validation/val_thm5_multiclass.py",
+    "experiments/kbound/theory_validation/val_thm9prime_drift.py",
+    "src/scripts/validate_manuscript_claims.py"
+  ]
+}

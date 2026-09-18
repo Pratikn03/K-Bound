@@ -43,7 +43,7 @@
         4
       ],
       "conditions_per_seed": 432,
-      "verdict": "Current exact-rank point estimate beats both fixed policies. In a retrospective current-policy sensitivity over six corruption families, both ordinary family-bootstrap intervals are positive; however, p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.09375, so no cluster-robust, confirmatory, or independent-checkpoint win is claimed.",
+      "verdict": "Current exact-rank point estimate has lower regret than both fixed policies. In a retrospective current-policy sensitivity over six corruption families, both ordinary family-bootstrap intervals are positive; however, p-values from retrospective Holm adjustment over the six prospectively named contrasts are 0.09375, so no cluster-robust, confirmatory, or independent-checkpoint win is claimed.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "status": "current_policy_exact_rank_replay",
       "quantile_rule": "per-candidate/per-run-seed exact-rank leave-one-condition-out empirical residual calibration",
@@ -235,15 +235,15 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
         "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
-        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
+        "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+        "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
-          "python": "3.12.13",
+          "python": "3.11.14",
           "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
@@ -254,7 +254,7 @@
           },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+            "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
           },
           "certificate": {
             "path": "kga/certificate.py",
@@ -368,7 +368,7 @@
         4
       ],
       "conditions_per_seed": 432,
-      "verdict": "Current exact-rank point estimate beats both fixed policies, but the ordinary adapt-side family-bootstrap interval crosses zero and the retrospective Holm analysis over the six prospectively named contrasts fails; no cluster-robust or independent-checkpoint claim is made.",
+      "verdict": "Current exact-rank point estimate has lower regret than both fixed policies, but the ordinary adapt-side family-bootstrap interval crosses zero and the retrospective Holm analysis over the six prospectively named contrasts fails; no cluster-robust or independent-checkpoint claim is made.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "status": "current_policy_exact_rank_replay",
       "quantile_rule": "per-candidate/per-run-seed exact-rank leave-one-condition-out empirical residual calibration",
@@ -503,15 +503,15 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
         "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
-        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
+        "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+        "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
-          "python": "3.12.13",
+          "python": "3.11.14",
           "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
@@ -522,7 +522,7 @@
           },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+            "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
           },
           "certificate": {
             "path": "kga/certificate.py",
@@ -636,7 +636,7 @@
         4
       ],
       "quantile_rule": "per-candidate/per-seed exact-rank leave-one-condition-out residual calibration",
-      "verdict": "Pooled point estimate is below both fixed policies, with one false adaptation in 135 cells; the seed bootstrap touches zero on the freeze side, so CI-robust beats-both is not claimed.",
+      "verdict": "Pooled point estimate is below both fixed policies, with one false adaptation in 135 cells; the seed bootstrap touches zero on the freeze side, so CI-robust dual-baseline dominance is not claimed.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "status": "current_policy_exact_rank_replay",
       "point_beats_both": false,
@@ -820,7 +820,7 @@
         3,
         4
       ],
-      "verdict": "Opened OOD diagnostic: KGA adapts on all 18 conditions and ties always-adapt; it is not prospective and not a beats-both result.",
+      "verdict": "Opened OOD diagnostic: KGA adapts on all 18 conditions and ties always-adapt; it is not prospective and not a dual-baseline result.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
       "reproducibility_status": "REPRODUCIBLE_FROM_CANONICAL_COMPACT_SOURCE",
       "false_adapt_count": 0,
@@ -862,7 +862,7 @@
       "numeric_release_eligible": true,
       "headline_promotion_eligible": false,
       "historical_audit_seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#camelyon17_ood",
-      "source_caveat": "archived opened OOD diagnostic that ties always-adapt on an all-helpful panel; not prospective, not a beats-both result, and FA_u=0 is vacuous here",
+      "source_caveat": "archived opened OOD diagnostic that ties always-adapt on an all-helpful panel; not prospective, not a dual-baseline result, and FA_u=0 is vacuous here",
       "cp95_upper_fa_c": 0.1533175539572782,
       "guarantee_status": "exercised"
     },
@@ -890,7 +890,7 @@
       ],
       "verdict": "Harmful-dominated no-harm diagnostic: KGA freezes on every primary condition and ties always-freeze; three independent model seeds reproduce that tie.",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-      "source_note": "held-out harmful-dominated no-harm result; KGA always freezes and ties always-freeze, so it is not a beats-both result",
+      "source_note": "held-out harmful-dominated no-harm result; KGA always freezes and ties always-freeze, so it is not a dual-baseline result",
       "decision_counts": {
         "ADAPT": 0,
         "FREEZE": 60,
@@ -1014,7 +1014,7 @@
       ],
       "false_adapt": 0.0,
       "n_conditions": 143,
-      "verdict": "locked CI beats-both; constructed routing aggregate",
+      "verdict": "locked CI dual-baseline win; constructed routing aggregate",
       "source": "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json",
       "caveat": "saved scorer used 5000 bootstrap replicates while protocol text states 10000",
       "seal": "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json#three_source_oof"
@@ -1055,7 +1055,7 @@
       "beats_both_backbones": "0/10",
       "claim_id": "KB-CLAIM-042",
       "source": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-      "verdict": "Negative four-seed, ten-backbone diagnostic: KGA is worse than always-adapt on 8/10 backbones; no architecture has CI-robust beats-both.",
+      "verdict": "Negative four-seed, ten-backbone diagnostic: KGA is worse than always-adapt on 8/10 backbones; no architecture has CI-robust dual-baseline dominance.",
       "false_adapt_count": 3,
       "decision_counts": {
         "ADAPT": 176,
@@ -1770,15 +1770,15 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
         "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
-        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
+        "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+        "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
-          "python": "3.12.13",
+          "python": "3.11.14",
           "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
@@ -1789,7 +1789,7 @@
           },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+            "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
           },
           "certificate": {
             "path": "kga/certificate.py",
@@ -2161,7 +2161,7 @@
   },
   "reconciliation_source": {
     "canonical_panel": "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
-    "canonical_panel_sha256": "16ec139aee0b5811830ee976281b95d847e03644196d29a14329a7835d1b6a53",
+    "canonical_panel_sha256": "fade61a3c522f44cceefbb97030f6485a0a7fc4aeafe6930fda6658ef88ac25c",
     "source_manifest": "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
     "source_manifest_sha256": "3ac2c7d14d44803e4ff8a19258d036dc86327adb02fdb4cd34536e5eeee9cb24",
     "generator": "scripts/reconcile_result_panels.py",
@@ -2169,16 +2169,16 @@
     "runtime": {
       "numpy": "2.4.4",
       "platform": "macOS-26.6.2-arm64-arm-64bit",
-      "python": "3.12.13",
+      "python": "3.11.14",
       "scikit_learn": "1.8.0"
     },
     "ci_convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "current_policy_family_sensitivity": {
       "artifact": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-      "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+      "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
       "artifact_bytes": 19529,
       "runtime": {
-        "python": "3.12.13",
+        "python": "3.11.14",
         "numpy": "2.4.4",
         "platform": "macOS-26.6.2-arm64-arm-64bit"
       },
@@ -2189,7 +2189,7 @@
         },
         "policy": {
           "path": "kga/policy.py",
-          "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+          "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
         },
         "certificate": {
           "path": "kga/certificate.py",
@@ -2210,12 +2210,12 @@
   "current_policy_family_sensitivity": {
     "status": "retrospective_current_policy_family_sensitivity",
     "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-    "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+    "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
     "artifact_bytes": 19529,
     "artifact_schema": "kbound-current-policy-cluster-inference-v3",
     "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
     "runtime": {
-      "python": "3.12.13",
+      "python": "3.11.14",
       "numpy": "2.4.4",
       "platform": "macOS-26.6.2-arm64-arm-64bit"
     },
@@ -2226,7 +2226,7 @@
       },
       "policy": {
         "path": "kga/policy.py",
-        "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+        "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
       },
       "certificate": {
         "path": "kga/certificate.py",
@@ -2291,15 +2291,15 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
         "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
-        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
+        "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+        "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
-          "python": "3.12.13",
+          "python": "3.11.14",
           "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
@@ -2310,7 +2310,7 @@
           },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+            "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
           },
           "certificate": {
             "path": "kga/certificate.py",
@@ -2407,15 +2407,15 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
         "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
-        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
+        "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+        "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
-          "python": "3.12.13",
+          "python": "3.11.14",
           "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
@@ -2426,7 +2426,7 @@
           },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+            "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
           },
           "certificate": {
             "path": "kga/certificate.py",
@@ -2523,15 +2523,15 @@
         "confirmatory": false,
         "convention": "baseline_regret_minus_kga_regret; positive values favor KGA",
         "artifact_path": "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
-        "artifact_sha256": "2537c594f71904482eeb160a4a0ab566a942b30562e271890e7644e7a41c0943",
+        "artifact_sha256": "50def507559bf12edbfe82d9d19c143c2c80a4bf6c9e1cc38e187c69a926132c",
         "artifact_bytes": 19529,
         "artifact_schema": "kbound-current-policy-cluster-inference-v3",
-        "generated_utc": "2026-09-13T02:25:49.191003+00:00",
-        "git_head": "43af09c05ab1fad97bd62b2fcad75a422b99d16c",
+        "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+        "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
         "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
         "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
         "runtime": {
-          "python": "3.12.13",
+          "python": "3.11.14",
           "numpy": "2.4.4",
           "platform": "macOS-26.6.2-arm64-arm-64bit"
         },
@@ -2542,7 +2542,7 @@
           },
           "policy": {
             "path": "kga/policy.py",
-            "sha256": "b6936e877b6e224ec335f61523c42a86a5ccd4dc984d80dec1497f6915297160"
+            "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
           },
           "certificate": {
             "path": "kga/certificate.py",

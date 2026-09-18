@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Cross-architecture KGA evaluation across 5 distinct backbone families (48 conditions each, ImageNet-R pre-registered Protocol~D panel, $\alpha = 0.10$, leave-one-out exact-rank empirical residual routing). Results provide cross-architecture selective-routing diagnostics; observed $\mathrm{FA}_u$ was at most 0.0208 across the five evaluated architecture panels, spanning vision transformers (ViT-B/16, Swin-T), modern convolutional networks (ConvNeXt-T), deep residuals (ResNet-101), and compound-scaled architectures (EfficientNet-B3). Routing behavior varies substantially by architecture and shift regime. Note: $\mathrm{FA}_c$ (conditional false-ADAPT rate, divides by ADAPT count) can be high when very few ADAPT decisions were issued; ``---'' indicates undefined (zero ADAPT decisions).}
+\label{tab:architecture-generalization}
+\setlength{\tabcolsep}{4.5pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llcccccccc@{}}
+\toprule
+Architecture & Model Family & Params & Help/Zero/Harm & $R_{\mathrm{freeze}}$ & $R_{\mathrm{adapt}}$ & $R_{\mathrm{policy}}$ & $\mathrm{FA}_u$ & Actions (A/F/U) & $\mathrm{FA}_c$ \\
+\midrule
+ViT-B/16 & Vision Transformer & 86.6M & 43/0/5 & 3.18\% & 0.21\% & 3.19\% & 0.0208 & 1/0/47 & 1.000 \\
+Swin-T & Hierarchical ViT & 28.3M & 17/2/29 & 0.47\% & 1.17\% & 0.47\% & 0.0000 & 0/0/48 & --- \\
+ConvNeXt-T & Modern ConvNet & 28.6M & 39/4/5 & 2.56\% & 0.08\% & 2.49\% & 0.0208 & 2/0/46 & 0.500 \\
+ResNet-101 & Deep Residual & 44.5M & 46/1/1 & 2.91\% & 0.03\% & 2.65\% & 0.0208 & 5/0/43 & 0.200 \\
+EfficientNet-B3 & Compound Scaled & 12.2M & 48/0/0 & 4.94\% & 0.00\% & 2.57\% & 0.0000 & 26/0/22 & 0.000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

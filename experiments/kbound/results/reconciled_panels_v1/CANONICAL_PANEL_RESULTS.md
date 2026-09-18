@@ -8,18 +8,18 @@ Regret order is KGA / always-adapt / always-freeze. Abstention keeps the frozen 
 | Office-Home M-v2 | 35 | 0.0158 | 0.0468 | 0.0158 | 0.0000 | 0.0000 | 0.3143 | yes | descriptive/A7 open |
 | Office-Home replication | 54 | 0.0215 | 0.0458 | 0.0217 | 0.0000 | 0.0185 | 0.2778 | yes | descriptive/A7 open |
 | iWildCam H-v2 | withheld | withheld | withheld | withheld | withheld | withheld | withheld | archived only | withheld: official-metric rerun required |
-| ImageNet-C SAR | 135 | 0.0289 | 0.0529 | 0.0319 | 0.0074 | 0.0963 | 0.2074 | yes | corrected LOO grid |
-| ImageNet-C TENT | 135 | 0.0145 | 0.0191 | 0.0145 | 0.0000 | 0.0000 | 0.0000 | yes | corrected LOO grid |
-| ImageNet-C EATA | 135 | 0.0007 | 0.0001 | 0.0342 | 0.0074 | 0.8889 | 0.8963 | yes | corrected LOO grid |
+| ImageNet-C SAR | 135 | 0.0348 | 0.0529 | 0.0319 | 0.0148 | 0.0593 | 0.0741 | yes | corrected LOO grid |
+| ImageNet-C TENT | 135 | 0.0139 | 0.0191 | 0.0145 | 0.0000 | 0.0074 | 0.0074 | yes | corrected LOO grid |
+| ImageNet-C EATA | 135 | 0.0031 | 0.0001 | 0.0342 | 0.0000 | 0.7926 | 0.8000 | yes | corrected LOO grid |
 | PACS | 12 | 0.0431 | 0.0176 | 0.0446 | 0.0093 | 0.0556 | 0.8148 | aggregate only | null diagnostic |
-| ImageNet-R | 480 | 0.0150 | 0.0064 | 0.0325 | 0.0000 | 0.3438 | 0.4042 | yes | architecture diagnostic |
-| CIFAR-10-C TENT | 2160 | 0.0016 | 0.0080 | 0.1239 | 0.0000 | 0.5125 | 0.6787 | yes | controlled exact-rank grid |
-| CIFAR-10-C EATA | 2160 | 0.0013 | 0.0033 | 0.1313 | 0.0000 | 0.5745 | 0.6356 | yes | controlled exact-rank grid |
-| CIFAR-10-C SAR | 2160 | 0.0016 | 0.0003 | 0.1405 | 0.0000 | 0.6694 | 0.6694 | yes | controlled exact-rank grid |
+| ImageNet-R | 480 | 0.0136 | 0.0064 | 0.0325 | 0.0063 | 0.3667 | 0.4417 | yes | architecture diagnostic |
+| CIFAR-10-C TENT | 2160 | 0.0018 | 0.0080 | 0.1239 | 0.0000 | 0.5065 | 0.6611 | yes | controlled exact-rank grid |
+| CIFAR-10-C EATA | 2160 | 0.0016 | 0.0033 | 0.1313 | 0.0000 | 0.5588 | 0.6134 | yes | controlled exact-rank grid |
+| CIFAR-10-C SAR | 2160 | 0.0017 | 0.0003 | 0.1405 | 0.0005 | 0.6620 | 0.6620 | yes | controlled exact-rank grid |
 | Camelyon17 OOD | 18 | 0.0000 | 0.0000 | 0.1381 | 0.0000 | 1.0000 | 1.0000 | yes | archived opened OOD diagnostic |
-| Camelyon17 B-v2 TENT | 108 | 0.0296 | 0.0097 | 0.0820 | 0.0093 | 0.3704 | 0.3704 | yes | within-seed diagnostic |
-| Camelyon17 B-v2 EATA | 108 | 0.0083 | 0.0040 | 0.0911 | 0.0000 | 0.5648 | 0.5648 | yes | within-seed diagnostic |
-| Camelyon17 B-v2 SAR | 108 | 0.0006 | 0.0016 | 0.1001 | 0.0000 | 0.6574 | 0.6574 | yes | within-seed diagnostic |
+| Camelyon17 B-v2 TENT | 108 | 0.0399 | 0.0097 | 0.0820 | 0.0185 | 0.3148 | 0.3241 | yes | within-seed diagnostic |
+| Camelyon17 B-v2 EATA | 108 | 0.0235 | 0.0040 | 0.0911 | 0.0741 | 0.5648 | 0.5648 | yes | within-seed diagnostic |
+| Camelyon17 B-v2 SAR | 108 | 0.0240 | 0.0016 | 0.1001 | 0.0093 | 0.4630 | 0.4630 | yes | within-seed diagnostic |
 | RxRx1 J | 60 | 0.0000 | 0.2531 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | yes | held-out no-harm |
 | CIFAR-10.1 K | 48 | 0.0017 | 0.0190 | 0.0017 | 0.0000 | 0.0000 | 0.4583 | yes | negative cross-seed diagnostic |
 

@@ -87,7 +87,7 @@ def test_audits_move_to_supplement_without_discarding_adverse_records():
     for token in (
         "five-checkpoint", "invalid", "withheld", "PACS", "ImageNet-R",
         "no target natural-shift", "Historical Protocol-Matched POEM and AETTA",
-            "147 named declarations", "--full-foundations",
+            "150 named declarations", "--full-foundations",
     ):
         assert token in supplement
     assert r"\input{paper/generated/kbound_primary_accuracy_table.tex}" in body

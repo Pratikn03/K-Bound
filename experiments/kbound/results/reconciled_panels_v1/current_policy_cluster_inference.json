@@ -1,26 +1,30 @@
 {
   "schema": "kbound-current-policy-cluster-inference-v3",
-  "generated_utc": "2026-08-31T09:45:24.464981+00:00",
-  "git_head": "38724b5985116c9f6f4e724e62b3bb7c71f79999",
+  "generated_utc": "2026-09-17T06:51:06.318291+00:00",
+  "git_head": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
   "analysis_script": "docs/research/kbound/scripts/analyze_current_policy_cluster_inference.py",
-  "analysis_script_sha256": "e450edf1bb21eaa78f81ba74405a12cbe1c63eea38d19bc288b9bb425a8e58c5",
+  "analysis_script_sha256": "41a6a188ad11d5878902a630053002b2cf3a2b76e0a99fe90481646bd1d36df3",
   "runtime": {
-    "python": "3.12.13",
+    "python": "3.11.14",
     "numpy": "2.4.4",
     "platform": "macOS-26.6.2-arm64-arm-64bit"
   },
   "live_code_bindings": {
+    "crossfit": {
+      "path": "kga/crossfit.py",
+      "sha256": "a82b16337e12f469f09b732caaa7c8305ff05edac8713fe2f4b2d12ff33ec5ac"
+    },
     "policy": {
       "path": "kga/policy.py",
-      "sha256": "256d2449787f6b1bebdfbf0eae4b7424b4f60a665ad31c2ef53358e0f52b65cb"
+      "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
     },
     "certificate": {
       "path": "kga/certificate.py",
-      "sha256": "d918a19d0117b8c9e979a79855af24cac437044b82bb7794f52f3f77f100a72b"
+      "sha256": "900fc37c4a9c8774e5f092bf359bea931e469ac66566eaa3ef3e5a1350f1bdc5"
     },
     "numeric_validation": {
       "path": "kga/_validation.py",
-      "sha256": "fe2b71602973e39a830c04c2e5059896a2d802ab7e911920a4d84aeb3457803c"
+      "sha256": "937e21419b8335c24fde86de74ecc67c65e63c5ae41a960bfefa493cc291ef9f"
     },
     "preregistered_protocol": {
       "path": "research_lock/STRESS_GRID_MULTISEED_PROTOCOL_A_v1.yaml",
@@ -55,7 +59,7 @@
     "raw_p_values": {
       "tent::always_adapt": 0.03125,
       "tent::always_freeze": 0.015625,
-      "eata::always_adapt": 0.125,
+      "eata::always_adapt": 0.15625,
       "eata::always_freeze": 0.015625,
       "sar::always_adapt": 0.90625,
       "sar::always_freeze": 0.015625
@@ -65,7 +69,7 @@
       "eata::always_freeze": 0.09375,
       "sar::always_freeze": 0.09375,
       "tent::always_adapt": 0.09375,
-      "eata::always_adapt": 0.25,
+      "eata::always_adapt": 0.3125,
       "sar::always_adapt": 0.90625
     },
     "family_size": 6,
@@ -92,24 +96,24 @@
         ]
       },
       "decision_counts": {
-        "ADAPT": 1107,
-        "FREEZE": 359,
-        "ABSTAIN": 694
+        "ADAPT": 1094,
+        "FREEZE": 334,
+        "ABSTAIN": 732
       },
       "recorded_historical_decision_counts": {
         "ADAPT": 1109,
         "FREEZE": 366,
         "ABSTAIN": 685
       },
-      "current_vs_recorded_decision_disagreements": 9,
-      "adapt_exposure": 0.5125,
-      "freeze_exposure": 0.16620370370370371,
-      "strict_decision_coverage": 0.6787037037037037,
+      "current_vs_recorded_decision_disagreements": 77,
+      "adapt_exposure": 0.5064814814814815,
+      "freeze_exposure": 0.15462962962962962,
+      "strict_decision_coverage": 0.6611111111111111,
       "comparisons": {
         "always_adapt": {
-          "point": 0.006330324571441721,
+          "point": 0.006183102230230968,
           "ci": [
-            0.002543518554281305,
+            0.0023120371555840533,
             0.009536807073487174
           ],
           "ci_level": 0.95,
@@ -119,8 +123,8 @@
             "contrast": 0.008229167262713114,
             "defocus_blur": 0.010590276949935489,
             "fog": 0.010380557345019446,
-            "gaussian_noise": -0.0020555557476149666,
-            "jpeg_compression": 0.003368055820465088,
+            "gaussian_noise": -0.0022041675117280748,
+            "jpeg_compression": 0.0026333335373136734,
             "pixelate": 0.007469445798132155
           },
           "p_value_one_sided_exact_sign_flip": 0.03125,
@@ -130,10 +134,10 @@
           "retrospective_holm_six_contrasts_reject_at_0_05": false
         },
         "always_freeze": {
-          "point": 0.12229143483219324,
+          "point": 0.12214421249098247,
           "ci": [
-            0.06330717476429762,
-            0.17772361136696957
+            0.06304027736186982,
+            0.1776740741122652
           ],
           "ci_level": 0.95,
           "replicates": 20000,
@@ -142,8 +146,8 @@
             "contrast": 0.22884583324193955,
             "defocus_blur": 0.12017222195863723,
             "fog": 0.06325694289472368,
-            "gaussian_noise": 0.17364722390969595,
-            "jpeg_compression": 0.006643055048253801,
+            "gaussian_noise": 0.17349861214558285,
+            "jpeg_compression": 0.0059083327651023865,
             "pixelate": 0.1411833319399092
           },
           "p_value_one_sided_exact_sign_flip": 0.015625,
@@ -161,10 +165,11 @@
         "retrospective_six_contrast_cluster_sensitivity_pass": false
       },
       "current_policy_replay": {
-        "entry_point": "kga.policy.decide_kga",
+        "entry_point": "kga.crossfit.controlled_grid_crossfit",
         "alpha": 0.1,
-        "calibration": "loo",
-        "radius": "exact split-conformal rank radius, leave-one-cell-out",
+        "calibration": "per-file deterministic three-way cross-fit",
+        "radius": "exact split-conformal rank radius on a score-fold-disjoint calibration subset",
+        "historical_fields_used_for_scoring": false,
         "stored_kga_decision_used_for_scoring": false
       },
       "sources": [
@@ -225,24 +230,24 @@
         ]
       },
       "decision_counts": {
-        "ADAPT": 1241,
-        "FREEZE": 132,
-        "ABSTAIN": 787
+        "ADAPT": 1207,
+        "FREEZE": 118,
+        "ABSTAIN": 835
       },
       "recorded_historical_decision_counts": {
         "ADAPT": 1243,
         "FREEZE": 132,
         "ABSTAIN": 785
       },
-      "current_vs_recorded_decision_disagreements": 2,
-      "adapt_exposure": 0.5745370370370371,
-      "freeze_exposure": 0.06111111111111111,
-      "strict_decision_coverage": 0.6356481481481482,
+      "current_vs_recorded_decision_disagreements": 90,
+      "adapt_exposure": 0.5587962962962963,
+      "freeze_exposure": 0.05462962962962963,
+      "strict_decision_coverage": 0.6134259259259259,
       "comparisons": {
         "always_adapt": {
-          "point": 0.0019513890699104023,
+          "point": 0.0016733798715803355,
           "ci": [
-            -0.0005194442415678941,
+            -0.0012715271777576872,
             0.004381944708250187
           ],
           "ci_level": 0.95,
@@ -252,21 +257,21 @@
             "contrast": 0.002649999823835161,
             "defocus_blur": 0.00548888858821657,
             "fog": 0.005572223001056247,
-            "gaussian_noise": -0.00022083371877670288,
-            "jpeg_compression": -0.0033013885219891864,
+            "gaussian_noise": -0.00042500048875808715,
+            "jpeg_compression": -0.004765276941988203,
             "pixelate": 0.0015194452471203274
           },
-          "p_value_one_sided_exact_sign_flip": 0.125,
-          "p_value_holm_within_candidate_posthoc": 0.125,
+          "p_value_one_sided_exact_sign_flip": 0.15625,
+          "p_value_holm_within_candidate_posthoc": 0.15625,
           "holm_within_candidate_posthoc_reject_at_0.05": false,
-          "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.25,
+          "p_value_retrospective_holm_six_prospectively_named_contrasts": 0.3125,
           "retrospective_holm_six_contrasts_reject_at_0_05": false
         },
         "always_freeze": {
-          "point": 0.13001203589417318,
+          "point": 0.12973402669584308,
           "ci": [
-            0.06977175780468516,
-            0.18754398066688469
+            0.06900578579968876,
+            0.18747592507689084
           ],
           "ci_level": 0.95,
           "replicates": 20000,
@@ -275,8 +280,8 @@
             "contrast": 0.23968055546283723,
             "defocus_blur": 0.12648055454095206,
             "fog": 0.06860277652740479,
-            "gaussian_noise": 0.186472221215566,
-            "jpeg_compression": 0.012358331514729395,
+            "gaussian_noise": 0.1862680544455846,
+            "jpeg_compression": 0.010894443094730377,
             "pixelate": 0.14647777610354953
           },
           "p_value_one_sided_exact_sign_flip": 0.015625,
@@ -294,10 +299,11 @@
         "retrospective_six_contrast_cluster_sensitivity_pass": false
       },
       "current_policy_replay": {
-        "entry_point": "kga.policy.decide_kga",
+        "entry_point": "kga.crossfit.controlled_grid_crossfit",
         "alpha": 0.1,
-        "calibration": "loo",
-        "radius": "exact split-conformal rank radius, leave-one-cell-out",
+        "calibration": "per-file deterministic three-way cross-fit",
+        "radius": "exact split-conformal rank radius on a score-fold-disjoint calibration subset",
+        "historical_fields_used_for_scoring": false,
         "stored_kga_decision_used_for_scoring": false
       },
       "sources": [
@@ -358,25 +364,25 @@
         ]
       },
       "decision_counts": {
-        "ADAPT": 1446,
+        "ADAPT": 1430,
         "FREEZE": 0,
-        "ABSTAIN": 714
+        "ABSTAIN": 730
       },
       "recorded_historical_decision_counts": {
         "ADAPT": 1448,
         "FREEZE": 0,
         "ABSTAIN": 712
       },
-      "current_vs_recorded_decision_disagreements": 2,
-      "adapt_exposure": 0.6694444444444444,
+      "current_vs_recorded_decision_disagreements": 36,
+      "adapt_exposure": 0.6620370370370371,
       "freeze_exposure": 0.0,
-      "strict_decision_coverage": 0.6694444444444444,
+      "strict_decision_coverage": 0.6620370370370371,
       "comparisons": {
         "always_adapt": {
-          "point": -0.0012226850346282677,
+          "point": -0.0013256943336239565,
           "ci": [
-            -0.0026736108517205273,
-            -6.736067158204539e-05
+            -0.0027423609462049275,
+            -0.00016111069255405003
           ],
           "ci_level": 0.95,
           "replicates": 20000,
@@ -386,8 +392,8 @@
             "defocus_blur": 6.388939089245267e-05,
             "fog": 6.945265663994683e-06,
             "gaussian_noise": 0.0,
-            "jpeg_compression": -0.000545833342605167,
-            "pixelate": -0.004320832755830553
+            "jpeg_compression": -0.0011083334684371948,
+            "pixelate": -0.004376388423972659
           },
           "p_value_one_sided_exact_sign_flip": 0.90625,
           "p_value_holm_within_candidate_posthoc": 0.90625,
@@ -396,10 +402,10 @@
           "retrospective_holm_six_contrasts_reject_at_0_05": false
         },
         "always_freeze": {
-          "point": 0.13891249966842156,
+          "point": 0.1388094903694259,
           "ci": [
-            0.08031388794382413,
-            0.19686064847089627
+            0.08003263788090811,
+            0.19685138919287257
           ],
           "ci_level": 0.95,
           "replicates": 20000,
@@ -409,8 +415,8 @@
             "defocus_blur": 0.13258749975098505,
             "fog": 0.07422638850079642,
             "gaussian_noise": 0.1980319455265999,
-            "jpeg_compression": 0.025679164628187815,
-            "pixelate": 0.15338749918672773
+            "jpeg_compression": 0.025116664502355786,
+            "pixelate": 0.15333194351858562
           },
           "p_value_one_sided_exact_sign_flip": 0.015625,
           "p_value_holm_within_candidate_posthoc": 0.03125,
@@ -427,10 +433,11 @@
         "retrospective_six_contrast_cluster_sensitivity_pass": false
       },
       "current_policy_replay": {
-        "entry_point": "kga.policy.decide_kga",
+        "entry_point": "kga.crossfit.controlled_grid_crossfit",
         "alpha": 0.1,
-        "calibration": "loo",
-        "radius": "exact split-conformal rank radius, leave-one-cell-out",
+        "calibration": "per-file deterministic three-way cross-fit",
+        "radius": "exact split-conformal rank radius on a score-fold-disjoint calibration subset",
+        "historical_fields_used_for_scoring": false,
         "stored_kga_decision_used_for_scoring": false
       },
       "sources": [

@@ -25,6 +25,8 @@ CURRENT_CLUSTER = ROOT / "experiments/kbound/results/reconciled_panels_v1/curren
 GENERATED_MANIFEST = KBOUND / "paper/generated/kbound_result_manifest.json"
 KBOUND_NUMBERS = KBOUND / "paper/generated/kbound_numbers.tex"
 CURRENT_CLUSTER_TABLE = KBOUND / "paper/generated/current_policy_family_sensitivity.tex"
+DIAGNOSTICS_GROUPS = KBOUND / "paper/generated/current_policy_interval_diagnostics_groups.tex"
+AUX_BALANCED = KBOUND / "paper/generated/kbound_auxiliary_balanced_accuracy_table.tex"
 UNIFORM_VERDICTS = KBOUND / "paper/generated/uniform_verdicts.json"
 DECISION_METRICS = KBOUND / "paper/generated/empirical_audit/decision_metrics.json"
 CLAIM_MATRIX = KBOUND / "paper/generated/empirical_audit/claim_matrix.md"
@@ -2045,6 +2047,8 @@ def main(argv: list[str] | None = None) -> int:
         r"66.8\%": "stale CIFAR-10-C aggregate coverage",
         r"5.00\times": "stale canonical regret ratio",
         r"9{,}504": "stale pooled decision denominator",
+        r"2{,}250": "stale CIFAR-10-C total cell count (should be 2,160)",
+        r"2250": "stale CIFAR-10-C total cell count (should be 2,160)",
         r"0.001585": "stale earlier-policy Tent value",
         r"cluster-robust for Tent": "obsolete current-policy Tent cluster claim",
         r"Verdict: WIN": "obsolete current-policy POEM/AETTA win",
@@ -2183,6 +2187,8 @@ def main(argv: list[str] | None = None) -> int:
     release_paths = (
         GENERATED_MANIFEST,
         CURRENT_CLUSTER_TABLE,
+        DIAGNOSTICS_GROUPS,
+        AUX_BALANCED,
         UNIFORM_VERDICTS,
         DECISION_METRICS,
         CLAIM_MATRIX,
@@ -2204,6 +2210,67 @@ def main(argv: list[str] | None = None) -> int:
             "tent": {"ADAPT": 1094, "FREEZE": 334, "ABSTAIN": 732},
             "eata": {"ADAPT": 1207, "FREEZE": 118, "ABSTAIN": 835},
         }
+
+        # Verify Table 32 family diagnostics aggregate counts
+        if DIAGNOSTICS_GROUPS.is_file():
+            group_totals = {}
+            for line in DIAGNOSTICS_GROUPS.read_text().splitlines():
+                s = line.strip()
+                if not s or s.startswith("%") or s.startswith("\\"):
+                    continue
+                parts = [p.strip() for p in s.replace(r"\\", "").split("&")]
+                if len(parts) == 8 and parts[0] in ("TENT", "EATA", "SAR"):
+                    cand = parts[0].lower()
+                    n = int(parts[2])
+                    fa, a = [int(x) for x in parts[6].split(";")[0].split("/")]
+                    f_part = parts[7].split(";")[0].split("/")
+                    ff = int(f_part[0])
+                    f = int(f_part[1]) if f_part[1] != "--" else 0
+                    if cand not in group_totals:
+                        group_totals[cand] = {"n": 0, "ADAPT": 0, "FREEZE": 0, "false_A": 0, "false_F": 0}
+                    group_totals[cand]["n"] += n
+                    group_totals[cand]["ADAPT"] += a
+                    group_totals[cand]["FREEZE"] += f
+                    group_totals[cand]["false_A"] += fa
+                    group_totals[cand]["false_F"] += ff
+            expected_family_totals = {
+                "tent": {"n": 2160, "ADAPT": 1094, "FREEZE": 334, "ABSTAIN": 732, "false_A": 0},
+                "eata": {"n": 2160, "ADAPT": 1207, "FREEZE": 118, "ABSTAIN": 835, "false_A": 0},
+                "sar": {"n": 2160, "ADAPT": 1430, "FREEZE": 0, "ABSTAIN": 730, "false_A": 1},
+            }
+            for cand, exp in expected_family_totals.items():
+                obs = group_totals.get(cand, {})
+                obs_abstain = obs.get("n", 0) - obs.get("ADAPT", 0) - obs.get("FREEZE", 0)
+                if (
+                    obs.get("n") != exp["n"]
+                    or obs.get("ADAPT") != exp["ADAPT"]
+                    or obs.get("FREEZE") != exp["FREEZE"]
+                    or obs_abstain != exp["ABSTAIN"]
+                    or obs.get("false_A") != exp["false_A"]
+                ):
+                    problems.append(
+                        f"diagnostics groups totals changed for {cand}: expected {exp}, got {obs} with ABSTAIN={obs_abstain}"
+                    )
+
+        # Verify Table 18 auxiliary balanced accuracy table
+        if AUX_BALANCED.is_file():
+            aux_text = AUX_BALANCED.read_text()
+            expected_aux_rows = [
+                ("ImageNet-R backbones", "480", "0.0063"),
+                ("Camelyon17 OOD", "18", "0.0000"),
+                ("Camelyon17 B--v2 Tent", "108", "0.0185"),
+                ("Camelyon17 B--v2 EATA", "108", "0.0741"),
+                ("Camelyon17 B--v2 SAR", "108", "0.0093"),
+                ("RxRx1 model seed 0", "60", "0.0000"),
+            ]
+            for name, n_str, fau_str in expected_aux_rows:
+                matching_lines = [l for l in aux_text.splitlines() if name in l]
+                if not matching_lines:
+                    problems.append(f"missing auxiliary balanced row for {name}")
+                else:
+                    row_line = matching_lines[0]
+                    if n_str not in row_line or fau_str not in row_line:
+                        problems.append(f"auxiliary balanced row mismatch for {name}: {row_line}")
 
         generated = json.loads(GENERATED_MANIFEST.read_text())
         direct_storage_count, sealed_storage_count = validate_storage_manifest(

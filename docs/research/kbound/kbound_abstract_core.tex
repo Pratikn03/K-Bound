@@ -1,20 +1,2 @@
 % Shared abstract text for both maintained drivers.
-Test-time adaptation updates a model without new target labels, but an update can help or harm.
-We ask when the available evidence supports replacing a frozen predictor with a fixed adapted
-candidate. K-Bound answers this question for a binary population model under an exogenous bound
-$\beta$ on target calibration residual. We construct target label laws that preserve all
-label-free observations and derive the exact feasible interval for paired population benefit. A strict
-decision is justified precisely when $|M|>\beta$, where $M$ is the observable correctness margin on the
-disagreement region; inside the closed band $|M|\le\beta$, no strict direction is uniformly justified.
-Furthermore, an evidence-fibre audit theorem characterizes the smallest residual bound that
-any uniformly valid audit based on the same observable law must cover at its declared confidence level;
-additional processing of unchanged evidence cannot reduce the unresolved residual range. Addressing this problem under a complementary inductive
-regime with historical shift benchmarks, Knowability-Guided Adaptation (\KGA) learns to predict
-observed evaluation-cell benefit, choosing \adapt, \freeze, or \abstain via calibrated residual intervals.
-On cross-fitted CIFAR-10-C, Tent and EATA achieve lower point regret than either fixed policy, while
-SAR favors always-adapt due to high baseline benefit under noise. On real-camera natural shift (CCT-20),
-KGA served the frozen model across all 45 cells, avoiding the measured degradation of always-adapt
-without issuing any \adapt decisions. These results demonstrate conservative retention in this setting
-and candidate-specific commitment control on synthetic shifts, while showing that selective opportunistic
-routing on unseen natural shifts remains an open empirical challenge.
-
+Test-time adaptation updates models without target labels, but updates can help or harm. We ask when evidence justifies replacing a frozen model with an adapted candidate. K-Bound answers this for a binary population model under an exogenous bound $\beta$ on target calibration residual. Preserving label-free observations, we derive exact feasible intervals for paired population benefit: a strict choice is justified precisely when margin $|M| > \beta$ on disagreement; inside $|M| \le \beta$, no strict choice is uniformly justified. An audit theorem proves no uniformly valid audit on the same observable law can cover a smaller bound at declared confidence. Addressing this under a complementary inductive regime, Knowability-Guided Adaptation (\KGA) serves as an empirical companion, not an implementation of this frontier. Trained on labeled historical outcomes, \KGA predicts observed evaluation-cell benefit, selecting \adapt, \freeze, or \abstain via residual intervals. On cross-fitted CIFAR-10-C, Tent and EATA achieve lower regret than fixed baselines, while SAR favors always-adapt. Across three independent ResNet-18 checkpoints on mixed-sign shifts, KGA achieves lower regret than both fixed policies; compared to an authenticated AETTA recovery rule, leave-one-out KGA achieves lower regret, whereas outcome-disjoint cross-fitting trades point regret for zero observed false adaptations. On camera traps (CCT-20), \KGA retained the frozen model across all 45 cells, avoiding adaptation degradation with no ADAPT decisions. These empirical diagnostics do not establish interval coverage or population-risk protection on unseen natural shifts.

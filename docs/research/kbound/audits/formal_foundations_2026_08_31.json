@@ -2,9 +2,9 @@
   "status": "PASS",
   "build_checked": true,
   "build_ok": true,
-  "declared_theorem_count": 142,
-  "legacy_core_theorem_count": 65,
-  "verified_theorem_count": 142,
+  "declared_theorem_count": 150,
+  "legacy_core_theorem_count": 70,
+  "verified_theorem_count": 150,
   "kernel_axiom_audit": {
     "ok": true,
     "allowed_axioms": [
@@ -334,6 +334,31 @@
         "propext"
       ],
       "KBound.distributional_frontier_maximal": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.populationRadius_nonneg": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.target_mem_populationInterval": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.populationDecision_adapt_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.populationDecision_freeze_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.populationDecision_abstain_of_zero_mem": [
         "Classical.choice",
         "Quot.sound",
         "propext"
@@ -714,6 +739,21 @@
         "Classical.choice",
         "Quot.sound",
         "propext"
+      ],
+      "KBound.historical_one_bit_decoder_iff_fibre_consistent": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.h_ratio_rate_transfer": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "KBound.h_ratio_rate_budget": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
       ]
     },
     "missing_declarations": [],
@@ -726,7 +766,7 @@
   "closure_record": {
     "revision": "measurable-foundations-2026-08-31",
     "date": "2026-08-31",
-    "scope": "Legacy finite/algebraic spine plus general exchangeable residual coverage, filtered Ville/predictable betting, KL/TV finite-product testing, concentration, and measurable target-law frontier. The historical full one-bit/H extension is not closed and is not claimed by the compact paper.",
+    "scope": "Legacy finite/algebraic spine plus general exchangeable residual coverage, filtered Ville/predictable betting, KL/TV finite-product testing, concentration, and measurable target-law frontier. The unrestricted historical orbit-only one-bit/H extension is refuted; corrected fibre-consistency and conditional H-rate statements are mechanized, but prospective empirical provenance remains open.",
     "new_mechanized_modules": [
       "KBound/Probability/MeasureConformal.lean",
       "KBound/Probability/FilteredVille.lean",
@@ -736,7 +776,9 @@
       "KBound/Probability/MeasureSwap.lean",
       "KBound/Probability/MeasureTarget.lean",
       "KBound/Probability/MeasureFrontier.lean",
-      "KBound/Probability/ChannelCounterexample.lean"
+      "KBound/Probability/ChannelCounterexample.lean",
+      "KBound/Probability/HistoricalExtension.lean",
+      "KBound/Population.lean"
     ],
     "foundation_layers": [
       {
@@ -774,13 +816,19 @@
         "status": "PARTIAL_COUNTEREXAMPLE_FOUND",
         "scope": "general measurable label-swap involution, invariant label-free channels, opposite population risks, evidence-definable-class impossibility, an orbit/fibre counterexample, and set-theoretic decoder factorization",
         "limits": "one representative per swap orbit is insufficient without sign consistency on the entire evidence fibre; historical H/ratio-rate extensions are not verified"
+      },
+      {
+        "item": "corrected one-bit decoder and conditional H/ratio-rate bridge",
+        "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
+        "scope": "fibre-consistent Boolean decoding plus conditional propagation of a declared episode-level H ratio through source and target miss budgets",
+        "limits": "the original orbit-only sufficiency claim is refuted; H, exchangeability, and nondegenerate ratio-rate premises are not estimated or inferred from benchmark records"
       }
     ],
     "open_research_frontier": [
       {
         "item": "full historical one-bit channel sufficiency and H/ratio-rate extension",
-        "current": "measurable swap/impossibility proved; orbit-selection sufficiency has an evidence-fibre counterexample",
-        "needed": "a corrected fibre-consistent orientation theorem and separately justified nondegenerate H/ratio-rate model; excluded from the compact paper"
+        "current": "the unrestricted orbit-selection sufficiency statement is refuted by an evidence-fibre counterexample; corrected fibre consistency and a conditional H/ratio-rate bridge are mechanized",
+        "needed": "a separately justified nondegenerate H/ratio-rate model and prospective evidence if the stronger historical population claim is retained; no unrestricted theorem can be claimed"
       }
     ]
   },
@@ -826,16 +874,22 @@
       "status": "PARTIAL_COUNTEREXAMPLE_FOUND",
       "scope": "general measurable label-swap involution, invariant label-free channels, opposite population risks, evidence-definable-class impossibility, an orbit/fibre counterexample, and set-theoretic decoder factorization",
       "limits": "one representative per swap orbit is insufficient without sign consistency on the entire evidence fibre; historical H/ratio-rate extensions are not verified"
+    },
+    {
+      "item": "corrected one-bit decoder and conditional H/ratio-rate bridge",
+      "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
+      "scope": "fibre-consistent Boolean decoding plus conditional propagation of a declared episode-level H ratio through source and target miss budgets",
+      "limits": "the original orbit-only sufficiency claim is refuted; H, exchangeability, and nondegenerate ratio-rate premises are not estimated or inferred from benchmark records"
     }
   ],
   "open_research_frontier": [
     {
       "item": "full historical one-bit channel sufficiency and H/ratio-rate extension",
-      "current": "measurable swap/impossibility proved; orbit-selection sufficiency has an evidence-fibre counterexample",
-      "needed": "a corrected fibre-consistent orientation theorem and separately justified nondegenerate H/ratio-rate model; excluded from the compact paper"
+      "current": "the unrestricted orbit-selection sufficiency statement is refuted by an evidence-fibre counterexample; corrected fibre consistency and a conditional H/ratio-rate bridge are mechanized",
+      "needed": "a separately justified nondegenerate H/ratio-rate model and prospective evidence if the stronger historical population claim is retained; no unrestricted theorem can be claimed"
     }
   ],
   "full_foundations_scope_complete": false,
   "strict_blockers": [],
-  "build_output_tail": "  KBound.OrbitFibreCounterexample.selected w \u2194\n    \u00acKBound.OrbitFibreCounterexample.selected (KBound.OrbitFibreCounterexample.swap w)\ninfo: KBound/TheoremMap.lean:274:0: KBound.OrbitFibreCounterexample.orbit_selection_not_fibre_orientation :\n  (\u2200 (w : KBound.OrbitFibreCounterexample.World),\n      KBound.OrbitFibreCounterexample.selected w \u2192\n        \u00acKBound.OrbitFibreCounterexample.selected (KBound.OrbitFibreCounterexample.swap w)) \u2227\n    \u2203 p q,\n      KBound.OrbitFibreCounterexample.selected p \u2227\n        KBound.OrbitFibreCounterexample.selected q \u2227\n          KBound.OrbitFibreCounterexample.evidence p = KBound.OrbitFibreCounterexample.evidence q \u2227\n            0 < KBound.OrbitFibreCounterexample.benefit p \u2227 KBound.OrbitFibreCounterexample.benefit q < 0\ninfo: KBound/TheoremMap.lean:275:0: KBound.OrbitFibreCounterexample.no_evidence_decoder :\n  \u00ac\u2203 decision,\n      \u2200 (w : KBound.OrbitFibreCounterexample.World),\n        KBound.OrbitFibreCounterexample.selected w \u2192 decision (KBound.OrbitFibreCounterexample.evidence w) = w.2\ninfo: KBound/TheoremMap.lean:276:0: KBound.bool_decoder_iff_constant_on_fibres.{u_1, u_2} {W : Type u_1} {E : Type u_2} (C : Set W) (observable : W \u2192 E)\n  (label : W \u2192 Bool) :\n  (\u2203 decision, \u2200 w \u2208 C, decision (observable w) = label w) \u2194\n    \u2200 u \u2208 C, \u2200 v \u2208 C, observable u = observable v \u2192 label u = label v\nBuild completed successfully (2921 jobs)."
+  "build_output_tail": "      KBound.OrbitFibreCounterexample.selected p \u2227\n        KBound.OrbitFibreCounterexample.selected q \u2227\n          KBound.OrbitFibreCounterexample.evidence p = KBound.OrbitFibreCounterexample.evidence q \u2227\n            0 < KBound.OrbitFibreCounterexample.benefit p \u2227 KBound.OrbitFibreCounterexample.benefit q < 0\ninfo: KBound/TheoremMap.lean:291:0: KBound.OrbitFibreCounterexample.no_evidence_decoder :\n  \u00ac\u2203 decision,\n      \u2200 (w : KBound.OrbitFibreCounterexample.World),\n        KBound.OrbitFibreCounterexample.selected w \u2192 decision (KBound.OrbitFibreCounterexample.evidence w) = w.2\ninfo: KBound/TheoremMap.lean:292:0: KBound.bool_decoder_iff_constant_on_fibres.{u_1, u_2} {W : Type u_1} {E : Type u_2} (C : Set W) (observable : W \u2192 E)\n  (label : W \u2192 Bool) :\n  (\u2203 decision, \u2200 w \u2208 C, decision (observable w) = label w) \u2194\n    \u2200 u \u2208 C, \u2200 v \u2208 C, observable u = observable v \u2192 label u = label v\ninfo: KBound/TheoremMap.lean:293:0: KBound.historical_one_bit_decoder_iff_fibre_consistent.{u_1, u_2} {W : Type u_1} {E : Type u_2} (C : Set W)\n  (observable : W \u2192 E) (label : W \u2192 Bool) :\n  (\u2203 decision, \u2200 w \u2208 C, decision (observable w) = label w) \u2194\n    \u2200 u \u2208 C, \u2200 v \u2208 C, observable u = observable v \u2192 label u = label v\ninfo: KBound/TheoremMap.lean:294:0: KBound.h_ratio_rate_transfer (contract : KBound.HRatioRateContract) : contract.targetMiss \u2264 contract.H * contract.alpha\ninfo: KBound/TheoremMap.lean:295:0: KBound.h_ratio_rate_budget (contract : KBound.HRatioRateContract) (hH : contract.H \u2264 1) :\n  contract.targetMiss \u2264 contract.alpha\nBuild completed successfully (3522 jobs)."
 }

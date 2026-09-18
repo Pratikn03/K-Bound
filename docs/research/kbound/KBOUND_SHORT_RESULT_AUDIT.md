@@ -140,7 +140,7 @@ are absent. These values remain historical diagnostics pending a current-policy 
 
 ## Unresolved Evidence Gaps
 
-- No clean held-out natural single-dataset CI-robust beats-both result.
+- No clean held-out natural single-dataset CI-robust dual-baseline regret dominance result.
 - No completed physical-camera result.
 - The promoted PACS panel lacks archived per-cell benefit estimates and residuals for full gate
   replay. A one-domain, ten-cell MPS smoke run validates the new replay schema only.

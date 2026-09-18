@@ -22,7 +22,7 @@ ORIGIN = "https://github.com/kebaek/Agreement-on-the-line.git"
 URL = f"https://raw.githubusercontent.com/kebaek/Agreement-on-the-line/{COMMIT}/agreement_trajectory.ipynb"
 FIELDS = {"model_ids", "checkpoint_sha256", "clean_sample_ids", "target_sample_ids",
           "clean_predictions", "target_predictions", "clean_accuracies", "class_count"}
-SUPPORTED_RUNTIME = {"python": "3.12.12", "numpy": "2.0.2", "scipy": "1.13.1", "statsmodels": "0.14.6"}
+SUPPORTED_RUNTIME = {"python": "3.12.12", "numpy": "2.4.4", "scipy": "1.13.1", "statsmodels": "0.14.6"}
 
 
 def _runtime():

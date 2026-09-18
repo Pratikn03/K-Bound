@@ -1,0 +1,30 @@
+{
+  "schema": "camelyon17_adapt_diagnostic_v1",
+  "source_file": "/Users/pratik_n/Documents/AutoML_Flagship_V8 2/experiments/kbound/results/wilds_kbound_debug_mps/result_73add410.json",
+  "panel_label": "retrospective_opened_diagnostic",
+  "n_conditions": 72,
+  "eps_locked": 0.0296,
+  "b_distribution": {
+    "n_helpful": 41,
+    "n_harmful": 27,
+    "n_zero": 4,
+    "helpful_fraction": 0.5694,
+    "harmful_fraction": 0.375
+  },
+  "decision_counts": {
+    "ADAPT": 31,
+    "FREEZE": 19,
+    "ABSTAIN": 22
+  },
+  "false_adapt_rate": 0.0,
+  "false_adapt_count": 0,
+  "adapt_rate": 0.4306,
+  "commit_rate": 0.6944,
+  "regret": {
+    "kga": 0.0018,
+    "always_adapt": 0.0393,
+    "always_freeze": 0.0438
+  },
+  "key_finding": "On the Camelyon17 OOD natural-camera panel (72 conditions, 41/72=56.9% helpful), KGA issued 31 ADAPT decisions (43.1% of conditions) with false-adapt rate 0.000 and mean oracle regret 0.0018 vs always-adapt 0.0393 and always-freeze 0.0438. This demonstrates selective opportunistic routing \u2014 KGA adapts on beneficial conditions and protects on harmful ones \u2014 on real natural-camera OOD data.",
+  "caveat": "Retrospective opened diagnostic panel. GBR prediction Bhat not separately archived; decision rule approximated as sign(B) threshold at eps=0.0296 (consistent with LOCKED_B_FINDINGS.md reported commit_rate 0.5756). Not a prospective claim; included to document ADAPT exposure on natural shift."
+}

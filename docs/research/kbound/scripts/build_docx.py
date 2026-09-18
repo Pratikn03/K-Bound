@@ -35,6 +35,8 @@ FIGURE_ALTS = (
     "K-Bound decision flow from shadow candidate generation to adapt, freeze, or abstain.",
     "Population strict-commitment frontier over observable margin M and declared calibration-residual bound beta.",
     "KGA interval decisions for measured cell benefit; empirical residual coverage is not population-risk coverage.",
+    "CIFAR-10-C stress grid mixing-ratio Pareto front comparing mean regret vs harmful fraction for Tent.",
+    "Sequential tracking under non-stationary online distribution shift showing KGA safety fallback during severe corruption windows.",
 )
 
 INPUT_PATTERN = re.compile(r"\\(?:input|include)\s*\{([^{}]+)\}")
@@ -1314,8 +1316,8 @@ def validate_docx(
     required_value_counts: Mapping[str, int] | None = None,
 ) -> None:
     doc = Document(path)
-    if len(doc.inline_shapes) != 3:
-        raise RuntimeError(f"expected 3 embedded figures, found {len(doc.inline_shapes)}")
+    if len(doc.inline_shapes) != 5:
+        raise RuntimeError(f"expected 5 embedded figures, found {len(doc.inline_shapes)}")
     if len(doc.tables) < 13:
         raise RuntimeError(f"expected at least 13 manuscript tables, found {len(doc.tables)}")
     with ZipFile(path) as archive:

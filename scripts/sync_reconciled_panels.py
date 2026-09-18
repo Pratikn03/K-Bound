@@ -882,14 +882,14 @@ def _sync_table(
         if candidate == "tent":
             row["historical_cluster_resampling"] = _normalized_historical_cluster()
     tracks["cifar10c_tent"]["verdict"] = (
-        "Current exact-rank point estimate beats both fixed policies. In a retrospective "
+        "Current exact-rank point estimate has lower regret than both fixed policies. In a retrospective "
         "current-policy sensitivity over six corruption families, both ordinary family-bootstrap "
         "intervals are positive; however, p-values from retrospective Holm adjustment over the "
         "six prospectively named contrasts are 0.09375, so no cluster-robust, confirmatory, or "
         "independent-checkpoint win is claimed."
     )
     tracks["cifar10c_eata"]["verdict"] = (
-        "Current exact-rank point estimate beats both fixed policies, but the ordinary adapt-side "
+        "Current exact-rank point estimate has lower regret than both fixed policies, but the ordinary adapt-side "
         "family-bootstrap interval crosses zero and the retrospective Holm analysis over the "
         "six prospectively named contrasts fails; no cluster-robust or independent-checkpoint "
         "claim is made."
@@ -1406,11 +1406,11 @@ def _sync_uniform_verdicts(
             score,
             unit=f"{len(cifar['seeds'])} run seeds x {score['n'] // len(cifar['seeds'])} cells",
             verdict=(
-                "current-policy point beats both; retrospective six-family sensitivity only; "
+                "current-policy point has lower regret than both fixed policies; retrospective six-family sensitivity only; "
                 "retrospective six-named-contrast Holm gate fails"
                 if candidate == "tent"
                 else (
-                    "current-policy point beats both; adapt-side family interval crosses zero; "
+                    "current-policy point has lower regret than both fixed policies; adapt-side family interval crosses zero; "
                     "retrospective six-named-contrast Holm gate fails"
                     if candidate == "eata"
                     else "negative arm: current-policy KGA has higher regret than always-adapt"
