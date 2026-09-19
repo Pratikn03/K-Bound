@@ -136,12 +136,35 @@ experiments/kbound/so2sat/**/*.zip
 !experiments/kbound/results/
 experiments/kbound/results/*
 !experiments/kbound/results/*.json
+experiments/kbound/results/task*.json
+experiments/kbound/results/task1_natural_preflight_final.json
+experiments/kbound/results/task2_population_panel_rerun_*.json
 !experiments/kbound/results/*.csv
 !experiments/kbound/results/*.md
 !experiments/kbound/results/**/
 !experiments/kbound/results/**/*.json
 !experiments/kbound/results/**/*.csv
 !experiments/kbound/results/**/*.md
+# Sept 2026 machine-local exploration run artifacts (not promoted publication results):
+# decision-baseline probes, local fast/SAR/task runs, head-to-head explorations, etc.
+experiments/kbound/results/decision_baselines_*/
+experiments/kbound/results/local_*/
+experiments/kbound/results/task*/
+experiments/kbound/results/synchronized_*/
+experiments/kbound/results/mixed_headtohead_*/
+experiments/kbound/results/synthetic_*/
+experiments/kbound/results/cifar_paired_array_audit*/
+experiments/kbound/results/imagenetc_baseline_smoke_*/
+experiments/kbound/results/imagenetr_kbound_smoke/
+experiments/kbound/results/imagenetc_sar_bncorrected_v2*/
+experiments/kbound/results/imagenetc_sar_official_control_v1/
+experiments/kbound/results/domainnet_setup_v1/
+experiments/kbound/results/domainnet_confirmatory.json
+experiments/kbound/results/sar_bncorrected_*/
+experiments/kbound/results/per_condition_*.json
+experiments/kbound/results/multi_architecture_probe_report.json
+experiments/kbound/results/result_manifest.json
+experiments/kbound/results/official_repro_v1/
 experiments/kbound/results/**/*.pt
 experiments/kbound/results/**/*.log
 experiments/kbound/**/._*
@@ -249,3 +272,54 @@ docs/research/kbound/**/*.render.png
 
 # kbound_repro toolkit: keep source/schemas/tests, drop its local caches
 docs/research/kbound/kbound_repro/**/__pycache__/
+
+# ===== September 2026 hygiene pass — machine-local run artifacts =====
+
+# External TTA comparison runner runs (POEM, AETTA, TTA-Line official ports)
+external/aetta_official/
+external/poem_official/
+external/ttaline_official/
+external/ttaline_official_incomplete_20260911/
+
+# AETTA native run outputs
+AETTA/native_runs/
+
+# So2Sat v2 prospective runner scratch scripts (not part of released protocol)
+experiments/kbound/so2sat/prospective_runner_v2.py
+experiments/kbound/so2sat/prospective_v2.py
+experiments/kbound/so2sat/v2_target.py
+
+# Synthetic population diagnostic scratch script
+experiments/kbound/synthetic_population_diagnostic.py
+
+# Native data-root binding and runner receipt directories (machine-local provenance)
+/native_data_root_binding_20260910/
+/native_runner_receipt_20260910_v3/
+
+# Root output scratch directory
+/output/
+
+# Machine-local requirements lock files (platform-specific; not portable release locks)
+/requirements-api-py311-linux.lock.txt
+/requirements-ci-py312-linux.lock.txt
+/requirements-ci.txt
+/requirements-release-macos-arm64.lock.txt
+/requirements-release.txt
+
+# poem_aetta __pycache__
+experiments/kbound/poem_aetta/__pycache__/
+
+# Stray duplicate result manifest (space in filename — excluded by pattern override)
+experiments/kbound/results/cifar101_multiseed_v1/seed0/result_manifest?2.json
+
+# Final override: Sept 2026 task-run JSON outputs at results root.
+# These must appear AFTER the !**/*.json whitelist rules above to take effect.
+experiments/kbound/results/task*.json
+experiments/kbound/results/task1_natural_preflight_final.json
+experiments/kbound/results/task2_population_panel_rerun_*.json
+experiments/kbound/results/task3_official_common_panel.json
+experiments/kbound/results/task3_official_common_panel_20260911.json
+experiments/kbound/results/per_condition_*.json
+experiments/kbound/results/multi_architecture_probe_report.json
+experiments/kbound/results/result_manifest.json
+experiments/kbound/results/domainnet_confirmatory.json

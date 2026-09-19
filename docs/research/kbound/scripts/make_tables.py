@@ -239,6 +239,10 @@ hh = _headtohead()
 if hh:
     if hh.get("policy_synchronized") is False or hh.get("numeric_release_eligible") is False:
         M["HeadToHeadVerdict"] = "HISTORICAL ONLY"
+        # Document that these macros are not used in the active manuscript.
+        # They are retained for audit continuity; the standalone comparison table
+        # they backed was removed when the comparison moved to supplement narrative.
+        # Confirmed unused in kbound_submission_body.tex, supplement, TMLR driver (2026-09-19).
         for macro in (
             "HeadToHeadKga",
             "HeadToHeadAdapt",
