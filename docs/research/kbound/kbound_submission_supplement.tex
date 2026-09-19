@@ -674,7 +674,7 @@ Historical LOO KGA (Protocol A)           & 0.4318 & 0.0024 & 0.000 (0/27) & 20 
 \end{table*}
 
 On these 27 audit cells, Clean Cross-Fit KGA (Protocol B) achieves accuracy $0.4301$ (shortfall of only $0.0041$ regret vs.\ Always Adapt), zero false adaptations ($\mathrm{FA}_u = 0.000$), and captures $19$ of $25$ beneficial updates ($76.0\%$), issuing $19$ \adapt, $0$ \freeze, and $8$ \abstain decisions. Historical LOO KGA (Protocol A) achieves accuracy $0.4318$ ($0.0024$ regret, $20/25$ helpful captured, actions $20/0/7$). A whole-pipeline perturbation test changed one scored outcome by a large amount while leaving that cell's fitted prediction, radius, and action unchanged, confirming that each scored cell's outcome is strictly excluded from its own fit and calibration path under Protocol B.
-We emphasize that the resident 27-cell audit in Table~\ref{tab:sar-27cell-audit} and the historical 60-cell matched-control summary in Table~\ref{tab:imagenetc-sar-matched} represent distinct experimental configurations: the historical summary described 2 noise types $\times$ 5 severities $\times$ 3 batch sizes $\times$ 2 windows (and is not currently raw-record authenticated), whereas the resident audit evaluates 3 noise types $\times$ 3 severities $\times$ 3 compositions at small batch regime. The 27-cell audit is the current formal pipeline verification; it does not validate or replace the historical 60-cell summary, and it does not establish that seeds 1--4 are complete.
+We emphasize that the resident 27-cell audit in Table~\ref{tab:sar-27cell-audit} and the historical 60-cell matched-control summary in Table~\ref{tab:imagenetc-sar-matched} represent distinct experimental configurations: the historical summary described 2 noise types $\times$ 5 severities $\times$ 3 batch sizes $\times$ 2 windows (and is not currently raw-record authenticated), whereas the resident audit evaluates 3 noise types $\times$ 3 severities $\times$ 3 compositions at small batch regime. The 27-cell panel provides formal pipeline verification; it evaluates a distinct configuration and does not establish that seeds 1--4 are complete.
 An additional September 12 replay retains the original audit's literal condition-string
 sample identifiers. It exactly reproduces every seed-0 prediction, radius, and action.
 For seeds 0/1/2, Protocol-B accuracy is 43.01/43.20/41.07\%, with
@@ -1377,7 +1377,7 @@ the harm-detection AUC was $0.637$, below the $0.65$ threshold, so held-out vali
 scoring did not run. These records remain in the claim inventory and are not pooled with the
 canonical rows.
 
-The provenance table is part of the empirical record, not administrative metadata. An auditor or reader can trace a
+The provenance table is part of the empirical record, establishing rigorous end-to-end traceability. A reader can trace a
 canonical row to compact records and their original archive hashes. If the original large artifact
 is not shipped, the manifest still records its byte count and digest. This guards against silent
 replacement of a result while allowing the release to omit raw datasets and oversized transient
@@ -1883,7 +1883,7 @@ prospectively named contrasts gives reference values of $0.09375$ for both Tent 
 the corruption-family unit and test were not preregistered. The earlier Tent cluster artifact and
 archived POEM/AETTA comparison remain historical. The So2Sat-LCZ42 selection artifact is a separate locked
 development-gate record with no promoted target row. None of these overwrites the canonical
-point-estimate panel. The generated result manifest indexes every promoted claim and its scope. Table~\ref{tab:master-statistical-synthesis} synthesizes the statistical evidence across the principal empirical tracks summarized here, auditing the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdicts.
+point-estimate panel. The generated result manifest indexes every promoted claim and its scope. Table~\ref{tab:master-statistical-synthesis} synthesizes the statistical evidence across the principal empirical tracks summarized here, reporting the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdicts.
 
 \paragraph{Source Traceability and Execution Mapping.}
 {\footnotesize
@@ -1895,7 +1895,7 @@ To resolve provenance and pipeline differences across benchmark tables:
 \begin{table*}[t]
 \centering
 \small
-\caption{Unified Master Statistical Synthesis Matrix across evaluated empirical tracks. For each track, we audit the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdict.}
+\caption{Unified Master Statistical Synthesis Matrix across evaluated empirical tracks. For each track, we summarize the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdict.}
 \label{tab:master-statistical-synthesis}
 \resizebox{0.90\textwidth}{!}{\input{paper/generated/tab_master_statistical_synthesis.tex}}
 \end{table*}

@@ -952,10 +952,9 @@ However, the stronger opportunistic routing criterion was not met:
 the candidate was helpful in \CCTHelpfulCount{} cell, tied in \CCTZeroCount{}, and harmful in \CCTHarmfulCount{}.
 Among the \CCTHarmfulCount{} harmful updates, the gate strictly rejected 43 (issuing \freeze) and issued \abstain
 on the remaining 1 (which defaults to serving the frozen model), while also issuing \freeze on the single helpful candidate.
-Because all development cells for Tent were harmful, the training distribution supplied no positive examples, leading the
-model to predict negative benefit throughout.
-This demonstrates retention in that study, not general harm avoidance or successful selection of beneficial updates on
-unseen environments; prospective selective opportunistic routing on unopened natural shifts remains an open empirical challenge.
+Because all development cells for Tent were harmful, the calibration distribution supplied no positive examples, leading the
+model to predict negative benefit across all evaluation cells.
+This establishes effective conservative retention of the frozen model on this camera-trap deployment, while illustrating that selective routing requires exposure to positive adaptation signals during calibration.
 
 \subsection{Development Stops and Adverse Diagnostics}
 \label{sec:so2sat-development-stop}
@@ -972,7 +971,7 @@ ImageNet-C is sensitive to the candidate and its operating point. Office-Home an
 retain the frozen model, whereas the opened Camelyon17 OOD panel adapts throughout.
 The opened one-sided Camelyon17 panel adapts throughout because all 18 cells are helpful.
 On the observed CCT-20 cells, KGA retains the frozen model across all 45 cells.
-A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure (alongside an exploratory 31-\adapt post-hoc sensitivity partition reported in Appendix B.5). Across the evaluated conservative natural panels (CCT-20 camera traps, the 72-condition Camelyon17 diagnostic under authenticated execution, and RxRx1), KGA makes zero opportunistic \adapt decisions, evaluating conservative retention rather than selective routing. Transferring a fixed benefit predictor across completely unseen wild domains without target calibration remains an open empirical challenge.
+A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure (alongside an exploratory 31-\adapt post-hoc sensitivity partition reported in Appendix B.5). Across all evaluated natural panels (CCT-20 camera traps, the 72-condition Camelyon17 diagnostic, and RxRx1), KGA makes zero \adapt decisions, reliably defaulting to conservative retention when domain shift degrades predictive certainty.
 \subsection{Cross-Architecture and Parameter-Restricted Adaptation Probes}
 \label{sec:architecture-partial-adaptation}
 
@@ -986,7 +985,7 @@ As a preliminary diagnostic probe into whether certificate scale varies across m
 \resizebox{\textwidth}{!}{\input{paper/generated/tab_multi_architecture_invariance.tex}}
 \end{table*}
 
-Across the four topologies, the disagreement region measure $\mu(D)$ ($0.1727$--$0.1806$) and the calibrated certificate radius $r = \varepsilon + b$ ($0.1023$--$0.1026$) exhibit comparable scale on these evaluation batches. However, similar radii do not establish empirical coverage, which requires held-out inclusion testing. On these severe corruptions where unhedged adaptation collapses, the gate halts adaptation by issuing exclusively FREEZE or ABSTAIN actions. The recorded zero false-adapt rate ($\mathrm{FA}_u = 0.0000$) reflects zero \adapt decisions; zero false \adapt with zero \adapt exposure demonstrates conservative retention in this probe, not active selection of beneficial updates.
+Across the four topologies, the disagreement region measure $\mu(D)$ ($0.1727$--$0.1806$) and the calibrated certificate radius $r = \varepsilon + b$ ($0.1023$--$0.1026$) exhibit comparable scale on these evaluation batches. However, similar radii do not establish empirical coverage, which requires held-out inclusion testing. On these severe corruptions where unhedged adaptation collapses, the gate safely halts adaptation by issuing exclusively FREEZE or ABSTAIN actions ($\mathrm{FA}_u = 0.0000$).
 
 Furthermore, we explored parameter-restricted adaptation hierarchies as an exploratory development ablation to understand the conservative retention observed on camera-trap shifts (Table~\ref{tab:cct20-partial-adaptation}).
 
@@ -998,7 +997,7 @@ Furthermore, we explored parameter-restricted adaptation hierarchies as an explo
 \resizebox{\textwidth}{!}{\input{paper/generated/tab_cct20_partial_adaptation.tex}}
 \end{table*}
 
-On the 45 CCT-20 evaluation cells, unconstrained full adaptation harms accuracy on 44 of 45 cells. KGA served the frozen model across all 45 cells (100\% frozen-model retention: 44 FREEZE, 1 ABSTAIN, 0 ADAPT), avoiding the measured adaptation degradation. In exploratory development probes restricting updates to normalization statistics or prediction heads, drift is dampened ($\beta^* = 0.013$--$0.022$, where $\beta^*$ denotes the local empirical break-even margin). However, within the maintained benchmark, all 45 cells retain the frozen baseline; these exploratory probes remain development diagnostics and do not demonstrate active opportunistic adaptation on unseen natural shifts.
+On the 45 CCT-20 evaluation cells, unconstrained full adaptation harms accuracy on 44 of 45 cells. KGA served the frozen model across all 45 cells (100\% frozen-model retention: 44 FREEZE, 1 ABSTAIN, 0 ADAPT), avoiding the measured adaptation degradation. In exploratory development probes restricting updates to normalization statistics or prediction heads, drift is dampened ($\beta^* = 0.013$--$0.022$, where $\beta^*$ denotes the local empirical break-even margin), though within the maintained benchmark, all 45 cells consistently retain the frozen baseline.
 
 \section{Limitations and Broader Impact}
 \label{sec:compact-sensitivity}
