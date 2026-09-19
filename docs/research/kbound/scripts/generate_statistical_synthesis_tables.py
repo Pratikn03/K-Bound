@@ -173,9 +173,9 @@ def generate_master_synthesis_table() -> None:
     ]
 
     panel_b = [
-        ("Independent Models (Mixed)", "3 Checkpoints (36 Cells)", "108", "+0.0078 to +0.0131", "+0.1259 to +0.1403", "Diagnostic; Point-regret ordering replication; no model population inference"),
+        ("Independent Models (Mixed, LOO)", "3 Checkpoints (36 Cells)", "108", "+0.0078 to +0.0131", "+0.1259 to +0.1403", "Diagnostic; Point-regret ordering replication; no model population inference"),
         ("AETTA Baseline (LOO)", "3 Checkpoints (36 Cells)", "108", r"\multicolumn{2}{c}{\textbf{Vs AETTA Rule:} +0.09 to +0.28 pp}", "", r"Diagnostic; LOO KGA (within-model calibration on evaluated checkpoint) achieves lower point regret (+0.09 to +0.28 pp) and $\le 1$ observed false adaptation per model ($\mathrm{FA}_u = 0.0000$--$0.0278$ vs $4$--$5$ for AETTA, $\mathrm{FA}_u = 0.1111$--$0.1389$)"),
-        ("AETTA Baseline (B6 Disjoint)", "3 Checkpoints (36 Cells)", "108", r"\multicolumn{2}{c}{\textbf{Vs AETTA Rule:} -0.05 to -0.78 pp}", "", "Diagnostic; B6 achieves lower regret than both fixed policies but has higher point regret (-0.05 to -0.78 pp vs AETTA) with 0 observed false adaptations across all models (vs 4--5 observed for AETTA)"),
+        ("AETTA Baseline (B6 Disjoint)", "3 Checkpoints (36 Cells)", "108", r"\multicolumn{2}{c}{\textbf{Vs AETTA Rule:} -0.78 to -0.05 pp}", "", "Diagnostic; B6 achieves lower regret than both fixed policies but has higher point regret (-0.78 to -0.05 pp vs AETTA) with 0 observed false adaptations across all models (vs 4--5 observed for AETTA)"),
         ("ImageNet-C (Tent)", "Condition-Seed Cell", "135", "+0.0052 \\footnotesize{[0.0019, 0.0085]}", "+0.0006 \\footnotesize{[0.0000, 0.0018]}", r"Diagnostic; 1 ADAPT, 134 ABSTAIN; diagnostic gain"),
         ("Office-Home Primary", "Domain-Seed Unit", "35", "+0.0310 \\footnotesize{[0.0031, 0.0623]}", "0.0000 \\footnotesize{[0.0000, 0.0000]}", "Diagnostic; Abstention avoids measured adaptation degradation"),
         ("PACS Aggregate", "Domain-Seed Unit", "12", "-0.0255 \\footnotesize{[-0.0390, -0.0120]}", "+0.0015 \\footnotesize{[-0.0080, +0.0110]}", r"Diagnostic; Small-$n$ exploratory baseline; adapt favored"),
@@ -188,7 +188,7 @@ def generate_master_synthesis_table() -> None:
         r"\toprule",
         r"\textbf{Benchmark Track} & \textbf{Evaluation Unit} & $n$ & \textbf{Vs Always Adapt}$^\dagger$ & \textbf{Vs Always Freeze}$^\dagger$ \\",
         r"\midrule",
-        r"\multicolumn{5}{@{}l}{\textbf{Panel A: Primary Controlled Benchmarks and Pre-Registered Safety Endpoints}} \\",
+        r"\multicolumn{5}{@{}l}{\textbf{Panel A: Primary Controlled Benchmarks and Safety Endpoints}} \\",
         r"\midrule",
     ]
     for r in panel_a:
@@ -209,7 +209,7 @@ def generate_master_synthesis_table() -> None:
 
     lines.extend([
         r"\bottomrule",
-        r"\multicolumn{5}{@{}p{\textwidth}@{}}{\footnotesize $^\dagger$Nominal 95\% bootstrap CIs for CIFAR-10-C (clustered by 6 corruption families), ImageNet-C, Office-Home (seed bootstrap), and PACS; for CCT-20, intervals report the two-comparator nominal 97.5\% CIs while the safe-utility non-inferiority check establishes $L > -0.0050$ vs.\ freeze. For the AETTA baseline, columns report KGA regret contrasts against the authenticated native AETTA recovery rule: LOO (within-model calibration on evaluated checkpoint) achieves lower regret (+0.09 to +0.28 pp) with $\le 1$ observed false adaptation per model; B6 cross-fitting achieves lower regret than both fixed policies but has higher point regret (-0.05 to -0.78 pp vs AETTA) with zero observed false adaptations across all models vs 4--5 observed for AETTA. Positive values favor KGA.} \\",
+        r"\multicolumn{5}{@{}p{\textwidth}@{}}{\footnotesize $^\dagger$Nominal 95\% bootstrap CIs for CIFAR-10-C (clustered by 6 corruption families), ImageNet-C, Office-Home (seed bootstrap), and PACS; for CCT-20, intervals report the two-comparator nominal 97.5\% CIs while the safe-utility non-inferiority check establishes $L > -0.0050$ vs.\ freeze. For the AETTA baseline, columns report KGA regret contrasts against the authenticated native AETTA recovery rule: LOO (within-model calibration on evaluated checkpoint) achieves lower regret (+0.09 to +0.28 pp) with $\le 1$ observed false adaptation per model; B6 cross-fitting achieves lower regret than both fixed policies but has higher point regret (-0.78 to -0.05 pp vs AETTA) with zero observed false adaptations across all models vs 4--5 observed for AETTA. Positive values favor KGA.} \\",
         r"\end{tabular*}",
         "",
     ])

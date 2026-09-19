@@ -16,8 +16,8 @@
       "scope": "third-party passlib import used only by API authentication tests"
     }
   ],
-  "classified_count": 140,
-  "excluded_count": 8,
+  "classified_count": 210,
+  "excluded_count": 9,
   "excluded_paths": [
     {
       "path": "AETTA/tests/test_dnn_state_initialization.py",
@@ -50,6 +50,10 @@
     {
       "path": "tests/test_so2sat_numbers_builder.py",
       "reason": "requires_explicit_protected_so2sat_authority"
+    },
+    {
+      "path": "tests/test_so2sat_prospective_v2.py",
+      "reason": "requires_explicit_protected_so2sat_authority"
     }
   ],
   "excluded_validator_count": 3,
@@ -67,13 +71,14 @@
       "reason": "requires_run_specific_input"
     }
   ],
-  "execution_status": "NOT_RUN",
+  "execution_status": "FAIL",
+  "failure": "source differs from the pinned Git blob: docs/research/kbound/edge/tests/test_real_reporting.py",
   "immutable_hook_configuration": {
     "config_path": ".pre-commit-config.yaml",
     "execution": "NOT_RUN",
     "status": "NOT_RUN"
   },
-  "inventory_sha256": "80b08af7dafd06fb45fdd9f6d68082f2171835d570ffcb82fed12a295443c368",
+  "inventory_sha256": "ea4127c581cdd0c3b949d750ce78a90987c0a3d4e0d821eb27ebfb241a2369e1",
   "private_path_scan": {
     "scope_roots": [
       "deploy/api",
@@ -85,7 +90,7 @@
     "status": "NOT_RUN"
   },
   "protected_so2sat_authorized": false,
-  "pytest_count": 132,
+  "pytest_count": 201,
   "pytest_paths": [
     "docs/research/kbound/dashboard/tests/test_build_dashboard_snapshot.py",
     "docs/research/kbound/edge/tests/test_candidate_isolation.py",
@@ -134,8 +139,14 @@
     "docs/research/multiclass_vector_capacity/formal/tests/test_export_inventory.py",
     "docs/research/multiclass_vector_capacity/tests/test_exact_oracle.py",
     "docs/research/multiclass_vector_capacity/tests/test_statement_bindings.py",
+    "tests/test_aetta_native_estimator.py",
+    "tests/test_aetta_real_image_executor.py",
+    "tests/test_aline_native_estimator.py",
+    "tests/test_aline_source_contract.py",
+    "tests/test_anonymous_supplement.py",
     "tests/test_api_payloads.py",
     "tests/test_api_production_security.py",
+    "tests/test_archived_authorities.py",
     "tests/test_assumption_reports_current.py",
     "tests/test_assumptions.py",
     "tests/test_audit_gate_decision_rule_e2e.py",
@@ -143,43 +154,66 @@
     "tests/test_camelyon_imagenetr_runner_integrity.py",
     "tests/test_camelyon_protocol_f.py",
     "tests/test_canonical_label_semantics.py",
+    "tests/test_canonical_release_live_bindings.py",
     "tests/test_cct20_end_to_end_runners.py",
     "tests/test_cct20_gate_execution.py",
     "tests/test_cct20_manuscript_claim_validation.py",
+    "tests/test_cct20_prospective_bridge.py",
     "tests/test_cct20_prospective_pipeline.py",
+    "tests/test_cct20_public_bundle.py",
     "tests/test_cct20_release_builder.py",
     "tests/test_certificate_drift_guard.py",
+    "tests/test_ci_action_pins.py",
+    "tests/test_cifar_current_arithmetic.py",
+    "tests/test_clean_imagenet_labels.py",
     "tests/test_comparator_selection_from_validation_only.py",
+    "tests/test_controlled_grid_crossfit.py",
     "tests/test_current_policy_cluster_inference.py",
     "tests/test_distributed_and_async_gateway.py",
+    "tests/test_docker_release_contract.py",
     "tests/test_ensemble_inference_label.py",
     "tests/test_exact_confirmation_pipeline.py",
+    "tests/test_external_repro_verifier.py",
     "tests/test_gate_p_and_scope_guard.py",
+    "tests/test_hierarchical_policy.py",
     "tests/test_imagenetr_protocol_d.py",
     "tests/test_independent_checkpoint_audit.py",
     "tests/test_iwildcam_router_nonpromotable_guard.py",
     "tests/test_kbound_bibliography.py",
     "tests/test_kbound_build_flags.py",
+    "tests/test_kbound_current_pdf_publication.py",
     "tests/test_kbound_current_policy_bindings.py",
     "tests/test_kbound_dashboard_metadata.py",
+    "tests/test_kbound_decide_small_n.py",
+    "tests/test_kbound_decision_input_hardening.py",
     "tests/test_kbound_estimand_inference_wording.py",
     "tests/test_kbound_formal_audit.py",
+    "tests/test_kbound_four_artifact_build.py",
     "tests/test_kbound_interval_diagnostics.py",
+    "tests/test_kbound_manuscript_authority_gaps.py",
     "tests/test_kbound_metric_display_tables.py",
     "tests/test_kbound_narrative_revision.py",
     "tests/test_kbound_pdf_build_isolation.py",
+    "tests/test_kbound_split_pdf_contract.py",
     "tests/test_kbound_theory_scope.py",
     "tests/test_kga_api_routes.py",
     "tests/test_kga_benefit_estimator.py",
     "tests/test_kga_canonical_rule.py",
+    "tests/test_kga_distribution_dependencies.py",
     "tests/test_kga_experiment_contract.py",
     "tests/test_kga_frontier_api.py",
     "tests/test_kga_masked_inputs.py",
     "tests/test_kga_package.py",
+    "tests/test_kga_population_transfer.py",
     "tests/test_kga_routing.py",
     "tests/test_kga_unavailable_api.py",
     "tests/test_kga_unavailable_runtime.py",
+    "tests/test_legacy_publication_archive.py",
+    "tests/test_live_publication_runner_guidance.py",
+    "tests/test_maintained_wrapper_fail_closed.py",
+    "tests/test_manuscript_calibration_scope.py",
     "tests/test_manuscript_claim_consistency.py",
+    "tests/test_manuscript_storage_boundary.py",
     "tests/test_model_governance.py",
     "tests/test_multiseed_natural_extraction_lineage.py",
     "tests/test_multiseed_natural_forest_lineage.py",
@@ -191,37 +225,77 @@
     "tests/test_no_retroactive_confirmatory_language.py",
     "tests/test_no_test_selected_comparator.py",
     "tests/test_no_test_selected_rga_plus.py",
+    "tests/test_official_baseline_audit_cli.py",
+    "tests/test_official_baseline_audit_cli_witness.py",
     "tests/test_official_baseline_provenance.py",
+    "tests/test_official_baseline_runbook_integration.py",
+    "tests/test_official_headtohead_outcome_exclusion.py",
+    "tests/test_official_stream_integrity.py",
     "tests/test_one_radius_rule.py",
     "tests/test_pacs_replay_artifact.py",
+    "tests/test_pdf_release_fail_closed.py",
+    "tests/test_poem_authenticated_dependency.py",
+    "tests/test_poem_cpu_stage_contract.py",
+    "tests/test_poem_imagenetc_runbook.py",
+    "tests/test_poem_native_cpu_seam.py",
+    "tests/test_poem_official_entrypoint.py",
+    "tests/test_poem_real_image_executor.py",
     "tests/test_polarity_probe_diagnostic_only.py",
+    "tests/test_population_panel_runner.py",
+    "tests/test_population_transfer_integration.py",
     "tests/test_positive_transfer_protocol_lock.py",
     "tests/test_production_gateway.py",
     "tests/test_production_release_hygiene.py",
+    "tests/test_protocol_f_rank_boundary.py",
+    "tests/test_public_ledger_sync.py",
+    "tests/test_public_result_manifest.py",
+    "tests/test_python_environment_lock.py",
     "tests/test_reconcile_no_implicit_cleanup.py",
+    "tests/test_release_checksum_producer.py",
     "tests/test_release_checksum_verifier.py",
+    "tests/test_release_formal_audit_invocation.py",
+    "tests/test_release_manuscript_discovery.py",
+    "tests/test_release_privacy.py",
     "tests/test_release_source_seal.py",
+    "tests/test_release_toolchain_lock.py",
     "tests/test_remaining_wilds_runner_integrity.py",
+    "tests/test_repository_verification_runner.py",
     "tests/test_reproducibility_hygiene.py",
     "tests/test_research_naming.py",
+    "tests/test_retired_kbound_surfaces.py",
     "tests/test_rxrx1_9plus_launcher.py",
+    "tests/test_rxrx1_supervisor_execution.py",
+    "tests/test_sar_final_block_batch_stats.py",
+    "tests/test_sar_runbook_exit_status.py",
     "tests/test_smoke_trichotomy.py",
     "tests/test_so2sat_development_selection.py",
     "tests/test_so2sat_gate.py",
+    "tests/test_so2sat_import_boundaries.py",
     "tests/test_so2sat_integrity_receipts.py",
+    "tests/test_so2sat_label_firewall.py",
     "tests/test_so2sat_prospective_protocol.py",
+    "tests/test_so2sat_prospective_v2_runner.py",
     "tests/test_so2sat_source_acceptance.py",
     "tests/test_so2sat_source_preflight.py",
     "tests/test_so2sat_source_training.py",
     "tests/test_so2sat_target_boundary.py",
+    "tests/test_so2sat_v2_target.py",
+    "tests/test_stale_publication_build_archive.py",
+    "tests/test_storage_refresh_public_boundary.py",
     "tests/test_target_label_light_probe.py",
+    "tests/test_task2_research_closure.py",
+    "tests/test_task3_common_analysis.py",
+    "tests/test_task3_common_scoring.py",
+    "tests/test_task3_image_panel.py",
+    "tests/test_task3_native_bn.py",
+    "tests/test_task3_preflight.py",
     "tests/test_tta_protocol_semantics.py",
     "tests/test_validation_frozen_rga_plus.py",
     "tests/test_wilds_multicandidate_route_hardening.py",
     "tests/test_wilds_run_integrity.py"
   ],
   "pytest_process_coverage_status": "PLANNED_COMPLETE_EXACTLY_ONCE",
-  "pytest_process_group_count": 132,
+  "pytest_process_group_count": 201,
   "pytest_process_groups": [
     {
       "group_id": "pytest-module-0001-b2e595a129db5775",
@@ -553,595 +627,1078 @@
       ]
     },
     {
-      "group_id": "pytest-module-0048-610dff85892572fb",
+      "group_id": "pytest-module-0048-e80e93d318cdb3a8",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_aetta_native_estimator.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0049-9771f665e44686d3",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_aetta_real_image_executor.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0050-6de581d971a9614c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_aline_native_estimator.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0051-5d0bc0b4171cb144",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_aline_source_contract.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0052-a694f708b9a1138c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_anonymous_supplement.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0053-610dff85892572fb",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_api_payloads.py"
       ]
     },
     {
-      "group_id": "pytest-module-0049-8e030ab8ad8c9f70",
+      "group_id": "pytest-module-0054-8e030ab8ad8c9f70",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_api_production_security.py"
       ]
     },
     {
-      "group_id": "pytest-module-0050-71bc1b4d6a4f633b",
+      "group_id": "pytest-module-0055-072165ee2818d258",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_archived_authorities.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0056-71bc1b4d6a4f633b",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_assumption_reports_current.py"
       ]
     },
     {
-      "group_id": "pytest-module-0051-932bd500d14c87b2",
+      "group_id": "pytest-module-0057-932bd500d14c87b2",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_assumptions.py"
       ]
     },
     {
-      "group_id": "pytest-module-0052-eba10abe87e4f402",
+      "group_id": "pytest-module-0058-eba10abe87e4f402",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_audit_gate_decision_rule_e2e.py"
       ]
     },
     {
-      "group_id": "pytest-module-0053-ccf38b6ba60bd7d9",
+      "group_id": "pytest-module-0059-ccf38b6ba60bd7d9",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_build_docx_pipeline.py"
       ]
     },
     {
-      "group_id": "pytest-module-0054-0f002fb2560f4877",
+      "group_id": "pytest-module-0060-0f002fb2560f4877",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_camelyon_imagenetr_runner_integrity.py"
       ]
     },
     {
-      "group_id": "pytest-module-0055-ef3ba4b0f655ab08",
+      "group_id": "pytest-module-0061-ef3ba4b0f655ab08",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_camelyon_protocol_f.py"
       ]
     },
     {
-      "group_id": "pytest-module-0056-199ee459a36f9b33",
+      "group_id": "pytest-module-0062-199ee459a36f9b33",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_canonical_label_semantics.py"
       ]
     },
     {
-      "group_id": "pytest-module-0057-1bc2c9541897501d",
+      "group_id": "pytest-module-0063-578e8e63b38d635a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_canonical_release_live_bindings.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0064-1bc2c9541897501d",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_cct20_end_to_end_runners.py"
       ]
     },
     {
-      "group_id": "pytest-module-0058-c179c0558c0ca868",
+      "group_id": "pytest-module-0065-c179c0558c0ca868",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_cct20_gate_execution.py"
       ]
     },
     {
-      "group_id": "pytest-module-0059-528f8cce8d50461b",
+      "group_id": "pytest-module-0066-528f8cce8d50461b",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_cct20_manuscript_claim_validation.py"
       ]
     },
     {
-      "group_id": "pytest-module-0060-aefb5d8dd93e815c",
+      "group_id": "pytest-module-0067-e6f0b07ed2a33ea7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_prospective_bridge.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0068-aefb5d8dd93e815c",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_cct20_prospective_pipeline.py"
       ]
     },
     {
-      "group_id": "pytest-module-0061-d7ac11541b0e4620",
+      "group_id": "pytest-module-0069-08514dd9808d9b9a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cct20_public_bundle.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0070-d7ac11541b0e4620",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_cct20_release_builder.py"
       ]
     },
     {
-      "group_id": "pytest-module-0062-ce622a4234e5995c",
+      "group_id": "pytest-module-0071-ce622a4234e5995c",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_certificate_drift_guard.py"
       ]
     },
     {
-      "group_id": "pytest-module-0063-4f95023869f284ba",
+      "group_id": "pytest-module-0072-537f6cda1b8ff799",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_ci_action_pins.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0073-6d6ec51c9cbcf7dc",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_cifar_current_arithmetic.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0074-2402043b4336d85b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_clean_imagenet_labels.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0075-4f95023869f284ba",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_comparator_selection_from_validation_only.py"
       ]
     },
     {
-      "group_id": "pytest-module-0064-29aaa893738c7f6b",
+      "group_id": "pytest-module-0076-bf8e5702c71e16a7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_controlled_grid_crossfit.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0077-29aaa893738c7f6b",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_current_policy_cluster_inference.py"
       ]
     },
     {
-      "group_id": "pytest-module-0065-66b8572b3502c2de",
+      "group_id": "pytest-module-0078-66b8572b3502c2de",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_distributed_and_async_gateway.py"
       ]
     },
     {
-      "group_id": "pytest-module-0066-4a2bfc5ebf779802",
+      "group_id": "pytest-module-0079-d279a0207391d85f",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_docker_release_contract.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0080-4a2bfc5ebf779802",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_ensemble_inference_label.py"
       ]
     },
     {
-      "group_id": "pytest-module-0067-0795df6d6e166381",
+      "group_id": "pytest-module-0081-0795df6d6e166381",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_exact_confirmation_pipeline.py"
       ]
     },
     {
-      "group_id": "pytest-module-0068-db477c1c3f428f9a",
+      "group_id": "pytest-module-0082-4155e39cccf2e28b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_external_repro_verifier.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0083-db477c1c3f428f9a",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_gate_p_and_scope_guard.py"
       ]
     },
     {
-      "group_id": "pytest-module-0069-01af26e7742da107",
+      "group_id": "pytest-module-0084-9ae076f6c14f9bfa",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_hierarchical_policy.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0085-01af26e7742da107",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_imagenetr_protocol_d.py"
       ]
     },
     {
-      "group_id": "pytest-module-0070-0d6a1f53be644556",
+      "group_id": "pytest-module-0086-0d6a1f53be644556",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_independent_checkpoint_audit.py"
       ]
     },
     {
-      "group_id": "pytest-module-0071-857b134fbcf257f9",
+      "group_id": "pytest-module-0087-857b134fbcf257f9",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_iwildcam_router_nonpromotable_guard.py"
       ]
     },
     {
-      "group_id": "pytest-module-0072-abf1e0b3d7ef698c",
+      "group_id": "pytest-module-0088-abf1e0b3d7ef698c",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_bibliography.py"
       ]
     },
     {
-      "group_id": "pytest-module-0073-83adaea9b6fb5dd0",
+      "group_id": "pytest-module-0089-83adaea9b6fb5dd0",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_build_flags.py"
       ]
     },
     {
-      "group_id": "pytest-module-0074-1af708a88046af0e",
+      "group_id": "pytest-module-0090-52c1dd433ce549b0",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_current_pdf_publication.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0091-1af708a88046af0e",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_current_policy_bindings.py"
       ]
     },
     {
-      "group_id": "pytest-module-0075-1582e7b0c305019f",
+      "group_id": "pytest-module-0092-1582e7b0c305019f",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_dashboard_metadata.py"
       ]
     },
     {
-      "group_id": "pytest-module-0076-a2873d173220f05b",
+      "group_id": "pytest-module-0093-dd92601302d78a7c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_decide_small_n.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0094-96972c89931c4301",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_decision_input_hardening.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0095-a2873d173220f05b",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_estimand_inference_wording.py"
       ]
     },
     {
-      "group_id": "pytest-module-0077-263baa8f1caf37a9",
+      "group_id": "pytest-module-0096-263baa8f1caf37a9",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_formal_audit.py"
       ]
     },
     {
-      "group_id": "pytest-module-0078-82654f3152e85fcf",
+      "group_id": "pytest-module-0097-31f68ea9ddb021a4",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_four_artifact_build.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0098-82654f3152e85fcf",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_interval_diagnostics.py"
       ]
     },
     {
-      "group_id": "pytest-module-0079-c219668701583776",
+      "group_id": "pytest-module-0099-6d191ec23724c333",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_manuscript_authority_gaps.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0100-c219668701583776",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_metric_display_tables.py"
       ]
     },
     {
-      "group_id": "pytest-module-0080-6b473df5b4fb21cc",
+      "group_id": "pytest-module-0101-6b473df5b4fb21cc",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_narrative_revision.py"
       ]
     },
     {
-      "group_id": "pytest-module-0081-e20b34a131a76d09",
+      "group_id": "pytest-module-0102-e20b34a131a76d09",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_pdf_build_isolation.py"
       ]
     },
     {
-      "group_id": "pytest-module-0082-5b846afa65420cc4",
+      "group_id": "pytest-module-0103-f9f07d77ec18f372",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kbound_split_pdf_contract.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0104-5b846afa65420cc4",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kbound_theory_scope.py"
       ]
     },
     {
-      "group_id": "pytest-module-0083-c0242d46b212d442",
+      "group_id": "pytest-module-0105-c0242d46b212d442",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_api_routes.py"
       ]
     },
     {
-      "group_id": "pytest-module-0084-20153217e5d88b24",
+      "group_id": "pytest-module-0106-20153217e5d88b24",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_benefit_estimator.py"
       ]
     },
     {
-      "group_id": "pytest-module-0085-1f98cba2922d6bc0",
+      "group_id": "pytest-module-0107-1f98cba2922d6bc0",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_canonical_rule.py"
       ]
     },
     {
-      "group_id": "pytest-module-0086-09a1e39d0166ca30",
+      "group_id": "pytest-module-0108-b91b7aae0c576260",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_distribution_dependencies.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0109-09a1e39d0166ca30",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_experiment_contract.py"
       ]
     },
     {
-      "group_id": "pytest-module-0087-9d472e4ca2ff419c",
+      "group_id": "pytest-module-0110-9d472e4ca2ff419c",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_frontier_api.py"
       ]
     },
     {
-      "group_id": "pytest-module-0088-a0913e857afb77b7",
+      "group_id": "pytest-module-0111-a0913e857afb77b7",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_masked_inputs.py"
       ]
     },
     {
-      "group_id": "pytest-module-0089-84b70d5bd235ef37",
+      "group_id": "pytest-module-0112-84b70d5bd235ef37",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_package.py"
       ]
     },
     {
-      "group_id": "pytest-module-0090-dbc0d910fbe6b295",
+      "group_id": "pytest-module-0113-180822a4b229e2ca",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_kga_population_transfer.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0114-dbc0d910fbe6b295",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_routing.py"
       ]
     },
     {
-      "group_id": "pytest-module-0091-58551e5948c57e1e",
+      "group_id": "pytest-module-0115-58551e5948c57e1e",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_unavailable_api.py"
       ]
     },
     {
-      "group_id": "pytest-module-0092-298c7c3c67c4c7ff",
+      "group_id": "pytest-module-0116-298c7c3c67c4c7ff",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_kga_unavailable_runtime.py"
       ]
     },
     {
-      "group_id": "pytest-module-0093-fe927155d5fb26f6",
+      "group_id": "pytest-module-0117-d38fe39b52fe1c62",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_legacy_publication_archive.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0118-99d9c82cc5d02d12",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_live_publication_runner_guidance.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0119-f60da901b74550b3",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_maintained_wrapper_fail_closed.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0120-b85e9b9cf28f4fd7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_manuscript_calibration_scope.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0121-fe927155d5fb26f6",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_manuscript_claim_consistency.py"
       ]
     },
     {
-      "group_id": "pytest-module-0094-1d6aa86f9c9008d4",
+      "group_id": "pytest-module-0122-88c21ee8d7430f0f",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_manuscript_storage_boundary.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0123-1d6aa86f9c9008d4",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_model_governance.py"
       ]
     },
     {
-      "group_id": "pytest-module-0095-38adbf510b44577c",
+      "group_id": "pytest-module-0124-38adbf510b44577c",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_multiseed_natural_extraction_lineage.py"
       ]
     },
     {
-      "group_id": "pytest-module-0096-d86629219a93bcd8",
+      "group_id": "pytest-module-0125-d86629219a93bcd8",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_multiseed_natural_forest_lineage.py"
       ]
     },
     {
-      "group_id": "pytest-module-0097-db9fd7f5906372ee",
+      "group_id": "pytest-module-0126-db9fd7f5906372ee",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_multiseed_runbook_safety.py"
       ]
     },
     {
-      "group_id": "pytest-module-0098-d18777dbe4740aba",
+      "group_id": "pytest-module-0127-d18777dbe4740aba",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_natural_crossfit_no_leakage.py"
       ]
     },
     {
-      "group_id": "pytest-module-0099-ace4d61a6dbb2eda",
+      "group_id": "pytest-module-0128-ace4d61a6dbb2eda",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_natural_runner_integrity.py"
       ]
     },
     {
-      "group_id": "pytest-module-0100-ff305f64e9ddb3b0",
+      "group_id": "pytest-module-0129-ff305f64e9ddb3b0",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_natural_target_provenance.py"
       ]
     },
     {
-      "group_id": "pytest-module-0101-748eb0ccd4de42e0",
+      "group_id": "pytest-module-0130-748eb0ccd4de42e0",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_no_fisher_seed_combination.py"
       ]
     },
     {
-      "group_id": "pytest-module-0102-4abd883985488164",
+      "group_id": "pytest-module-0131-4abd883985488164",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_no_retroactive_confirmatory_language.py"
       ]
     },
     {
-      "group_id": "pytest-module-0103-7c7c181def69da5d",
+      "group_id": "pytest-module-0132-7c7c181def69da5d",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_no_test_selected_comparator.py"
       ]
     },
     {
-      "group_id": "pytest-module-0104-d50c0dc75c96c584",
+      "group_id": "pytest-module-0133-d50c0dc75c96c584",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_no_test_selected_rga_plus.py"
       ]
     },
     {
-      "group_id": "pytest-module-0105-73794b6a454b0e5c",
+      "group_id": "pytest-module-0134-77f9c6ecf844463a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_official_baseline_audit_cli.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0135-5c0973d2cd6d7dd3",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_official_baseline_audit_cli_witness.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0136-73794b6a454b0e5c",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_official_baseline_provenance.py"
       ]
     },
     {
-      "group_id": "pytest-module-0106-bfac9f0e7f78b417",
+      "group_id": "pytest-module-0137-28c2ad4f3f56639c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_official_baseline_runbook_integration.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0138-0f4c4413b76d5772",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_official_headtohead_outcome_exclusion.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0139-ce88cee2e32be57c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_official_stream_integrity.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0140-bfac9f0e7f78b417",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_one_radius_rule.py"
       ]
     },
     {
-      "group_id": "pytest-module-0107-27a14c00b197faa7",
+      "group_id": "pytest-module-0141-27a14c00b197faa7",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_pacs_replay_artifact.py"
       ]
     },
     {
-      "group_id": "pytest-module-0108-52cf3b27ab2c95e5",
+      "group_id": "pytest-module-0142-ab9dc0855cd1e748",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_pdf_release_fail_closed.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0143-bc8949a99dd5559c",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_poem_authenticated_dependency.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0144-f027a0e322b78b8f",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_poem_cpu_stage_contract.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0145-a1f1f13a16b870ae",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_poem_imagenetc_runbook.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0146-e2dd87a51d62739d",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_poem_native_cpu_seam.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0147-0f79116629863620",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_poem_official_entrypoint.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0148-be0b124e9f87a343",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_poem_real_image_executor.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0149-52cf3b27ab2c95e5",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_polarity_probe_diagnostic_only.py"
       ]
     },
     {
-      "group_id": "pytest-module-0109-8cba413c19436adc",
+      "group_id": "pytest-module-0150-891a8a8fd3d366de",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_population_panel_runner.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0151-3f18c148a345ec66",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_population_transfer_integration.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0152-8cba413c19436adc",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_positive_transfer_protocol_lock.py"
       ]
     },
     {
-      "group_id": "pytest-module-0110-d98ba9f22220e317",
+      "group_id": "pytest-module-0153-d98ba9f22220e317",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_production_gateway.py"
       ]
     },
     {
-      "group_id": "pytest-module-0111-d5c7e3c89c269a82",
+      "group_id": "pytest-module-0154-d5c7e3c89c269a82",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_production_release_hygiene.py"
       ]
     },
     {
-      "group_id": "pytest-module-0112-95f96bf63c3e5977",
+      "group_id": "pytest-module-0155-df2880841190caa1",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_protocol_f_rank_boundary.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0156-65ba9de276265d27",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_public_ledger_sync.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0157-ca2ce330a39f36e7",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_public_result_manifest.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0158-49b582344d24978b",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_python_environment_lock.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0159-95f96bf63c3e5977",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_reconcile_no_implicit_cleanup.py"
       ]
     },
     {
-      "group_id": "pytest-module-0113-36ad653f4121316b",
+      "group_id": "pytest-module-0160-ce16d30e2d3195f4",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_checksum_producer.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0161-36ad653f4121316b",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_release_checksum_verifier.py"
       ]
     },
     {
-      "group_id": "pytest-module-0114-65a4826427f4e860",
+      "group_id": "pytest-module-0162-d8e82bcb22de3bd4",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_formal_audit_invocation.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0163-8cc003df1305061a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_manuscript_discovery.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0164-073cd2e814fce085",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_privacy.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0165-65a4826427f4e860",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_release_source_seal.py"
       ]
     },
     {
-      "group_id": "pytest-module-0115-b9501230b8060ac9",
+      "group_id": "pytest-module-0166-c7be4b4e336af21a",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_release_toolchain_lock.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0167-b9501230b8060ac9",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_remaining_wilds_runner_integrity.py"
       ]
     },
     {
-      "group_id": "pytest-module-0116-260121a07ea0ecba",
+      "group_id": "pytest-module-0168-0393099fd2c0c4f0",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_repository_verification_runner.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0169-260121a07ea0ecba",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_reproducibility_hygiene.py"
       ]
     },
     {
-      "group_id": "pytest-module-0117-226157d2c0acd6de",
+      "group_id": "pytest-module-0170-226157d2c0acd6de",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_research_naming.py"
       ]
     },
     {
-      "group_id": "pytest-module-0118-1eba4b04b4214afe",
+      "group_id": "pytest-module-0171-85067bed8a167fcf",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_retired_kbound_surfaces.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0172-1eba4b04b4214afe",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_rxrx1_9plus_launcher.py"
       ]
     },
     {
-      "group_id": "pytest-module-0119-ed3f26e04a730dd3",
+      "group_id": "pytest-module-0173-448d4e5a3928c9f6",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_rxrx1_supervisor_execution.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0174-8aab104e622f1e5e",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_sar_final_block_batch_stats.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0175-c8bce2dc7c48c98d",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_sar_runbook_exit_status.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0176-ed3f26e04a730dd3",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_smoke_trichotomy.py"
       ]
     },
     {
-      "group_id": "pytest-module-0120-5a116f33e26a0208",
+      "group_id": "pytest-module-0177-5a116f33e26a0208",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_development_selection.py"
       ]
     },
     {
-      "group_id": "pytest-module-0121-c0502b5bbb4b71a7",
+      "group_id": "pytest-module-0178-c0502b5bbb4b71a7",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_gate.py"
       ]
     },
     {
-      "group_id": "pytest-module-0122-a00188be16e557a5",
+      "group_id": "pytest-module-0179-ef9479e76da9afa6",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_import_boundaries.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0180-a00188be16e557a5",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_integrity_receipts.py"
       ]
     },
     {
-      "group_id": "pytest-module-0123-c0f789bc47c16d49",
+      "group_id": "pytest-module-0181-eba113bd33594471",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_label_firewall.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0182-c0f789bc47c16d49",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_prospective_protocol.py"
       ]
     },
     {
-      "group_id": "pytest-module-0124-53dadc9d11de8b3f",
+      "group_id": "pytest-module-0183-905121465d30d185",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_prospective_v2_runner.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0184-53dadc9d11de8b3f",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_source_acceptance.py"
       ]
     },
     {
-      "group_id": "pytest-module-0125-709af21327830cb1",
+      "group_id": "pytest-module-0185-709af21327830cb1",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_source_preflight.py"
       ]
     },
     {
-      "group_id": "pytest-module-0126-18c67d08039cd2a7",
+      "group_id": "pytest-module-0186-18c67d08039cd2a7",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_source_training.py"
       ]
     },
     {
-      "group_id": "pytest-module-0127-885b24f50c181060",
+      "group_id": "pytest-module-0187-885b24f50c181060",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_so2sat_target_boundary.py"
       ]
     },
     {
-      "group_id": "pytest-module-0128-056454066364298e",
+      "group_id": "pytest-module-0188-e311e7498aeffb96",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_so2sat_v2_target.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0189-b409120da1c313ff",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_stale_publication_build_archive.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0190-4240d3efcd9e1928",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_storage_refresh_public_boundary.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0191-056454066364298e",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_target_label_light_probe.py"
       ]
     },
     {
-      "group_id": "pytest-module-0129-fe7430bf6a98fa2b",
+      "group_id": "pytest-module-0192-62e4c2047d46fb62",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_task2_research_closure.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0193-5015b7812ce9ab81",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_task3_common_analysis.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0194-b5804ed4dc0d1533",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_task3_common_scoring.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0195-fd733662cd878934",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_task3_image_panel.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0196-3f831cbe0a094fd4",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_task3_native_bn.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0197-0161ecd62563064d",
+      "module_count": 1,
+      "pytest_paths": [
+        "tests/test_task3_preflight.py"
+      ]
+    },
+    {
+      "group_id": "pytest-module-0198-fe7430bf6a98fa2b",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_tta_protocol_semantics.py"
       ]
     },
     {
-      "group_id": "pytest-module-0130-e75554b9c2cdc82a",
+      "group_id": "pytest-module-0199-e75554b9c2cdc82a",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_validation_frozen_rga_plus.py"
       ]
     },
     {
-      "group_id": "pytest-module-0131-36cdf5d380cc5bdd",
+      "group_id": "pytest-module-0200-36cdf5d380cc5bdd",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_wilds_multicandidate_route_hardening.py"
       ]
     },
     {
-      "group_id": "pytest-module-0132-b0ea4627e4c4fe99",
+      "group_id": "pytest-module-0201-b0ea4627e4c4fe99",
       "module_count": 1,
       "pytest_paths": [
         "tests/test_wilds_run_integrity.py"
@@ -1216,10 +1773,10 @@
     }
   ],
   "schema": "kbound-repository-test-inventory-v2",
-  "source_commit": "0637a8c399c0bcd0cb225a274fd14bd38ff00aee",
-  "source_tree": "b7eea4431f78be6ec297eed1114e64b2f39501d5",
+  "source_commit": "454002dbd26266a5389af40753db0ca604f198d2",
+  "source_tree": "dbb47e39de964fb5db0581bc2a0b082a5bd976f7",
   "status": "COMPLETE_CLASSIFICATION",
-  "test_shaped_count": 140,
+  "test_shaped_count": 210,
   "unexpected_skips": [],
   "unexpected_warnings": [],
   "validator_candidate_count": 47,
