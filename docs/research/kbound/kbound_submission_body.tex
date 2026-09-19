@@ -34,18 +34,7 @@ decision. The bound on the hidden calibration residual is an assumption about th
 quantity that an unlabeled batch supplies for free. A second result makes this information limit
 explicit: an audit using the same evidence must still cover the unresolved residual range.
 
-We present K-Bound and Knowability-Guided Adaptation (KGA) together because they address the
-identical practitioner problem---when to risk model adaptation without ground-truth target
-labels---under two complementary evidentiary regimes. K-Bound operates in the deductive regime of a single unlabeled test stream, establishing that
-within the declared label-kernel class $\mathcal{C}_\beta$ and observable evidence, auditing target risk
-without an exogenous calibration residual bound $\beta$ is impossible. (Alternative guarantees remain
-possible under different structural couplings or domain assumptions.) KGA operates in the empirical
-inductive regime where past shift records are available, fitting an empirical benefit predictor on
-previous evaluation cells and calibrating its residual uncertainty to govern a three-way commitment gate.
-We do not claim KGA implements or approximates the population frontier; rather, K-Bound clarifies
-the information limits of unlabeled test data alone, while KGA explores what becomes operational
-when empirical shift records are admitted into the evidentiary basis.
-Section~\ref{sec:compact-bridge} formalizes this architectural relationship.
+K-Bound and Knowability-Guided Adaptation (\KGA) address the same update decision using different information. K-Bound characterizes which strict benefit signs are supported by fixed label-free evidence and a declared residual bound in a binary model. \KGA uses labeled historical shift outcomes to fit and calibrate an empirical benefit gate. It is an empirical companion, not an implementation of the population frontier. Section~\ref{sec:compact-bridge} explains the relationship and the additional assumptions needed to connect evaluation-cell benefit to population benefit.
 
 \subsection{Three Scientific Contributions}
 
@@ -520,20 +509,15 @@ Multiclass extensions under entropy-constrained support conditions require separ
 
 \subsection{Implications for K-Bound and KGA}
 
-Theorem~\ref{thm:compact-beta-minimax} provides the formal justification for why KGA is designed
-as an inductive decision layer rather than an empirical estimator of $\beta$. Because unlabeled
-deployment data cannot identify the residual bound on its own evidence fibres, an empirical system
-seeking data-driven decision thresholds must draw upon additional structure or assumptions (such
-as the routes cataloged in Section~\ref{sec:compact-additional-structure}). KGA pursues the
-empirical shift-benchmark route:
-it fits an empirical benefit regressor $\widehat\Delta=h_\theta(Z)$ and places a calibrated
-conformal prediction radius $\varepsilon$ around it. While population benefit $\Delta$ and observed
-cell benefit $\Delta^{\mathrm{cell}}$ describe the same model pair under different evaluation
-regimes, KGA's finite-sample radius $\varepsilon$ reflects predictive uncertainty over historical
-cells, not an estimate of the latent population residual $\beta$.
+Theorem~\ref{thm:compact-beta-minimax} shows why label-free deployment observations cannot audit
+their own calibration residual bound without additional structure. An empirical decision layer must
+therefore draw upon external information or domain assumptions, such as the routes cataloged in
+Section~\ref{sec:compact-additional-structure}. KGA explores the historical-shift-record route,
+using labeled prior shifts to fit and calibrate an empirical benefit gate.
 A population application would instead require coverage of the target population through a separate
-sampling-error bound. No such sampling-error bound is established for the reported panels.
-Furthermore, historical data do not automatically establish calibration transfer to unseen deployment environments.
+sampling-error bound; no such sampling-error bound is established for the reported panels.
+Section~\ref{sec:compact-bridge} details this architecture, its validity conditions, and the
+distinction between evaluation-cell predictions and population guarantees.
 
 \section{KGA: An Empirical Benefit-Interval Gate}
 \label{sec:compact-kga}
@@ -952,9 +936,7 @@ However, the stronger opportunistic routing criterion was not met:
 the candidate was helpful in \CCTHelpfulCount{} cell, tied in \CCTZeroCount{}, and harmful in \CCTHarmfulCount{}.
 Among the \CCTHarmfulCount{} harmful updates, the gate strictly rejected 43 (issuing \freeze) and issued \abstain
 on the remaining 1 (which defaults to serving the frozen model), while also issuing \freeze on the single helpful candidate.
-Because all development cells for Tent were harmful, the calibration distribution supplied no positive examples, leading the
-model to predict negative benefit across all evaluation cells.
-This establishes effective conservative retention of the frozen model on this camera-trap deployment, while illustrating that selective routing requires exposure to positive adaptation signals during calibration.
+All recorded development cells for Tent had negative measured benefit. On the evaluated CCT-20 panel, KGA issued no ADAPT decisions. This result demonstrates frozen-model retention, not successful selection of beneficial updates.
 
 \subsection{Development Stops and Adverse Diagnostics}
 \label{sec:so2sat-development-stop}
@@ -971,7 +953,7 @@ ImageNet-C is sensitive to the candidate and its operating point. Office-Home an
 retain the frozen model, whereas the opened Camelyon17 OOD panel adapts throughout.
 The opened one-sided Camelyon17 panel adapts throughout because all 18 cells are helpful.
 On the observed CCT-20 cells, KGA retains the frozen model across all 45 cells.
-A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure (alongside an exploratory 31-\adapt post-hoc sensitivity partition reported in Appendix B.5). Across all evaluated natural panels (CCT-20 camera traps, the 72-condition Camelyon17 diagnostic, and RxRx1), KGA makes zero \adapt decisions, reliably defaulting to conservative retention when domain shift degrades predictive certainty.
+A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure (alongside an exploratory 31-\adapt post-hoc sensitivity partition reported in Appendix B.5). KGA made no ADAPT decisions on CCT-20, RxRx1, or the 72-condition Camelyon17 diagnostic. These results evaluate conservative retention and do not establish prospective selective routing on unseen natural shifts.
 \subsection{Cross-Architecture and Parameter-Restricted Adaptation Probes}
 \label{sec:architecture-partial-adaptation}
 
@@ -985,7 +967,7 @@ As a preliminary diagnostic probe into whether certificate scale varies across m
 \resizebox{\textwidth}{!}{\input{paper/generated/tab_multi_architecture_invariance.tex}}
 \end{table*}
 
-Across the four topologies, the disagreement region measure $\mu(D)$ ($0.1727$--$0.1806$) and the calibrated certificate radius $r = \varepsilon + b$ ($0.1023$--$0.1026$) exhibit comparable scale on these evaluation batches. However, similar radii do not establish empirical coverage, which requires held-out inclusion testing. On these severe corruptions where unhedged adaptation collapses, the gate safely halts adaptation by issuing exclusively FREEZE or ABSTAIN actions ($\mathrm{FA}_u = 0.0000$).
+Across the four topologies, the disagreement region measure $\mu(D)$ ($0.1727$--$0.1806$) and the calibrated certificate radius $r = \varepsilon + b$ ($0.1023$--$0.1026$) exhibit comparable scale on these evaluation batches. However, similar radii do not establish empirical coverage, which requires held-out inclusion testing. In this probe, KGA issued only FREEZE or ABSTAIN decisions and therefore retained the frozen predictor throughout. The zero observed false-ADAPT rate reflects the absence of ADAPT decisions, not successful selection of beneficial updates.
 
 Furthermore, we explored parameter-restricted adaptation hierarchies as an exploratory development ablation to understand the conservative retention observed on camera-trap shifts (Table~\ref{tab:cct20-partial-adaptation}).
 
@@ -1018,12 +1000,12 @@ the proxy-declared interval, and commit error reached 0.4--16.6\%. On ImageNet-C
 zero commitments across all 405 evaluation cells in 5 of 10 configurations.
 This operational failure directly corroborates Theorem~\ref{thm:compact-beta-minimax}: processing unchanged evidence
 cannot replace a justified structural assumption.
-The theorem does not identify the cause or magnitude of this particular proxy's errors. Rather,
-Theorem~\ref{thm:compact-beta-minimax} shows why $\beta$ cannot be audited from label-free target
-data alone within this rich kernel class; population guarantees within this framework without coupled target labels
+The theorem does not attribute this failure to any single cause. Rather,
+Theorem~\ref{thm:compact-beta-minimax} proves that $\beta$ cannot be audited from label-free target
+data alone within this rich kernel class. Consequently, population guarantees within this framework without coupled target labels
 or alternative structural assumptions (such as those discussed in Section~\ref{sec:compact-additional-structure}) require
-treating $\beta$ as an externally declared sensitivity parameter (by analogy to sensitivity analysis in causal inference), while
-KGA pursues empirical evaluation-cell interval coverage through historical shift benchmarks.
+treating $\beta$ as an externally declared sensitivity parameter (analogous to Rosenbaum sensitivity bounds in causal inference), whereas
+KGA pursues empirical evaluation-cell interval coverage using historical shift benchmarks.
 
 For KGA, empirical interval coverage requires separate support at the intended decision unit.
 A larger radius reduces commitment but can increase regret when the frozen model is worse.
@@ -1046,7 +1028,7 @@ We consolidate the essential empirical boundaries of the current evidence into f
 \begin{enumerate}
   \item \textbf{Retention vs.\ Opportunistic Routing under Natural Shift:} On real-camera distribution shifts
   (CCT-20), KGA served the frozen model across all 45 cells and avoided the measured degradation of always-adapt
-  in that study. However, it made zero \adapt decisions. Prospectively demonstrating selective opportunistic routing on an unopened natural-shift target remains an open empirical challenge. The retrospective Camelyon17 diagnostic in \KBSuppRef{app:camelyon17}{Appendix}{B.5} similarly exhibits conservative retention (zero \adapt decisions under authenticated outcome-blind execution) and does not establish opportunistic routing.
+  in that study. However, it made zero \adapt decisions. Prospectively demonstrating selective opportunistic routing on an unopened natural-shift target remains an open empirical challenge. The retrospective Camelyon17 diagnostic in \KBSuppRef{app:camelyon17}{Appendix}{B.5} similarly exhibits conservative retention (zero \adapt decisions under authenticated outcome-blind execution).
   \item \textbf{Retrospective Benchmarks vs.\ Prospective Deployment:} The controlled CIFAR-10-C and ImageNet-C
   experiments evaluate retrospective, opened panels under Protocol B cross-fitting. While these report empirical
   commitment and inclusion diagnostics on opened records, prospective evaluation on unopened environments is
@@ -1066,8 +1048,7 @@ A unified statistical synthesis matrix consolidating sample sizes, evaluation un
 
 A rejected update can prevent adaptation harm, but retaining a frozen model is not proof that the
 model is accurate or suitable for a high-stakes setting. Misinterpreting an abstention as a
-certificate would be particularly risky. Deployment should preserve the assessment reason and
-connect unresolved cases to a domain-appropriate review or evidence-acquisition process.
+certificate would be particularly risky. In safety-critical deployments (e.g., automated diagnostics or autonomous navigation), a FREEZE or ABSTAIN action should not be assumed to guarantee safety; rather, it should function as an automated fallback trigger, preserving the frozen baseline while routing ambiguous cases to human clinical review or secondary fail-safe systems.
 The reported experiments do not validate clinical, safety-critical, or autonomous operation.
 No held-out physical camera deployment or common end-to-end latency result is claimed.
 
