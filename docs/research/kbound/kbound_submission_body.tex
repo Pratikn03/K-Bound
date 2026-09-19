@@ -1007,12 +1007,9 @@ now open, so retuning them cannot produce fresh confirmation.
 The auxiliary studies also show limitations. ImageNet-R and PACS favor always-adapt;
 ImageNet-C is sensitive to the candidate and its operating point. Office-Home and RxRx1 mainly
 retain the frozen model, whereas the opened Camelyon17 OOD panel adapts throughout.
-The opened Camelyon17 panel shows that KGA can issue ADAPT decisions on natural data;
-it does not establish why CCT-20 produced no such decisions. On the observed CCT-20 cells,
-KGA retains the frozen model, whereas the one-sided Camelyon17 panel retains adaptation
-exposure. A separate retrospective mixed-sign Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells and shows nontrivial ADAPT/FREEZE/ABSTAIN exposure with lower measured point regret than both fixed policies; because the target was already opened, it is treated as diagnostic rather than prospective confirmation. These candidate-specific outcomes do not demonstrate prospective selective routing.
-Transferring a fixed benefit predictor
-across completely unseen wild domains without target calibration remains an open empirical challenge.
+The opened one-sided Camelyon17 panel adapts throughout because all 18 cells are helpful.
+On the observed CCT-20 cells, KGA retains the frozen model across all 45 cells.
+A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure. (An earlier draft reported an exploratory 31-\adapt partition, which forensic audit identified as an unauthenticated post-hoc reconstruction conditioned on ground-truth $B$ and formally demoted.) Across all evaluated natural-distribution benchmarks (CCT-20, Camelyon17, RxRx1), KGA makes zero opportunistic \adapt decisions. Transferring a fixed benefit predictor across completely unseen wild domains without target calibration remains an open empirical challenge.
 \subsection{Cross-Architecture and Parameter-Restricted Adaptation Probes}
 \label{sec:architecture-partial-adaptation}
 
@@ -1087,7 +1084,7 @@ We consolidate the essential empirical boundaries of the current evidence into f
 \begin{enumerate}
   \item \textbf{Retention vs.\ Opportunistic Routing under Natural Shift:} On real-camera distribution shifts
   (CCT-20), KGA served the frozen model across all 45 cells and avoided the measured degradation of always-adapt
-  in that study. However, it made zero \adapt decisions. Prospectively demonstrating selective opportunistic routing on an unopened natural-shift target remains an open empirical challenge. The retrospective Camelyon17 diagnostic in \KBSuppRef{app:camelyon17}{Appendix}{B.5} provides mixed-sign whole-slide-imaging OOD routing evidence but does not establish prospective transfer.
+  in that study. However, it made zero \adapt decisions. Prospectively demonstrating selective opportunistic routing on an unopened natural-shift target remains an open empirical challenge. The retrospective Camelyon17 diagnostic in \KBSuppRef{app:camelyon17}{Appendix}{B.5} similarly exhibits conservative retention (zero \adapt decisions under authenticated outcome-blind execution; an earlier 31-\adapt reconstruction conditioned on ground-truth $B$ is formally demoted) and does not establish opportunistic routing.
   \item \textbf{Retrospective Benchmarks vs.\ Prospective Deployment:} The controlled CIFAR-10-C and ImageNet-C
   experiments evaluate retrospective, opened panels under Protocol B cross-fitting. While these report empirical
   commitment and inclusion diagnostics on opened records, prospective evaluation on unopened environments is

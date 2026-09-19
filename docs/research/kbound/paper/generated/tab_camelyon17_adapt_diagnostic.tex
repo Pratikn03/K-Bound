@@ -1,15 +1,16 @@
 \begin{table}[htbp]
 \centering
-\caption{Retrospective opened Camelyon17 whole-slide-imaging OOD diagnostic with mixed-sign adaptation outcomes ($+$, $0$, $-$ denote $B>0$, $B=0$, $B<0$) and selective A/F/U (ADAPT/FREEZE/ABSTAIN) decisions ($n=72$ conditions, locked $\varepsilon=0.0296$, Tent-online).}
+\caption{Camelyon17 whole-slide pathology OOD diagnostic ($n=72$ conditions, Tent-online; $41$ helpful, $4$ zero, $27$ harmful adaptation outcomes, where $+$, $0$, $-$ denote $B>0$, $B=0$, $B<0$). The authenticated original outcome-blind execution (\texttt{result\_73add410.json}, $\varepsilon = 0.1621$) yielded conservative retention matching always-freeze with zero \adapt exposure. An earlier $31$-\adapt partition is formally demoted as an unauthenticated post-hoc reconstruction conditioned on ground-truth $B$.}
 \label{tab:camelyon17-adapt-diagnostic}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}lcccccc@{}}
+\setlength{\tabcolsep}{4.5pt}
+\small
+\begin{tabular}{@{}lccccccr@{}}
 \toprule
-\textbf{Panel} & $\mathbf{+}$ & $\mathbf{0}$ & $\mathbf{-}$ & \textbf{A} & \textbf{F} & \textbf{U} \\
+\textbf{Evaluation Regimen} & $\mathbf{+}$ & $\mathbf{0}$ & $\mathbf{-}$ & \textbf{A} & \textbf{F} & \textbf{U} & \textbf{Regret} ($R_\mathrm{KGA} / R_\mathrm{adapt} / R_\mathrm{freeze}$) \\
 \midrule
-Camelyon17 OOD & 41 & 4 & 27 & 31 & 19 & 22 \\
-\midrule
-\multicolumn{7}{@{}c@{}}{$R_\mathrm{KGA} = 0.0018, \quad R_\mathrm{adapt} = 0.0393, \quad R_\mathrm{freeze} = 0.0438$} \\
+\textbf{Authenticated Outcome-Blind} ($\varepsilon = 0.1621$) & 41 & 4 & 27 & 0 & 2 & 70 & $0.0438$ / $0.0393$ / $0.0438$ \\
+\textit{Demoted post-hoc sensitivity}$^\dagger$ ($\varepsilon = 0.0296$) & 41 & 4 & 27 & 31 & 19 & 22 & $0.0018$ / $0.0393$ / $0.0438$ \\
 \bottomrule
+\multicolumn{8}{@{}p{0.96\columnwidth}@{}}{\footnotesize $^\dagger$Demoted and withdrawn: audit confirmed the original run unarchived $\widehat{B}$; the $31/19/22$ partition thresholded ground-truth $B$ post-hoc, conditioning on target labels.}
 \end{tabular}
 \end{table}
