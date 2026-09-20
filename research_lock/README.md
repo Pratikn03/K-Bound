@@ -36,5 +36,9 @@ confirmatory evaluation.
   ImageNet-R/C, mixed-stream, edge camera, win-hunt arms)
 - Headline finding locks and decision logs that gate paper claims
 
-Canonical status for what is currently claimable lives in
-[`docs/research/kbound/PROJECT_STATUS_AND_OPEN_PROBLEMS.md`](../docs/research/kbound/PROJECT_STATUS_AND_OPEN_PROBLEMS.md).
+Current execution status lives in the
+[living ledger](../docs/research/kbound/ACTIVE_NATURAL_STUDY_PLAN.md);
+claims require the [claim-to-artifact manifest](../docs/research/kbound/KBOUND_SHORT_CLAIM_MANIFEST.md)
+and its verified evidence. The older status document is retained in the
+[preserved local archive](../docs/research/kbound/archive/preserved_worktree_2026-09-20/README.md),
+not treated as current authority. No locked protocol is changed by this navigation update.

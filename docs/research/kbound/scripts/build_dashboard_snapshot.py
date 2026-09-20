@@ -721,7 +721,7 @@ def build_paper_projection() -> dict[str, Any]:
             },
         },
         "reproduce": {
-            "primary": "bash docs/research/kbound/scripts/reproduce_submission.sh",
+            "primary": "bash docs/research/kbound/runbooks/release_candidate.sh all",
             "gpu": "bash docs/research/kbound/scripts/kbtrain.sh smoke-all",
             "validators": "cd docs/research/kbound/formal && bash build.sh",
             "dashboard": "bash docs/research/kbound/scripts/build_dashboard.sh",

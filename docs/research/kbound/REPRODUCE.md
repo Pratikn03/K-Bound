@@ -1,5 +1,23 @@
 # Reproducing K-Bound
 
+## Current execution boundary — 2026-09-20
+
+The instructions and numerical descriptions below document earlier diagnostic
+workflows. They do not supersede [the living execution ledger](ACTIVE_NATURAL_STUDY_PLAN.md)
+or authorize a rerun of completed experiments. The maintained release route is
+`bash docs/research/kbound/runbooks/release_candidate.sh all`; it remains gated
+on source/runtime identity and does not train backbones. No full release PASS is
+asserted here. Archived notebooks/packets must be read as historical provenance.
+
+Current release packaging uses the separately approved
+`release_python_environment_macos_arm64_v2.json` identity under the unchanged
+release dependency lock. The preceding profile is preserved, not overwritten or
+retroactively authenticated. The migration receipt is
+`audits/release_runtime_migration_2026_09_20.json`; a passing environment check is
+not a complete publication release pass.
+
+## Historical reproduction notes
+
 This document reproduces the K-Bound short-paper results from committed artifacts. Every headline
 number is either (a) rebuilt from raw per-condition logs by the verifier, or (b) traced to a locked
 JSON. Nothing here needs the external T9 drive.
@@ -64,7 +82,11 @@ seed on a different Python, torch and commit. Those two facts cannot be separate
 `result_manifest.json` to `pooled_5seed/`. Until then every multi-seed claim in the paper must
 carry a footnote pointing here.
 
-## 1. One-command verification (CPU, seconds)
+## 1. Historical one-command verifier (retired; do not execute)
+
+The command below is a historical quotation. Its original bytes are preserved
+in the [local-variant archive](archive/preserved_worktree_2026-09-20/README.md).
+Use the source-gated release route at the top of this document for current work.
 ```
 python3 docs/research/kbound/scripts/reproduce_headlines.py
 ```

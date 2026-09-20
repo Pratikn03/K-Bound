@@ -513,3 +513,8 @@ def test_current_registry_is_not_promoted_to_a_full_foundations_proof():
     assert scope["registry_sha256"] == hashlib.sha256(dashboard.FORMAL_REGISTRY.read_bytes()).hexdigest()
     assert scope["counterexample_layers"] >= 1
     assert scope["full_foundations_proof"] is False
+
+
+def test_paper_projection_routes_reproduction_to_maintained_release(paper_refresh_inputs):
+    snapshot = dashboard.build_paper_projection()
+    assert snapshot["reproduce"]["primary"] == "bash docs/research/kbound/runbooks/release_candidate.sh all"

@@ -2,7 +2,7 @@
 # One-command monorepo health gate (fast, no GPU).
 # Usage:
 #   bash scripts/monorepo_health.sh          # quick (~2 min)
-#   bash scripts/monorepo_health.sh --full   # + reproduce_submission (~70s more)
+#   bash scripts/monorepo_health.sh --full   # + gated release verification/build
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -41,8 +41,8 @@ echo "=== Hermetic smoke ==="
 PYTHON="$PY" bash scripts/smoke_kbound.sh
 
 if [[ "${1:-}" == "--full" ]]; then
-  echo "=== Full submission repro ==="
-  bash docs/research/kbound/scripts/reproduce_submission.sh
+  echo "=== Full source-bound release gate (requires approved clean source) ==="
+  KBOUND_PYTHON="$PY" bash docs/research/kbound/runbooks/release_candidate.sh all
 fi
 
 echo "=== Gate P production audit ==="

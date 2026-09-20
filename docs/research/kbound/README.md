@@ -1,5 +1,32 @@
 # K-Bound Research Guide
 
+## Current routing qualification — 2026-09-20
+
+The [living execution ledger](ACTIVE_NATURAL_STUDY_PLAN.md) supersedes the dated
+status descriptions below. Historical panel summaries and completed component
+checks are not current full-release acceptance. Do not restart SAR or Task3 from
+an older command in this guide. The separate painting development attempt is
+complete, not prospective routing confirmation.
+
+For the release pipeline, use `bash docs/research/kbound/runbooks/release_candidate.sh all`
+only when its source/runtime and resource gates permit. Retired notebooks and
+reviewer packets remain in the authenticated archive, not at active paths.
+The `archive/stale_publication_builds_2026-09-02/` inventory now preserves ten
+historical Git blobs recovered on 2026-09-20. Its old three-artifact contract is
+not current release acceptance; current PDFs were not rebuilt or promoted.
+
+Retired local variants are preserved in the separate
+[2026-09-20 archive](archive/preserved_worktree_2026-09-20/README.md), including
+all six originals that differ from the older archive. Neither archive is a
+current release entrypoint.
+
+The two old PDF aliases are also preserved in
+[`retired_pdf_aliases_2026-09-20`](archive/retired_pdf_aliases_2026-09-20/README.md).
+Use the three canonical outputs above; archival placement does not trim or
+rewrite a manuscript.
+
+## Historical guide and evidence descriptions
+
 This directory is the maintained research surface for K-Bound and KGA. It contains the manuscript,
 historical extended manuscript, formalization, canonical result manifest, dashboard, and
 physical-camera validation package.
@@ -31,20 +58,20 @@ physical-camera validation package.
 
 | Goal | Entry point |
 |---|---|
-| **Understand the current state and every open item** | **[SUBMISSION_LEDGER.md](SUBMISSION_LEDGER.md)** — canonical; overrides every other document |
+| **Understand the current state and open items** | **[ACTIVE_NATURAL_STUDY_PLAN.md](ACTIVE_NATURAL_STUDY_PLAN.md)** — living execution ledger; a plan is not experiment evidence |
 | Read the compact submission | [kbound_submission.tex](kbound_submission.tex) and [kbound_submission_body.tex](kbound_submission_body.tex) |
-| Read the full manuscript | [kbound_tmlr.tex](kbound_tmlr.tex), [kbound_short_body.tex](kbound_short_body.tex), and [kbound_short_appendix.tex](kbound_short_appendix.tex) |
+| Read the maintained full manuscript sources | [kbound_tmlr.tex](kbound_tmlr.tex), [kbound_submission_body.tex](kbound_submission_body.tex), and [kbound_submission_supplement.tex](kbound_submission_supplement.tex) |
 | Inspect every canonical panel number | [../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json](../../../experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json) |
 | Audit claim-to-artifact links | [KBOUND_SHORT_CLAIM_MANIFEST.md](KBOUND_SHORT_CLAIM_MANIFEST.md) |
 | Obtain the datasets | [../../../DATA.md](../../../DATA.md) — per-dataset version, split, licence, acquisition |
-| Reproduce the submission | [REPRODUCE.md](REPRODUCE.md), then [REVIEWER_REPRO_PACKET.md](REVIEWER_REPRO_PACKET.md) (partially superseded) |
+| Reproduce the submission | [REPRODUCE.md](REPRODUCE.md), then [REVIEWER_REPRO_PACKET.md](archive/superseded_empirical_authorities_2026-09-02/retired_tree/docs/research/kbound/REVIEWER_REPRO_PACKET.md) (partially superseded) |
 | Run an independent replication | [INDEPENDENT_REPLICATION_PROTOCOL.md](INDEPENDENT_REPLICATION_PROTOCOL.md) |
 | See what is unreadable and why | [PLACEHOLDER_INVENTORY.md](PLACEHOLDER_INVENTORY.md) |
-| See the comparison family and arm inventory | [COMPARISON_FAMILY.md](COMPARISON_FAMILY.md) |
+| See the comparison family and arm inventory | [COMPARISON_FAMILY.md](archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/COMPARISON_FAMILY.md) |
 | Read the corrected leakage audit | [PHASE6_LEAKAGE_AUDIT.md](PHASE6_LEAKAGE_AUDIT.md) |
 | Understand tracked vs external artifacts | [EXTERNAL_STORAGE_POLICY.md](EXTERNAL_STORAGE_POLICY.md) / [STORAGE_MANIFEST.json](STORAGE_MANIFEST.json) |
 | Inspect the historical CIFAR SAR quarantine | [CIFAR10C_SAR_QUARANTINE.md](CIFAR10C_SAR_QUARANTINE.md) -- superseded by the completed rebuild |
-| Inspect theory-to-code mapping | [THEORY_TO_CODE_MAP.md](THEORY_TO_CODE_MAP.md) |
+| Inspect theory-to-code mapping | [THEORY_TO_CODE_MAP.md](archive/legacy_publication_surfaces_2026-09-02/retired_tree/docs/research/kbound/THEORY_TO_CODE_MAP.md) |
 | Build the research dashboard | [dashboard/README.md](dashboard/README.md) |
 | Start the physical study | [edge/PHYSICAL_STUDY_RUNBOOK.md](edge/PHYSICAL_STUDY_RUNBOOK.md) |
 | Verify Lean files | [formal/README.md](formal/README.md) |
@@ -90,25 +117,26 @@ population-sealed rerun is required before any numerical iWildCam claim can be p
 ## Canonical Build
 
 ~~~bash
-bash scripts/reproduce_submission.sh
-bash scripts/build_dashboard.sh
+# From the repository root, only after its approved source/runtime gates pass:
+bash docs/research/kbound/runbooks/release_candidate.sh all
 ~~~
 
-Build the compact submission, full manuscript, shared-source IEEE rendering, canonical tables, and
-figures:
+For a source-validated review build (not a sealed release), build the maintained
+compact and TMLR pair with their tables and figures:
 
 ~~~bash
-bash scripts/build_pdfs.sh
+BUILD_LONG_TMLR=1 BUILD_DOCX=1 bash docs/research/kbound/scripts/build_pdfs.sh
 ~~~
 
-Primary outputs: `kbound_short_final_draft.pdf` (compact), `kbound_submission.pdf` (same compact
-build), `kbound_tmlr.pdf` (full manuscript), and `kbound_short.pdf` (shared-source IEEE rendering).
-Set `BUILD_DOCX=1` only when a Word export is needed.
+Primary outputs: `kbound_short_final_draft.pdf`, `kbound_tmlr.pdf` and
+`kbound_short_final_draft.docx`. Historical compatibility output names are not
+current deliverables. Page counts and file presence do not establish release sealing.
 
 The generated result manifest is authoritative for repeated headline values.
 Historical notes and archived runs are provenance, not automatic evidence.
 
-**Caveat added 2026-07-26.** `bash scripts/reproduce_submission.sh` uses `set -euo pipefail`, so a
+**Historical caveat recorded 2026-07-26; archived command, do not execute.**
+`bash scripts/reproduce_submission.sh` used `set -euo pipefail`, so a
 failure in step 1 silently prevents steps 2-9 from running; and several of its checks reference
 files that are absent or unreadable. Read `REPRODUCE.md §1`'s "Known failures" box before treating
 a green run as a clean bill.
@@ -163,8 +191,8 @@ external.
 ## Manuscript Policy
 
 The maintained compact submission is `kbound_submission.tex`; the complete single-column manuscript
-is `kbound_tmlr.tex`. `kbound.tex` is a compatibility wrapper for the complete manuscript, and
-`kbound_short.tex` checks that the shared full source also renders in IEEE two-column form.
+is `kbound_tmlr.tex`. The old `kbound.tex` and `kbound_short.tex` compatibility
+drivers are archived history, not alternate maintained build routes.
 
 Because the venue is TMLR rather than a two-column conference, **no result is cut for length**. The
 eight meta-tables the review flagged (`tab:regime-summary`, `tab:data-access`,

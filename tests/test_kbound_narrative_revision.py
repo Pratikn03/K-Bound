@@ -161,7 +161,8 @@ def test_new_inputs_and_outputs_are_in_the_release_inventory():
 
 def test_historical_closure_docs_cannot_claim_current_full_foundations_pass() -> None:
     for name in ("THEORY_100_PERCENT_CLOSURE_PLAN.md", "PROJECT_STATUS_AND_OPEN_PROBLEMS.md"):
-        text = (PAPER / name).read_text(encoding="utf-8")
+        preserved = PAPER / "archive/preserved_worktree_2026-09-20/tree/docs/research/kbound"
+        text = (preserved / name).read_text(encoding="utf-8")
         assert "full-foundations` PASS" not in text
         assert "currently fails" in text or "remains open" in text
 
