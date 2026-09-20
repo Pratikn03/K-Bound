@@ -29,6 +29,7 @@ from .integrity import (
     file_sha256,
     stable_sha256,
     verify_artifact_receipt,
+    verify_complete_directory_publication,
     write_immutable_json_with_receipt,
 )
 from .metadata_manifest import validate_population_manifest
@@ -122,8 +123,7 @@ def _read_testing_outcomes_once(
         dataset = handle[LABEL_DATASET_NAME]
         if getattr(dataset, "shape", None) != (expected_rows, 17):
             raise IntegrityError(
-                f"testing.h5/label shape drift: expected {(expected_rows, 17)}, "
-                f"found {getattr(dataset, 'shape', None)}"
+                f"testing.h5/label shape drift: expected {(expected_rows, 17)}, found {getattr(dataset, 'shape', None)}"
             )
         values = dataset[:]
     try:
@@ -158,9 +158,7 @@ def _crossed_bootstrap_interval(matrix: np.ndarray) -> dict[str, Any]:
     replicates = np.empty(BOOTSTRAP_REPLICATES, dtype=np.float64)
     # Looping over 20k tiny 10x5 matrices avoids a large advanced-index tensor.
     for index in range(BOOTSTRAP_REPLICATES):
-        replicates[index] = float(
-            matrix[np.ix_(city_draws[index], checkpoint_draws[index])].mean()
-        )
+        replicates[index] = float(matrix[np.ix_(city_draws[index], checkpoint_draws[index])].mean())
     lower, upper = np.quantile(
         replicates,
         [INFERENCE_ALPHA / 2.0, 1.0 - INFERENCE_ALPHA / 2.0],
@@ -298,9 +296,7 @@ def _exposure(cell_metrics: list[dict[str, Any]], inference_contract: Mapping[st
     decisions = Counter(row["decision"] for row in cell_metrics)
     realized = Counter(row["realized_action"] for row in cell_metrics)
     cities_by_action = {
-        action: sorted(
-            {row["city_id"] for row in cell_metrics if row["realized_action"] == action}
-        )
+        action: sorted({row["city_id"] for row in cell_metrics if row["realized_action"] == action})
         for action in ("ADAPT", "FREEZE")
     }
     minimum_fraction = float(inference_contract["minimum_realized_action_cell_fraction"])
@@ -312,43 +308,22 @@ def _exposure(cell_metrics: list[dict[str, Any]], inference_contract: Mapping[st
             "city_count": len(cities_by_action[action]),
             "cities": cities_by_action[action],
             "meets_sealed_minimum": bool(
-                realized[action] / 50.0 >= minimum_fraction
-                and len(cities_by_action[action]) >= minimum_cities
+                realized[action] / 50.0 >= minimum_fraction and len(cities_by_action[action]) >= minimum_cities
             ),
         }
         for action in ("ADAPT", "FREEZE")
     }
-    direct_minimum_fraction = float(
-        inference_contract["minimum_direct_decision_cell_fraction"]
-    )
+    direct_minimum_fraction = float(inference_contract["minimum_direct_decision_cell_fraction"])
     direct_minimum_cities = int(inference_contract["minimum_direct_decision_city_count"])
     direct_checks = {
         decision: {
             "cell_count": decisions[decision],
             "cell_fraction": decisions[decision] / 50.0,
-            "city_count": len(
-                {
-                    row["city_id"]
-                    for row in cell_metrics
-                    if row["decision"] == decision
-                }
-            ),
-            "cities": sorted(
-                {
-                    row["city_id"]
-                    for row in cell_metrics
-                    if row["decision"] == decision
-                }
-            ),
+            "city_count": len({row["city_id"] for row in cell_metrics if row["decision"] == decision}),
+            "cities": sorted({row["city_id"] for row in cell_metrics if row["decision"] == decision}),
             "meets_sealed_minimum": bool(
                 decisions[decision] / 50.0 >= direct_minimum_fraction
-                and len(
-                    {
-                        row["city_id"]
-                        for row in cell_metrics
-                        if row["decision"] == decision
-                    }
-                )
+                and len({row["city_id"] for row in cell_metrics if row["decision"] == decision})
                 >= direct_minimum_cities
             ),
         }
@@ -356,29 +331,19 @@ def _exposure(cell_metrics: list[dict[str, Any]], inference_contract: Mapping[st
     }
     adaptation_directions = Counter(row["adaptation_direction"] for row in cell_metrics)
     adaptation_direction_cities = {
-        direction: sorted(
-            {
-                row["city_id"]
-                for row in cell_metrics
-                if row["adaptation_direction"] == direction
-            }
-        )
+        direction: sorted({row["city_id"] for row in cell_metrics if row["adaptation_direction"] == direction})
         for direction in ("HELPFUL", "HARMFUL", "TIE")
     }
     return {
         "decision_counts": {name: decisions[name] for name in ("ADAPT", "FREEZE", "ABSTAIN")},
         "realized_action_counts": {name: realized[name] for name in ("ADAPT", "FREEZE")},
         "abstain_realized_as_freeze": all(
-            row["realized_action"] == "FREEZE"
-            for row in cell_metrics
-            if row["decision"] == "ABSTAIN"
+            row["realized_action"] == "FREEZE" for row in cell_metrics if row["decision"] == "ABSTAIN"
         ),
         "sealed_minimum_cell_fraction": minimum_fraction,
         "sealed_minimum_city_count": minimum_cities,
         "by_realized_action": realized_checks,
-        "both_actions_meaningfully_exposed": all(
-            row["meets_sealed_minimum"] for row in realized_checks.values()
-        ),
+        "both_actions_meaningfully_exposed": all(row["meets_sealed_minimum"] for row in realized_checks.values()),
         "sealed_direct_decision_minimum_cell_fraction": direct_minimum_fraction,
         "sealed_direct_decision_minimum_city_count": direct_minimum_cities,
         "by_direct_decision": direct_checks,
@@ -386,13 +351,11 @@ def _exposure(cell_metrics: list[dict[str, Any]], inference_contract: Mapping[st
             row["meets_sealed_minimum"] for row in direct_checks.values()
         ),
         "adaptation_outcome_direction_counts": {
-            direction: adaptation_directions[direction]
-            for direction in ("HELPFUL", "HARMFUL", "TIE")
+            direction: adaptation_directions[direction] for direction in ("HELPFUL", "HARMFUL", "TIE")
         },
         "adaptation_outcome_direction_cities": adaptation_direction_cities,
         "both_helpful_and_harmful_adaptation_observed": bool(
-            adaptation_directions["HELPFUL"] > 0
-            and adaptation_directions["HARMFUL"] > 0
+            adaptation_directions["HELPFUL"] > 0 and adaptation_directions["HARMFUL"] > 0
         ),
     }
 
@@ -422,8 +385,7 @@ def _score_sealed_target_bundle_core(
     """Verify the frozen evidence, reveal testing outcomes once, and score all cells."""
 
     if expected_execution_mode == PRODUCTION_MODE and (
-        h5_factory is not None
-        or population_manifest_validator is not _CANONICAL_MANIFEST_VALIDATOR
+        h5_factory is not None or population_manifest_validator is not _CANONICAL_MANIFEST_VALIDATOR
     ):
         raise IntegrityError("production scorer rejects injected factories or validators")
     if expected_execution_mode not in {PRODUCTION_MODE, TEST_ONLY_MODE}:
@@ -433,11 +395,9 @@ def _score_sealed_target_bundle_core(
     # is constructed.  Keep this ordering explicit and covered by tests.
     manifest, manifest_receipt = _load_verified(population_manifest_path)
     population_manifest_validator(manifest)
-    source_acceptance, _, source_acceptance_binding = (
-        load_source_postrun_acceptance_pair(
-            source_postrun_acceptance_path,
-            strict_document=expected_execution_mode == PRODUCTION_MODE,
-        )
+    source_acceptance, _, source_acceptance_binding = load_source_postrun_acceptance_pair(
+        source_postrun_acceptance_path,
+        strict_document=expected_execution_mode == PRODUCTION_MODE,
     )
     gate = load_gate_with_receipt(gate_path)
     gate_receipt = verify_artifact_receipt(gate_path)
@@ -445,8 +405,7 @@ def _score_sealed_target_bundle_core(
     if (
         manifest.get("manifest_sha256") != binding["manifest_sha256"]
         or manifest.get("population_identity_sha256") != binding["population_identity_sha256"]
-        or _artifact_binding(manifest_receipt)["artifact_sha256"]
-        != binding["manifest_artifact_sha256"]
+        or _artifact_binding(manifest_receipt)["artifact_sha256"] != binding["manifest_artifact_sha256"]
         or _artifact_binding(manifest_receipt)["canonical_document_sha256"]
         != binding["manifest_canonical_document_sha256"]
     ):
@@ -457,22 +416,18 @@ def _score_sealed_target_bundle_core(
         raise IntegrityError("offline scorer selection binds another source acceptance")
     selected = _selected_candidate_view(selection)
     fit_bundle, fit_bundle_receipt = _load_verified(selected_gate_fit_bundle_path)
-    gate_authorization, authorized_selection, authorized_gate = (
-        load_gate_authorization_with_receipt(
-            gate_authorization_path,
-            selection_path=selected_candidate_path,
-            gate_path=gate_path,
-            population_manifest_path=population_manifest_path,
-            fit_bundle_path=selected_gate_fit_bundle_path,
-            calibration_bundle_path=selected_gate_cal_bundle_path,
-        )
+    gate_authorization, authorized_selection, authorized_gate = load_gate_authorization_with_receipt(
+        gate_authorization_path,
+        selection_path=selected_candidate_path,
+        gate_path=gate_path,
+        population_manifest_path=population_manifest_path,
+        fit_bundle_path=selected_gate_fit_bundle_path,
+        calibration_bundle_path=selected_gate_cal_bundle_path,
     )
     gate_authorization_receipt = verify_artifact_receipt(gate_authorization_path)
     if authorized_selection != selection or authorized_gate != gate:
         raise IntegrityError("gate authorization loader returned a different selection or gate")
-    amendment, amendment_receipt = load_target_boundary_amendment(
-        target_boundary_amendment_path
-    )
+    amendment, amendment_receipt = load_target_boundary_amendment(target_boundary_amendment_path)
     collection, collection_receipt = _load_verified(checkpoint_collection_path)
     validate_checkpoint_collection(
         collection,
@@ -481,20 +436,17 @@ def _score_sealed_target_bundle_core(
         checkpoint_dir=checkpoint_dir,
     )
     if (
-        gate_authorization["checkpoint_collection_canonical_sha256"]
-        != stable_sha256(collection)
+        gate_authorization["checkpoint_collection_canonical_sha256"] != stable_sha256(collection)
         or gate_authorization["normalizer_sha256"] != collection["normalizer_sha256"]
     ):
         raise IntegrityError("gate authorization differs from the verified checkpoint collection")
-    precalibration_seal, precalibration_seal_receipt = (
-        load_precalibration_seal_with_receipt(
-            precalibration_seal_path,
-            study_binding=binding,
-            selection=selection,
-            fit_bundle=fit_bundle,
-            target_boundary_amendment=amendment,
-            checkpoint_collection=collection,
-        )
+    precalibration_seal, precalibration_seal_receipt = load_precalibration_seal_with_receipt(
+        precalibration_seal_path,
+        study_binding=binding,
+        selection=selection,
+        fit_bundle=fit_bundle,
+        target_boundary_amendment=amendment,
+        checkpoint_collection=collection,
     )
     seal, seal_receipt = _load_verified(execution_seal_path)
     validate_execution_seal(
@@ -508,42 +460,30 @@ def _score_sealed_target_bundle_core(
         precalibration_seal=precalibration_seal,
     )
     if seal["execution_mode"] != expected_execution_mode:
-        raise IntegrityError(
-            f"offline scorer expected {expected_execution_mode}, found {seal['execution_mode']}"
-        )
+        raise IntegrityError(f"offline scorer expected {expected_execution_mode}, found {seal['execution_mode']}")
     if (
         seal["selected_candidate_artifact"] != _artifact_binding(selected_receipt)
         or seal["checkpoint_collection_artifact"] != _artifact_binding(collection_receipt)
         or seal["gate_artifact"] != _artifact_binding(gate_receipt)
-        or seal["gate_authorization_artifact"]
-        != _artifact_binding(gate_authorization_receipt)
-        or seal["target_boundary_amendment_artifact"]
-        != _artifact_binding(amendment_receipt)
-        or seal["precalibration_seal_artifact"]
-        != _artifact_binding(precalibration_seal_receipt)
-        or precalibration_seal["selected_gate_fit_bundle_artifact"]
-        != _artifact_binding(fit_bundle_receipt)
+        or seal["gate_authorization_artifact"] != _artifact_binding(gate_authorization_receipt)
+        or seal["target_boundary_amendment_artifact"] != _artifact_binding(amendment_receipt)
+        or seal["precalibration_seal_artifact"] != _artifact_binding(precalibration_seal_receipt)
+        or precalibration_seal["selected_gate_fit_bundle_artifact"] != _artifact_binding(fit_bundle_receipt)
     ):
         raise IntegrityError("execution seal artifact bindings differ at scoring")
     if (
         seal["source_postrun_acceptance"] != source_acceptance_binding
-        or seal["source_postrun_training_container"]
-        != source_acceptance["postrun_source_container"]
-        or seal["source_hdf5_runtime_disclosure"]
-        != source_acceptance["source_hdf5_runtime_disclosure"]
-        or seal["source_checkpoint_selection_disclosure"]
-        != source_acceptance["source_checkpoint_selection_disclosure"]
-        or seal["source_initialization_clarification"]
-        != source_acceptance["source_initialization_clarification"]
+        or seal["source_postrun_training_container"] != source_acceptance["postrun_source_container"]
+        or seal["source_hdf5_runtime_disclosure"] != source_acceptance["source_hdf5_runtime_disclosure"]
+        or seal["source_checkpoint_selection_disclosure"] != source_acceptance["source_checkpoint_selection_disclosure"]
+        or seal["source_initialization_clarification"] != source_acceptance["source_initialization_clarification"]
     ):
         raise IntegrityError("offline scorer source acceptance provenance drift")
     scorer_code_identity = target_scorer_code_identity()
     scorer_environment_identity = target_scorer_environment_identity()
     if (
-        seal["scorer_code_identity_sha256"]
-        != scorer_code_identity["code_identity_sha256"]
-        or seal["scorer_environment_identity_sha256"]
-        != scorer_environment_identity["environment_identity_sha256"]
+        seal["scorer_code_identity_sha256"] != scorer_code_identity["code_identity_sha256"]
+        or seal["scorer_environment_identity_sha256"] != scorer_environment_identity["environment_identity_sha256"]
     ):
         raise IntegrityError("offline scorer code or environment differs from the execution seal")
     master, cells = load_complete_target_bundle(
@@ -553,15 +493,29 @@ def _score_sealed_target_bundle_core(
         gate=gate,
         selected_candidate=selected,
     )
+    # Content replay is also used privately by the producer before publication.
+    # Scoring additionally requires the published, inventory-bound COMPLETE state
+    # before any reveal reservation or outcome-store access can be authorized.
+    master_path = Path(target_bundle_path).expanduser()
+    required_files = {master_path.name, master_path.name + ".receipt.json"}
+    for inventory, cell in zip(master["cells"], cells, strict=True):
+        for basename in (
+            inventory["cell_basename"],
+            cell["action_artifact"]["action_basename"],
+            cell["logit_archive"]["manifest_basename"],
+        ):
+            required_files.update((basename, basename + ".receipt.json"))
+        required_files.add(cell["logit_archive"]["archive_basename"])
+    verify_complete_directory_publication(
+        master_path.parent,
+        required_relative_regular_files=required_files,
+    )
     bundle_receipt = verify_artifact_receipt(target_bundle_path)
     if (
         master["execution_seal_artifact"] != _artifact_binding(seal_receipt)
-        or master["gate_authorization_artifact"]
-        != _artifact_binding(gate_authorization_receipt)
-        or master["target_boundary_amendment_artifact"]
-        != _artifact_binding(amendment_receipt)
-        or master["precalibration_seal_artifact"]
-        != _artifact_binding(precalibration_seal_receipt)
+        or master["gate_authorization_artifact"] != _artifact_binding(gate_authorization_receipt)
+        or master["target_boundary_amendment_artifact"] != _artifact_binding(amendment_receipt)
+        or master["precalibration_seal_artifact"] != _artifact_binding(precalibration_seal_receipt)
         or master["population_manifest_artifact"] != _artifact_binding(manifest_receipt)
         or master["selected_candidate_artifact"] != _artifact_binding(selected_receipt)
         or master["checkpoint_collection_artifact"] != _artifact_binding(collection_receipt)
@@ -570,9 +524,7 @@ def _score_sealed_target_bundle_core(
     output = Path(output_path).expanduser().resolve()
     output_receipt = output.with_name(output.name + ".receipt.json")
     output_reservation_path = output.with_name(output.name + ".reservation.json")
-    output_reservation_receipt_path = output_reservation_path.with_name(
-        output_reservation_path.name + ".receipt.json"
-    )
+    output_reservation_receipt_path = output_reservation_path.with_name(output_reservation_path.name + ".receipt.json")
     if (
         not output.parent.is_dir()
         or not os.access(output.parent, os.W_OK)
@@ -582,12 +534,8 @@ def _score_sealed_target_bundle_core(
             "offline score output parent must already exist, be writable, and have "
             "at least 64 MiB free before outcome reveal"
         )
-    registry_root = validate_reveal_registry_directory(
-        reveal_registry_dir, seal["outcome_reveal_registry"]
-    )
-    reveal_path = registry_root / (
-        f"so2sat_target_outcome_reveal_{seal['execution_seal_sha256']}.json"
-    )
+    registry_root = validate_reveal_registry_directory(reveal_registry_dir, seal["outcome_reveal_registry"])
+    reveal_path = registry_root / (f"so2sat_target_outcome_reveal_{seal['execution_seal_sha256']}.json")
     reveal_receipt_path = reveal_path.with_name(reveal_path.name + ".receipt.json")
     if output.exists() or output_receipt.exists():
         raise IntegrityError("refusing to overwrite an offline target score artifact")
@@ -595,20 +543,13 @@ def _score_sealed_target_bundle_core(
         raise IntegrityError("offline target score output was already reserved")
     if reveal_path.exists() or reveal_receipt_path.exists():
         raise IntegrityError(
-            "a single testing-label reveal was already authorized; fail-closed recovery "
-            "forbids reopening outcomes"
+            "a single testing-label reveal was already authorized; fail-closed recovery forbids reopening outcomes"
         )
-    paths, signatures = _verify_target_container_paths(
-        target_data_paths, seal["target_data_identities"]
-    )
+    paths, signatures = _verify_target_container_paths(target_data_paths, seal["target_data_identities"])
     split_counts = {
-        split: manifest.get("splits", {}).get(split, {}).get("observed_samples")
-        for split in ("validation", "testing")
+        split: manifest.get("splits", {}).get(split, {}).get("observed_samples") for split in ("validation", "testing")
     }
-    if any(
-        isinstance(count, bool) or not isinstance(count, int) or count < 1
-        for count in split_counts.values()
-    ):
+    if any(isinstance(count, bool) or not isinstance(count, int) or count < 1 for count in split_counts.values()):
         raise IntegrityError("scoring manifest has an invalid target population count")
     validation_count = int(split_counts["validation"])
     testing_count = int(split_counts["testing"])
@@ -655,9 +596,7 @@ def _score_sealed_target_bundle_core(
         "target_outcomes_opened": False,
     }
     output_reservation["reservation_sha256"] = stable_sha256(output_reservation)
-    output_reservation_receipt = write_immutable_json_with_receipt(
-        output_reservation_path, output_reservation
-    )
+    output_reservation_receipt = write_immutable_json_with_receipt(output_reservation_path, output_reservation)
 
     # Exclusively reserve the one permitted outcome reveal.  If this process
     # crashes after this create-only ledger is written, recovery is deliberately
@@ -676,31 +615,15 @@ def _score_sealed_target_bundle_core(
         "execution_seal_sha256": seal["execution_seal_sha256"],
         "gate_authorization_sha256": gate_authorization["authorization_sha256"],
         "target_boundary_amendment_artifact": _artifact_binding(amendment_receipt),
-        "target_boundary_amendment_sha256": seal[
-            "target_boundary_amendment_sha256"
-        ],
-        "precalibration_seal_artifact": _artifact_binding(
-            precalibration_seal_receipt
-        ),
-        "precalibration_seal_sha256": precalibration_seal[
-            "precalibration_seal_sha256"
-        ],
+        "target_boundary_amendment_sha256": seal["target_boundary_amendment_sha256"],
+        "precalibration_seal_artifact": _artifact_binding(precalibration_seal_receipt),
+        "precalibration_seal_sha256": precalibration_seal["precalibration_seal_sha256"],
         "source_postrun_acceptance": seal["source_postrun_acceptance"],
-        "source_postrun_acceptance_artifact_sha256": seal[
-            "source_postrun_acceptance_artifact_sha256"
-        ],
-        "source_postrun_training_container": seal[
-            "source_postrun_training_container"
-        ],
-        "source_hdf5_runtime_disclosure": seal[
-            "source_hdf5_runtime_disclosure"
-        ],
-        "source_checkpoint_selection_disclosure": seal[
-            "source_checkpoint_selection_disclosure"
-        ],
-        "source_initialization_clarification": seal[
-            "source_initialization_clarification"
-        ],
+        "source_postrun_acceptance_artifact_sha256": seal["source_postrun_acceptance_artifact_sha256"],
+        "source_postrun_training_container": seal["source_postrun_training_container"],
+        "source_hdf5_runtime_disclosure": seal["source_hdf5_runtime_disclosure"],
+        "source_checkpoint_selection_disclosure": seal["source_checkpoint_selection_disclosure"],
+        "source_initialization_clarification": seal["source_initialization_clarification"],
         "outcome_reveal_registry": seal["outcome_reveal_registry"],
         "gate_sha256": gate["gate_sha256"],
         "selected_candidate_sha256": selected["selected_candidate_sha256"],
@@ -722,9 +645,7 @@ def _score_sealed_target_bundle_core(
 
     # Phase B: the single permitted outcome read.  Validation is never passed
     # to the HDF5 factory and its label array is structurally unreachable here.
-    truth = _read_testing_outcomes_once(
-        paths["testing"], expected_rows=testing_count, h5_factory=h5_factory
-    )
+    truth = _read_testing_outcomes_once(paths["testing"], expected_rows=testing_count, h5_factory=h5_factory)
     for split in ("validation", "testing"):
         identity = seal["target_data_identities"][split]
         if (
@@ -749,10 +670,7 @@ def _score_sealed_target_bundle_core(
             "positive_favors": "KGA",
             "point_estimate": float(matrix.mean()),
             "point_estimate_percentage_points": float(100.0 * matrix.mean()),
-            "city_mean_effects": {
-                city: float(city_means[index])
-                for index, city in enumerate(master["target_cities"])
-            },
+            "city_mean_effects": {city: float(city_means[index]) for index, city in enumerate(master["target_cities"])},
             "effect_matrix": {
                 "row_axis": "target_city",
                 "row_ids": list(master["target_cities"]),
@@ -768,13 +686,9 @@ def _score_sealed_target_bundle_core(
         comparisons[policy]["multiplicity"] = holm[policy]
 
     exposure = _exposure(cell_metrics, seal["inference_contract"])
-    both_ci_positive = all(
-        comparisons[policy]["confidence_interval"]["lower"] > 0.0
-        for policy in comparisons
-    )
+    both_ci_positive = all(comparisons[policy]["confidence_interval"]["lower"] > 0.0 for policy in comparisons)
     both_holm_positive = all(
-        comparisons[policy]["point_estimate"] > 0.0
-        and comparisons[policy]["multiplicity"]["holm_reject_at_0_05"]
+        comparisons[policy]["point_estimate"] > 0.0 and comparisons[policy]["multiplicity"]["holm_reject_at_0_05"]
         for policy in comparisons
     )
     numerical_strong_success = bool(
@@ -785,9 +699,7 @@ def _score_sealed_target_bundle_core(
         and exposure["both_helpful_and_harmful_adaptation_observed"]
         and len(cell_metrics) == 50
     )
-    strong_success = bool(
-        numerical_strong_success and seal["execution_mode"] == PRODUCTION_MODE
-    )
+    strong_success = bool(numerical_strong_success and seal["execution_mode"] == PRODUCTION_MODE)
     class_counts = np.bincount(truth, minlength=17).astype(int)
     document = {
         "schema": SCORE_SCHEMA,
@@ -810,31 +722,15 @@ def _score_sealed_target_bundle_core(
         "gate_authorization_artifact": _artifact_binding(gate_authorization_receipt),
         "gate_authorization_sha256": gate_authorization["authorization_sha256"],
         "target_boundary_amendment_artifact": _artifact_binding(amendment_receipt),
-        "target_boundary_amendment_sha256": seal[
-            "target_boundary_amendment_sha256"
-        ],
-        "precalibration_seal_artifact": _artifact_binding(
-            precalibration_seal_receipt
-        ),
-        "precalibration_seal_sha256": precalibration_seal[
-            "precalibration_seal_sha256"
-        ],
+        "target_boundary_amendment_sha256": seal["target_boundary_amendment_sha256"],
+        "precalibration_seal_artifact": _artifact_binding(precalibration_seal_receipt),
+        "precalibration_seal_sha256": precalibration_seal["precalibration_seal_sha256"],
         "source_postrun_acceptance": seal["source_postrun_acceptance"],
-        "source_postrun_acceptance_artifact_sha256": seal[
-            "source_postrun_acceptance_artifact_sha256"
-        ],
-        "source_postrun_training_container": seal[
-            "source_postrun_training_container"
-        ],
-        "source_hdf5_runtime_disclosure": seal[
-            "source_hdf5_runtime_disclosure"
-        ],
-        "source_checkpoint_selection_disclosure": seal[
-            "source_checkpoint_selection_disclosure"
-        ],
-        "source_initialization_clarification": seal[
-            "source_initialization_clarification"
-        ],
+        "source_postrun_acceptance_artifact_sha256": seal["source_postrun_acceptance_artifact_sha256"],
+        "source_postrun_training_container": seal["source_postrun_training_container"],
+        "source_hdf5_runtime_disclosure": seal["source_hdf5_runtime_disclosure"],
+        "source_checkpoint_selection_disclosure": seal["source_checkpoint_selection_disclosure"],
+        "source_initialization_clarification": seal["source_initialization_clarification"],
         "outcome_reveal_registry": seal["outcome_reveal_registry"],
         "gate_sha256": gate["gate_sha256"],
         "selected_candidate_sha256": selected["selected_candidate_sha256"],
@@ -863,15 +759,9 @@ def _score_sealed_target_bundle_core(
         "cell_metrics": cell_metrics,
         "inference": {
             "estimand": seal["inference_contract"]["estimand"],
-            "within_cell_weighting": seal["inference_contract"][
-                "within_cell_weighting"
-            ],
-            "target_city_weighting": seal["inference_contract"][
-                "target_city_weighting"
-            ],
-            "source_checkpoint_weighting": seal["inference_contract"][
-                "source_checkpoint_weighting"
-            ],
+            "within_cell_weighting": seal["inference_contract"]["within_cell_weighting"],
+            "target_city_weighting": seal["inference_contract"]["target_city_weighting"],
+            "source_checkpoint_weighting": seal["inference_contract"]["source_checkpoint_weighting"],
             "primary_cluster_unit": "target_city",
             "crossed_unit": "source_checkpoint",
             "comparisons": comparisons,
@@ -883,15 +773,11 @@ def _score_sealed_target_bundle_core(
         "strong_success_checks": {
             "both_crossed_bootstrap_intervals_above_zero": both_ci_positive,
             "both_two_sided_city_sign_flip_tests_holm_significant_with_positive_effect": both_holm_positive,
-            "meaningful_adapt_and_freeze_exposure": exposure[
-                "both_actions_meaningfully_exposed"
-            ],
+            "meaningful_adapt_and_freeze_exposure": exposure["both_actions_meaningfully_exposed"],
             "meaningful_direct_adapt_and_freeze_decisions": exposure[
                 "both_direct_adapt_and_freeze_meaningfully_exposed"
             ],
-            "helpful_and_harmful_adaptation_cases_observed": exposure[
-                "both_helpful_and_harmful_adaptation_observed"
-            ],
+            "helpful_and_harmful_adaptation_cases_observed": exposure["both_helpful_and_harmful_adaptation_observed"],
             "all_50_checkpoint_by_city_cells_complete": len(cell_metrics) == 50,
             "numerical_criteria_met_before_evidence_mode_guard": numerical_strong_success,
             "production_evidence_mode": seal["execution_mode"] == PRODUCTION_MODE,

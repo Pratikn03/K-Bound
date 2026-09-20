@@ -99,12 +99,8 @@ SYNTHETIC_TARGET_ENVIRONMENT_IDENTITY = {
 SYNTHETIC_TARGET_ENVIRONMENT_IDENTITY["environment_identity_sha256"] = stable_sha256(
     SYNTHETIC_TARGET_ENVIRONMENT_IDENTITY
 )
-SYNTHETIC_TARGET_ENVIRONMENT_SHA256 = SYNTHETIC_TARGET_ENVIRONMENT_IDENTITY[
-    "environment_identity_sha256"
-]
-AMENDMENT_PATH = (
-    Path(target_inference.__file__).resolve().parent / AMENDMENT_BASENAME
-)
+SYNTHETIC_TARGET_ENVIRONMENT_SHA256 = SYNTHETIC_TARGET_ENVIRONMENT_IDENTITY["environment_identity_sha256"]
+AMENDMENT_PATH = Path(target_inference.__file__).resolve().parent / AMENDMENT_BASENAME
 
 
 class _PixelDataset:
@@ -186,9 +182,7 @@ def _synthetic_cell_computation(
 ) -> CellComputation:
     city_index = TARGET_CITIES.index(probe_samples[0].metadata.city_id)
     checkpoint_index = int(checkpoint["checkpoint_id"])
-    signal = (
-        0.10 if city_index < 4 else 1.90 if city_index < 8 else 1.0
-    ) + checkpoint_index / 1000.0
+    signal = (0.10 if city_index < 4 else 1.90 if city_index < 8 else 1.0) + checkpoint_index / 1000.0
     frozen_probe = np.zeros((len(probe_samples), 17), dtype=np.float64)
     adapted_probe = frozen_probe.copy()
     adapted_probe[:, 1] = signal
@@ -206,14 +200,10 @@ def _synthetic_cell_computation(
     )
 
 
-def _synthetic_probe_computation(
-    checkpoint: dict[str, Any], probe_samples: list[Any]
-) -> ProbeComputation:
+def _synthetic_probe_computation(checkpoint: dict[str, Any], probe_samples: list[Any]) -> ProbeComputation:
     city_index = TARGET_CITIES.index(probe_samples[0].metadata.city_id)
     checkpoint_index = int(checkpoint["checkpoint_id"])
-    signal = (
-        0.10 if city_index < 4 else 1.90 if city_index < 8 else 1.0
-    ) + checkpoint_index / 1000.0
+    signal = (0.10 if city_index < 4 else 1.90 if city_index < 8 else 1.0) + checkpoint_index / 1000.0
     frozen_probe = np.zeros((len(probe_samples), 17), dtype=np.float64)
     adapted_probe = frozen_probe.copy()
     adapted_probe[:, 1] = signal
@@ -229,9 +219,7 @@ def _synthetic_probe_computation(
     )
 
 
-def _synthetic_evaluation_computation(
-    probe: ProbeComputation, evaluation_samples: list[Any]
-) -> EvaluationComputation:
+def _synthetic_evaluation_computation(probe: ProbeComputation, evaluation_samples: list[Any]) -> EvaluationComputation:
     assert probe.opaque_evaluation_state["city_id"] == evaluation_samples[0].metadata.city_id
     frozen_eval = np.zeros((len(evaluation_samples), 17), dtype=np.float64)
     frozen_eval[:, 0] = 2.0
@@ -426,9 +414,7 @@ def _development_row(
     }
 
 
-def _checkpoint_collection(
-    root: Path, checkpoint_hashes: dict[str, dict[str, str]]
-) -> Path:
+def _checkpoint_collection(root: Path, checkpoint_hashes: dict[str, dict[str, str]]) -> Path:
     rows = []
     config_sha256 = stable_sha256({"config": "synthetic"})
     data_identity_sha256 = stable_sha256({"data": "synthetic"})
@@ -573,9 +559,7 @@ def _candidate_bundle(
             "observed_benefit": benefit,
             "adapter_diagnostics": diagnostics,
             "gate_row": gate_row,
-            "source_training_receipt_sha256": stable_sha256(
-                {"training_receipt": gate_row["checkpoint_id"]}
-            ),
+            "source_training_receipt_sha256": stable_sha256({"training_receipt": gate_row["checkpoint_id"]}),
             "source_normalizer_sha256": normalizer_sha256,
             "source_container_identity_sha256": source_container_sha256,
             "runner_code_sha256": code_identity["code_sha256"],
@@ -596,25 +580,25 @@ def _candidate_bundle(
         source_container_identity_sha256=source_container_sha256,
         normalizer_sha256=normalizer_sha256,
         code_identity=code_identity,
-        development_environment=development_environment_identity(
-            torch.device("cpu")
-        ),
+        development_environment=development_environment_identity(torch.device("cpu")),
     )
 
 
-def _fixture(tmp_path: Path) -> dict[str, Any]:
+def _fixture(tmp_path: Path, *, protocol_identity: dict[str, str] | None = None) -> dict[str, Any]:
     manifest_path = tmp_path / "population.json"
-    manifest_receipt = write_immutable_json_with_receipt(manifest_path, _manifest())
+    manifest = _manifest()
+    if protocol_identity is not None:
+        manifest["protocol_identity"] = dict(protocol_identity)
+        manifest.pop("manifest_sha256")
+        manifest["manifest_sha256"] = stable_sha256(manifest)
+    manifest_receipt = write_immutable_json_with_receipt(manifest_path, manifest)
     binding = load_study_binding(manifest_path)
     checkpoint_hashes = {
-        checkpoint: {"tensor": stable_sha256({"tensor": checkpoint}), "file": ""}
-        for checkpoint in CHECKPOINT_IDS
+        checkpoint: {"tensor": stable_sha256({"tensor": checkpoint}), "file": ""} for checkpoint in CHECKPOINT_IDS
     }
     checkpoint_dir = tmp_path / "checkpoints"
     checkpoint_dir.mkdir()
-    checkpoint_collection_path = _checkpoint_collection(
-        checkpoint_dir, checkpoint_hashes
-    )
+    checkpoint_collection_path = _checkpoint_collection(checkpoint_dir, checkpoint_hashes)
     fit: list[dict[str, Any]] = []
     for city_index, city in enumerate(FIT_CITIES):
         for checkpoint_index, checkpoint in enumerate(CHECKPOINT_IDS):
@@ -654,20 +638,14 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         "status": "SOURCE_POSTRUN_ACCEPTED",
         "population_manifest": {
             "manifest_sha256": binding["manifest_sha256"],
-            "population_identity_sha256": binding[
-                "population_identity_sha256"
-            ],
+            "population_identity_sha256": binding["population_identity_sha256"],
         },
-        "checkpoint_collection": {
-            "normalizer_sha256": collection["normalizer_sha256"]
-        },
+        "checkpoint_collection": {"normalizer_sha256": collection["normalizer_sha256"]},
         "postrun_source_container": {
             "basename": "training.h5",
             "bytes": 123,
             "sha256": stable_sha256({"training": "synthetic"}),
-            "source_container_identity_sha256": stable_sha256(
-                {"source_container": "synthetic"}
-            ),
+            "source_container_identity_sha256": stable_sha256({"source_container": "synthetic"}),
             "matches_source_preflight": True,
             "stable_during_hash": True,
             "hdf5_datasets_opened": False,
@@ -675,16 +653,11 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         "source_hdf5_runtime_disclosure": {
             "source_preflight_schema": "kbound_so2sat_source_data_preflight_v1",
             "source_preflight_explicit_h5py_version_recorded": False,
-            "source_training_scientific_identity_schema": (
-                "kbound_so2sat_source_seed_identity_v1"
-            ),
+            "source_training_scientific_identity_schema": ("kbound_so2sat_source_seed_identity_v1"),
             "source_training_runtime_sha256_by_model_seed": {
-                str(seed): stable_sha256({"synthetic_runtime": seed})
-                for seed in range(5)
+                str(seed): stable_sha256({"synthetic_runtime": seed}) for seed in range(5)
             },
-            "source_training_explicit_h5py_version_by_model_seed": {
-                str(seed): None for seed in range(5)
-            },
+            "source_training_explicit_h5py_version_by_model_seed": {str(seed): None for seed in range(5)},
             "all_source_training_receipts_explicitly_record_h5py_version": False,
             "postrun_acceptance_h5py_version": "synthetic-test-version",
             "postrun_acceptance_h5py_version_is_retroactive_source_runtime_proof": False,
@@ -700,32 +673,18 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         },
         "source_initialization_clarification": {
             "architecture_id": ARCHITECTURE_ID,
-            "legacy_architecture_spec_initialization_label": (
-                "independent_torchvision_kaiming_per_model_seed"
-            ),
-            "residual_body_initialization": (
-                "torchvision_resnet18_constructor_initialization"
-            ),
-            "replacement_conv1_initialization": (
-                "torch.nn.Conv2d_default_reset_parameters_kaiming_uniform_a_sqrt5"
-            ),
-            "replacement_fc_initialization": (
-                "torch.nn.Linear_default_reset_parameters"
-            ),
+            "legacy_architecture_spec_initialization_label": ("independent_torchvision_kaiming_per_model_seed"),
+            "residual_body_initialization": ("torchvision_resnet18_constructor_initialization"),
+            "replacement_conv1_initialization": ("torch.nn.Conv2d_default_reset_parameters_kaiming_uniform_a_sqrt5"),
+            "replacement_fc_initialization": ("torch.nn.Linear_default_reset_parameters"),
             "exact_initial_tensor_hashes_authoritative": True,
-            "initial_tensor_sha256_by_model_seed": {
-                str(seed): stable_sha256({"initial": seed}) for seed in range(5)
-            },
+            "initial_tensor_sha256_by_model_seed": {str(seed): stable_sha256({"initial": seed}) for seed in range(5)},
             "numerical_artifacts_changed_by_clarification": False,
         },
     }
     source_acceptance_path = tmp_path / "so2sat_source_postrun_acceptance.json"
-    source_acceptance_receipt = write_immutable_json_with_receipt(
-        source_acceptance_path, source_acceptance_document
-    )
-    source_acceptance_binding = source_postrun_acceptance_binding(
-        source_acceptance_document, source_acceptance_receipt
-    )
+    source_acceptance_receipt = write_immutable_json_with_receipt(source_acceptance_path, source_acceptance_document)
+    source_acceptance_binding = source_postrun_acceptance_binding(source_acceptance_document, source_acceptance_receipt)
     tent_fit_bundle = _candidate_bundle(
         candidate_id=TENT_CANDIDATE_ID,
         role="gate_fit",
@@ -760,9 +719,7 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
     selected_receipt = write_immutable_json_with_receipt(selected_path, selected)
     fit_bundle_path = tmp_path / "selected.gate_fit.json"
     cal_bundle_path = tmp_path / "selected.gate_cal.json"
-    fit_bundle_receipt = write_immutable_json_with_receipt(
-        fit_bundle_path, tent_fit_bundle
-    )
+    fit_bundle_receipt = write_immutable_json_with_receipt(fit_bundle_path, tent_fit_bundle)
     write_immutable_json_with_receipt(cal_bundle_path, tent_cal_bundle)
     gate_authorization = build_gate_authorization(
         selected,
@@ -772,9 +729,7 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         study_binding=binding,
     )
     gate_authorization_path = tmp_path / "gate-authorization.json"
-    gate_authorization_receipt = write_immutable_json_with_receipt(
-        gate_authorization_path, gate_authorization
-    )
+    gate_authorization_receipt = write_immutable_json_with_receipt(gate_authorization_path, gate_authorization)
     amendment, amendment_receipt = load_target_boundary_amendment(AMENDMENT_PATH)
     collection_receipt = strict_json_load(
         checkpoint_collection_path.with_name(checkpoint_collection_path.name + ".receipt.json")
@@ -810,9 +765,7 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         "schema": "synthetic_development_environment_v1",
         "environment": "synthetic",
     }
-    development_environment["environment_identity_sha256"] = stable_sha256(
-        development_environment
-    )
+    development_environment["environment_identity_sha256"] = stable_sha256(development_environment)
     precalibration = build_precalibration_seal(
         study_binding=binding,
         manifest_receipt=manifest_receipt,
@@ -838,9 +791,7 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         execution_mode=TEST_ONLY_MODE,
     )
     precalibration_path = tmp_path / "precalibration-seal.json"
-    precalibration_receipt = write_immutable_json_with_receipt(
-        precalibration_path, precalibration
-    )
+    precalibration_receipt = write_immutable_json_with_receipt(precalibration_path, precalibration)
     seal = build_execution_seal(
         study_binding=binding,
         selected_candidate=selected,
@@ -859,12 +810,8 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
         target_data_identities=data_identities,
         code_identity_sha256=SYNTHETIC_TARGET_CODE_SHA256,
         environment_identity_sha256=SYNTHETIC_TARGET_ENVIRONMENT_SHA256,
-        scorer_code_identity_sha256=target_scorer_code_identity()[
-            "code_identity_sha256"
-        ],
-        scorer_environment_identity_sha256=target_scorer_environment_identity()[
-            "environment_identity_sha256"
-        ],
+        scorer_code_identity_sha256=target_scorer_code_identity()["code_identity_sha256"],
+        scorer_environment_identity_sha256=target_scorer_environment_identity()["environment_identity_sha256"],
         execution_mode=TEST_ONLY_MODE,
     )
     seal_path = tmp_path / "execution-seal.json"
@@ -877,9 +824,12 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
     def assert_actions_exist_before_testing_pixels(path: Path) -> None:
         if path.stem != "testing":
             return
+        assert not output_dir.exists(), "partial output must not occupy the final name"
+        stages = list(tmp_path.glob(".kbound-*.reservation/payload"))
+        assert len(stages) == 1
         city = TARGET_CITIES[action_timing["testing_city_opens_after_five_actions"]]
         for checkpoint in CHECKPOINT_IDS:
-            action_path = output_dir / f"target_{city}_checkpoint{checkpoint}.action.json"
+            action_path = stages[0] / f"target_{city}_checkpoint{checkpoint}.action.json"
             verify_artifact_receipt(action_path)
         action_timing["testing_city_opens_after_five_actions"] += 1
 
@@ -911,9 +861,7 @@ def _fixture(tmp_path: Path) -> dict[str, Any]:
             probe_computation: ProbeComputation,
             evaluation_samples: list[Any],
         ) -> EvaluationComputation:
-            return _synthetic_evaluation_computation(
-                probe_computation, evaluation_samples
-            )
+            return _synthetic_evaluation_computation(probe_computation, evaluation_samples)
 
     executor = SyntheticExecutor()
 
@@ -993,9 +941,10 @@ def test_live_runner_is_label_blind_and_offline_scorer_opens_testing_labels_once
     assert bundle["probe_labels_opened"] is False
     assert bundle["probe_labels_scored"] is False
     assert bundle["evaluation_labels_opened"] is False
-    assert bundle["source_postrun_acceptance_artifact_sha256"] == bundle[
-        "source_postrun_acceptance"
-    ]["source_postrun_acceptance_artifact_sha256"]
+    assert (
+        bundle["source_postrun_acceptance_artifact_sha256"]
+        == bundle["source_postrun_acceptance"]["source_postrun_acceptance_artifact_sha256"]
+    )
 
     truth = np.asarray([0, 0, 0, 0, 1, 1, 1, 1, 0, 1], dtype=np.int64)
     label_factory = _LabelFactory(truth)
@@ -1003,13 +952,9 @@ def test_live_runner_is_label_blind_and_offline_scorer_opens_testing_labels_once
     result = strict_json_load(result_path)
     assert result["execution_mode"] == TEST_ONLY_MODE
     assert result["status"].startswith("TEST_ONLY_")
-    assert result["source_postrun_acceptance"] == bundle[
-        "source_postrun_acceptance"
-    ]
+    assert result["source_postrun_acceptance"] == bundle["source_postrun_acceptance"]
     assert result["source_postrun_training_container"]["basename"] == "training.h5"
-    assert result["source_hdf5_runtime_disclosure"] == bundle[
-        "source_hdf5_runtime_disclosure"
-    ]
+    assert result["source_hdf5_runtime_disclosure"] == bundle["source_hdf5_runtime_disclosure"]
     assert result["strong_success_checks"]["strong_success"] is False
     assert label_factory.tracker == {"opens": 1, "requests": 1, "full_reads": 1}
     assert [path.name for path in label_factory.paths] == ["testing.h5"]
@@ -1027,19 +972,13 @@ def test_live_runner_is_label_blind_and_offline_scorer_opens_testing_labels_once
     assert adapt_comparison["point_estimate"] == pytest.approx(0.4)
     assert adapt_comparison["confidence_interval"]["lower"] == pytest.approx(0.0)
     assert adapt_comparison["confidence_interval"]["upper"] == pytest.approx(0.8)
-    assert adapt_comparison["sign_flip"]["two_sided_p_value"] == pytest.approx(
-        0.21875
-    )
-    assert adapt_comparison["multiplicity"]["holm_adjusted_p_value"] == pytest.approx(
-        0.25
-    )
+    assert adapt_comparison["sign_flip"]["two_sided_p_value"] == pytest.approx(0.21875)
+    assert adapt_comparison["multiplicity"]["holm_adjusted_p_value"] == pytest.approx(0.25)
     assert freeze_comparison["point_estimate"] == pytest.approx(0.4)
     assert freeze_comparison["confidence_interval"]["lower"] == pytest.approx(0.1)
     assert freeze_comparison["confidence_interval"]["upper"] == pytest.approx(0.7)
     assert freeze_comparison["sign_flip"]["two_sided_p_value"] == pytest.approx(0.125)
-    assert freeze_comparison["multiplicity"]["holm_adjusted_p_value"] == pytest.approx(
-        0.25
-    )
+    assert freeze_comparison["multiplicity"]["holm_adjusted_p_value"] == pytest.approx(0.25)
     for metric in result["cell_metrics"]:
         assert metric["fixed_freeze_regret_minus_kga_regret"] == pytest.approx(
             metric["kga_accuracy"] - metric["frozen_accuracy"]
@@ -1052,9 +991,7 @@ def test_live_runner_is_label_blind_and_offline_scorer_opens_testing_labels_once
         "FREEZE": 20,
         "ABSTAIN": 10,
     }
-    assert result["exposure"][
-        "both_direct_adapt_and_freeze_meaningfully_exposed"
-    ] is True
+    assert result["exposure"]["both_direct_adapt_and_freeze_meaningfully_exposed"] is True
     assert result["exposure"]["abstain_realized_as_freeze"] is True
 
     second_factory = _LabelFactory(truth)
@@ -1068,9 +1005,7 @@ def test_live_runner_is_label_blind_and_offline_scorer_opens_testing_labels_once
     shutil.copytree(Path(fixture["collection"]).parent, copied_checkpoint_root)
     copied_fixture = dict(fixture)
     copied_fixture["bundle"] = copied_bundle_root / Path(fixture["bundle"]).name
-    copied_fixture["collection"] = (
-        copied_checkpoint_root / Path(fixture["collection"]).name
-    )
+    copied_fixture["collection"] = copied_checkpoint_root / Path(fixture["collection"]).name
     copied_factory = _LabelFactory(truth)
     with pytest.raises(IntegrityError, match="already authorized|forbids reopening"):
         _score(copied_fixture, copied_factory, tmp_path / "copied-score.json")
@@ -1086,6 +1021,34 @@ def test_incomplete_or_tampered_bundle_fails_before_any_outcome_open(tmp_path: P
     with pytest.raises(IntegrityError, match="incomplete|artifact/receipt pair"):
         _score(fixture, label_factory, tmp_path / "score-incomplete.json")
     assert label_factory.tracker == {"opens": 0, "requests": 0, "full_reads": 0}
+
+
+@pytest.mark.parametrize("state", ("missing", "incomplete", "private_staging", "wrong_inventory"))
+def test_unpublished_bundle_fails_before_reveal_authorization(tmp_path: Path, state: str) -> None:
+    fixture = _fixture(tmp_path)
+    root = Path(fixture["bundle"]).parent
+    complete = root / ".kbound-publication-complete.json"
+    if state == "incomplete":
+        complete.rename(root / ".kbound-publication-incomplete.json")
+    elif state == "wrong_inventory":
+        os.chmod(complete, 0o644)
+        document = strict_json_load(complete)
+        document["required_regular_files_sha256"] = "0" * 64
+        complete.write_text(json.dumps(document), encoding="utf-8")
+    else:
+        complete.unlink()
+        if state == "private_staging":
+            holder = tmp_path / ".kbound-test.reservation"
+            holder.mkdir()
+            root.rename(holder / "payload")
+            fixture["bundle"] = holder / "payload" / Path(fixture["bundle"]).name
+    label_factory = _LabelFactory(np.zeros(10, dtype=np.int64))
+    registry_before = sorted(path.name for path in Path(fixture["registry_dir"]).iterdir())
+    with pytest.raises(IntegrityError, match="publication"):
+        _score(fixture, label_factory, tmp_path / "score.json")
+    assert label_factory.tracker == {"opens": 0, "requests": 0, "full_reads": 0}
+    assert sorted(path.name for path in Path(fixture["registry_dir"]).iterdir()) == registry_before
+    assert not (tmp_path / "score.json.reservation.json").exists()
 
 
 def test_source_acceptance_tamper_fails_before_any_outcome_open(
@@ -1132,13 +1095,8 @@ def test_prediction_tamper_and_container_tamper_fail_before_outcome_open(tmp_pat
     third_root.mkdir()
     fixture3 = _fixture(third_root)
     master3 = strict_json_load(fixture3["bundle"])
-    first_cell3 = strict_json_load(
-        Path(fixture3["bundle"]).parent / master3["cells"][0]["cell_basename"]
-    )
-    archive3 = (
-        Path(fixture3["bundle"]).parent
-        / first_cell3["logit_archive"]["archive_basename"]
-    )
+    first_cell3 = strict_json_load(Path(fixture3["bundle"]).parent / master3["cells"][0]["cell_basename"])
+    archive3 = Path(fixture3["bundle"]).parent / first_cell3["logit_archive"]["archive_basename"]
     os.chmod(archive3, 0o644)
     archive3.write_bytes(archive3.read_bytes() + b"tamper")
     label_factory3 = _LabelFactory(np.zeros(10, dtype=np.int64))
@@ -1150,13 +1108,8 @@ def test_prediction_tamper_and_container_tamper_fail_before_outcome_open(tmp_pat
     fourth_root.mkdir()
     fixture4 = _fixture(fourth_root)
     master4 = strict_json_load(fixture4["bundle"])
-    first_cell4 = strict_json_load(
-        Path(fixture4["bundle"]).parent / master4["cells"][0]["cell_basename"]
-    )
-    archive4 = (
-        Path(fixture4["bundle"]).parent
-        / first_cell4["logit_archive"]["archive_basename"]
-    )
+    first_cell4 = strict_json_load(Path(fixture4["bundle"]).parent / master4["cells"][0]["cell_basename"])
+    archive4 = Path(fixture4["bundle"]).parent / first_cell4["logit_archive"]["archive_basename"]
     archive4.unlink()
     label_factory4 = _LabelFactory(np.zeros(10, dtype=np.int64))
     with pytest.raises(IntegrityError, match="logit archive"):
@@ -1284,9 +1237,7 @@ def test_production_runner_and_seal_stop_on_action_unit_mismatch_before_io(
         runner_calls.append("runner")
         raise IntegrityError("synthetic action-unit mismatch")
 
-    monkeypatch.setattr(
-        target_runner, "require_production_target_action_unit_alignment", stop_runner
-    )
+    monkeypatch.setattr(target_runner, "require_production_target_action_unit_alignment", stop_runner)
     geo = object.__new__(VerifiedGeoIndex)
     geo._uses_canonical_h5_factory = True  # type: ignore[attr-defined]
     loader = object.__new__(LabelFreeTargetLoader)
@@ -1323,9 +1274,7 @@ def test_production_runner_and_seal_stop_on_action_unit_mismatch_before_io(
         seal_calls.append("seal")
         raise IntegrityError("synthetic action-unit mismatch")
 
-    monkeypatch.setattr(
-        target_seal, "require_production_target_action_unit_alignment", stop_seal
-    )
+    monkeypatch.setattr(target_seal, "require_production_target_action_unit_alignment", stop_seal)
     with pytest.raises(IntegrityError, match="synthetic action-unit mismatch"):
         target_seal._create_execution_seal_core(
             population_manifest_path=tmp_path / "missing-manifest.json",
@@ -1360,8 +1309,9 @@ def test_precalibration_seal_predates_and_is_extended_by_target_seal(
     precalibration = strict_json_load(fixture["precalibration_seal"])
     execution = strict_json_load(fixture["seal"])
     selected_fit = strict_json_load(fixture["fit_bundle"])
-    assert precalibration["gate_fit_development_environment_identity"] == (
-        selected_fit["development_environment_identity"]
+    assert (
+        precalibration["gate_fit_development_environment_identity"]
+        == (selected_fit["development_environment_identity"])
     )
     assert precalibration["seal_creation_audit"] == {
         "created_after_gate_fit_selection": True,
@@ -1373,29 +1323,18 @@ def test_precalibration_seal_predates_and_is_extended_by_target_seal(
         "target_pixels_opened": 0,
         "target_labels_opened": 0,
     }
-    assert execution["precalibration_seal_sha256"] == precalibration[
-        "precalibration_seal_sha256"
-    ]
-    assert precalibration["source_postrun_acceptance_artifact_sha256"] == (
-        precalibration["source_postrun_acceptance"][
-            "source_postrun_acceptance_artifact_sha256"
-        ]
+    assert execution["precalibration_seal_sha256"] == precalibration["precalibration_seal_sha256"]
+    assert (
+        precalibration["source_postrun_acceptance_artifact_sha256"]
+        == (precalibration["source_postrun_acceptance"]["source_postrun_acceptance_artifact_sha256"])
     )
-    assert precalibration["source_postrun_training_container"]["basename"] == (
-        "training.h5"
+    assert precalibration["source_postrun_training_container"]["basename"] == ("training.h5")
+    assert execution["source_postrun_acceptance"] == precalibration["source_postrun_acceptance"]
+    assert execution["source_hdf5_runtime_disclosure"] == precalibration["source_hdf5_runtime_disclosure"]
+    assert (
+        execution["source_checkpoint_selection_disclosure"] == precalibration["source_checkpoint_selection_disclosure"]
     )
-    assert execution["source_postrun_acceptance"] == precalibration[
-        "source_postrun_acceptance"
-    ]
-    assert execution["source_hdf5_runtime_disclosure"] == precalibration[
-        "source_hdf5_runtime_disclosure"
-    ]
-    assert execution["source_checkpoint_selection_disclosure"] == precalibration[
-        "source_checkpoint_selection_disclosure"
-    ]
-    assert execution["outcome_reveal_registry"] == precalibration[
-        "outcome_reveal_registry"
-    ]
+    assert execution["outcome_reveal_registry"] == precalibration["outcome_reveal_registry"]
     assert execution["seal_creation_audit"]["extends_precalibration_seal"] is True
 
 
@@ -1432,9 +1371,7 @@ def test_production_cell_executor_uses_firewall_pixels_and_fresh_checkpoint(
         source_train_n=1,
         source_train_pixel_n=1024,
         source_rows_sha256=normalizer_unsigned["source_rows_sha256"],
-        source_container_identity_sha256=normalizer_unsigned[
-            "source_container_identity_sha256"
-        ],
+        source_container_identity_sha256=normalizer_unsigned["source_container_identity_sha256"],
         normalizer_sha256=stable_sha256(normalizer_unsigned),
     )
     normalizer_path = tmp_path / "normalizer.json"
@@ -1477,15 +1414,15 @@ def test_production_cell_executor_uses_firewall_pixels_and_fresh_checkpoint(
     }
     geo = _SyntheticGeoIndex(stable_sha256({"population": "tiny"}))
     probe = [
-        type("Sample", (), {"pixels": np.zeros((32, 32, 10), dtype=np.float32), "metadata": geo.record("validation", 0)})()
+        type(
+            "Sample", (), {"pixels": np.zeros((32, 32, 10), dtype=np.float32), "metadata": geo.record("validation", 0)}
+        )()
     ]
     evaluation = [
         type("Sample", (), {"pixels": np.ones((32, 32, 10), dtype=np.float32), "metadata": geo.record("testing", 0)})()
     ]
     result = executor(checkpoint, candidate_spec(TENT_CANDIDATE_ID), probe, evaluation)
-    repeated = executor(
-        checkpoint, candidate_spec(TENT_CANDIDATE_ID), probe, evaluation
-    )
+    repeated = executor(checkpoint, candidate_spec(TENT_CANDIDATE_ID), probe, evaluation)
     assert np.asarray(result.frozen_probe_logits).shape == (1, 17)
     assert np.asarray(result.adapted_probe_logits).shape == (1, 17)
     assert np.asarray(result.frozen_evaluation_logits).shape == (1, 17)
@@ -1547,9 +1484,7 @@ def test_production_cli_builds_the_firewall_and_all_50_cells(
     real_loader = LabelFreeTargetLoader
     real_run = target_runner._run_label_blind_target_for_test
 
-    def synthetic_geo_index(
-        manifest: dict[str, Any], _geo_paths: dict[str, str]
-    ) -> _SyntheticGeoIndex:
+    def synthetic_geo_index(manifest: dict[str, Any], _geo_paths: dict[str, str]) -> _SyntheticGeoIndex:
         return _SyntheticGeoIndex(manifest["population_identity_sha256"])
 
     def synthetic_loader(
@@ -1597,9 +1532,7 @@ def test_production_cli_builds_the_firewall_and_all_50_cells(
             probe_computation: ProbeComputation,
             evaluation_samples: list[Any],
         ) -> EvaluationComputation:
-            return _synthetic_evaluation_computation(
-                probe_computation, evaluation_samples
-            )
+            return _synthetic_evaluation_computation(probe_computation, evaluation_samples)
 
     def relaxed_run(**kwargs: Any) -> Path:
         kwargs.pop("_production_authority")
@@ -1610,9 +1543,7 @@ def test_production_cli_builds_the_firewall_and_all_50_cells(
     monkeypatch.setattr(target_runner, "VerifiedGeoIndex", synthetic_geo_index)
     monkeypatch.setattr(target_runner, "LabelFreeTargetLoader", synthetic_loader)
     monkeypatch.setattr(target_runner, "run_label_blind_target", relaxed_run)
-    monkeypatch.setattr(
-        target_inference, "TorchTargetCellExecutor", SyntheticProductionExecutor
-    )
+    monkeypatch.setattr(target_inference, "TorchTargetCellExecutor", SyntheticProductionExecutor)
 
     output_dir = tmp_path / "cli-target-bundle"
     normalizer_path = tmp_path / "normalizer.synthetic.json"

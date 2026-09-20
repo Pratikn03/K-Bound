@@ -11,12 +11,26 @@ from experiments.kbound.so2sat import target_runner
 from experiments.kbound.so2sat.integrity import (
     ARTIFACT_RECEIPT_SCHEMA_V1,
     IntegrityError,
+    file_sha256,
     stable_sha256,
     strict_json_load,
     write_immutable_json_with_receipt,
 )
 from experiments.kbound.so2sat.protocol import default_protocol_path, load_protocol
-from tests.test_so2sat_target_boundary import _fixture
+from tests.test_so2sat_target_boundary import _fixture as _synthetic_target_fixture
+
+
+def _fixture(tmp_path: Path) -> dict[str, object]:
+    # The shared runner fixture otherwise deliberately uses opaque placeholder
+    # protocol digests. This authorization suite must bind the actual public
+    # protocol (not any development/target data) all the way through the chain.
+    return _synthetic_target_fixture(
+        tmp_path,
+        protocol_identity={
+            "file_sha256": file_sha256(default_protocol_path()),
+            "canonical_document_sha256": stable_sha256(load_protocol()),
+        },
+    )
 
 
 def _documents(fixture: dict[str, object]) -> dict[str, dict[str, object]]:
@@ -235,8 +249,9 @@ def test_receipted_failed_all_tie_screen_never_authorizes(tmp_path: Path) -> Non
         )
 
 
+@pytest.mark.parametrize("changed_part", ["master", "cell"])
 def test_two_pass_bundle_mismatch_never_publishes_partial_output(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, changed_part: str
 ) -> None:
     real_loader = target_runner.load_complete_target_bundle
     calls = 0
@@ -246,8 +261,12 @@ def test_two_pass_bundle_mismatch_never_publishes_partial_output(
         calls += 1
         master, cells = real_loader(*args, **kwargs)
         if calls == 2:
-            cells = copy.deepcopy(cells)
-            cells[0]["cell_sha256"] = "f" * 64
+            if changed_part == "cell":
+                cells = copy.deepcopy(cells)
+                cells[0]["cell_sha256"] = "f" * 64
+            else:
+                master = copy.deepcopy(master)
+                master["bundle_sha256"] = "f" * 64
         return master, cells
 
     monkeypatch.setattr(target_runner, "load_complete_target_bundle", disagree_on_second_pass)
@@ -257,4 +276,28 @@ def test_two_pass_bundle_mismatch_never_publishes_partial_output(
 
     assert calls == 2
     assert not (tmp_path / "target-bundle").exists()
-    assert (tmp_path / ".target-bundle.staging").is_dir()
+    assert len(list(tmp_path.glob(".kbound-*.reservation/payload"))) == 1
+
+
+def test_successful_target_bundle_has_verified_publication_inventory(tmp_path: Path) -> None:
+    from experiments.kbound.so2sat.integrity import verify_complete_directory_publication
+
+    fixture = _fixture(tmp_path)
+    root = fixture["bundle"].parent
+    required = {"so2sat_target_bundle.json", "so2sat_target_bundle.json.receipt.json"}
+    for city in range(10):
+        for checkpoint in range(5):
+            prefix = f"target_targetcity{city:02d}_checkpoint{checkpoint}"
+            required.update(
+                prefix + suffix
+                for suffix in (
+                    ".json",
+                    ".json.receipt.json",
+                    ".action.json",
+                    ".action.json.receipt.json",
+                    ".logits.npz",
+                    ".logits.npz.manifest.json",
+                    ".logits.npz.manifest.json.receipt.json",
+                )
+            )
+    assert verify_complete_directory_publication(root, required_relative_regular_files=required) == root

@@ -42,9 +42,12 @@ from .gate import (
 from .integrity import (
     IntegrityError,
     file_sha256,
+    publish_directory_create_only,
     require_sha256,
+    reserve_create_only_directory_publication,
     stable_sha256,
     verify_artifact_receipt,
+    verify_complete_directory_publication,
     write_immutable_json_with_receipt,
 )
 from .label_firewall import LabelFreeTargetLoader, PixelSample, VerifiedGeoIndex
@@ -70,6 +73,7 @@ from .target_contract import (
     TARGET_CELL_SCHEMA,
     TARGET_SPLITS,
     TEST_ONLY_MODE,
+    load_complete_target_bundle,
     load_source_postrun_acceptance_pair,
     validate_checkpoint_collection,
     validate_complete_target_bundle_document,
@@ -123,13 +127,8 @@ def build_execution_seal(
 ) -> dict[str, Any]:
     """Build the exact seal that must predate every target-pixel read."""
 
-    if (
-        execution_mode == PRODUCTION_MODE
-        and _production_authority is not _PRODUCTION_SEAL_BUILD_AUTHORITY
-    ):
-        raise IntegrityError(
-            "PRODUCTION execution seals require the canonical target-seal authority"
-        )
+    if execution_mode == PRODUCTION_MODE and _production_authority is not _PRODUCTION_SEAL_BUILD_AUTHORITY:
+        raise IntegrityError("PRODUCTION execution seals require the canonical target-seal authority")
     validate_study_binding(study_binding)
     validate_selected_candidate(selected_candidate, study_binding=study_binding)
     validate_gate_document(gate)
@@ -164,9 +163,7 @@ def build_execution_seal(
         if checkpoint_id not in CHECKPOINT_IDS or checkpoint_id in checkpoint_identities:
             raise IntegrityError("execution seal checkpoint ids must be seeds 0--4")
         checkpoint_identities[checkpoint_id] = {
-            "checkpoint_file_sha256": require_sha256(
-                row.get("checkpoint_file_sha256"), field="checkpoint_file_sha256"
-            ),
+            "checkpoint_file_sha256": require_sha256(row.get("checkpoint_file_sha256"), field="checkpoint_file_sha256"),
             "checkpoint_tensor_sha256": require_sha256(
                 row.get("checkpoint_tensor_sha256"), field="checkpoint_tensor_sha256"
             ),
@@ -190,37 +187,21 @@ def build_execution_seal(
         "selected_candidate_sha256": selected["selected_candidate_sha256"],
         "selected_candidate_artifact": _artifact_binding(selected_candidate_receipt),
         "candidate_id": selected["candidate_id"],
-        "candidate_config_sha256": selected["candidate_spec"][
-            "candidate_config_sha256"
-        ],
+        "candidate_config_sha256": selected["candidate_spec"]["candidate_config_sha256"],
         "gate_artifact": _artifact_binding(gate_receipt),
         "gate_sha256": gate["gate_sha256"],
         "gate_authorization_artifact": _artifact_binding(gate_authorization_receipt),
         "gate_authorization_sha256": gate_authorization["authorization_sha256"],
-        "target_boundary_amendment_artifact": _artifact_binding(
-            target_boundary_amendment_receipt
-        ),
-        "target_boundary_amendment_sha256": stable_sha256(
-            dict(target_boundary_amendment)
-        ),
-        "precalibration_seal_artifact": _artifact_binding(
-            precalibration_seal_receipt
-        ),
-        "precalibration_seal_sha256": precalibration_seal[
-            "precalibration_seal_sha256"
-        ],
-        "source_postrun_acceptance": copy.deepcopy(
-            dict(precalibration_seal["source_postrun_acceptance"])
-        ),
-        "source_postrun_acceptance_artifact_sha256": precalibration_seal[
-            "source_postrun_acceptance_artifact_sha256"
-        ],
+        "target_boundary_amendment_artifact": _artifact_binding(target_boundary_amendment_receipt),
+        "target_boundary_amendment_sha256": stable_sha256(dict(target_boundary_amendment)),
+        "precalibration_seal_artifact": _artifact_binding(precalibration_seal_receipt),
+        "precalibration_seal_sha256": precalibration_seal["precalibration_seal_sha256"],
+        "source_postrun_acceptance": copy.deepcopy(dict(precalibration_seal["source_postrun_acceptance"])),
+        "source_postrun_acceptance_artifact_sha256": precalibration_seal["source_postrun_acceptance_artifact_sha256"],
         "source_postrun_training_container": copy.deepcopy(
             dict(precalibration_seal["source_postrun_training_container"])
         ),
-        "source_hdf5_runtime_disclosure": copy.deepcopy(
-            dict(precalibration_seal["source_hdf5_runtime_disclosure"])
-        ),
+        "source_hdf5_runtime_disclosure": copy.deepcopy(dict(precalibration_seal["source_hdf5_runtime_disclosure"])),
         "source_checkpoint_selection_disclosure": copy.deepcopy(
             dict(precalibration_seal["source_checkpoint_selection_disclosure"])
         ),
@@ -231,18 +212,10 @@ def build_execution_seal(
         "checkpoint_collection_document_sha256": stable_sha256(dict(checkpoint_collection)),
         "checkpoint_identities": dict(sorted(checkpoint_identities.items())),
         "target_data_identities": _target_identities(target_data_identities),
-        "outcome_reveal_registry": copy.deepcopy(
-            dict(precalibration_seal["outcome_reveal_registry"])
-        ),
-        "code_identity_sha256": require_sha256(
-            code_identity_sha256, field="code_identity_sha256"
-        ),
-        "environment_identity_sha256": require_sha256(
-            environment_identity_sha256, field="environment_identity_sha256"
-        ),
-        "scorer_code_identity_sha256": require_sha256(
-            scorer_code_identity_sha256, field="scorer_code_identity_sha256"
-        ),
+        "outcome_reveal_registry": copy.deepcopy(dict(precalibration_seal["outcome_reveal_registry"])),
+        "code_identity_sha256": require_sha256(code_identity_sha256, field="code_identity_sha256"),
+        "environment_identity_sha256": require_sha256(environment_identity_sha256, field="environment_identity_sha256"),
+        "scorer_code_identity_sha256": require_sha256(scorer_code_identity_sha256, field="scorer_code_identity_sha256"),
         "scorer_environment_identity_sha256": require_sha256(
             scorer_environment_identity_sha256,
             field="scorer_environment_identity_sha256",
@@ -361,9 +334,7 @@ def _logits(value: Any, *, rows: int, field: str) -> np.ndarray:
     except (TypeError, ValueError, OverflowError) as exc:
         raise IntegrityError(f"{field} must be a numeric logit matrix") from exc
     if array.shape != (rows, N_CLASSES) or not np.isfinite(array).all():
-        raise IntegrityError(
-            f"{field} must have finite shape {(rows, N_CLASSES)}, found {array.shape}"
-        )
+        raise IntegrityError(f"{field} must have finite shape {(rows, N_CLASSES)}, found {array.shape}")
     return np.ascontiguousarray(array)
 
 
@@ -485,9 +456,7 @@ def _partition(
         grouped[record.city_id].append(record)
     if {city: len(rows) for city, rows in grouped.items()} != dict(city_counts):
         raise IntegrityError(f"safe {split} metadata differs from sealed city counts")
-    if sorted(record.row_index for rows in grouped.values() for record in rows) != list(
-        range(count)
-    ):
+    if sorted(record.row_index for rows in grouped.values() for record in rows) != list(range(count)):
         raise IntegrityError(f"safe {split} metadata does not partition every row exactly once")
     return grouped
 
@@ -513,12 +482,8 @@ def _prepare_action_context(
         record.city_id != city_id for record in evaluation_records
     ):
         raise IntegrityError("target cell samples cross city boundaries")
-    frozen_probe = _logits(
-        computation.frozen_probe_logits, rows=len(probe_rows), field="frozen_probe_logits"
-    )
-    adapted_probe = _logits(
-        computation.adapted_probe_logits, rows=len(probe_rows), field="adapted_probe_logits"
-    )
+    frozen_probe = _logits(computation.frozen_probe_logits, rows=len(probe_rows), field="frozen_probe_logits")
+    adapted_probe = _logits(computation.adapted_probe_logits, rows=len(probe_rows), field="adapted_probe_logits")
     feature = extract_label_free_features(
         frozen_probe,
         adapted_probe,
@@ -633,13 +598,11 @@ def _cell_document(
         "execution_mode": seal["execution_mode"],
         "execution_seal_sha256": seal["execution_seal_sha256"],
         "gate_authorization_sha256": gate_authorization["authorization_sha256"],
-        "target_boundary_amendment_sha256": seal[
-            "target_boundary_amendment_sha256"
-        ],
+        "target_boundary_amendment_sha256": seal["target_boundary_amendment_sha256"],
         "precalibration_seal_sha256": seal["precalibration_seal_sha256"],
-        "source_postrun_acceptance_artifact_sha256": seal[
-            "source_postrun_acceptance"
-        ]["source_postrun_acceptance_artifact_sha256"],
+        "source_postrun_acceptance_artifact_sha256": seal["source_postrun_acceptance"][
+            "source_postrun_acceptance_artifact_sha256"
+        ],
         "gate_sha256": gate["gate_sha256"],
         "selected_candidate_sha256": selected["selected_candidate_sha256"],
         "candidate_id": selected["candidate_id"],
@@ -692,9 +655,7 @@ def _verify_loader_audit(loader: LabelFreeTargetLoader, manifest: Mapping[str, A
     rows = list(loader.access_log)
     expected_total = sum(int(manifest["splits"][split]["observed_samples"]) for split in TARGET_SPLITS)
     if len(rows) != expected_total:
-        raise IntegrityError(
-            f"label-free loader accessed {len(rows)} target rows, expected {expected_total}"
-        )
+        raise IntegrityError(f"label-free loader accessed {len(rows)} target rows, expected {expected_total}")
     keys = [(row.get("split"), row.get("row_index")) for row in rows]
     expected = [
         (split, row_index)
@@ -703,10 +664,7 @@ def _verify_loader_audit(loader: LabelFreeTargetLoader, manifest: Mapping[str, A
     ]
     if sorted(keys) != sorted(expected) or len(set(keys)) != len(keys):
         raise IntegrityError("label-free loader did not access each target pixel row exactly once")
-    if any(
-        row.get("dataset") != "sen2" or row.get("target_outcome_dataset_accessed") is not False
-        for row in rows
-    ):
+    if any(row.get("dataset") != "sen2" or row.get("target_outcome_dataset_accessed") is not False for row in rows):
         raise IntegrityError("live target loader audit indicates a firewall violation")
     return {
         "pixel_rows_read_exactly_once": True,
@@ -759,8 +717,7 @@ def _run_label_blind_target_core(
             or target_loader.uses_canonical_h5_factory is not True
         ):
             raise IntegrityError(
-                "production target core rejects injected validators, geo indexes, "
-                "loaders, or executors"
+                "production target core rejects injected validators, geo indexes, loaders, or executors"
             )
         require_production_target_action_unit_alignment()
     elif expected_execution_mode != TEST_ONLY_MODE:
@@ -768,11 +725,9 @@ def _run_label_blind_target_core(
 
     manifest, manifest_receipt = _receipt_document(population_manifest_path)
     population_manifest_validator(manifest)
-    source_acceptance, _, source_acceptance_binding = (
-        load_source_postrun_acceptance_pair(
-            source_postrun_acceptance_path,
-            strict_document=expected_execution_mode == PRODUCTION_MODE,
-        )
+    source_acceptance, _, source_acceptance_binding = load_source_postrun_acceptance_pair(
+        source_postrun_acceptance_path,
+        strict_document=expected_execution_mode == PRODUCTION_MODE,
     )
     gate = load_gate_with_receipt(gate_path)
     gate_receipt = verify_artifact_receipt(gate_path)
@@ -781,8 +736,7 @@ def _run_label_blind_target_core(
     if (
         manifest.get("manifest_sha256") != binding["manifest_sha256"]
         or manifest.get("population_identity_sha256") != binding["population_identity_sha256"]
-        or _artifact_binding(manifest_receipt)["artifact_sha256"]
-        != binding["manifest_artifact_sha256"]
+        or _artifact_binding(manifest_receipt)["artifact_sha256"] != binding["manifest_artifact_sha256"]
         or _artifact_binding(manifest_receipt)["canonical_document_sha256"]
         != binding["manifest_canonical_document_sha256"]
     ):
@@ -793,22 +747,18 @@ def _run_label_blind_target_core(
         raise IntegrityError("target runner selection binds another source acceptance")
     selected = _selected_candidate_view(selection)
     fit_bundle, fit_bundle_receipt = _receipt_document(selected_gate_fit_bundle_path)
-    gate_authorization, authorized_selection, authorized_gate = (
-        load_gate_authorization_with_receipt(
-            gate_authorization_path,
-            selection_path=selected_candidate_path,
-            gate_path=gate_path,
-            population_manifest_path=population_manifest_path,
-            fit_bundle_path=selected_gate_fit_bundle_path,
-            calibration_bundle_path=selected_gate_cal_bundle_path,
-        )
+    gate_authorization, authorized_selection, authorized_gate = load_gate_authorization_with_receipt(
+        gate_authorization_path,
+        selection_path=selected_candidate_path,
+        gate_path=gate_path,
+        population_manifest_path=population_manifest_path,
+        fit_bundle_path=selected_gate_fit_bundle_path,
+        calibration_bundle_path=selected_gate_cal_bundle_path,
     )
     gate_authorization_receipt = verify_artifact_receipt(gate_authorization_path)
     if authorized_selection != selection or authorized_gate != gate:
         raise IntegrityError("gate authorization loader returned a different selection or gate")
-    amendment, amendment_receipt = load_target_boundary_amendment(
-        target_boundary_amendment_path
-    )
+    amendment, amendment_receipt = load_target_boundary_amendment(target_boundary_amendment_path)
     collection, collection_receipt = _receipt_document(checkpoint_collection_path)
     checkpoints = validate_checkpoint_collection(
         collection,
@@ -817,20 +767,17 @@ def _run_label_blind_target_core(
         checkpoint_dir=checkpoint_dir,
     )
     if (
-        gate_authorization["checkpoint_collection_canonical_sha256"]
-        != stable_sha256(collection)
+        gate_authorization["checkpoint_collection_canonical_sha256"] != stable_sha256(collection)
         or gate_authorization["normalizer_sha256"] != collection["normalizer_sha256"]
     ):
         raise IntegrityError("gate authorization differs from the verified checkpoint collection")
-    precalibration_seal, precalibration_seal_receipt = (
-        load_precalibration_seal_with_receipt(
-            precalibration_seal_path,
-            study_binding=binding,
-            selection=selection,
-            fit_bundle=fit_bundle,
-            target_boundary_amendment=amendment,
-            checkpoint_collection=collection,
-        )
+    precalibration_seal, precalibration_seal_receipt = load_precalibration_seal_with_receipt(
+        precalibration_seal_path,
+        study_binding=binding,
+        selection=selection,
+        fit_bundle=fit_bundle,
+        target_boundary_amendment=amendment,
+        checkpoint_collection=collection,
     )
     seal, seal_receipt = _receipt_document(execution_seal_path)
     validate_execution_seal(
@@ -844,49 +791,33 @@ def _run_label_blind_target_core(
         precalibration_seal=precalibration_seal,
     )
     if seal["execution_mode"] != expected_execution_mode:
-        raise IntegrityError(
-            f"target runner expected {expected_execution_mode}, found {seal['execution_mode']}"
-        )
+        raise IntegrityError(f"target runner expected {expected_execution_mode}, found {seal['execution_mode']}")
     if seal["selected_candidate_artifact"] != _artifact_binding(selected_receipt):
         raise IntegrityError("execution seal does not bind the selected-candidate artifact bytes")
     if seal["checkpoint_collection_artifact"] != _artifact_binding(collection_receipt):
         raise IntegrityError("execution seal does not bind the checkpoint collection artifact bytes")
     if (
         seal["gate_artifact"] != _artifact_binding(gate_receipt)
-        or seal["gate_authorization_artifact"]
-        != _artifact_binding(gate_authorization_receipt)
-        or seal["target_boundary_amendment_artifact"]
-        != _artifact_binding(amendment_receipt)
-        or seal["precalibration_seal_artifact"]
-        != _artifact_binding(precalibration_seal_receipt)
+        or seal["gate_authorization_artifact"] != _artifact_binding(gate_authorization_receipt)
+        or seal["target_boundary_amendment_artifact"] != _artifact_binding(amendment_receipt)
+        or seal["precalibration_seal_artifact"] != _artifact_binding(precalibration_seal_receipt)
     ):
-        raise IntegrityError(
-            "execution seal does not bind the gate/amendment/precalibration artifact bytes"
-        )
-    if (
-        precalibration_seal["selected_gate_fit_bundle_artifact"]
-        != _artifact_binding(fit_bundle_receipt)
-    ):
+        raise IntegrityError("execution seal does not bind the gate/amendment/precalibration artifact bytes")
+    if precalibration_seal["selected_gate_fit_bundle_artifact"] != _artifact_binding(fit_bundle_receipt):
         raise IntegrityError("precalibration seal does not bind selected gate-fit bytes")
     if (
         seal["source_postrun_acceptance"] != source_acceptance_binding
-        or seal["source_postrun_training_container"]
-        != source_acceptance["postrun_source_container"]
-        or seal["source_hdf5_runtime_disclosure"]
-        != source_acceptance["source_hdf5_runtime_disclosure"]
-        or seal["source_checkpoint_selection_disclosure"]
-        != source_acceptance["source_checkpoint_selection_disclosure"]
-        or seal["source_initialization_clarification"]
-        != source_acceptance["source_initialization_clarification"]
+        or seal["source_postrun_training_container"] != source_acceptance["postrun_source_container"]
+        or seal["source_hdf5_runtime_disclosure"] != source_acceptance["source_hdf5_runtime_disclosure"]
+        or seal["source_checkpoint_selection_disclosure"] != source_acceptance["source_checkpoint_selection_disclosure"]
+        or seal["source_initialization_clarification"] != source_acceptance["source_initialization_clarification"]
     ):
         raise IntegrityError("target runner source acceptance provenance drift")
     for checkpoint_id in CHECKPOINT_IDS:
         for field in ("checkpoint_file_sha256", "checkpoint_tensor_sha256"):
             if checkpoints[checkpoint_id][field] != seal["checkpoint_identities"][checkpoint_id][field]:
                 raise IntegrityError("verified source checkpoint differs from execution seal")
-            if checkpoints[checkpoint_id][field] != gate["development_provenance"][
-                f"{field}_by_id"
-            ][checkpoint_id]:
+            if checkpoints[checkpoint_id][field] != gate["development_provenance"][f"{field}_by_id"][checkpoint_id]:
                 raise IntegrityError("verified source checkpoint differs from calibrated gate")
     if geo_index.population_identity_sha256 != seal["population_identity_sha256"]:
         raise IntegrityError("target geographic index differs from execution seal")
@@ -894,245 +825,231 @@ def _run_label_blind_target_core(
         raise IntegrityError("live runner requires a fresh target loader with an empty access log")
     if (
         getattr(cell_executor, "candidate_id", None) != selected["candidate_id"]
-        or getattr(cell_executor, "normalizer_sha256", None)
-        != gate_authorization["normalizer_sha256"]
-        or getattr(cell_executor, "code_identity_sha256", None)
-        != seal["code_identity_sha256"]
-        or getattr(cell_executor, "environment_identity_sha256", None)
-        != seal["environment_identity_sha256"]
+        or getattr(cell_executor, "normalizer_sha256", None) != gate_authorization["normalizer_sha256"]
+        or getattr(cell_executor, "code_identity_sha256", None) != seal["code_identity_sha256"]
+        or getattr(cell_executor, "environment_identity_sha256", None) != seal["environment_identity_sha256"]
     ):
         raise IntegrityError(
-            "target cell executor candidate, normalizer, code, or environment identity "
-            "differs from the seals"
+            "target cell executor candidate, normalizer, code, or environment identity differs from the seals"
         )
 
-    destination = Path(output_dir).expanduser().resolve()
-    destination.mkdir(parents=True, exist_ok=True)
-    master_path = destination / "so2sat_target_bundle.json"
-    expected_cell_paths = {
-        (city, checkpoint): destination / f"target_{city}_checkpoint{checkpoint}.json"
-        for city in binding["target_cities"]
-        for checkpoint in CHECKPOINT_IDS
-    }
-    expected_logit_paths = {
-        (city, checkpoint): destination
-        / f"target_{city}_checkpoint{checkpoint}.logits.npz"
-        for city in binding["target_cities"]
-        for checkpoint in CHECKPOINT_IDS
-    }
-    expected_action_paths = {
-        (city, checkpoint): destination
-        / f"target_{city}_checkpoint{checkpoint}.action.json"
-        for city in binding["target_cities"]
-        for checkpoint in CHECKPOINT_IDS
-    }
-    reserved = [master_path, master_path.with_name(master_path.name + ".receipt.json")]
-    for path in expected_cell_paths.values():
-        reserved.extend([path, path.with_name(path.name + ".receipt.json")])
-    for path in expected_action_paths.values():
-        reserved.extend([path, path.with_name(path.name + ".receipt.json")])
-    for path in expected_logit_paths.values():
-        manifest_path = path.with_name(path.name + ".manifest.json")
-        reserved.extend(
-            [
-                path,
-                manifest_path,
-                manifest_path.with_name(manifest_path.name + ".receipt.json"),
-            ]
-        )
-    if any(path.exists() for path in reserved):
-        raise IntegrityError("target output contains a prior or partial immutable bundle")
-
-    container_verification = target_loader.verify_containers()
-    observed_containers = {
-        row["split"]: {
-            "basename": row["basename"],
-            "bytes": row["bytes"],
-            "sha256": row["sha256"],
+    reservation = reserve_create_only_directory_publication(output_dir)
+    try:
+        destination = reservation.staging_path
+        master_path = destination / "so2sat_target_bundle.json"
+        expected_cell_paths = {
+            (city, checkpoint): destination / f"target_{city}_checkpoint{checkpoint}.json"
+            for city in binding["target_cities"]
+            for checkpoint in CHECKPOINT_IDS
         }
-        for row in container_verification.get("containers", [])
-    }
-    if observed_containers != seal["target_data_identities"]:
-        raise IntegrityError("live target containers differ from the execution seal")
+        expected_logit_paths = {
+            (city, checkpoint): destination / f"target_{city}_checkpoint{checkpoint}.logits.npz"
+            for city in binding["target_cities"]
+            for checkpoint in CHECKPOINT_IDS
+        }
+        expected_action_paths = {
+            (city, checkpoint): destination / f"target_{city}_checkpoint{checkpoint}.action.json"
+            for city in binding["target_cities"]
+            for checkpoint in CHECKPOINT_IDS
+        }
+        reserved = [master_path, master_path.with_name(master_path.name + ".receipt.json")]
+        for path in expected_cell_paths.values():
+            reserved.extend([path, path.with_name(path.name + ".receipt.json")])
+        for path in expected_action_paths.values():
+            reserved.extend([path, path.with_name(path.name + ".receipt.json")])
+        for path in expected_logit_paths.values():
+            manifest_path = path.with_name(path.name + ".manifest.json")
+            reserved.extend(
+                [
+                    path,
+                    manifest_path,
+                    manifest_path.with_name(manifest_path.name + ".receipt.json"),
+                ]
+            )
+        if any(path.exists() for path in reserved):
+            raise IntegrityError("target output contains a prior or partial immutable bundle")
 
-    cities = list(binding["target_cities"])
-    validation_by_city = _partition(geo_index, manifest, split="validation", cities=cities)
-    testing_by_city = _partition(geo_index, manifest, split="testing", cities=cities)
-    cell_rows: list[dict[str, Any]] = []
-    for city_id in cities:
-        probe_samples = target_loader.read_verified_many(
-            "validation", validation_by_city[city_id]
-        )
-        _freeze_sample_pixels(probe_samples)
-        prepared: dict[str, tuple[ProbeComputation, dict[str, Any], dict[str, Any]]] = {}
-        for checkpoint_id in CHECKPOINT_IDS:
-            probe_computation = cell_executor.prepare_probe(
-                checkpoints[checkpoint_id],
-                selected["candidate_spec"],
-                probe_samples,
-            )
-            if not isinstance(probe_computation, ProbeComputation):
-                raise IntegrityError("cell executor must return ProbeComputation")
-            action_context = _prepare_action_context(
-                seal=seal,
-                gate=gate,
-                checkpoint=checkpoints[checkpoint_id],
-                city_id=city_id,
-                probe_samples=probe_samples,
-                evaluation_records=testing_by_city[city_id],
-                computation=probe_computation,
-            )
-            action_path = expected_action_paths[(city_id, checkpoint_id)]
-            action_receipt = write_immutable_json_with_receipt(
-                action_path, action_context["action"]
-            )
-            action_artifact = {
-                "action_basename": action_path.name,
-                "artifact_sha256": action_receipt["artifact_sha256"],
-                "canonical_document_sha256": action_receipt[
-                    "canonical_document_sha256"
-                ],
-                "sealed_before_evaluation_pixel_access": True,
+        container_verification = target_loader.verify_containers()
+        observed_containers = {
+            row["split"]: {
+                "basename": row["basename"],
+                "bytes": row["bytes"],
+                "sha256": row["sha256"],
             }
-            prepared[checkpoint_id] = (
-                probe_computation,
-                action_context,
-                action_artifact,
-            )
-        # Testing pixels for this city are unreachable until all five action
-        # documents and receipts for the city have been durably created.
-        if any(
-            not expected_action_paths[(city_id, checkpoint_id)].is_file()
-            or not expected_action_paths[(city_id, checkpoint_id)]
-            .with_name(
-                expected_action_paths[(city_id, checkpoint_id)].name
-                + ".receipt.json"
-            )
-            .is_file()
-            for checkpoint_id in CHECKPOINT_IDS
-        ):
-            raise IntegrityError("city actions were not sealed before testing pixel access")
-        evaluation_samples = target_loader.read_verified_many(
-            "testing", testing_by_city[city_id]
-        )
-        _freeze_sample_pixels(evaluation_samples)
-        for checkpoint_id in CHECKPOINT_IDS:
-            probe_computation, action_context, action_artifact = prepared[checkpoint_id]
-            evaluation_computation = cell_executor.evaluate_after_action(
-                probe_computation, evaluation_samples
-            )
-            if not isinstance(evaluation_computation, EvaluationComputation):
-                raise IntegrityError("cell executor must return EvaluationComputation")
-            cell = _cell_document(
-                seal=seal,
-                gate_authorization=gate_authorization,
-                gate=gate,
-                selected=selected,
-                checkpoint=checkpoints[checkpoint_id],
-                city_id=city_id,
-                evaluation_samples=evaluation_samples,
-                action_context=action_context,
-                action_artifact=action_artifact,
-                computation=evaluation_computation,
-                logit_archive_path=expected_logit_paths[(city_id, checkpoint_id)],
-            )
-            path = expected_cell_paths[(city_id, checkpoint_id)]
-            receipt = write_immutable_json_with_receipt(path, cell)
-            cell_rows.append(
-                {
-                    "city_id": city_id,
-                    "checkpoint_id": checkpoint_id,
-                    "cell_basename": path.name,
-                    "cell_sha256": cell["cell_sha256"],
-                    "artifact_sha256": receipt["artifact_sha256"],
-                    "canonical_document_sha256": receipt["canonical_document_sha256"],
-                    "action_sha256": cell["action"]["action_sha256"],
-                    "action_basename": action_artifact["action_basename"],
-                    "action_artifact_sha256": action_artifact["artifact_sha256"],
-                    "action_canonical_document_sha256": action_artifact[
-                        "canonical_document_sha256"
-                    ],
-                    "logit_archive_sha256": cell["logit_archive"]["archive_sha256"],
-                    "logit_manifest_sha256": cell["logit_archive"]["manifest_sha256"],
-                }
-            )
-
-    postrun_container_verification = target_loader.verify_containers()
-    postrun_containers = {
-        row["split"]: {
-            "basename": row["basename"],
-            "bytes": row["bytes"],
-            "sha256": row["sha256"],
+            for row in container_verification.get("containers", [])
         }
-        for row in postrun_container_verification.get("containers", [])
-    }
-    if postrun_containers != observed_containers:
-        raise IntegrityError("target containers changed during label-blind inference")
-    access_audit = _verify_loader_audit(target_loader, manifest)
-    cell_rows.sort(key=lambda row: (row["city_id"], row["checkpoint_id"]))
-    master = {
-        "schema": TARGET_BUNDLE_SCHEMA,
-        "status": (
-            "COMPLETE_50_CELLS_SEALED_BEFORE_TARGET_OUTCOME_ACCESS"
-            if seal["execution_mode"] == PRODUCTION_MODE
-            else "TEST_ONLY_COMPLETE_50_CELLS_WITH_SYNTHETIC_OR_INJECTED_DEPENDENCIES"
-        ),
-        "execution_mode": seal["execution_mode"],
-        "execution_seal_artifact": _artifact_binding(seal_receipt),
-        "execution_seal_sha256": seal["execution_seal_sha256"],
-        "gate_authorization_artifact": _artifact_binding(gate_authorization_receipt),
-        "gate_authorization_sha256": gate_authorization["authorization_sha256"],
-        "target_boundary_amendment_artifact": _artifact_binding(amendment_receipt),
-        "target_boundary_amendment_sha256": seal[
-            "target_boundary_amendment_sha256"
-        ],
-        "precalibration_seal_artifact": _artifact_binding(
-            precalibration_seal_receipt
-        ),
-        "precalibration_seal_sha256": precalibration_seal[
-            "precalibration_seal_sha256"
-        ],
-        "source_postrun_acceptance": copy.deepcopy(
-            dict(seal["source_postrun_acceptance"])
-        ),
-        "source_postrun_acceptance_artifact_sha256": seal[
-            "source_postrun_acceptance_artifact_sha256"
-        ],
-        "source_postrun_training_container": copy.deepcopy(
-            dict(seal["source_postrun_training_container"])
-        ),
-        "source_hdf5_runtime_disclosure": copy.deepcopy(
-            dict(seal["source_hdf5_runtime_disclosure"])
-        ),
-        "source_checkpoint_selection_disclosure": copy.deepcopy(
-            dict(seal["source_checkpoint_selection_disclosure"])
-        ),
-        "source_initialization_clarification": copy.deepcopy(
-            dict(seal["source_initialization_clarification"])
-        ),
-        "population_manifest_artifact": _artifact_binding(manifest_receipt),
-        "manifest_sha256": seal["manifest_sha256"],
-        "population_identity_sha256": seal["population_identity_sha256"],
-        "selected_candidate_artifact": _artifact_binding(selected_receipt),
-        "selected_candidate_sha256": selected["selected_candidate_sha256"],
-        "candidate_id": selected["candidate_id"],
-        "gate_sha256": gate["gate_sha256"],
-        "checkpoint_collection_artifact": _artifact_binding(collection_receipt),
-        "target_data_identities": copy.deepcopy(dict(seal["target_data_identities"])),
-        "target_cities": cities,
-        "checkpoint_ids": list(CHECKPOINT_IDS),
-        "cell_count": len(cell_rows),
-        "cells": cell_rows,
-        "access_audit": access_audit,
-        "probe_labels_opened": False,
-        "probe_labels_scored": False,
-        "evaluation_labels_opened": False,
-        "complete_before_scoring": True,
-    }
-    master["bundle_sha256"] = stable_sha256(master)
-    validate_complete_target_bundle_document(master)
-    write_immutable_json_with_receipt(master_path, master)
-    return master_path
+        if observed_containers != seal["target_data_identities"]:
+            raise IntegrityError("live target containers differ from the execution seal")
+
+        cities = list(binding["target_cities"])
+        validation_by_city = _partition(geo_index, manifest, split="validation", cities=cities)
+        testing_by_city = _partition(geo_index, manifest, split="testing", cities=cities)
+        cell_rows: list[dict[str, Any]] = []
+        for city_id in cities:
+            probe_samples = target_loader.read_verified_many("validation", validation_by_city[city_id])
+            _freeze_sample_pixels(probe_samples)
+            prepared: dict[str, tuple[ProbeComputation, dict[str, Any], dict[str, Any]]] = {}
+            for checkpoint_id in CHECKPOINT_IDS:
+                probe_computation = cell_executor.prepare_probe(
+                    checkpoints[checkpoint_id],
+                    selected["candidate_spec"],
+                    probe_samples,
+                )
+                if not isinstance(probe_computation, ProbeComputation):
+                    raise IntegrityError("cell executor must return ProbeComputation")
+                action_context = _prepare_action_context(
+                    seal=seal,
+                    gate=gate,
+                    checkpoint=checkpoints[checkpoint_id],
+                    city_id=city_id,
+                    probe_samples=probe_samples,
+                    evaluation_records=testing_by_city[city_id],
+                    computation=probe_computation,
+                )
+                action_path = expected_action_paths[(city_id, checkpoint_id)]
+                action_receipt = write_immutable_json_with_receipt(action_path, action_context["action"])
+                action_artifact = {
+                    "action_basename": action_path.name,
+                    "artifact_sha256": action_receipt["artifact_sha256"],
+                    "canonical_document_sha256": action_receipt["canonical_document_sha256"],
+                    "sealed_before_evaluation_pixel_access": True,
+                }
+                prepared[checkpoint_id] = (
+                    probe_computation,
+                    action_context,
+                    action_artifact,
+                )
+            # Testing pixels for this city are unreachable until all five action
+            # documents and receipts for the city have been durably created.
+            if any(
+                not expected_action_paths[(city_id, checkpoint_id)].is_file()
+                or not expected_action_paths[(city_id, checkpoint_id)]
+                .with_name(expected_action_paths[(city_id, checkpoint_id)].name + ".receipt.json")
+                .is_file()
+                for checkpoint_id in CHECKPOINT_IDS
+            ):
+                raise IntegrityError("city actions were not sealed before testing pixel access")
+            evaluation_samples = target_loader.read_verified_many("testing", testing_by_city[city_id])
+            _freeze_sample_pixels(evaluation_samples)
+            for checkpoint_id in CHECKPOINT_IDS:
+                probe_computation, action_context, action_artifact = prepared[checkpoint_id]
+                evaluation_computation = cell_executor.evaluate_after_action(probe_computation, evaluation_samples)
+                if not isinstance(evaluation_computation, EvaluationComputation):
+                    raise IntegrityError("cell executor must return EvaluationComputation")
+                cell = _cell_document(
+                    seal=seal,
+                    gate_authorization=gate_authorization,
+                    gate=gate,
+                    selected=selected,
+                    checkpoint=checkpoints[checkpoint_id],
+                    city_id=city_id,
+                    evaluation_samples=evaluation_samples,
+                    action_context=action_context,
+                    action_artifact=action_artifact,
+                    computation=evaluation_computation,
+                    logit_archive_path=expected_logit_paths[(city_id, checkpoint_id)],
+                )
+                path = expected_cell_paths[(city_id, checkpoint_id)]
+                receipt = write_immutable_json_with_receipt(path, cell)
+                cell_rows.append(
+                    {
+                        "city_id": city_id,
+                        "checkpoint_id": checkpoint_id,
+                        "cell_basename": path.name,
+                        "cell_sha256": cell["cell_sha256"],
+                        "artifact_sha256": receipt["artifact_sha256"],
+                        "canonical_document_sha256": receipt["canonical_document_sha256"],
+                        "action_sha256": cell["action"]["action_sha256"],
+                        "action_basename": action_artifact["action_basename"],
+                        "action_artifact_sha256": action_artifact["artifact_sha256"],
+                        "action_canonical_document_sha256": action_artifact["canonical_document_sha256"],
+                        "logit_archive_sha256": cell["logit_archive"]["archive_sha256"],
+                        "logit_manifest_sha256": cell["logit_archive"]["manifest_sha256"],
+                    }
+                )
+
+        postrun_container_verification = target_loader.verify_containers()
+        postrun_containers = {
+            row["split"]: {
+                "basename": row["basename"],
+                "bytes": row["bytes"],
+                "sha256": row["sha256"],
+            }
+            for row in postrun_container_verification.get("containers", [])
+        }
+        if postrun_containers != observed_containers:
+            raise IntegrityError("target containers changed during label-blind inference")
+        access_audit = _verify_loader_audit(target_loader, manifest)
+        cell_rows.sort(key=lambda row: (row["city_id"], row["checkpoint_id"]))
+        master = {
+            "schema": TARGET_BUNDLE_SCHEMA,
+            "status": (
+                "COMPLETE_50_CELLS_SEALED_BEFORE_TARGET_OUTCOME_ACCESS"
+                if seal["execution_mode"] == PRODUCTION_MODE
+                else "TEST_ONLY_COMPLETE_50_CELLS_WITH_SYNTHETIC_OR_INJECTED_DEPENDENCIES"
+            ),
+            "execution_mode": seal["execution_mode"],
+            "execution_seal_artifact": _artifact_binding(seal_receipt),
+            "execution_seal_sha256": seal["execution_seal_sha256"],
+            "gate_authorization_artifact": _artifact_binding(gate_authorization_receipt),
+            "gate_authorization_sha256": gate_authorization["authorization_sha256"],
+            "target_boundary_amendment_artifact": _artifact_binding(amendment_receipt),
+            "target_boundary_amendment_sha256": seal["target_boundary_amendment_sha256"],
+            "precalibration_seal_artifact": _artifact_binding(precalibration_seal_receipt),
+            "precalibration_seal_sha256": precalibration_seal["precalibration_seal_sha256"],
+            "source_postrun_acceptance": copy.deepcopy(dict(seal["source_postrun_acceptance"])),
+            "source_postrun_acceptance_artifact_sha256": seal["source_postrun_acceptance_artifact_sha256"],
+            "source_postrun_training_container": copy.deepcopy(dict(seal["source_postrun_training_container"])),
+            "source_hdf5_runtime_disclosure": copy.deepcopy(dict(seal["source_hdf5_runtime_disclosure"])),
+            "source_checkpoint_selection_disclosure": copy.deepcopy(
+                dict(seal["source_checkpoint_selection_disclosure"])
+            ),
+            "source_initialization_clarification": copy.deepcopy(dict(seal["source_initialization_clarification"])),
+            "population_manifest_artifact": _artifact_binding(manifest_receipt),
+            "manifest_sha256": seal["manifest_sha256"],
+            "population_identity_sha256": seal["population_identity_sha256"],
+            "selected_candidate_artifact": _artifact_binding(selected_receipt),
+            "selected_candidate_sha256": selected["selected_candidate_sha256"],
+            "candidate_id": selected["candidate_id"],
+            "gate_sha256": gate["gate_sha256"],
+            "checkpoint_collection_artifact": _artifact_binding(collection_receipt),
+            "target_data_identities": copy.deepcopy(dict(seal["target_data_identities"])),
+            "target_cities": cities,
+            "checkpoint_ids": list(CHECKPOINT_IDS),
+            "cell_count": len(cell_rows),
+            "cells": cell_rows,
+            "access_audit": access_audit,
+            "probe_labels_opened": False,
+            "probe_labels_scored": False,
+            "evaluation_labels_opened": False,
+            "complete_before_scoring": True,
+        }
+        master["bundle_sha256"] = stable_sha256(master)
+        validate_complete_target_bundle_document(master)
+        write_immutable_json_with_receipt(master_path, master)
+        replay_arguments = {
+            "seal": seal,
+            "gate_authorization": gate_authorization,
+            "gate": gate,
+            "selected_candidate": selected,
+        }
+        first = load_complete_target_bundle(master_path, **replay_arguments)
+        second = load_complete_target_bundle(master_path, **replay_arguments)
+        if first != second:
+            raise IntegrityError("target bundle changed across deterministic verification passes")
+        required = frozenset(path.name for path in reserved)
+        published = publish_directory_create_only(
+            reservation,
+            required_relative_regular_files=required,
+        )
+        verify_complete_directory_publication(
+            published,
+            required_relative_regular_files=required,
+        )
+        return published / master_path.name
+
+    finally:
+        reservation.close()
 
 
 def run_label_blind_target(

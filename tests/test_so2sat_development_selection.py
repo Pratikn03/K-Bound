@@ -375,6 +375,66 @@ def test_complete_candidate_pair_is_reusable_only_with_exact_live_bindings(
         )
 
 
+def test_candidate_output_accepts_only_empty_private_publication_residue(tmp_path: Path) -> None:
+    destination = tmp_path / "development"
+    destination.mkdir()
+    residue = destination / (".kbound-quarantine-" + "a" * 32)
+    residue.mkdir(mode=0o700)
+    assert not any(_inspect_candidate_output_state(destination).values())
+    assert residue.is_dir(), "inspection must preserve transaction residue"
+
+
+def test_candidate_output_rejects_parent_replacement_during_residue_inspection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "development"
+    destination.mkdir()
+    name = ".kbound-quarantine-" + "a" * 32
+    (destination / name).mkdir(mode=0o700)
+    original_listdir = development_module.os.listdir
+    swapped = False
+
+    def replace_parent(directory):
+        nonlocal swapped
+        if isinstance(directory, int) and not swapped:
+            swapped = True
+            destination.rename(tmp_path / "preserved-original")
+            destination.mkdir()
+            (destination / name).mkdir(mode=0o700)
+            (destination / name / "captured").write_text("preserve replacement")
+        return original_listdir(directory)
+
+    monkeypatch.setattr(development_module.os, "listdir", replace_parent)
+    with pytest.raises(IntegrityError, match="unknown state"):
+        _inspect_candidate_output_state(destination)
+    assert (destination / name / "captured").read_text() == "preserve replacement"
+    assert (tmp_path / "preserved-original" / name).is_dir()
+
+
+@pytest.mark.parametrize("fault", ["nonempty", "symlink", "file", "public_mode", "malformed_name"])
+def test_candidate_output_rejects_untrusted_publication_residue(tmp_path: Path, fault: str) -> None:
+    destination = tmp_path / "development"
+    destination.mkdir()
+    residue = destination / (".kbound-quarantine-" + "a" * 32)
+    if fault == "malformed_name":
+        residue = destination / ".kbound-quarantine-unrecognized"
+    if fault == "symlink":
+        other = tmp_path / "other"
+        other.mkdir(mode=0o700)
+        residue.symlink_to(other, target_is_directory=True)
+    elif fault == "file":
+        residue.write_text("preserve me")
+    else:
+        residue.mkdir(mode=0o700)
+        if fault == "nonempty":
+            (residue / "captured").write_text("preserve me")
+        elif fault == "public_mode":
+            residue.chmod(0o755)
+    with pytest.raises(IntegrityError, match="unknown state"):
+        _inspect_candidate_output_state(destination)
+    assert residue.exists(), "rejection must not remove unknown user state"
+
+
 def test_frozen_tent_and_sar_specs_are_hash_pinned_and_probe_only() -> None:
     for candidate_id in CANDIDATE_IDS:
         spec = candidate_spec(candidate_id)

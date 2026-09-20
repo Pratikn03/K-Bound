@@ -120,7 +120,32 @@ experiments/kbound/officehome/*
 experiments/kbound/cct20/**/__pycache__/
 experiments/kbound/cct20/**/*.py[cod]
 !experiments/kbound/so2sat/
-!experiments/kbound/so2sat/**
+experiments/kbound/so2sat/*
+# Exact maintained source authority; neither data nor arbitrary new files.
+!experiments/kbound/so2sat/__init__.py
+!experiments/kbound/so2sat/adapters.py
+!experiments/kbound/so2sat/development.py
+!experiments/kbound/so2sat/features.py
+!experiments/kbound/so2sat/gate.py
+!experiments/kbound/so2sat/integrity.py
+!experiments/kbound/so2sat/label_firewall.py
+!experiments/kbound/so2sat/metadata_manifest.py
+!experiments/kbound/so2sat/model.py
+!experiments/kbound/so2sat/precalibration_seal.py
+!experiments/kbound/so2sat/prospective_runner_v2.py
+!experiments/kbound/so2sat/prospective_v2.py
+!experiments/kbound/so2sat/protocol.py
+!experiments/kbound/so2sat/source_acceptance.py
+!experiments/kbound/so2sat/source_data.py
+!experiments/kbound/so2sat/source_preflight.py
+!experiments/kbound/so2sat/target_amendment.py
+!experiments/kbound/so2sat/target_contract.py
+!experiments/kbound/so2sat/target_inference.py
+!experiments/kbound/so2sat/target_runner.py
+!experiments/kbound/so2sat/target_scorer.py
+!experiments/kbound/so2sat/target_seal.py
+!experiments/kbound/so2sat/train_source.py
+!experiments/kbound/so2sat/v2_target.py
 experiments/kbound/so2sat/**/__pycache__/
 experiments/kbound/so2sat/**/*.py[cod]
 experiments/kbound/so2sat/**/*.h5
@@ -284,10 +309,9 @@ external/ttaline_official_incomplete_20260911/
 # AETTA native run outputs
 AETTA/native_runs/
 
-# So2Sat v2 prospective runner scratch scripts (not part of released protocol)
-experiments/kbound/so2sat/prospective_runner_v2.py
-experiments/kbound/so2sat/prospective_v2.py
-experiments/kbound/so2sat/v2_target.py
+# Required So2Sat v2 source modules belong to the explicit verification
+# inventory. Do not ignore them; protected data/results remain excluded.
+# Making source trackable does not authenticate or commit its bytes.
 
 # Synthetic population diagnostic scratch script
 experiments/kbound/synthetic_population_diagnostic.py

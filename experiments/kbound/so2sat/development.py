@@ -16,6 +16,8 @@ import importlib.metadata
 import math
 import os
 import platform
+import re
+import stat
 import sys
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -50,6 +52,7 @@ from .gate import (
 )
 from .integrity import (
     IntegrityError,
+    _open_directory_chain_no_follow,
     file_sha256,
     ordered_records_sha256,
     require_sha256,
@@ -1978,6 +1981,53 @@ def _candidate_output_paths(destination: Path) -> dict[str, Path]:
     return paths
 
 
+def _empty_private_publication_residue(destination: Path, name: str) -> bool:
+    """Recognize only empty retained writer workspaces, without reading payloads.
+
+    Nonempty rollback quarantine is deliberately not accepted. Nothing is
+    deleted, and no artifact is trusted merely because this directory exists.
+    """
+    if re.fullmatch(r"\.kbound-quarantine-[0-9a-f]{32}", name) is None:
+        return False
+    parent = descriptor = live_parent = None
+    try:
+        parent = _open_directory_chain_no_follow(
+            Path(os.path.abspath(destination)), create=False
+        )
+        descriptor = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                             dir_fd=parent)
+        before = os.fstat(descriptor)
+        if stat.S_IMODE(before.st_mode) != 0o700 or before.st_uid != os.geteuid():
+            return False
+        if os.listdir(descriptor):
+            return False
+        after = os.fstat(descriptor)
+        named = os.stat(name, dir_fd=parent, follow_symlinks=False)
+        # The leaf capability is insufficient if its containing directory was
+        # renamed away and replaced while inspection was in progress.
+        live_parent = _open_directory_chain_no_follow(
+            Path(os.path.abspath(destination)), create=False
+        )
+        retained_parent = os.fstat(parent)
+        current_parent = os.fstat(live_parent)
+        if (retained_parent.st_dev, retained_parent.st_ino) != (
+            current_parent.st_dev, current_parent.st_ino
+        ):
+            return False
+        fields = ("st_dev", "st_ino", "st_mode", "st_uid", "st_mtime_ns", "st_ctime_ns")
+        return all(getattr(before, key) == getattr(after, key) == getattr(named, key)
+                   for key in fields)
+    except (OSError, IntegrityError):
+        return False
+    finally:
+        if live_parent is not None:
+            os.close(live_parent)
+        if descriptor is not None:
+            os.close(descriptor)
+        if parent is not None:
+            os.close(parent)
+
+
 def _inspect_candidate_output_state(destination: Path) -> dict[str, bool]:
     """Inspect only the exact create-only gate-fit namespace before expensive work."""
 
@@ -1995,7 +2045,8 @@ def _inspect_candidate_output_state(destination: Path) -> dict[str, bool]:
     allowed_sidecars = {"._" + name for name in allowed}
     entries = {entry.name: entry for entry in destination.iterdir()}
     observed = set(entries)
-    unknown = sorted(observed - allowed - allowed_sidecars)
+    unknown = sorted(name for name in observed - allowed - allowed_sidecars
+                     if not _empty_private_publication_residue(destination, name))
     if unknown:
         raise IntegrityError(
             "candidate output directory contains unknown state: " + ", ".join(unknown)

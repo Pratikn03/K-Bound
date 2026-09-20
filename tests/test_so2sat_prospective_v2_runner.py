@@ -22,6 +22,32 @@ from tests.test_so2sat_prospective_v2 import (
 )
 
 
+@pytest.fixture(autouse=True)
+def synthetic_v2_documents(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exercise the real secure loaders without requiring historical authorities.
+
+    These schema fixtures are NOT recovered historical protocol/controller
+    evidence. They exist only under pytest's temporary directory, and no
+    production default or repository receipt is written or bypassed.
+    """
+    from experiments.kbound.so2sat import prospective_v2 as protocol
+
+    fixture_root = tmp_path / "synthetic-v2-schema"
+    documents = {
+        protocol.PROTOCOL_BASENAME: protocol._expected_protocol_v2(),
+        protocol.CONTROLLER_BASENAME: protocol._expected_controller_v2(),
+        protocol.PRECALIBRATION_TEMPLATE_BASENAME: protocol._expected_template_v2(),
+    }
+    for name, document in documents.items():
+        write_immutable_json_with_receipt(fixture_root / name, document)
+    real_module_file = protocol._module_file
+
+    def source_or_fixture(name: str) -> Path:
+        return fixture_root / name if name in documents else real_module_file(name)
+
+    monkeypatch.setattr(protocol, "_module_file", source_or_fixture)
+
+
 def _authority_files(tmp_path: Path) -> dict[str, Path]:
     from experiments.kbound.so2sat.prospective_v2 import (
         authorize_target_execution_v2,
@@ -339,14 +365,18 @@ def test_runtime_gateway_detects_toctou_snapshot_change(
 
     paths = _authority_files(tmp_path)
     original = integrity._snapshot_from_stat
+    # Target one authority's actual inode, not the third incidental metadata
+    # call (which now belongs to a retained private transaction residue).
+    identity = paths["precalibration_seal"].stat()
     calls = 0
 
     def changed(stat_result: object) -> tuple[int, int, int, int, int]:
         nonlocal calls
-        calls += 1
         snapshot = original(stat_result)
-        if calls == 3:
-            return (*snapshot[:-1], snapshot[-1] + 1)
+        if (stat_result.st_dev, stat_result.st_ino) == (identity.st_dev, identity.st_ino):
+            calls += 1
+            if calls >= 3:
+                return (*snapshot[:-1], snapshot[-1] + 1)
         return snapshot
 
     monkeypatch.setattr(integrity, "_snapshot_from_stat", changed)
