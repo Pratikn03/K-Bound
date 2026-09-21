@@ -66,6 +66,7 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
         "docs/research/kbound/figures/fig_certificate.png",
         "docs/research/kbound/figures/fig_decision_value_frontier.png",
         "docs/research/kbound/figures/fig_frontier_schematic.png",
+        "docs/research/kbound/figures/fig_frontier_schematic.pdf",
         "docs/research/kbound/figures/fig_phase_diagram.png",
         "docs/research/kbound/kbound_short_final_draft.docx",
         "docs/research/kbound/kbound_short_final_draft.pdf",
