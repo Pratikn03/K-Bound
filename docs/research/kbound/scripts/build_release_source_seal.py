@@ -111,6 +111,27 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    # These dependencies are required by the sealed synthetic tests. Binding
+    # retained development software does not authorize study execution or
+    # promote its historical results. Public packaging must separately review
+    # the proposal metadata's private paths/selected IDs; no results tree walk.
+    "natural_development_software": (
+        "docs/research/kbound/scripts/domainnet_batch_probe.py",
+        "docs/research/kbound/scripts/domainnet_bn_diagnostic.py",
+        "docs/research/kbound/scripts/domainnet_capacity_pilot.py",
+        "docs/research/kbound/scripts/domainnet_feasibility_contract.py",
+        "docs/research/kbound/scripts/domainnet_feasibility_images.py",
+        "docs/research/kbound/scripts/domainnet_feasibility_runner.py",
+        "docs/research/kbound/scripts/domainnet_feasibility_score.py",
+        "docs/research/kbound/scripts/domainnet_pilot_images.py",
+        "docs/research/kbound/scripts/domainnet_reference_adapter.py",
+        "docs/research/kbound/scripts/domainnet_reference_source.py",
+        "docs/research/kbound/scripts/natural_study_contract.py",
+        "docs/research/kbound/scripts/natural_study_runner.py",
+    ),
+    "natural_development_test_metadata": (
+        "experiments/kbound/results/natural_calibration_value_v1/DOMAINNET_PILOT_PROPOSAL_V1.json",
+    ),
     "preservation_policy": (
         "docs/research/kbound/audits/preserved_executable_inventory_2026_09_20.json",
     ),
