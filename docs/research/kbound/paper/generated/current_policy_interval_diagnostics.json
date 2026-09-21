@@ -1,10 +1,10 @@
 {
   "schema": "kbound-current-policy-interval-diagnostics-v1",
   "analysis_script": "docs/research/kbound/scripts/build_current_policy_interval_diagnostics.py",
-  "analysis_script_sha256": "723643566b586e89a4b34e219cc949a03075ec94c54cf00dacd8505cfb89c5a4",
+  "analysis_script_sha256": "50ea893d92cf013b7f715fbb54dd20f11196ca79adad3dc67556abaac142761a",
   "runtime": {
-    "python": "3.13.5",
-    "numpy": "2.1.3"
+    "python": "3.12.13",
+    "numpy": "2.4.4"
   },
   "scope": "Retrospective descriptive interval inclusion on already-opened dependent CIFAR-10-C cells; no fitting or new data access.",
   "calibration": {
@@ -65,7 +65,7 @@
     },
     "policy": {
       "path": "kga/policy.py",
-      "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
+      "sha256": "93152a5b1e8c66d392b9e09b3f28e490591da8f187497d1ef5a4826d5f0d4fce"
     },
     "certificate": {
       "path": "kga/certificate.py",
@@ -317,17 +317,16 @@
       "passed": true
     },
     {
-      "check": "current_policy.code.policy",
-      "comparison": "exact_equality",
-      "observed": {
+      "name": "policy_source_reconciliation_v1",
+      "passed": true,
+      "historical": {
         "path": "kga/policy.py",
         "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
       },
-      "expected": {
+      "current": {
         "path": "kga/policy.py",
-        "sha256": "baad38d43f2eda54c701f9c1ab0725c953bf076cadc6ec6eec151526377b0696"
-      },
-      "passed": true
+        "sha256": "93152a5b1e8c66d392b9e09b3f28e490591da8f187497d1ef5a4826d5f0d4fce"
+      }
     },
     {
       "check": "current_policy.code.certificate",
