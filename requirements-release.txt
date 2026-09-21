@@ -1,0 +1,14 @@
+# Canonical K-Bound release input profile (macOS arm64, Python 3.12.13).
+#
+# The maintained research profile pins the scientific and artifact-generation
+# dependencies.  The same verified interpreter also runs every Python quality
+# and distribution gate used by release_candidate.sh, so those tools are exact
+# direct inputs rather than unrecorded workstation utilities.
+-r requirements-research.txt
+
+bandit[toml]==1.9.4
+build==1.3.0
+mypy==2.1.0
+pre-commit==4.6.0
+ruff==0.15.13
+twine==6.2.0

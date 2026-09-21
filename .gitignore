@@ -323,12 +323,13 @@ experiments/kbound/synthetic_population_diagnostic.py
 # Root output scratch directory
 /output/
 
-# Machine-local requirements lock files (platform-specific; not portable release locks)
-/requirements-api-py311-linux.lock.txt
-/requirements-ci-py312-linux.lock.txt
-/requirements-ci.txt
-/requirements-release-macos-arm64.lock.txt
-/requirements-release.txt
+# Exact required platform/runtime authorities consumed by release verification.
+# Recording these files does not certify an installation on another platform.
+!/requirements-api-py311-linux.lock.txt
+!/requirements-ci-py312-linux.lock.txt
+!/requirements-ci.txt
+!/requirements-release-macos-arm64.lock.txt
+!/requirements-release.txt
 
 # poem_aetta __pycache__
 experiments/kbound/poem_aetta/__pycache__/
