@@ -119,10 +119,17 @@ that disabled runner is a certified FREEZE or a completed target experiment.
 | :--- | :--- | :--- | :--- |
 | **Controlled stress grids** | CIFAR-10-C, ImageNet-C | Tent and EATA have pooled CIFAR-10-C point advantages; SAR does not. Retrospective Holm adjustment over the six prospectively named contrasts gives adjusted Tent p=0.09375; non-confirmatory. | Controlled evidence only; no confirmatory or natural-shift win is claimed. |
 | **Prospective natural shift** | CCT-20 | KGA makes 44 FREEZE, 0 ADAPT, and 1 ABSTAIN decisions, tying always-freeze while avoiding the measured degradation from always-adapt. | Passes the locked safe-utility check at its nominal bootstrap level; not a population-safety guarantee or bidirectional routing result. |
-| **Prospective development gate** | So2Sat-LCZ42 | Adapter selection found no feasible candidate and stopped before gate calibration. The target was never opened, so no target score exists. | Negative development-only evidence; it is separate from the CCT-20 natural-shift result. |
+| **Prospective development gate (v1)** | So2Sat-LCZ42 | Adapter selection found no feasible candidate and stopped before gate calibration. The target was never opened, so no target score exists. | Preserved negative development-only evidence. |
+| **Locked calibration gate (v2)** | So2Sat-LCZ42 | All 19 cities × 5 checkpoints completed: 2 ADAPT, 0 direct FREEZE and 93 ABSTAIN. Only one city supplied ADAPT and none supplied FREEZE, failing the fixed seven-city requirements. Target remains unopened. | Two helpful accepted calibration updates do not establish target routing value; the calibration utilities are descriptive. |
 | **Natural diagnostics** | Office-Home, Camelyon17, RxRx1, PACS, ImageNet-R, CIFAR-10.1 | Results are ties, point-only findings, one-sided regimes, or negative diagnostics. iWildCam numbers are withheld pending an official-metric rerun. | No valid natural dataset currently establishes a confidence-supported win over both fixed policies. |
 
 ---
+
+## Next-phase research revision — 2026-09-21
+
+The [next-phase evidence reports](docs/research/kbound/next_phase/) add a retrospective shared-predictor calibration comparison, an assumption-explicit paired-transport certificate and synthetic diagnostic, a newly locked So2Sat v2 execution, and measured local deployment costs. The new calibration comparison does not establish general superiority to simple margins; the transport diagnostic retains harmful assumption-violating counterexamples. Historical B6 remains descriptive.
+
+The local production-mode certificate API and the separately tested request lifecycle do not establish neural adaptation deployment or field utility. The lifecycle now enforces calibration expiry, identity binding, durable-journal failure handling and bounded receipt/journal retention. Its statistical assumptions remain separate from these engineering controls. See the [deployment report](docs/research/kbound/next_phase/deployment_results.md) and [release checklist](docs/research/kbound/next_phase/RELEASE_CHECKLIST.md) for exact scope and current artifacts. Physical-device camera work remains deferred until after publication.
 
 ## 📂 Repository Layout
 
@@ -130,7 +137,7 @@ that disabled runner is a certified FREEZE or a completed target experiment.
 .
 ├── kga/                        Core Python package (KGA certificate, decision policy, assumptions)
 ├── docs/research/kbound/       Paper source files, figures, submission ledger, & manifests
-│   ├── formal/                 Lean 4 proofs and explicit scope audit (142 declarations)
+│   ├── formal/                 Lean 4 proofs and explicit declaration-scope audit
 │   ├── paper/                  LaTeX manuscript sections & generated numeric tables
 │   └── kbound_tmlr.tex         Authoritative TMLR / single-column manuscript driver
 ├── experiments/kbound/         Execution harnesses, result JSONs, & protocol runners

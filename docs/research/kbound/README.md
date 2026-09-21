@@ -1,5 +1,9 @@
 # K-Bound Research Guide
 
+## Next-phase revision — 2026-09-21
+
+Use the [next-phase execution ledger](next_phase/PROGRESS.md), [results](next_phase/calibration_value_results.md), [conditional transport analysis](next_phase/paired_transport_theory.md), [deployment measurements](next_phase/deployment_results.md), and [release checklist](next_phase/RELEASE_CHECKLIST.md) for the new revision. These supersede earlier routing/status descriptions below; the old documents and evidence remain preserved. Final acceptance refers to the exact source-bound release receipt, not an earlier dated checklist. The main-paper-only PDF and Word variants exclude appendices; the historically named `short_final_draft` full export includes them.
+
 ## Current routing qualification — 2026-09-20
 
 The [living execution ledger](ACTIVE_NATURAL_STUDY_PLAN.md) supersedes the dated

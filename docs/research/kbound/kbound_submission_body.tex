@@ -3,8 +3,8 @@
 % Shared scientific narrative. Audit material is in kbound_submission_supplement.tex.
 
 % Shared scientific main text for the maintained compact and anonymous TMLR layouts.
-% Numerical authorities are unchanged. Supplementary material is loaded separately
-% after the shared bibliography by both drivers.
+% Historical numerical authorities are retained. Completed next-phase comparisons
+% have separate hash-bound authorities; supplementary material follows the bibliography.
 
 \section{Introduction}
 \label{sec:compact-intro}
@@ -52,6 +52,13 @@ K-Bound and Knowability-Guided Adaptation (\KGA) address the same update decisio
   follows if the interval covers its declared target.
 \end{enumerate}
 
+Two additional evaluations test the limits of these contributions. A paired-prediction
+transport certificate gives a concrete finite-sample decision procedure under an explicit
+conditional-shift assumption, using established confidence-region and LP machinery.
+A shared-predictor comparison isolates what residual calibration adds beyond point prediction
+and a tune-selected margin. Its favorable and unfavorable cases are reported together in
+Section~\ref{sec:nextphase-comparisons}; neither evaluation establishes general deployment safety.
+
 The controlled CIFAR-10-C results show useful routing for some candidates, not a universal
 improvement: Tent and EATA have lower point regret than either fixed policy, whereas SAR favors
 always-adapt due to high baseline benefit under noise corruptions. On real-camera natural shift
@@ -86,6 +93,13 @@ gradient alignment~\cite{sahoo2025gala}; Informed Adaptation learns topological 
 with useful updates~\cite{mutlu2026informed}. KGA evaluates a fixed proposed candidate against its
 frozen baseline. Learned routing and rollback are established ideas; their existence is not our
 novelty claim.
+MORPHEUS~\cite{danilowski2026morpheus}, presented at the ICLR 2026 Test-Time Updates
+workshop, learns historical regressors from source-model entropy and embedding
+geometry to predict post-adaptation accuracy and choose a method before executing
+it. This directly overlaps the practical motivation of avoiding harmful updates.
+KGA's proposed distinction is the calibrated paired-benefit operating point for
+one executed shadow candidate; whether that calibration improves useful decisions
+over a shared point predictor is an empirical question evaluated separately.
 
 \subsection{Label-Free Performance and Strategy Estimation}
 
@@ -129,11 +143,27 @@ Indistinguishable adaptation problems are already central to domain-adaptation i
 ~\cite{bendavid2010theory,bendavid2010impossibility}. K-Bound's specific contribution is a
 disagreement-conditional label-kernel construction, its clipped benefit set, and the associated
 residual-audit floor. The proof does not introduce label-free impossibility.
+Jhawar and Wang~\cite{jhawar2026identifiable} independently study when an unlabeled
+observation channel identifies the best TTA action. Their September 2026 preprint
+includes a finite-batch Gaussian keep/recenter boundary and benchmark examples
+where stream structure changes the preferred action. Thus action identification
+being weaker than mechanism identification is not a unique claim of this paper.
+Our population result fixes a realized predictor pair and a disagreement-conditional
+residual class, deriving its clipped paired-benefit set and strict-sign boundary.
+The distinction lies in that explicit compatible-law construction and its audit
+requirements, not in the general fibre-consistency principle.
 Risk-estimation assumptions based on conditional independence~\cite{steinhardt2016}, label shift
 ~\cite{lipton2018bbse,garg2020labelshift}, or disagreement discrepancy~\cite{rosenfeld2023dis2}
 restrict the compatible laws. Likewise, MMD-credal risk intervals impose RKHS and covariate-shift
 structure~\cite{ariq2026mmd}. Such restrictions can change the identified set; they are not
 contradicted by a converse theorem for a richer class.
+Li, Han, and Ma~\cite{li2026matrixconstraints} construct finite-sample label-shift
+confidence regions through matrix constraints and linear programming. Consequently,
+optimizing a compatible probability table is established machinery. The separate
+paired-transport extension evaluated here targets the benefit contrast directly,
+retains joint prediction-pair information, and reports sensitivity to an externally
+specified conditional-transport violation. It does not estimate that violation
+from unlabeled data or claim a new general-purpose LP confidence method.
 
 \subsection{Marginal and Conditional Coverage}
 
@@ -599,7 +629,7 @@ Proposition~\ref{thm:population-transfer} formalizes the conditional bridge to p
 The deterministic action layer for this bridge is verified within our formal mathematics suite: an outcome-blind estimate, cell radius, and independently justified sampling radius define the compound interval, and strict \adapt/\freeze actions are sound whenever the target benefit is inside that interval. The companion evaluation interface enforces outcome-blindness by rejecting outcome-dependent inputs. Because historical canonical benchmark records do not contain fresh-sample draws, no population-transfer number is promoted into those empirical tables.
 
 \paragraph{Formal Theorem--Code Correspondence.}
-Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. In particular, we formally prove that a label-free one-bit decoder exists if and only if the label is constant on each observable evidence fibre. The stronger claim that one representative per swap orbit suffices is refuted by an explicit machine-checked counterexample. Furthermore, rate transfer holds only under an explicit episode-level contract ($\mathrm{miss}_{T}\le H\,\mathrm{miss}_{S}$, $H\ge0$, and $\mathrm{miss}_{S}\le\alpha$); it does not estimate $H$, prove benchmark exchangeability, or establish prospective population provenance. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
+Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. In particular, we formally prove that a set-theoretic label-free one-bit decoder exists if and only if the label is constant on each observable evidence fibre; existence of a general measurable decoder requires additional structure. The stronger claim that one representative per swap orbit suffices is refuted by an explicit machine-checked counterexample. Furthermore, rate transfer holds only under an explicit episode-level contract ($\mathrm{miss}_{T}\le H\,\mathrm{miss}_{S}$, $H\ge0$, and $\mathrm{miss}_{S}\le\alpha$); it does not estimate $H$, prove benchmark exchangeability, or establish prospective population provenance. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
 
 \paragraph{ImageNet-C 108-cell population replay.}
 To audit this procedure on existing benchmark data without changing historical estimands, we replayed the outcome-blind compound interval $[\widehat\Delta \pm (\varepsilon + b)]$ across 108 ImageNet-C development cells (36 cells each for Tent, EATA, and SAR; five-fold cell-outcome-disjoint cross-fitting; sensitivity parameter $m=2{,}000$, yielding uniform concentration radius $b=0.0607$; Table~\ref{tab:main-pop-replay-summary}). Full fold breakdowns and radius distributions appear in \KBSuppRef{tab:imagenetc-108-population-replay}{Table}{the supplementary 108-cell replay table} (\KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}).
@@ -723,7 +753,7 @@ Evidence & Design and status & Question it can answer \\
 \midrule
 CIFAR-10-C: Tent, EATA, SAR & opened controlled grids; cross-fitted empirical calibration & candidate-specific routing on the evaluated cells \\
 CCT-20: Tent & internally sealed protocol; five checkpoints and nine target camera locations & conservative retention under the stated score and safe-utility rule \\
-So2Sat-LCZ42 & development feasibility stopped; no target access & whether a candidate met the pre-target eligibility checks \\
+So2Sat-LCZ42 v1/v2 & v1 development stop; v2 calibration-screen failure; targets unopened & whether the respective pre-target eligibility checks were met \\
 Other replayable tracks & opened natural/semantic and candidate-configuration diagnostics & transfer limits and one-sided retention; full results in the supplement \\
 PACS; iWildCam; historical ports; focused Office-Home route & partial replay, withheld metric, superseded policy, or invalid route & audit history only where the corresponding contract is incomplete or invalid \\
 \bottomrule
@@ -941,12 +971,15 @@ All recorded development cells for Tent had negative measured benefit. On the ev
 \subsection{Development Stops and Adverse Diagnostics}
 \label{sec:so2sat-development-stop}
 
-So2Sat-LCZ42~\cite{zhu2020so2sat} tested \SoTwoCandidateCount{} candidates on
+The earlier v1 study on So2Sat-LCZ42~\cite{zhu2020so2sat} tested \SoTwoCandidateCount{} candidates on
 \SoTwoDevelopmentCityCount{} development cities and \SoTwoCheckpointCount{} independent
 checkpoints. Tent had both helpful and harmful cities, but neither candidate passed all
 predeclared eligibility checks. The study stopped before gate calibration: no target inputs or
 labels were accessed, and there is no target natural-shift score. The development outcomes are
 now open, so retuning them cannot produce fresh confirmation.
+The separately locked v2 calibration study is reported in
+Section~\ref{sec:nextphase-natural-cost}; it also stopped before target access,
+after failing its fixed calibration eligibility screen.
 
 The auxiliary studies also show limitations. ImageNet-R and PACS favor always-adapt;
 ImageNet-C is sensitive to the candidate and its operating point. Office-Home and RxRx1 mainly
@@ -979,6 +1012,140 @@ The parameter-restricted probe also samples synthetic benefits at five hardcoded
 
 Separately, the authenticated CCT-20 benchmark retained the frozen model across all 45 cells (44 FREEZE, 1 ABSTAIN, 0 ADAPT). That safe-utility result does not establish positive selective adaptation or validate any of the simulated restricted-adapter regimes.
 
+\section{Additional Tests of Decision Value}
+\label{sec:nextphase-comparisons}
+
+\subsection{What Does Calibration Add to a Shared Predictor?}
+\label{sec:nextphase-calibration}
+
+We conducted a new retrospective comparison on the already opened CIFAR, ImageNet,
+and mixed-checkpoint records. Every arm shares the same fitted GBRT within a fold.
+CIFAR and ImageNet folds exclude complete scored corruption types from fitting,
+tuning, and calibration. Checkpoint-only folds exclude the scored source model
+and rotate held-out semantic groups; joint folds exclude both the scored source
+model and the complete corruption type.
+This tests transfer beyond the earlier cell-wise splits, while retaining the historical
+data's provenance and dependence limits. It is not a new independent deployment study.
+The loss grid, fold construction, and policy family were fixed before the new fitting;
+held-out outcomes enter scoring only after decisions have been saved.
+
+The primary loss uses a prespecified harm weight of five:
+\begin{equation}
+ L_5=\frac{1}{N}\sum_{i=1}^N
+ \left[(1-a_i)(B_i)_+ +5a_i(-B_i)_+\right],
+ \label{eq:nextphase-loss}
+\end{equation}
+where $B_i$ is measured paired cell benefit and $a_i$ is one for ADAPT and zero
+otherwise. A fixed margin minimizes this loss
+on tune-only groups. Constant and locally scaled residual intervals use the exact
+conformal rank, without clipping a rank that exceeds the calibration sample size.
+The full study includes harm weights $1,5,20$, nominal levels $80,90,95\%$,
+group-maximum residuals, exposure-matched controls, and binomial risk-selection arms.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Retrospective shared-predictor comparison. Losses are $100L_5$ in percentage
+points (lower is better). Margin is selected on tuning data; Constant and Scaled
+use nominal 90\% cell residual intervals. Inclusion C/S is observed held-out
+interval inclusion for those two arms, not a coverage guarantee. The same 108
+mixed-checkpoint records appear in two evaluation designs; they are not 216 independent observations.}
+\label{tab:nextphase-calibration}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_nextphase_calibration.tex}}
+\end{table*}
+
+Table~\ref{tab:nextphase-calibration} does not establish a general advantage for
+calibration. Scaled calibration reduces CIFAR Tent loss from $0.2867$ to $0.1429$
+percentage points versus point prediction, and from $0.2264$ versus the tuned
+margin. Its loss at matched exposure is only modestly lower than point ranking
+($0.1429$ versus $0.1610$). Simple margins do better on CIFAR EATA and SAR;
+point or margin policies do better in the other cohorts. Constant-radius gates
+have exactly the point predictor's ranking at equal exposure: their role is
+choosing an operating point, rather than improving ranking.
+
+Nominal 90\% constant-cell intervals include only $50.51$--$60.69\%$ of held-out
+CIFAR benefits; scaling and group maxima do not restore nominal inclusion.
+All independently held-out environment-calibration arms abstain: this split
+provides no calibration environments independently excluded from fitting and
+tuning. The 10\% conditional group-risk arm also abstains throughout. Even with
+zero observed errors, its 13-threshold family needs 53 exposed calibration groups
+at within-fold confidence error $.05$, exceeding the largest partition of 45.
+These are information and transfer limits, rather than evidence that every
+possible policy is unsafe. The 20\% sensitivity selects some CIFAR updates;
+its held-out group error rates differ materially from cell rates
+(\KBSuppRef{app:nextphase-calibration}{Appendix}{the supplementary calibration comparison}).
+B6 remains descriptive: this study does not recover its missing original execution
+identities or repair its historical rank clipping.
+
+\subsection{A Conditional Paired-Transport Certificate}
+\label{sec:nextphase-paired}
+
+The population frontier leaves open how extra structural information can make a
+decision possible. We instantiate one such assumption regime for fixed multiclass
+predictors. Let $r=(f_0(X),f_a(X))$ index their joint prediction bins,
+$A_{ry}=P_S(r\mid Y=y)$, and $q_r=P_T(r)$. With unknown target prior $\pi$, declare
+\begin{equation}
+ \sum_y\pi_y\TV\bigl(P_T(r\mid y),A_{\cdot y}\bigr)\le\rho.
+ \label{eq:nextphase-transport}
+\end{equation}
+The budget $\rho$ requires external justification; unlabeled evidence cannot
+generally validate it. Both predictors must be fixed independently of the
+source and target evidence samples. In particular, adapting on the same target
+examples later used as independent evidence does not satisfy this construction.
+
+For $R$ bins and $K$ classes, simultaneous binomial intervals for the $RK+R$
+source-conditional and target-marginal probabilities define a linear feasible
+set. The variables are target joint masses $t_{ry}$, transported source masses
+$s_{ry}=A_{ry}\pi_y$, priors, and absolute-value slacks for
+Equation~\eqref{eq:nextphase-transport}. Source interval endpoints multiply
+$\pi_y$, so the resulting constraints remain linear. Minimize and maximize
+\begin{equation}
+ \Delta(t)=\sum_{r,y}
+ \bigl(\mathbf{1}\{f_a(r)=y\}-\mathbf{1}\{f_0(r)=y\}\bigr)t_{ry}.
+ \label{eq:nextphase-paired-objective}
+\end{equation}
+On the simultaneous interval event, the true table is feasible and these extrema
+enclose its benefit. Under the stated sampling and transport assumptions,
+strict interval thresholding therefore has unconditional wrong-direction
+probability at most $\alpha$. It does not give acceptance-conditional or
+repeated-use error control. Detected infeasibility, solver failure, or an interval
+touching zero produces \abstain. The full constraints, proof, and numerical
+scope appear in \KBSuppRef{app:nextphase-paired-proof}{Appendix}{the supplementary paired-transport proof}.
+
+This construction applies existing interval-constrained LP inference
+~\cite{li2026matrixconstraints} to a paired contrast. Joint optimization can
+retain information lost by separately bounding the two accuracies: in one exact
+three-class construction, the paired interval is $[.1,.4]$, whereas subtracting
+separate extrema on the same feasible set gives $[-.1,.6]$. An unidentifiable
+prior can therefore coexist with an identified positive action. This is a
+concrete use of dependence, not a first claim for action identification
+~\cite{jhawar2026identifiable} or new LP machinery.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Selected diagnostic regimes from 4,860 synthetic trial configurations
+(nine scenarios, three sample sizes, three sensitivity budgets, 60 trials each).
+A/F/U count ADAPT/FREEZE/ABSTAIN over 60 trials. Separate subtracts accuracy
+extrema on the same polytope; it is not an implementation of MaC-LP. The
+same-evidence violation row deliberately violates the declared assumption and
+reuses the paired-cancellation row's observable count streams.}
+\label{tab:nextphase-paired}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_nextphase_paired_transport.tex}}
+\end{table*}
+
+The paired procedure adapts in all 60 cancellation trials while the separate
+accuracy relaxation always abstains. Near a small positive benefit, it avoids
+the plug-in rule's 22 wrong FREEZE decisions out of 60 at the smaller sample
+size; its price is abstention. Larger sensitivity budgets likewise reduce
+commitment. Most importantly, the same observed evidence can have true benefit
+$-.5$ under a violated transport assumption: the paired procedure then makes
+60 harmful ADAPT decisions. The diagnostic demonstrates both conditional value
+and the impossibility of obtaining the missing assumption from unchanged
+unlabeled observations. It does not establish useful natural-shift adaptation.
+
+\input{next_phase/field_study_results.tex}
+
 \section{Limitations and Broader Impact}
 \label{sec:compact-sensitivity}
 
@@ -1004,6 +1171,11 @@ A larger radius reduces commitment but can increase regret when the frozen model
 A smaller radius increases exposure and makes calibration failures more consequential.
 Changing the adapter, checkpoint, feature schema, or update settings changes the prediction problem
 and requires recalibration or a justified transfer argument.
+The new held-out-corruption comparison directly exhibits this failure: nominal
+90\% calibration transfers poorly on CIFAR, and the best useful policy depends
+on the candidate and harm weight. The paired-transport certificate supplies a
+different sufficient assumption regime; it does not validate either that
+calibration transfer or its own transport budget from unlabeled target data.
 
 \paragraph{Repeated deployment needs a separate guarantee.}
 A predeclared policy does not by itself supply exchangeability or time-uniform safety.
@@ -1059,6 +1231,13 @@ observations cannot remove the unresolved residual bound.
 
 KGA is an empirical companion: it predicts a measured cell benefit and uses an interval to accept,
 reject, or defer an update. The controlled results show candidate-specific routing value.
+The shared-predictor comparison finds a calibration advantage for one retrospective
+CIFAR Tent cohort, alongside losses to simple margins and substantial held-out
+coverage failure. A paired-transport extension demonstrates how joint prediction
+information can identify a beneficial decision under explicit assumptions, and
+how the identical observable evidence supports harmful decisions when those
+assumptions fail. These results narrow the supported practical claim rather than
+establishing universal superiority.
 The CCT-20 result shows conservative retention, while the So2Sat development stop exposes a transfer
 limit. Together they motivate evidence-aware commitment, with the validity of each conclusion tied
 to its stated target and assumptions. Stronger natural-shift routing and independent coverage

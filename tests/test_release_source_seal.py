@@ -13,9 +13,7 @@ from docs.research.kbound.scripts import build_release_source_seal as seal
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
-    ).stdout.strip()
+    return subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True).stdout.strip()
 
 
 def test_source_seal_binds_head_tree_and_rejects_dirty_maintained_path(
@@ -57,9 +55,7 @@ def test_source_seal_binds_head_tree_and_rejects_dirty_maintained_path(
         seal.build_payload(tmp_path, head)
 
 
-def test_source_seal_rejects_non_head_commit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_seal_rejects_non_head_commit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _git(tmp_path, "init", "-q")
     _git(tmp_path, "config", "user.name", "Release Test")
     _git(tmp_path, "config", "user.email", "release@example.invalid")
@@ -139,9 +135,7 @@ def test_release_generated_authorities_are_outer_checksum_outputs() -> None:
         "experiments/kbound/results/reconciled_panels_v1/current_policy_cluster_inference.json",
         "experiments/kbound/results/reconciled_panels_v1/source_manifest.json",
     }
-    source_inventory = {
-        path for paths in seal.EXPLICIT_FILES.values() for path in paths
-    }
+    source_inventory = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
     assert generated.isdisjoint(source_inventory)
     assert generated <= seal.GENERATED_OUTPUT_ALLOWLIST
 
@@ -156,6 +150,13 @@ def test_direct_release_scripts_are_explicitly_source_sealed() -> None:
         "docs/research/kbound/scripts/render_pdf_pages.py",
         "docs/research/kbound/scripts/run_frontier_kga_bridge.py",
         "docs/research/kbound/scripts/validate_closure_protocol.py",
+        "docs/research/kbound/scripts/build_next_phase_evidence.py",
+        "docs/research/kbound/scripts/run_calibration_value.py",
+        "docs/research/kbound/scripts/run_paired_transport_diagnostic.py",
+        "docs/research/kbound/scripts/run_deployment_audit.py",
+        "docs/research/kbound/scripts/run_next_phase_docker_smoke.py",
+        "docs/research/kbound/scripts/profile_natural_deployment.py",
+        "docs/research/kbound/scripts/make_next_phase_tables.py",
     }
     assert required <= set(seal.EXPLICIT_FILES["release_code"])
 
@@ -171,9 +172,7 @@ def _small_source_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple
     _git(repo, "add", "maintained.txt", "generated.json")
     _git(repo, "commit", "-qm", "source freeze")
     monkeypatch.setattr(seal, "EXPLICIT_FILES", {"test_source": ("maintained.txt",)})
-    monkeypatch.setattr(
-        seal, "GENERATED_OUTPUT_ALLOWLIST", frozenset({"generated.json", "release_seal.json"})
-    )
+    monkeypatch.setattr(seal, "GENERATED_OUTPUT_ALLOWLIST", frozenset({"generated.json", "release_seal.json"}))
     return repo, _git(repo, "rev-parse", "HEAD")
 
 
@@ -189,9 +188,7 @@ def test_clean_start_rejects_even_allowlisted_generated_changes(
     assert seal.build_payload(repo, source)["source_commit"] == source
 
 
-def test_phase_check_rejects_source_change_and_commit_advance(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_phase_check_rejects_source_change_and_commit_advance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     (repo / "maintained.txt").write_text("changed source\n", encoding="utf-8")
     with pytest.raises(ValueError, match="maintained release-source paths are dirty"):
@@ -202,9 +199,7 @@ def test_phase_check_rejects_source_change_and_commit_advance(
         seal.build_payload(repo, source)
 
 
-def test_source_check_rejects_head_change_while_hashing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_check_rejects_head_change_while_hashing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     original_rows = seal._artifact_rows
 
@@ -218,9 +213,7 @@ def test_source_check_rejects_head_change_while_hashing(
         seal.build_payload(repo, source)
 
 
-def test_source_artifact_reader_rejects_symlinked_parent(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_artifact_reader_rejects_symlinked_parent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -247,9 +240,7 @@ def test_final_seal_remains_valid_after_generated_artifact_commit(
     assert payload["source_commit"] == source
 
 
-def test_final_seal_rejects_committed_non_output_change(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_final_seal_rejects_committed_non_output_change(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     path = repo / "release_seal.json"
     seal._write(path, seal.build_payload(repo, source))
@@ -263,9 +254,7 @@ def test_final_seal_rejects_committed_non_output_change(
         seal.validate_seal(repo, path)
 
 
-def test_final_seal_rejects_mutable_source_reference(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_final_seal_rejects_mutable_source_reference(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, source = _small_source_repo(tmp_path, monkeypatch)
     payload = seal.build_payload(repo, source)
     payload["source_commit"] = "HEAD"
@@ -281,8 +270,13 @@ def test_formal_pins_and_selected_validation_files_are_source_sealed() -> None:
     required = {
         prefix + name
         for name in (
-            "KBound.lean", "README.md", "build.sh", "formal_audit.py",
-            "lakefile.lean", "lake-manifest.json", "lean-toolchain",
+            "KBound.lean",
+            "README.md",
+            "build.sh",
+            "formal_audit.py",
+            "lakefile.lean",
+            "lake-manifest.json",
+            "lean-toolchain",
         )
     }
     assert required <= set(seal.EXPLICIT_FILES["formal_source"])
@@ -298,14 +292,17 @@ def test_formal_pins_and_selected_validation_files_are_source_sealed() -> None:
         tokens = shlex.split(line, comments=True)
         if "--collect-only" not in tokens:
             executed.update(t for t in tokens if t.startswith("tests/") and t.endswith(".py"))
+
     def is_sealed(path: str) -> bool:
         return path in seal.EXPLICIT_FILES["release_validation"] or any(
             category == "release_validation" and path.startswith(prefix) and path.endswith(suffixes)
             for category, prefix, suffixes in seal.SOURCE_PREFIX_RULES
         )
+
     assert all(is_sealed(path) for path in executed)
     assert {
-        "tests/test_kbound_formal_audit.py", "tests/test_kga_masked_inputs.py",
+        "tests/test_kbound_formal_audit.py",
+        "tests/test_kga_masked_inputs.py",
         "tests/test_kbound_current_policy_bindings.py",
     } <= executed
 
@@ -323,6 +320,15 @@ def test_source_prefix_inventory_excludes_caches_reports_and_data(
         "docs/research/kbound/edge/tests/test_policy.py",
         "docs/research/kbound/tests/test_protocol.py",
         "kga/_validation.py",
+        "kga/calibration_value.py",
+        "kga/paired_transport.py",
+        "kga/deployment_audit.py",
+        "docs/research/kbound/next_phase/evidence_manifest.json",
+        "docs/research/kbound/next_phase/natural_protocol.json",
+        "docs/research/kbound/next_phase/calibration_value_results.md",
+        "experiments/kbound/next_phase/natural_runner.py",
+        "experiments/kbound/next_phase/__init__.py",
+        "experiments/kbound/next_phase/README.md",
     }
     excluded = {
         "docs/research/kbound/formal/.lake/packages/mathlib/Mathlib.lean",
@@ -332,11 +338,28 @@ def test_source_prefix_inventory_excludes_caches_reports_and_data(
         "docs/research/kbound/kbound_repro/__pycache__/stale.py",
         "docs/research/kbound/data/raw.py",
         "experiments/kbound/results/old_history.py",
+        "experiments/kbound/next_phase/data/target.h5",
+        "experiments/kbound/next_phase/__pycache__/stale.py",
+        "output/next_phase/natural_v2/calibration_cells/city.json",
     }
     monkeypatch.setattr(seal, "EXPLICIT_FILES", {})
-    monkeypatch.setattr(seal, "_tree_blobs", lambda *args: {p: "a" * 40 for p in wanted | excluded})
+    monkeypatch.setattr(seal, "_tree_blobs", lambda *args: dict.fromkeys(wanted | excluded, "a" * 40))
     inventory = {path for _, path in seal._inventory(tmp_path, "source")}
     assert inventory == wanted
+
+
+def test_next_phase_config_receipts_are_exactly_scoped() -> None:
+    required = {
+        "experiments/kbound/so2sat/prospective_protocol_v2.json",
+        "experiments/kbound/so2sat/prospective_protocol_v2.json.receipt.json",
+        "experiments/kbound/so2sat/precalibration_seal_v2.template.json",
+        "experiments/kbound/so2sat/precalibration_seal_v2.template.json.receipt.json",
+        "experiments/kbound/so2sat/tent_citymean5_checkpoint_ridge_v2.json",
+        "experiments/kbound/so2sat/tent_citymean5_checkpoint_ridge_v2.json.receipt.json",
+    }
+    assert required <= set(seal.EXPLICIT_FILES["next_phase_configuration"])
+    assert "docs/research/kbound/next_phase/evidence_manifest.json" in seal.EXPLICIT_FILES["next_phase_metadata"]
+    assert not any(prefix.startswith("output/") for _, prefix, _ in seal.SOURCE_PREFIX_RULES)
 
 
 def test_generated_formal_receipt_is_output_not_source() -> None:
@@ -396,8 +419,12 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
     environment.pop("KBOUND_SOURCE_COMMIT", None)
     environment.pop("RELEASE_SOURCE_COMMIT", None)
     completed = subprocess.run(
-        ["bash", str(runbook), "all"], cwd=repo, env=environment,
-        capture_output=True, text=True, timeout=30,
+        ["bash", str(runbook), "all"],
+        cwd=repo,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     assert completed.returncode != 0
     events = [json.loads(line) for line in event_log.read_text().splitlines()]
@@ -408,7 +435,11 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
         assert "completely clean working tree" in combined_output
     else:
         assert any("--check-source" in event for event in events)
-        expected = "source commit must equal HEAD" if change == "head_during_run" else "maintained release-source paths are dirty"
+        expected = (
+            "source commit must equal HEAD"
+            if change == "head_during_run"
+            else "maintained release-source paths are dirty"
+        )
         assert expected in combined_output
         assert all(event == ["-"] or event[0].endswith("build_release_source_seal.py") for event in events)
 
@@ -421,10 +452,15 @@ def test_every_isolated_validator_source_and_input_is_in_release_seal() -> None:
     commit, _tree = runner.source_identity(repository)
     active = runner.classify_validator_paths(runner.tracked_paths(repository, commit))
     candidates = set(runner.VALIDATOR_INPUTS) | set(active["validator_paths"])
-    candidates.update(path for path in runner.VALIDATOR_SUPPORT_SOURCES if path.endswith('.py'))
-    candidates.update(prefix + 'validator_support.py' for prefix in runner.VALIDATOR_PREFIXES)
-    unsealed = {path for path in candidates if path not in explicit and not any(
-        path.startswith(prefix) and path.endswith(suffixes)
-        for _category, prefix, suffixes in seal.SOURCE_PREFIX_RULES
-    )}
+    candidates.update(path for path in runner.VALIDATOR_SUPPORT_SOURCES if path.endswith(".py"))
+    candidates.update(prefix + "validator_support.py" for prefix in runner.VALIDATOR_PREFIXES)
+    unsealed = {
+        path
+        for path in candidates
+        if path not in explicit
+        and not any(
+            path.startswith(prefix) and path.endswith(suffixes)
+            for _category, prefix, suffixes in seal.SOURCE_PREFIX_RULES
+        )
+    }
     assert not unsealed

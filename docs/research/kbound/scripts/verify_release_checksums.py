@@ -67,6 +67,7 @@ REQUIRED_RELEASE_PATHS: tuple[str, ...] = (
     "docs/research/kbound/figures/fig_phase_diagram.png",
     "docs/research/kbound/kbound_short_final_draft.pdf",
     "docs/research/kbound/kbound_short_final_draft.docx",
+    "docs/research/kbound/kbound_short_final_draft.figures.json",
     "docs/research/kbound/kbound_tmlr.pdf",
     "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json",
     "experiments/kbound/results/reconciled_panels_v1/CANONICAL_PANEL_RESULTS.md",

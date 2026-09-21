@@ -1,0 +1,134 @@
+{
+  "action_unit": "city_checkpoint",
+  "amendment_rule": "any_change_requires_a_new_version_before_gate_calibration_or_target_access",
+  "calibration": {
+    "alpha": 0.1,
+    "independent_cluster_unit": "gate_calibration_city",
+    "method": "split_conformal_city_max_checkpoint_absolute_residual",
+    "order_statistic_rank_one_based": 18,
+    "within_city_residual": "maximum_absolute_residual_over_five_checkpoints"
+  },
+  "checkpoint_ids": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "controller_contract": {
+    "candidate": "tent_adam_bn_affine_probe_transfer_v1",
+    "checkpoint_encoding": "I(checkpoint=s)-1/5_for_s_0_through_4",
+    "city_feature_aggregation": "equal_mean_over_exactly_five_checkpoint_probe_documents",
+    "features": [
+      "entropy_change",
+      "prediction_disagreement",
+      "marginal_jensen_shannon_divergence",
+      "normalized_adapter_update_norm",
+      "batchnorm_source_statistic_divergence"
+    ],
+    "intercept_unpenalized": true,
+    "raw_routing_rule": "positive_ADAPT_negative_FREEZE_zero_ABSTAIN",
+    "ridge_penalized_terms": "all_nonintercept_coefficients",
+    "ridge_penalty": 1.0,
+    "standardization": "nine_gate_fit_city_vectors_population_sd_ddof_0"
+  },
+  "controller_id": "tent_citymean5_checkpoint_ridge_v2",
+  "dataset": {
+    "class_count": 17,
+    "modality": "sen2_10_band",
+    "name": "So2Sat LCZ42",
+    "release": "v4.2",
+    "split_scenario": "culture-10"
+  },
+  "decision_rule": {
+    "abstain_realized_action": "FREEZE",
+    "adapt": "lower_bound_strictly_greater_than_zero",
+    "freeze": "upper_bound_strictly_less_than_zero",
+    "missing_or_nonfinite_feature_action": "ABSTAIN",
+    "missing_or_nonfinite_feature_realized_action": "FREEZE",
+    "otherwise": "ABSTAIN"
+  },
+  "development": {
+    "gate_calibration_checkpoint_cell_count": 95,
+    "gate_calibration_city_count": 19,
+    "gate_calibration_role": "split_conformal_radius_and_predeclared_exposure_screen_only",
+    "gate_fit_checkpoint_cell_count": 45,
+    "gate_fit_city_count": 9,
+    "gate_fit_role": "controller_design_and_fit_only",
+    "no_postseal_selection": "no_model_feature_penalty_threshold_adapter_or_baseline_selection_after_v2_seal"
+  },
+  "gate_authorization": {
+    "checkpoint_only_baseline": "required_and_reported_without_selection",
+    "complete_grid_required": true,
+    "direct_means": "interval_certified_ADAPT_or_FREEZE_not_ABSTAIN",
+    "failure": "NO_TARGET_ACCESS",
+    "minimum_direct_adapt_cities": 7,
+    "minimum_direct_freeze_cities": 7
+  },
+  "live_execution": {
+    "abstain_realized_action": "FREEZE",
+    "action_inventory": "exactly_10_target_cities_by_5_checkpoints",
+    "action_receipts": "all_50_create_only_and_replayed_twice_before_evaluation",
+    "authority_order": [
+      "recompute_precalibration_seal",
+      "recompute_complete_95_cell_gate_screen",
+      "recompute_target_authorization",
+      "construct_target_paths_and_loader"
+    ],
+    "evaluation_pixel_access": "testing_sen2_only_after_complete_action_plan",
+    "probe_label_access": "FORBIDDEN",
+    "probe_pixel_access": "validation_sen2_only_after_authorization",
+    "target_outcome_access": "FORBIDDEN_TO_LIVE_RUNNER",
+    "target_path_or_loader_before_authorization": "FORBIDDEN"
+  },
+  "preaccess_requirements": {
+    "gate_calibration_before_precalibration_seal": "FORBIDDEN",
+    "precalibration_seal_binds": [
+      "v2_protocol_and_receipt",
+      "v2_controller_and_receipt",
+      "gate_fit_bundle_and_receipt",
+      "source_acceptance_normalizer_and_five_independent_checkpoints",
+      "code_configuration_and_environment_hashes",
+      "opaque_validation_and_testing_container_raw_byte_identities",
+      "zero_access_chronology"
+    ],
+    "target_before_passing_gate_authorization": "FORBIDDEN",
+    "target_outcomes_available_to_live_runner": false
+  },
+  "protocol_id": "KBOUND_SO2SAT_LCZ42_PROSPECTIVE_CONFIRMATION_v2",
+  "schema": "kbound_so2sat_prospective_protocol_v2",
+  "status": "SOURCE_ONLY_LOCK_NOT_PRECALIBRATION_SEALED",
+  "target_inference": {
+    "bootstrap": {
+      "bit_generator": "PCG64",
+      "interval": "percentile",
+      "numpy_quantile_method": "linear",
+      "quantiles": [
+        0.025,
+        0.975
+      ],
+      "resamples": 10000,
+      "seed": 20260902
+    },
+    "checkpoint_only_baseline_role": "required_secondary_diagnostic",
+    "cluster_unit": "target_city",
+    "confidence_interval_sign": "positive_favors_kbound_v2",
+    "confidence_intervals": "nominal_95_percent_city_cluster_bootstrap",
+    "multiplicity": "holm_familywise_0.05",
+    "primary_comparison_family": [
+      "kbound_v2_vs_always_adapt",
+      "kbound_v2_vs_always_freeze"
+    ],
+    "primary_estimand": "mean_over_10_target_cities_of_within_city_mean_over_5_checkpoints_utility_difference",
+    "report_all_target_cities_and_all_five_checkpoints": true,
+    "sign_flip_assumption": "independent_target_city_difference_vectors_with_joint_sign_symmetry_under_each_null",
+    "sign_flip_tests": "exact_city_cluster_sign_flip"
+  },
+  "version_relationship": {
+    "gate_calibration_accessed_for_v2_design": false,
+    "target_accessed_for_v2_design": false,
+    "v1_result": "PRESERVED_NEGATIVE_NO_FEASIBLE_CANDIDATE",
+    "v2_development_basis": "already_open_v1_nine_city_gate_fit_evidence_only",
+    "v2_is_not_an_amendment_to_v1": true
+  }
+}

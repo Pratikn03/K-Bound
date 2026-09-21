@@ -69,6 +69,7 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
         "docs/research/kbound/figures/fig_frontier_schematic.pdf",
         "docs/research/kbound/figures/fig_phase_diagram.png",
         "docs/research/kbound/kbound_short_final_draft.docx",
+        "docs/research/kbound/kbound_short_final_draft.figures.json",
         "docs/research/kbound/kbound_short_final_draft.pdf",
         "docs/research/kbound/kbound_tmlr.pdf",
         "docs/research/kbound/notebooks/kbound_empirical_data_quality_audit_2026_08_27.ipynb",
@@ -112,6 +113,29 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    # The manifest is committed before source freeze and binds the separate
+    # ignored-output evidence archive transitively. It never authorizes reading
+    # new target data or promotes hashes into scientific execution evidence.
+    "next_phase_metadata": (
+        "docs/research/kbound/next_phase/evidence_manifest.json",
+        "docs/research/kbound/next_phase/calibration_value_protocol.json",
+        "docs/research/kbound/next_phase/paired_transport_protocol.json",
+        "docs/research/kbound/next_phase/natural_protocol.json",
+        "docs/research/kbound/next_phase/RELEASE_CHECKLIST.md",
+    ),
+    "next_phase_software": (
+        "experiments/kbound/next_phase/__init__.py",
+        "experiments/kbound/next_phase/natural_runner.py",
+        "experiments/kbound/next_phase/README.md",
+    ),
+    "next_phase_configuration": (
+        "experiments/kbound/so2sat/prospective_protocol_v2.json",
+        "experiments/kbound/so2sat/prospective_protocol_v2.json.receipt.json",
+        "experiments/kbound/so2sat/precalibration_seal_v2.template.json",
+        "experiments/kbound/so2sat/precalibration_seal_v2.template.json.receipt.json",
+        "experiments/kbound/so2sat/tent_citymean5_checkpoint_ridge_v2.json",
+        "experiments/kbound/so2sat/tent_citymean5_checkpoint_ridge_v2.json.receipt.json",
+    ),
     # These dependencies are required by the sealed synthetic tests. Binding
     # retained development software does not authorize study execution or
     # promote its historical results. Public packaging must separately review
@@ -133,9 +157,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
     "natural_development_test_metadata": (
         "experiments/kbound/results/natural_calibration_value_v1/DOMAINNET_PILOT_PROPOSAL_V1.json",
     ),
-    "preservation_policy": (
-        "docs/research/kbound/audits/preserved_executable_inventory_2026_09_20.json",
-    ),
+    "preservation_policy": ("docs/research/kbound/audits/preserved_executable_inventory_2026_09_20.json",),
     "so2sat_source": SO2SAT_SOURCE_PATHS,
     "reader_surface": (
         "DATA.md",
@@ -227,6 +249,15 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/figures/fig_decision_flow.png",
     ),
     "release_code": (
+        "docs/research/kbound/scripts/build_next_phase_evidence.py",
+        "docs/research/kbound/scripts/run_calibration_value.py",
+        "docs/research/kbound/scripts/run_paired_transport_diagnostic.py",
+        "docs/research/kbound/scripts/run_deployment_audit.py",
+        "docs/research/kbound/scripts/run_next_phase_docker_smoke.py",
+        "docs/research/kbound/scripts/profile_natural_deployment.py",
+        "docs/research/kbound/scripts/make_next_phase_tables.py",
+        "docs/research/kbound/scripts/derive_main_only_documents.py",
+        "docs/research/kbound/scripts/build_next_phase_review_package.py",
         "scripts/reconcile_result_panels.py",
         "scripts/sync_reconciled_panels.py",
         "src/scripts/validate_manuscript_claims.py",
@@ -267,14 +298,12 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "experiments/kbound/results/cct20_partial_adaptation_report.json",
         "experiments/kbound/benchmarks/multi_architecture_eval.py",
         "experiments/kbound/cct20/partial_adaptation_gate.py",
-
         "docs/research/kbound/release/policy_reconciliation_v1/policy_original.txt",
         "docs/research/kbound/release/recovered_gemini_evidence_v1/b6_outcome_exclusion_receipt.json",
         "docs/research/kbound/release/recovered_gemini_evidence_v1/b6_fold_configuration.json",
         "docs/research/kbound/release/recovered_gemini_evidence_v1/RECOVERY_AUDIT.json",
         "docs/research/kbound/release/recovered_gemini_evidence_v1/comparator_alignment.json",
         "docs/research/kbound/release/recovered_gemini_evidence_v1/README.md",
-
         "docs/research/kbound/scripts/render_pdf_pages.py",
         "docs/research/kbound/scripts/run_official_native.py",
         "docs/research/kbound/scripts/run_repository_verification.py",
@@ -360,6 +389,8 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
 # Never walk datasets, historical experiment results, Lake caches, distributions,
 # or generated reports to construct the source inventory.
 SOURCE_PREFIX_RULES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("next_phase_metadata", "docs/research/kbound/next_phase/", (".md", ".json")),
+    ("next_phase_software", "experiments/kbound/next_phase/", (".py", ".md")),
     ("formal_source", "docs/research/kbound/formal/KBound/", (".lean",)),
     ("formal_source", "docs/research/multiclass_vector_capacity/formal/", (".lean", ".py")),
     ("repro_package", "docs/research/kbound/kbound_repro/", (".py",)),
@@ -382,9 +413,14 @@ SOURCE_PREFIX_RULES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
 EXCLUDED_SOURCE_PARTS = frozenset({".lake", "build", "dist", "__pycache__"})
 
 # Git inventories can enumerate only paths already committed at the selected
-# revision. This one bounded worktree scope ensures that a newly added test is
-# visible to the preflight without scanning experiments, results, or datasets.
-MAINTAINED_WORKTREE_SCOPES: tuple[str, ...] = ("tests",)
+# revision. These bounded maintained scopes ensure newly added runtime, test,
+# and next-phase source files are visible without scanning results or datasets.
+MAINTAINED_WORKTREE_SCOPES: tuple[str, ...] = (
+    "tests",
+    "kga",
+    "docs/research/kbound/next_phase",
+    "experiments/kbound/next_phase",
+)
 
 
 def _git(*args: str, repo: Path = ROOT) -> str:

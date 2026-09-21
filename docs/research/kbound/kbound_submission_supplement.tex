@@ -241,8 +241,10 @@ Taking probabilities yields the claimed bound $\le \alpha_{\mathrm{cell}} + \del
 \subsection{The Price of Rigor: Sample Size vs.\ Abstention Analysis}
 \label{app:price-of-rigor}
 
-Theorem~\ref{thm:app-pop-cert} explains mathematically why empirical test-time adaptation gates frequently abstain
-when rigorous population validity is demanded. The total interval half-width is $\varepsilon + b(m, \delta)$.
+Theorem~\ref{thm:app-pop-cert} quantifies the additional sampling allowance required
+to transfer a valid cell interval to population benefit under its stated assumptions.
+It does not attribute the observed empirical abstentions to population uncertainty.
+For this transfer construction, the total interval half-width is $\varepsilon + b(m, \delta)$.
 Table~\ref{tab:sample-size-hoeffding} computes the Hoeffding sampling radius $b(m, \delta)$ at confidence level
 $1 - \delta = 0.95$ across representative evaluation sample sizes $m$.
 
@@ -1407,11 +1409,15 @@ the harm-detection AUC was $0.637$, below the $0.65$ threshold, so held-out vali
 scoring did not run. These records remain in the claim inventory and are not pooled with the
 canonical rows.
 
-The provenance table is part of the empirical record, establishing rigorous end-to-end traceability. A reader can trace a
+The provenance table establishes record-level traceability within the declared release scope. A reader can trace a
 canonical row to compact records and their original archive hashes. If the original large artifact
 is not shipped, the manifest still records its byte count and digest. This guards against silent
 replacement of a result while allowing the release to omit raw datasets and oversized transient
 checkpoints.
+
+These bindings authenticate retained bytes and arithmetic, not every historical
+execution environment or model fit. Missing producer logs and checkpoint identities
+remain explicit provenance limits; a checksum cannot reconstruct them.
 
 Three upgrades would materially strengthen the empirical case. First, hold out entire shift
 families rather than individual controlled cells and fit all hyperparameters before opening the
@@ -1996,3 +2002,217 @@ logs, the canonical manifest, the provenance seal, and final PDFs are archived t
 Repository URLs and author-identifying metadata must be withheld or redacted for a double-blind
 venue. The local paths above describe artifact roles without providing a public identity link.
 \fi
+
+\section{Additional Calibration Comparison: Units, Risk, and Provenance}
+\label{app:nextphase-calibration}
+
+The study in \KBMainRef{sec:nextphase-calibration}{Section}{the main additional calibration comparison}
+uses 32 allowlisted, hash-bound inputs from opened historical records. Its primary
+authority combines the corrected CIFAR/checkpoint scoring report with the corrected
+ImageNet grouping report. The source summaries and their immutable report history
+are retained under \path{output/next_phase/calibration_value_v1/}; these summaries
+authenticate the new calculations without supplying missing original training or
+adaptation execution evidence.
+
+\paragraph{Separation and evaluation units.}
+Each fold fits one benefit predictor shared across all policies. Semantic groups
+are kept intact across predictor fitting, margin tuning, residual calibration,
+and scoring. CIFAR and ImageNet outer folds exclude whole corruption types.
+Checkpoint-only evaluation excludes the scored source model and rotates held-out
+semantic groups; joint evaluation excludes both the scored checkpoint and the
+complete corruption type. Local scale estimation uses grouped
+out-of-fold residuals within the development data. Held-out score outcomes are
+loaded only after serialized decisions; outcome-perturbation tests preserve the
+fitted hashes, radii, thresholds, and decision bytes for the scored fold.
+These computational separations do not make the already opened environments
+exchangeable or independent deployments.
+
+The main execution has 57 outer folds and 20 arms; nine ImageNet folds were later
+rerun under a deterministic identifier-schema correction. The two checkpoint
+designs reuse the same 108 records. Bootstrap sensitivity resamples six CIFAR
+corruption types, three ImageNet types, or three source checkpoints, with 1,000
+resamples. Such small numbers of related units support descriptive sensitivity,
+not strong deployment-level inference. All prespecified alpha and harm-weight
+sensitivities are retained, including unbounded intervals and abstaining arms.
+
+\paragraph{Cell risk and group risk are different estimands.}
+For the conditional-risk selection arm, a scored group is a
+\texttt{(fold\_id, semantic\_group)} pair. A group is exposed if any constituent
+cell receives ADAPT, and is an error group if any accepted cell has $B\le0$.
+Conditional group error divides error groups by exposed groups; with zero
+exposure it is undefined. Unconditional group error divides by all scored
+groups. Equal-group utility first averages cell utility inside each group and
+then averages groups; it is kept separate from equal-cell utility.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Descriptive held-out risk for the 20\% group-risk selection sensitivity.
+The group error event is any accepted $B\le0$ within a semantic group. Conditional
+cell and group rates have different denominators and are not interchangeable.
+Each candidate has 216 scored groups. These observations do not establish population risk control.}
+\label{tab:nextphase-group-risk}
+\resizebox{0.90\textwidth}{!}{\input{paper/generated/tab_nextphase_group_risk.tex}}
+\end{table*}
+
+The corresponding unconditional group rates are $8/216$ for EATA, $19/216$ for
+SAR, and $0/216$ for Tent. In contrast, the 10\% arm exposes no groups, so its
+conditional risk is undefined rather than zero. The binomial procedure assumes
+independent identically distributed group outcomes with a common conditional
+error probability for a fixed threshold. Independence alone does not justify a
+common-risk binomial model, and neither assumption is established by this
+historical collection. Bonferroni adjustment covers the 13 candidate thresholds
+within a fold, not all folds or a deployment lifetime. With $n$ exposed groups
+and zero errors, its upper bound is $1-(.05/13)^{1/n}$; reaching $.10$ needs
+$n\ge53$, while the largest available calibration partition has 45 groups.
+
+\paragraph{Corrections and fixed authorities.}
+An initial strict-JSON serialization failure stopped before scoring. A later
+scoring correction separated committed false FREEZE ($B\ge0$) from abstention
+and forgone helpful non-ADAPT; it rescored the same decision bytes. A source
+identifier correction then removed only literal terminal repeat tags of the
+form \texttt{r} followed by digits. The earlier ImageNet parser had mistakenly
+removed a composition field, creating coarser groups. Its nine-fold rerun used
+unchanged statistical choices but occurred after outcomes were seen, and remains
+retrospective. Finally, the semantic-group report supplied the held-out estimand
+omitted from the original display; it changed no decision, prior metric, or
+canonical result authority. Original outputs and executed source snapshots are
+preserved rather than overwritten.
+
+The byte-identical rendering authorities in
+\path{next_phase/table_sources/} retain their original output paths and SHA-256
+identities. \path{scripts/make_next_phase_tables.py} verifies every pinned hash
+before writing any table. The calibration study does not claim novelty for GBRT,
+split conformal calibration, local residual scaling, or binomial risk selection.
+Full native TTALine/AETTA comparisons and independent field replications remain
+outside this saved-feature experiment.
+
+\section{Paired-Transport Certificate: Construction and Scope}
+\label{app:nextphase-paired-proof}
+
+\paragraph{Sampling and probability intervals.}
+Fix $f_0,f_a$ before the evidence samples, or condition on an independent
+adaptation sample that fixes them. Within source class $y$, observations are
+independent identically distributed conditional draws, with fixed or conditioned-on
+class counts. Target evidence consists of independent identically distributed
+draws from its joint-prediction marginal. Retain all $R$ declared bins, including
+unobserved bins; a bin can be coarsened only if its loss contrast is unchanged.
+For the $RK+R$ probabilities $A_{ry}$ and $q_r$, take two-sided
+Clopper--Pearson intervals at individual error $\alpha/(RK+R)$. A source class
+with no observations receives $[0,1]$ bounds. A union bound gives simultaneous
+containment probability at least $1-\alpha$; multinomial cell independence is
+unnecessary. Conditioning on class counts and averaging preserves this statement.
+
+\paragraph{Linear feasible set.}
+Writing source interval endpoints as $L^A,U^A$ and target endpoints as
+$L^q,U^q$, let $\mathcal P_\rho$ contain variables $t,s,\pi,v$ satisfying
+\begin{align}
+ \sum_y\pi_y&=1,&
+ \sum_r t_{ry}&=\sum_r s_{ry}=\pi_y,\nonumber\\
+ L^A_{ry}\pi_y&\le s_{ry}\le U^A_{ry}\pi_y,&
+ L^q_r&\le\sum_y t_{ry}\le U^q_r,\nonumber\\
+ v_{ry}&\ge t_{ry}-s_{ry},&
+ v_{ry}&\ge s_{ry}-t_{ry},\nonumber\\
+ \tfrac12\sum_{r,y}v_{ry}&\le\rho,&
+ 0&\le t,s,\pi,v\le1.
+ \label{eq:app-paired-polytope}
+\end{align}
+Minimal slacks are absolute differences of probabilities, so their unit upper
+bounds remove no feasible table. Define
+$c_{ry}=\mathbf1\{f_a(r)=y\}-\mathbf1\{f_0(r)=y\}$ and exact extrema
+$\ell=\min_{\mathcal P_\rho}c^\top t$,
+$u=\max_{\mathcal P_\rho}c^\top t$ when the set is nonempty.
+
+\begin{proposition}[Conditional paired-benefit coverage]
+\label{prop:nextphase-transport}
+Under the sampling assumptions and the declared aggregate conditional-TV bound,
+the true benefit belongs to $[\ell,u]$ with probability at least $1-\alpha$.
+Thus ADAPT for $\ell>0$ and FREEZE for $u<0$ has unconditional wrong-direction
+probability at most $\alpha$, with abstention otherwise and on an empty set.
+\end{proposition}
+\begin{proof}
+On the simultaneous interval event, set $\pi$ to the true target prior,
+$t_{ry}=P_T(r,y)$, $s_{ry}=A_{ry}\pi_y$, and $v_{ry}=|t_{ry}-s_{ry}|$.
+The marginal and probability-box constraints hold. The external transport bound
+gives the slack budget. Hence the true table is feasible and its benefit lies
+between the extrema. A wrong strict sign entails failure of the simultaneous
+interval event. The proof uses no matrix invertibility or full-rank assumption.
+\end{proof}
+
+The exact nonempty polytope is compact, so its extrema are attained. A feasible
+table realizes a finite probability model by taking source conditionals
+$s_{\cdot y}/\pi_y$ for positive-mass classes and any normalized column inside
+the source box for zero-mass classes, whose existence is required. Sharpness is
+relative to this finite-table model, not every underlying feature-space model or
+every confidence procedure. Multiple candidates or repeated decisions require
+another simultaneous construction or error allocation.
+
+\paragraph{A decision without prior identification.}
+For classes $0,1,2$ and bins $(2,0),(2,1),(2,2)$, take
+\[
+ A=\begin{pmatrix}.2&.2&0\\.8&.8&0\\0&0&1\end{pmatrix},
+ \qquad q=(.2,.8,0)^\top.
+\]
+At $\rho=0$, every prior $(p,1-p,0)$ is compatible, while the benefit is
+$.2p+.8(1-p)\in[.2,.8]$. The prior is unidentifiable but ADAPT is identified.
+These are exact rational decimals in the mathematical example; floating-point
+LP checks are not a separate proof of exact feasibility.
+The smallest transport allowance admitting a nonpositive benefit is $1/6$.
+Indeed, write the prior as $(a,b,g)$ and let $d$ be moved mass in the first two
+columns. Nonpositive benefit requires $d\ge .2a+.8b-g$; moving all third-column
+mass out of its original row costs $g$. Total variation is at least
+$\max(g,.2a+.8b)\ge\max(g,.2(1-g))\ge1/6$.
+At $(a,b,g)=(5/6,0,1/6)$, target columns zero and two equal
+$(1/6,2/3,0)^\top$ and $(1/30,2/15,0)^\top$, respectively, attaining zero
+benefit and TV $1/6$.
+
+\paragraph{Why paired optimization helps.}
+On any common feasible set,
+\[
+ \min(a_a-a_0)\ge\min a_a-\max a_0,
+\]
+with the reversed upper-endpoint inequality. Agreement-bin correctness can vary
+with an unidentified prior while canceling in the paired difference. For bins
+$(2,0),(2,1),(0,0),(2,2)$ and
+\[
+ A=\begin{pmatrix}.1&.1&0\\.4&.4&0\\.5&.5&0\\0&0&1\end{pmatrix},
+ \quad q=(.1,.4,.5,0)^\top,
+\]
+the paired interval is $[.1,.4]$, whereas separate-accuracy subtraction gives
+$[-.1,.6]$. Prior $(.8,.2,0)$ gives benefit $.16$. Reassigning every target
+label to the frozen prediction preserves all observed bins but gives benefit
+$-.5$. This counterworld violates the declared transport bound, demonstrating
+why unlabeled observations cannot establish that bound.
+
+\paragraph{Numerical scope.}
+Each minimization is $\min c^\top x$ subject to $Bx\le b$, $Ex=d$, and
+$0\le x\le1$. For any finite equality multiplier $\mu$, project inequality
+multipliers to $\lambda\le0$ and set $r=c-B^\top\lambda-E^\top\mu$.
+Weak duality gives the conservative bound
+\begin{equation}
+ c^\top x\ge b^\top\lambda+d^\top\mu+\sum_j\min(0,r_j).
+ \label{eq:app-paired-dual}
+\end{equation}
+The implementation evaluates this bound with directed 60-digit decimal
+operations starting from exact binary64 coefficients, then rounds outward
+when converting to binary64. Maximization uses a separately bounded negative
+objective. Residual and primal--dual-gap checks detect poor solver output but
+do not prove exact primal feasibility or certify that a feasible set is
+nonempty. Detected infeasibility, nonfinite output, and failed checks cause
+abstention; a $10^{-10}$ numerical sign margin is applied. Approximate primal
+tables are diagnostic witnesses. The weak-dual bounds are valid for every
+exact feasible point of the supplied floating-point problem; they do not
+certify that such a point exists. Binomial endpoints use numerical inverse-beta
+quantiles expanded by one floating-point unit, not a formally certified inverse
+CDF. Accordingly, the statistical theorem concerns the exact intervals, while
+the numerical certificate concerns its supplied endpoints.
+
+The synthetic protocol fixes nine scenarios, three source class sample sizes,
+three sensitivity budgets, and 60 trials per combination before count sampling.
+All counts, decisions, outcomes, approximate witnesses, receipts, and executed
+source snapshots are preserved under \path{output/next_phase/paired_transport_v1/}.
+The separate-accuracy arm is a coupling relaxation on the identical polytope.
+An official MaC-LP execution was unavailable after checking the primary paper
+and targeted author-code sources; it was not replaced with a purported native
+implementation. Monte Carlo intervals are descriptive within regimes and are
+not simultaneous inference over all reported configurations.

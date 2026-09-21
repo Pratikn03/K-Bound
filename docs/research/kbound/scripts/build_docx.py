@@ -11,6 +11,9 @@ converts the result to DOCX, and applies deterministic academic-paper styling.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
+import json
 import math
 import re
 import shutil
@@ -18,6 +21,7 @@ import subprocess
 import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from xml.etree import ElementTree
 from zipfile import ZipFile
 
 from docx import Document
@@ -31,6 +35,7 @@ from docx.shared import Inches, Pt, RGBColor
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "kbound_submission.tex"
 GENERATED_DIR = ROOT / "paper" / "generated"
+MIN_FIGURE_WIDTH_INCHES = 4.65
 FIGURE_ALTS = (
     "K-Bound decision flow from shadow candidate generation to adapt, freeze, or abstain.",
     "Population strict-commitment frontier over observable margin M and declared calibration-residual bound beta.",
@@ -587,6 +592,110 @@ def replace_figure_macro(tex: str) -> str:
     return pattern.sub(r"\\includegraphics[width=0.80\\textwidth]{\1}", tex)
 
 
+def rasterize_figure_pdfs(
+    tex: str, output_dir: Path, resource_dirs: Sequence[Path], *, dpi: int = 240
+) -> tuple[str, list[dict[str, object]]]:
+    """Render the exact referenced PDF bytes to Word-compatible PNG figures.
+
+    Pandoc can embed a PDF as an image blip, but LibreOffice leaves it blank.
+    Existing PNG companions are deliberately ignored because they may be stale.
+    This conversion touches figures only; editable OMML equations are unaffected.
+    """
+    from PIL import Image
+
+    if dpi < 200 or dpi > 300:
+        raise ValueError("figure rasterization requires 200--300 dpi")
+    pdftoppm = require_binary("pdftoppm")
+    pdfinfo = require_binary("pdfinfo")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    records: list[dict[str, object]] = []
+    pattern = re.compile(r"(\\includegraphics\*?(?:\[[^\]]*\])?\s*\{)([^{}]+)(\})")
+
+    def replace(match: re.Match[str]) -> str:
+        requested = Path(match.group(2))
+        if requested.suffix.lower() != ".pdf":
+            return match.group(0)
+        candidates = [requested] if requested.is_absolute() else [root / requested for root in resource_dirs]
+        candidates = list(dict.fromkeys(path.resolve() for path in candidates if path.is_file()))
+        if len(candidates) != 1:
+            raise RuntimeError(f"missing or ambiguous PDF figure: {requested}")
+        source = candidates[0]
+        data = source.read_bytes()
+        source_hash = hashlib.sha256(data).hexdigest()
+        stem = output_dir / f"figure-{len(records) + 1:02d}-{source_hash[:16]}"
+        snapshot = stem.with_suffix(".pdf")
+        snapshot.write_bytes(data)
+        metadata = run_checked([pdfinfo, str(snapshot)], cwd=output_dir)
+        if re.search(r"(?m)^Pages:\s+1\s*$", metadata) is None:
+            raise RuntimeError(f"Word figure must be a single-page PDF: {source}")
+        run_checked(
+            [pdftoppm, "-f", "1", "-singlefile", "-r", str(dpi), "-png", str(snapshot), str(stem)],
+            cwd=output_dir,
+        )
+        png = stem.with_suffix(".png")
+        with Image.open(png) as rendered:
+            rendered.verify()
+        with Image.open(png) as rendered:
+            dimensions = list(rendered.size)
+        minimum_pixels = math.ceil(MIN_FIGURE_WIDTH_INCHES * dpi)
+        enlarged_from_vector = dimensions[0] < minimum_pixels
+        if enlarged_from_vector:
+            # Small physical PDF pages otherwise yield unreadable figure labels.
+            # Re-render vector content at the intended display size; do not
+            # interpolate the first raster or substitute a companion image.
+            run_checked(
+                [pdftoppm, "-f", "1", "-singlefile", "-r", str(dpi),
+                 "-scale-to-x", str(minimum_pixels), "-scale-to-y", "-1",
+                 "-png", str(snapshot), str(stem)], cwd=output_dir,
+            )
+            with Image.open(png) as rendered:
+                rendered.verify()
+            with Image.open(png) as rendered:
+                dimensions = list(rendered.size)
+        records.append({
+            "source_path": str(source), "source_sha256": source_hash,
+            "png_path": str(png), "png_sha256": hashlib.sha256(png.read_bytes()).hexdigest(),
+            "dpi": dpi, "size_pixels": dimensions,
+            "minimum_display_width_inches": MIN_FIGURE_WIDTH_INCHES,
+            "enlarged_from_vector": enlarged_from_vector,
+        })
+        return match.group(1) + png.as_posix() + match.group(3)
+
+    return pattern.sub(replace, tex), records
+
+
+def validate_figure_media(path: Path, *, expected_count: int = 5) -> list[dict[str, object]]:
+    """Reject unsupported or unreadable picture parts before Word delivery."""
+    from PIL import Image
+
+    records: list[dict[str, object]] = []
+    with ZipFile(path) as archive:
+        relationships = ElementTree.fromstring(archive.read("word/_rels/document.xml.rels"))
+        images = [entry for entry in relationships if entry.get("Type", "").endswith("/image")]
+        if len(images) != expected_count:
+            raise RuntimeError(f"expected {expected_count} PNG image relationships, found {len(images)}")
+        for relationship in images:
+            target = relationship.get("Target", "")
+            if not target.endswith(".png") or relationship.get("TargetMode") == "External":
+                raise RuntimeError(f"Word figure must be an embedded PNG image, found {target}")
+            member = "word/" + target
+            content_types = ElementTree.fromstring(archive.read("[Content_Types].xml"))
+            content_type = next((entry.get("ContentType") for entry in content_types
+                                 if entry.get("PartName") == "/" + member), None)
+            if content_type is None:
+                content_type = next((entry.get("ContentType") for entry in content_types
+                                     if entry.get("Extension") == "png"), None)
+            if content_type != "image/png":
+                raise RuntimeError(f"Word figure must declare image/png content type: {member}")
+            data = archive.read(member)
+            if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                raise RuntimeError(f"Word figure has invalid PNG bytes: {member}")
+            with Image.open(io.BytesIO(data)) as rendered:
+                rendered.verify()
+            records.append({"member": member, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
+    return records
+
+
 def unwrap_resizebox_tables(tex: str) -> str:
     """Expose tabular content hidden inside PDF-only resizebox wrappers."""
     pattern = re.compile(r"\\resizebox\{[^{}]+\}\{!\}\{")
@@ -1128,6 +1237,13 @@ def table_widths(table, total: int) -> list[int]:
         return [1800, 1600, 3100, total - 6500]
     if len(headers) == 8 and headers[0] == "evaluation regimen" and headers[-1].startswith("regret"):
         return [2600, 560, 560, 560, 560, 560, 560, total - 5960]
+    if (len(headers) == 11 and headers[:2] == ("arm", "configuration")
+            and headers[3] == "adapted layers" and headers[-1] == "decisions (a/f/abs)"
+            and table.rows[0].cells[2]._tc.xpath(".//m:t/text()") == ["η"]):
+        # python-docx cell.text excludes OMML. In this dense matched-control
+        # table, an all-math learning-rate column otherwise appears empty and
+        # clips the scientific-notation exponent; the norm header needs room too.
+        return [600, 1550, 1240, 1120, 700, 700, 940, 700, 700, 650, total - 8900]
 
     columns = len(table.columns)
     weights: list[float] = []
@@ -1225,6 +1341,29 @@ def size_native_math(paragraph, size: float) -> None:
                 element = OxmlElement(tag)
                 properties.append(element)
             element.set(qn("w:val"), str(round(size * 2)))
+
+
+def preserve_equation_tag_spacing(doc: Document) -> None:
+    """Keep the generated terminal equation tag visibly separate in Word.
+
+    Pandoc emits our ``\\quad\\text{(n)}`` as a standalone U+2001 math
+    spacer followed by a normal-text tag. LibreOffice drops that standalone
+    spacer. Two nonbreaking spaces inside the tag survive without modifying
+    any expression nodes or equation/reference numbering.
+    """
+    for equation in doc._element.xpath(".//m:oMath"):
+        if len(equation) < 2:
+            continue
+        spacer, tag = equation[-2:]
+        if spacer.tag != qn("m:r") or tag.tag != qn("m:r"):
+            continue
+        space_text = spacer.find(qn("m:t"))
+        tag_text = tag.find(qn("m:t"))
+        if (space_text is not None and space_text.text == "\u2001"
+                and tag_text is not None and re.fullmatch(r"\(\d+\)", tag_text.text or "")):
+            tag_text.text = "\u00a0\u00a0" + tag_text.text
+            tag_text.set(qn("xml:space"), "preserve")
+            equation.remove(spacer)
 
 
 def format_tables(doc: Document) -> None:
@@ -1339,6 +1478,7 @@ def bibliography_paragraphs(doc: Document, *, required: bool = True) -> list:
 
 def postprocess(raw_docx: Path, output: Path) -> None:
     doc = Document(raw_docx)
+    preserve_equation_tag_spacing(doc)
     configure_styles(doc)
     normalize_compact_heading_hierarchy(doc)
     for section in doc.sections:
@@ -1359,9 +1499,10 @@ def postprocess(raw_docx: Path, output: Path) -> None:
         if paragraph._p.xpath(".//w:drawing"):
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for shape, alt in zip(doc.inline_shapes, FIGURE_ALTS, strict=False):
-        if shape.width > Inches(5.9):
+        width = min(max(shape.width, Inches(MIN_FIGURE_WIDTH_INCHES)), Inches(5.9))
+        if shape.width != width:
             ratio = shape.height / shape.width
-            shape.width = Inches(5.9)
+            shape.width = width
             shape.height = int(shape.width * ratio)
         shape._inline.docPr.set("descr", alt)
         shape._inline.docPr.set("title", alt.split(".")[0])
@@ -1400,6 +1541,7 @@ def validate_docx(
         raise RuntimeError(f"expected 5 embedded figures, found {len(doc.inline_shapes)}")
     if len(doc.tables) < 13:
         raise RuntimeError(f"expected at least 13 manuscript tables, found {len(doc.tables)}")
+    validate_figure_media(path)
     with ZipFile(path) as archive:
         xml = archive.read("word/document.xml").decode("utf-8")
     for token in (r"\textsc", r"\begin{", r"\cite", "[eq:", "[fig:", "[tab:"):
@@ -1443,11 +1585,15 @@ def main() -> None:
         processed, reference_count, required_values = preprocess_with_metadata(
             flattened.read_text(encoding="utf-8"), macros=macros
         )
-        preprocessed = temp / "kbound_submission_word.tex"
-        preprocessed.write_text(processed, encoding="utf-8")
         if args.keep_preprocessed:
             args.keep_preprocessed.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(preprocessed, args.keep_preprocessed)
+            # Preserve durable source PDF references, not temporary PNG paths.
+            args.keep_preprocessed.write_text(processed, encoding="utf-8")
+        processed, figure_records = rasterize_figure_pdfs(processed, temp / "word_figures", (ROOT,))
+        if len(figure_records) != 5:
+            raise RuntimeError(f"expected 5 source PDF figures to rasterize, found {len(figure_records)}")
+        preprocessed = temp / "kbound_submission_word.tex"
+        preprocessed.write_text(processed, encoding="utf-8")
         raw_docx = temp / "kbound_short_raw.docx"
         resource_path = ":".join(
             str(path)
@@ -1482,6 +1628,17 @@ def main() -> None:
             raise RuntimeError("Pandoc emitted conversion warnings:\n" + "\n".join(warnings))
         postprocess(raw_docx, args.output.resolve())
     validate_docx(args.output.resolve(), reference_count, required_values)
+    embedded = validate_figure_media(args.output.resolve())
+    if sorted(record["png_sha256"] for record in figure_records) != sorted(record["sha256"] for record in embedded):
+        raise RuntimeError("rasterized figure bytes changed during DOCX conversion")
+    figure_receipt = {
+        "schema": "kbound-docx-figure-rasterization-v1",
+        "docx_sha256": hashlib.sha256(args.output.read_bytes()).hexdigest(),
+        "figures": [{key: value for key, value in record.items() if key != "png_path"} for record in figure_records],
+        "embedded_media": embedded,
+        "note": "Figures were rasterized from exact referenced single-page PDFs; OMML equations remain native.",
+    }
+    args.output.with_suffix(".figures.json").write_text(json.dumps(figure_receipt, indent=2, sort_keys=True) + "\n")
     print(f"Built {args.output.resolve()}")
 
 

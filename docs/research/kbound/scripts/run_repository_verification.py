@@ -265,6 +265,7 @@ TRACKED_VERIFICATION_PATHSPECS = (
     "experiments/kbound/test_3dadam_bootstrap.py",
     "experiments/kbound/test_3dadam_namedcond.py",
     "experiments/kbound/theory_validation",
+    "experiments/kbound/next_phase",
     *SO2SAT_SOURCE_PATHS,
     "kga",
     "scripts",

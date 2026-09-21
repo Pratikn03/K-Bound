@@ -924,6 +924,55 @@ def test_word_evaluation_regimen_reserves_width_for_three_regret_metrics():
     assert all(width >= 500 for width in widths[1:7])
 
 
+def test_matched_control_table_reserves_space_for_native_math_columns():
+    doc = Document()
+    table = doc.add_table(rows=2, cols=11)
+    for cell, text in zip(table.rows[0].cells,
+                          ["Arm", "Configuration", "", "Adapted Layers", "", "", "", "", "", "", "Decisions (A/F/Abs)"]):
+        cell.text = text
+    for row, column, value in [(0, 2, "η"), (0, 6, "∥Δθ∥₂"), (1, 2, "2.5×10⁻⁴")]:
+        math = OxmlElement("m:oMath")
+        run = OxmlElement("m:r")
+        text = OxmlElement("m:t")
+        text.text = value
+        run.append(text)
+        math.append(run)
+        table.cell(row, column).paragraphs[0]._p.append(math)
+    table.cell(1, 1).text = "Reference SAR (official)"
+    table.cell(1, 3).text = "Layers 1–3 affine"
+    table.cell(1, 10).text = "18 / 2 / 7"
+    assert table.cell(1, 2).text == ""  # The actual clipping trigger.
+    before = table._tbl.xpath(".//m:t/text()")
+    widths = MODULE.table_widths(table, 9960)
+    assert sum(widths) == 9960 and widths[2] >= 1240 and widths[6] >= 940
+    MODULE.format_tables(doc)
+    assert table._tbl.xpath(".//m:t/text()") == before
+    assert [int(node.get(qn("w:w"))) for node in table._tbl.tblGrid] == widths
+    assert [int(cell._tc.tcPr.tcW.get(qn("w:w"))) for cell in table.rows[1].cells] == widths
+
+
+def test_equation_tag_spacing_preserves_native_expression_and_number():
+    from lxml import etree
+
+    doc = Document()
+    equation = OxmlElement("m:oMath")
+    for value in ["x=1", "\u2001", "(28)"]:
+        run = OxmlElement("m:r")
+        text = OxmlElement("m:t")
+        text.text = value
+        run.append(text)
+        equation.append(run)
+    doc.add_paragraph()._p.append(equation)
+    expression_xml = etree.tostring(equation[0], method="c14n")
+    MODULE.preserve_equation_tag_spacing(doc)
+    assert etree.tostring(equation[0], method="c14n") == expression_xml
+    assert equation[-1].find(qn("m:t")).text == "\u00a0\u00a0(28)"
+    assert equation[-1].find(qn("m:t")).get(qn("xml:space")) == "preserve"
+    assert len(equation) == 2
+    MODULE.preserve_equation_tag_spacing(doc)
+    assert len(equation) == 2
+
+
 def test_word_keeps_release_commands_inside_hanging_indent(monkeypatch):
     pandoc = shutil.which("pandoc")
     if pandoc is None:
@@ -940,3 +989,90 @@ def test_word_keeps_release_commands_inside_hanging_indent(monkeypatch):
                              text=True, capture_output=True, check=True)
     assert "BUILD_DOCX=1 bash" in process.stdout
     assert "docs/research/kbound/scripts/build_pdfs.sh" in process.stdout
+
+
+
+def _figure_pdf_bytes(page_count: int) -> bytes:
+    pages = [("", 40)] * page_count
+    objects: list[bytes] = [b"<< /Type /Catalog /Pages 2 0 R >>", b"", b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+    page_ids = []
+    for text, y in pages:
+        page_id = len(objects) + 1
+        page_ids.append(page_id)
+        escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        commands = f"BT /F1 12 Tf 40 {y} Td ({escaped}) Tj ET".encode()
+        objects.append(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 144 72] /Resources << /Font << /F1 3 0 R >> >> /Contents {page_id + 1} 0 R >>".encode())
+        objects.append(b"<< /Length " + str(len(commands)).encode() + b" >>\nstream\n" + commands + b"\nendstream")
+    objects[1] = f"<< /Type /Pages /Count {len(page_ids)} /Kids [{' '.join(f'{n} 0 R' for n in page_ids)}] >>".encode()
+    output = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for index, obj in enumerate(objects, 1):
+        offsets.append(len(output))
+        output.extend(f"{index} 0 obj\n".encode() + obj + b"\nendobj\n")
+    xref = len(output)
+    output.extend(f"xref\n0 {len(offsets)}\n0000000000 65535 f \n".encode())
+    for offset in offsets[1:]:
+        output.extend(f"{offset:010d} 00000 n \n".encode())
+    output.extend(f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode())
+    return bytes(output)
+
+def test_pdf_figures_rasterize_exact_source_not_existing_png(tmp_path: Path) -> None:
+    from PIL import Image
+
+    source = tmp_path / "figure.pdf"
+    source.write_bytes(_figure_pdf_bytes(1))
+    # This stale companion must never become the embedded image.
+    Image.new("RGB", (3, 3), "red").save(tmp_path / "figure.png")
+    tex = r"\includegraphics[width=0.8\textwidth]{figure.pdf}"
+    converted, records = MODULE.rasterize_figure_pdfs(tex, tmp_path / "raster", (tmp_path,))
+    assert "figure.pdf}" not in converted
+    assert len(records) == 1
+    record = records[0]
+    assert record["source_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+    raster = Path(record["png_path"])
+    with Image.open(raster) as image:
+        assert image.size == (1116, 558)
+        assert image.getpixel((0, 0)) == (255, 255, 255)
+    assert record["png_sha256"] == hashlib.sha256(raster.read_bytes()).hexdigest()
+    assert record["enlarged_from_vector"] is True
+    assert r"\includegraphics[width=0.8\textwidth]" in converted
+
+
+def test_pdf_figure_rasterization_rejects_multiple_pages(tmp_path: Path) -> None:
+
+    (tmp_path / "figure.pdf").write_bytes(_figure_pdf_bytes(2))
+    with pytest.raises(RuntimeError, match="single-page"):
+        MODULE.rasterize_figure_pdfs(r"\includegraphics{figure.pdf}", tmp_path / "raster", (tmp_path,))
+
+
+def test_docx_figure_validation_rejects_pdf_image_blips(tmp_path: Path) -> None:
+    from zipfile import ZIP_DEFLATED, ZipFile
+
+    path = tmp_path / "bad.docx"
+    with ZipFile(path, "w", ZIP_DEFLATED) as archive:
+        archive.writestr("word/media/image.pdf", b"%PDF-1.5")
+        archive.writestr("word/_rels/document.xml.rels", '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image.pdf"/></Relationships>')
+    with pytest.raises(RuntimeError, match="PNG"):
+        MODULE.validate_figure_media(path, expected_count=1)
+
+
+def test_docx_figure_validation_checks_png_content_type(tmp_path: Path) -> None:
+    from zipfile import ZipFile
+
+    from PIL import Image
+
+    image_path = tmp_path / "figure.png"
+    Image.new("RGB", (2, 2), "white").save(image_path)
+    path = tmp_path / "valid.docx"
+    doc = Document()
+    doc.add_picture(str(image_path))
+    doc.save(path)
+    assert len(MODULE.validate_figure_media(path, expected_count=1)) == 1
+    with ZipFile(path) as archive:
+        members = {name: archive.read(name) for name in archive.namelist()}
+    members["[Content_Types].xml"] = members["[Content_Types].xml"].replace(b"image/png", b"application/pdf")
+    with ZipFile(path, "w") as archive:
+        for name, data in members.items():
+            archive.writestr(name, data)
+    with pytest.raises(RuntimeError, match="image/png"):
+        MODULE.validate_figure_media(path, expected_count=1)

@@ -61,7 +61,7 @@ def frontier():
     ax.text(-0.30,0.5,"FREEZE\n(knowably harmful)",ha="center",va="center",fontsize=9,color="#d6604d")
     ax.text(0,0.5,"ABSTAIN\n(no sound strict commitment)",ha="center",va="center",fontsize=9,color="#9a6b00")
     ax.annotate("",xy=(b,-0.28),xytext=(-b,-0.28),arrowprops=dict(arrowstyle="<->",color="k"))
-    ax.text(0,-0.43,r"calibration-drift budget  $2\beta$",ha="center",va="top",fontsize=8.5)
+    ax.text(0,-0.43,r"declared residual bound  $2\beta$",ha="center",va="top",fontsize=8.5)
     ax.set_xlim(-limit,limit); ax.set_ylim(-0.6,1.05); ax.set_yticks([])
     # illustration: $\beta=0.1$; show the feasible margin and budget boundaries.
     ax.set_xticks([-0.5, -0.1, 0.0, 0.1, 0.5])

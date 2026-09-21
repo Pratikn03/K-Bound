@@ -1,5 +1,9 @@
 # K-Bound publication release checklist
 
+## Next-phase revision — 2026-09-21
+
+The [next-phase checklist](next_phase/RELEASE_CHECKLIST.md) and [execution ledger](next_phase/PROGRESS.md) govern the new isolated revision. Dated checked boxes below describe their historical scopes. In particular, the So2Sat v1 development stop remains historical evidence; the new v2 calibration is a separate execution with its own locks and eligibility screen. No historical seal or pass is reused as evidence for the new source.
+
 ## Paper scope update — 2026-09-21
 
 The unfinished physical-device camera study is deferred to post-publication future

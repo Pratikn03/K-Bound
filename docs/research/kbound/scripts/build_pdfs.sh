@@ -161,6 +161,7 @@ echo "==> Validating frozen release authorities"
 
 echo "==> Regenerating canonical numbers and figures"
 "$PY" scripts/make_tables.py
+"$PY" scripts/make_next_phase_tables.py
 "$PY" scripts/generate_statistical_synthesis_tables.py
 "$PY" scripts/plot_canonical_decision_frontier.py
 "$PY" scripts/plot_conceptual_regime_geometry.py
