@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "docs/research/kbound/scripts/build_docx.py"
@@ -766,3 +771,172 @@ def test_word_algorithm_current_manuscript_retains_both_abstention_paths():
     assert r"\item retain $f_0$, log the reason, and return \abstain" in converted
     assert r"\item retain $f_0$, log uncertainty, and return \abstain" in converted
     assert r"\item Obtain $\varepsilon$ from the calibrated residual rule" in converted
+
+
+def test_immediate_unnumbered_paragraph_label_inherits_heading_reference():
+    source = (
+        r"\section{Main}\subsection{Evidence}\subsubsection{Replication}\label{sec:rep}"
+        "\n% source note\n"
+        r"\paragraph{Historical \textbf{authority}.}\label{app:authority}"
+        r"See~\ref{app:authority}.\subsubsection{Next}\label{sec:next}"
+    )
+    resolved = MODULE.resolve_cross_references(source)
+    assert r"See~1.1.1." in resolved
+    assert r"\paragraph{Historical \textbf{authority}.}" in resolved
+    assert r"\subsubsection{1.1.2 Next}" in resolved
+
+
+def test_current_replication_paragraph_matches_compiled_latex_reference():
+    # Literal B.3.3 was independently checked in the maintained PDF's .aux.
+    source = (ROOT / "docs/research/kbound/kbound_submission_body.tex").read_text()
+    source += (ROOT / "docs/research/kbound/kbound_submission_supplement.tex").read_text()
+    assert MODULE.section_labels(source)["app:replication-provenance"] == "B.3.3"
+
+
+def test_paragraph_after_intervening_counter_is_not_guessed_from_heading():
+    source = (
+        r"\section{Main}\begin{equation}x=1\end{equation}"
+        r"\paragraph{Later}\label{app:unknown}See~\ref{app:unknown}."
+    )
+    with pytest.raises(RuntimeError, match="unresolved reference"):
+        MODULE.resolve_cross_references(source)
+
+
+@pytest.mark.parametrize("alignment", (
+    r"@{}l", r"@{}l@{}", r"@{}p{1.1\linewidth}@{}", r"@{\quad}p{0.92\linewidth}",
+))
+def test_word_preserves_multicolumn_table_instead_of_flattened_text(monkeypatch, alignment):
+    pandoc = shutil.which("pandoc")
+    if pandoc is None:
+        pytest.skip("Pandoc is required for the native-table conversion regression")
+    source = (
+        r"\begin{document}\section{Evidence}\begin{table}\caption{Preserved evidence}"
+        r"\begin{tabular}{@{}lcc@{}}"
+        r"Model & Accuracy & Regret \\"
+        rf"\multicolumn{{3}}{{{alignment}}}{{\textit{{Withdrawn: target labels were used.}}}} \\"
+        r"Original & 0.44 & 0.04 \\\end{tabular}\end{table}"
+        r"\begin{thebibliography}{1}\bibitem{one} First reference.\end{thebibliography}\end{document}"
+    )
+    monkeypatch.setattr(MODULE, "replace_algorithm_for_word", lambda text: text)
+    converted, _, _ = MODULE.preprocess_with_metadata(source, macros={})
+    process = subprocess.run(
+        [pandoc, "--from=latex", "--to=json"], input=converted,
+        text=True, capture_output=True, check=True,
+    )
+    blocks = json.loads(process.stdout)["blocks"]
+    assert sum(block["t"] == "Table" for block in blocks) == 1
+    assert "Withdrawn:" in process.stdout and "0.44" in process.stdout
+
+
+def test_word_multicolumn_normalization_preserves_body_and_nonempty_spacing():
+    source = r"\multicolumn{2}{@{}p{1.1\linewidth}@{}}{Keep literal @{} and 0.44.}"
+    expected = r"\multicolumn{2}{p{1.1\linewidth}}{Keep literal @{} and 0.44.}"
+    assert MODULE.normalize_multicolumn_padding(source) == expected
+    custom = r"\multicolumn{2}{@{--}l}{Unchanged.}"
+    assert MODULE.normalize_multicolumn_padding(custom) == custom
+
+
+@pytest.mark.parametrize("environment", ("tabular", "tabular*"))
+def test_word_resizebox_keeps_caption_with_prefixed_table(environment):
+    pandoc = shutil.which("pandoc")
+    if pandoc is None:
+        pytest.skip("Pandoc is required for the table-caption regression")
+    width = r"{\textwidth}" if environment.endswith("*") else ""
+    content = (
+        r"\setlength{\tabcolsep}{4pt}"
+        rf"\begin{{{environment}}}{width}{{lc}}"
+        r"Component & Latency \\ Gate & 0.62 ms \\"
+        rf"\end{{{environment}}}"
+    )
+    source = (
+        r"\begin{table}\caption{Table 45. Preserved runtime scope.}"
+        r"\resizebox{\textwidth}{!}{" + content + r"}\end{table}"
+    )
+    converted = MODULE.unwrap_resizebox_tables(source)
+    assert content in converted
+    assert r"\resizebox" not in converted
+    process = subprocess.run(
+        [pandoc, "--from=latex", "--to=json"], input=converted,
+        text=True, capture_output=True, check=True,
+    )
+    table = next(block for block in json.loads(process.stdout)["blocks"] if block["t"] == "Table")
+    assert "45." in json.dumps(table["c"][1])
+
+
+def test_word_stacked_headers_remain_in_three_columns(monkeypatch, tmp_path):
+    pandoc = shutil.which("pandoc")
+    if pandoc is None:
+        pytest.skip("Pandoc is required for stacked-header conversion")
+    source = (
+        r"\begin{document}\section{Evidence}\begin{table}\caption{Sampling radii}"
+        r"\begin{tabular}{rcc}\toprule"
+        r"\shortstack{Sample\\Size $m$} & \shortstack{Hoeffding Radius\\$b(m)$} & "
+        r"\shortstack{Total Radius\\$(\varepsilon=0.015)$} \\\midrule"
+        r"64 & 0.3396 & 0.3546 \\\bottomrule\end{tabular}\end{table}"
+        r"\begin{thebibliography}{1}\bibitem{one} First reference.\end{thebibliography}\end{document}"
+    )
+    monkeypatch.setattr(MODULE, "replace_algorithm_for_word", lambda text: text)
+    converted, _, _ = MODULE.preprocess_with_metadata(source, macros={})
+    output = tmp_path / "header.docx"
+    subprocess.run([pandoc, "--from=latex", "-o", str(output)], input=converted,
+                   text=True, capture_output=True, check=True)
+    table = Document(output).tables[0]
+    assert len(table.rows) == 2
+    assert [c.text.strip() for c in table.rows[0].cells] == [
+        "Sample Size", "Hoeffding Radius", "Total Radius",
+    ]
+    assert [c.text.strip() for c in table.rows[1].cells] == ["64", "0.3396", "0.3546"]
+
+
+def test_word_stacked_headers_and_footnote_markers_preserve_content():
+    source = r"\shortstack[l]{Nested \textbf{header}\\$b(m,\delta)$}; note$^\dagger$ end$^{\dagger}$"
+    assert MODULE.normalize_word_table_text(source) == (
+        r"{Nested \textbf{header} $b(m,\delta)$}; note\textsuperscript{†} end\textsuperscript{†}"
+    )
+
+
+def test_word_native_math_uses_table_font_size_instead_of_overflowing():
+    doc = Document()
+    table = doc.add_table(rows=2, cols=8)
+    paragraph = table.cell(0, 7).paragraphs[0]
+    math = OxmlElement("m:oMath")
+    run = OxmlElement("m:r")
+    text = OxmlElement("m:t")
+    text.text = "R"
+    run.append(text)
+    math.append(run)
+    paragraph._p.append(math)
+    MODULE.format_tables(doc)
+    size = run.find(qn("w:rPr"))
+    assert size is not None
+    assert size.find(qn("w:sz")).get(qn("w:val")) == "15"
+    assert text.text == "R"
+
+
+def test_word_evaluation_regimen_reserves_width_for_three_regret_metrics():
+    doc = Document()
+    table = doc.add_table(rows=3, cols=8)
+    table.cell(0, 0).text = "Evaluation Regimen"
+    table.cell(0, 7).text = "Regret"
+    widths = MODULE.table_widths(table, 9960)
+    assert sum(widths) == 9960
+    assert widths[0] >= 2500 and widths[7] >= 3900
+    assert all(width >= 500 for width in widths[1:7])
+
+
+def test_word_keeps_release_commands_inside_hanging_indent(monkeypatch):
+    pandoc = shutil.which("pandoc")
+    if pandoc is None:
+        pytest.skip("Pandoc is required for command-paragraph conversion")
+    source = (
+        r"\begin{document}\section{Reproduction}Run this command:"
+        r"\par\vspace{1pt}\noindent\hangindent=1em{\small\texttt{BUILD\_DOCX=1 bash }"
+        r"\path{docs/research/kbound/scripts/build_pdfs.sh}}\par\vspace{1pt}"
+        r"\begin{thebibliography}{1}\bibitem{one} First reference.\end{thebibliography}\end{document}"
+    )
+    monkeypatch.setattr(MODULE, "replace_algorithm_for_word", lambda text: text)
+    converted, _, _ = MODULE.preprocess_with_metadata(source, macros={})
+    process = subprocess.run([pandoc, "--from=latex", "--to=plain"], input=converted,
+                             text=True, capture_output=True, check=True)
+    assert "BUILD_DOCX=1 bash" in process.stdout
+    assert "docs/research/kbound/scripts/build_pdfs.sh" in process.stdout

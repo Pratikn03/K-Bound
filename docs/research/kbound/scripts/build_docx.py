@@ -589,11 +589,50 @@ def replace_figure_macro(tex: str) -> str:
 
 def unwrap_resizebox_tables(tex: str) -> str:
     """Expose tabular content hidden inside PDF-only resizebox wrappers."""
-    pattern = re.compile(
-        r"\\resizebox\{[^}]+\}\{!\}\{(\s*\\begin\{tabular\}.*?\\end\{tabular\})\s*\}",
-        flags=re.DOTALL,
-    )
-    return pattern.sub(lambda match: match.group(1), tex)
+    pattern = re.compile(r"\\resizebox\{[^{}]+\}\{!\}\{")
+    for match in reversed(list(pattern.finditer(tex))):
+        closing = find_brace_end(tex, match.end() - 1)
+        content = tex[match.end():closing]
+        # Spacing declarations before a table are harmless, but left inside a
+        # resizebox they cause Pandoc to detach (and drop) the table caption.
+        if re.match(
+            r"\s*(?:\\setlength\{\\[A-Za-z@]+\}\{[^{}]*\}\s*)*\\begin\{tabular\*?\}",
+            content,
+        ) and re.search(r"\\end\{tabular\*?\}\s*$", content):
+            tex = tex[:match.start()] + content + tex[closing + 1:]
+    return tex
+
+
+def normalize_multicolumn_padding(tex: str) -> str:
+    """Remove empty/quad TeX padding in spanning-cell alignment, for Word only.
+
+    Pandoc silently flattens a complete table when a multicolumn alignment
+    contains ``@{}`` or ``@{\\quad}``. This is spacing, not cell content. Preserve the
+    span, alignment (including nested paragraph widths), and cell body.
+    Other intercolumn material is deliberately left unchanged.
+    """
+    pattern = re.compile(r"\\multicolumn\s*\{[1-9][0-9]*\}\s*\{")
+    for match in reversed(list(pattern.finditer(tex))):
+        opening = match.end() - 1
+        closing = find_brace_end(tex, opening)
+        alignment = tex[opening + 1:closing].replace("@{}", "").replace(r"@{\quad}", "")
+        tex = tex[:opening + 1] + alignment + tex[closing:]
+    return tex
+
+
+def normalize_word_table_text(tex: str) -> str:
+    """Keep stacked header text in its cell and footnote daggers as text.
+
+    Pandoc interprets shortstack line breaks as whole-table row boundaries;
+    Word can wrap the same header words naturally. Empty-base math superscript
+    daggers can render a missing base glyph, so use ordinary text superscripts.
+    """
+    pattern = re.compile(r"\\shortstack(?:\[[lcr]\])?\{")
+    for match in reversed(list(pattern.finditer(tex))):
+        closing = find_brace_end(tex, match.end() - 1)
+        content = tex[match.end():closing].replace(r"\\", " ")
+        tex = tex[:match.start()] + "{" + content + "}" + tex[closing + 1:]
+    return re.sub(r"\$\^(?:\\dagger|\{\\dagger\})\$", lambda _: r"\textsuperscript{†}", tex)
 
 
 def normalize_starred_floats(tex: str) -> str:
@@ -840,6 +879,18 @@ def number_section_headings(tex: str) -> tuple[str, dict[str, str]]:
         while label_match := label_pattern.match(scan, position):
             heading_labels.append(label_match.group(1))
             position = label_match.end()
+        # The maintained article leaves paragraph headings unnumbered. When
+        # immediately adjacent, their labels inherit this heading's number
+        # (confirmed against the compiled LaTeX auxiliary record). Do not infer
+        # this across intervening content, which might change the TeX counter.
+        paragraph = re.match(r"\s*\\paragraph\s*\{", scan[position:])
+        if paragraph:
+            paragraph_opening = position + paragraph.end() - 1
+            paragraph_end = find_brace_end(scan, paragraph_opening) + 1
+            while label_match := label_pattern.match(scan, paragraph_end):
+                heading_labels.append(label_match.group(1))
+                paragraph_end = label_match.end()
+            position = paragraph_end
         for label in heading_labels:
             if label in labels:
                 raise RuntimeError(f"duplicate section label: {label}")
@@ -915,6 +966,14 @@ def preprocess_with_metadata(tex: str, *, macros: Mapping[str, str] | None = Non
     tex = replace_algorithm_for_word(tex)
     tex = replace_figure_macro(tex)
     tex = unwrap_resizebox_tables(tex)
+    tex = normalize_multicolumn_padding(tex)
+    tex = normalize_word_table_text(tex)
+    # Pandoc otherwise swallows the following braced command paragraph as an
+    # argument to unsupported layout commands. These are presentation-only.
+    for layout in (r"\hangindent=1em", r"\noindent", r"\vspace{1pt}"):
+        tex = tex.replace(layout, "")
+    # Unlike \path, Pandoc supports nolinkurl and preserves literal underscores.
+    tex = tex.replace(r"\path{", r"\nolinkurl{")
     tex = normalize_starred_floats(tex)
     tex, entries = split_bibliography(tex)
     tex = resolve_citations(tex, entries)
@@ -1067,6 +1126,8 @@ def table_widths(table, total: int) -> list[int]:
         return [2150, 2300, 2200, total - 6650]
     if headers == ("track", "released status", "present evidence", "remaining limitation"):
         return [1800, 1600, 3100, total - 6500]
+    if len(headers) == 8 and headers[0] == "evaluation regimen" and headers[-1].startswith("regret"):
+        return [2600, 560, 560, 560, 560, 560, 560, total - 5960]
 
     columns = len(table.columns)
     weights: list[float] = []
@@ -1150,6 +1211,22 @@ def set_table_geometry(table, widths: list[int]) -> None:
             column += span
 
 
+def size_native_math(paragraph, size: float) -> None:
+    """OMML runs are not included in python-docx paragraph.runs."""
+    for run in paragraph._p.xpath(".//m:r"):
+        properties = run.find(qn("w:rPr"))
+        if properties is None:
+            properties = OxmlElement("w:rPr")
+            math_properties = run.find(qn("m:rPr"))
+            run.insert(1 if math_properties is not None else 0, properties)
+        for tag in ("w:sz", "w:szCs"):
+            element = properties.find(qn(tag))
+            if element is None:
+                element = OxmlElement(tag)
+                properties.append(element)
+            element.set(qn("w:val"), str(round(size * 2)))
+
+
 def format_tables(doc: Document) -> None:
     for table in doc.tables:
         table.alignment = WD_TABLE_ALIGNMENT.LEFT
@@ -1184,6 +1261,7 @@ def format_tables(doc: Document) -> None:
                         tc_pr.append(shade)
                     shade.set(qn("w:fill"), "E8EEF5")
                 for paragraph in cell.paragraphs:
+                    size_native_math(paragraph, size)
                     paragraph.paragraph_format.space_before = Pt(0)
                     paragraph.paragraph_format.space_after = Pt(0)
                     paragraph.paragraph_format.line_spacing = 1.0
@@ -1276,6 +1354,8 @@ def postprocess(raw_docx: Path, output: Path) -> None:
         add_page_number(section)
     for paragraph in doc.paragraphs:
         paragraph.paragraph_format.widow_control = True
+        if paragraph.style.name in ("Image Caption", "Table Caption", "Caption"):
+            size_native_math(paragraph, 8.4)
         if paragraph._p.xpath(".//w:drawing"):
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for shape, alt in zip(doc.inline_shapes, FIGURE_ALTS, strict=False):
