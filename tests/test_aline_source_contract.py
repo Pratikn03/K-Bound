@@ -50,3 +50,20 @@ def test_duplicate_source_receipt_fields_rejected(interface):
 
 def test_bank_binding_changes_when_order_changes(interface):
     assert interface.bank_sha256({"model_ids": ["a", "b"]}) != interface.bank_sha256({"model_ids": ["b", "a"]})
+
+
+def test_dependency_compatible_exact_runtime_is_accepted(interface, monkeypatch):
+    monkeypatch.setenv("ALINE_PYTHON", sys.executable)
+    monkeypatch.setattr(interface.sys, "version_info", (3, 12, 12))
+    monkeypatch.setattr(interface.importlib.metadata, "version", lambda name: {
+        "numpy": "2.0.2", "scipy": "1.13.1", "statsmodels": "0.14.6"}[name])
+    assert interface._runtime()["numpy"] == "2.0.2"
+
+
+def test_incompatible_historical_numpy_pin_is_not_current_runtime(interface, monkeypatch):
+    monkeypatch.setenv("ALINE_PYTHON", sys.executable)
+    monkeypatch.setattr(interface.sys, "version_info", (3, 12, 12))
+    monkeypatch.setattr(interface.importlib.metadata, "version", lambda name: {
+        "numpy": "2.4.4", "scipy": "1.13.1", "statsmodels": "0.14.6"}[name])
+    with pytest.raises(ValueError, match="unsupported ALine method runtime"):
+        interface._runtime()

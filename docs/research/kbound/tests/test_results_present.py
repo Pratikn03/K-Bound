@@ -7,4 +7,5 @@ def test_result_groups_populated():
         files = glob.glob(os.path.join(PKG, "results", grp, "*.json"))
         assert len(files) >= n, f"{grp}: {len(files)} < {n}"
         for f in files:
-            assert isinstance(json.load(open(f)), dict)
+            with open(f, encoding="utf-8") as handle:
+                assert isinstance(json.load(handle), dict)

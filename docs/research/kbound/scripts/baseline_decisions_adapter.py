@@ -28,11 +28,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CANON = str(Path(__file__).resolve().parents[4] / "experiments/kbound/results/per_condition_cifar10c_tent_seed0.json")
 
 def canonical_conditions():
-    return [r.get("condition","") for r in json.load(open(CANON))["records"]]
+    return [r.get("condition","") for r in json.loads(Path(CANON).read_text(encoding="utf-8"))["records"]]
 
 def load_rows(path):
     if path.endswith(".json"):
-        d = json.load(open(path))
+        d = json.loads(Path(path).read_text(encoding="utf-8"))
         if isinstance(d, dict):
             d = d.get("records") or d.get("rows") or d.get("results") or list(d.values())
         return [r for r in d if isinstance(r, dict)]
@@ -85,7 +85,7 @@ def main():
         c, d = to_decision(a.method, r)
         if c is None or d is None: unmapped += 1; continue
         dec[str(c)] = d
-    canon = [r.get("condition","") for r in json.load(open(a.conditions_from))["records"]]
+    canon = [r.get("condition","") for r in json.loads(Path(a.conditions_from).read_text(encoding="utf-8"))["records"]]
     missing = [c for c in canon if c not in dec]
     extra   = [c for c in dec if c not in set(canon)]
     print(f"[{a.method}] mapped {len(dec)} decisions; {unmapped} rows unmapped; "
@@ -93,7 +93,7 @@ def main():
     if missing[:3]: print("  e.g. missing:", missing[:3])
     if missing or extra or unmapped:
         raise SystemExit("incomplete or invalid baseline panel; refusing to write decisions")
-    json.dump(dec, open(a.out,"w"), indent=2)
+    Path(a.out).write_text(json.dumps(dec, indent=2), encoding="utf-8")
     print("wrote", a.out)
 
 if __name__ == "__main__": main()

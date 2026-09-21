@@ -118,7 +118,8 @@ def test_uniform_native_ddp_prefix_is_accepted():
 
 def test_zero_weight_norm_direction_rejected_before_mutation():
     loader = load_module()
-    model = torch.nn.Sequential(torch.nn.utils.weight_norm(torch.nn.Linear(2, 3), dim=0))
+    with pytest.warns(FutureWarning, match="weight_norm.*deprecated"):
+        model = torch.nn.Sequential(torch.nn.utils.weight_norm(torch.nn.Linear(2, 3), dim=0))
     before = {k: v.clone() for k, v in model.state_dict().items()}
     state = {k: v.clone() for k, v in before.items()}
     state['0.weight_v'][1].zero_()
@@ -128,7 +129,8 @@ def test_zero_weight_norm_direction_rejected_before_mutation():
 
 def test_weight_norm_cached_effective_weight_is_refreshed_without_forward():
     loader = load_module()
-    model = torch.nn.Sequential(torch.nn.utils.weight_norm(torch.nn.Linear(2, 3), dim=0))
+    with pytest.warns(FutureWarning, match="weight_norm.*deprecated"):
+        model = torch.nn.Sequential(torch.nn.utils.weight_norm(torch.nn.Linear(2, 3), dim=0))
     state = {k: v.clone() for k, v in model.state_dict().items()}
     state['0.weight_v'] = torch.tensor([[3., 4.], [0., 2.], [1., 0.]])
     state['0.weight_g'] = torch.tensor([[10.], [6.], [4.]])
@@ -143,7 +145,8 @@ def test_full_reference_factory_is_cpu_fp32_and_preserves_rng_and_default_dtype(
     rng = torch.get_rng_state().clone()
     try:
         torch.set_default_dtype(torch.float64)
-        model = loader.build_reference_classifier()
+        with pytest.warns(FutureWarning, match="weight_norm.*deprecated"):
+            model = loader.build_reference_classifier()
         assert torch.get_default_dtype() == torch.float64
         assert torch.equal(torch.get_rng_state(), rng)
         assert model.encoder[0].layer3.__len__() == 6
@@ -172,7 +175,8 @@ def test_factory_restores_rng_and_dtype_on_constructor_failure(monkeypatch):
 
 
 def test_reference_model_exposes_native_optimizer_groups_without_state_changes():
-    model = load_module().build_reference_classifier()
+    with pytest.warns(FutureWarning, match="weight_norm.*deprecated"):
+        model = load_module().build_reference_classifier()
     original_keys = tuple(model.state_dict())
     frozen = model.encoder[0].conv1.weight
     frozen.requires_grad_(False)

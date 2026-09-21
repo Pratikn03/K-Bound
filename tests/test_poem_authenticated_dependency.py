@@ -223,7 +223,9 @@ def test_pinned_driver_derivation_changes_only_the_native_list_literal():
     source = Path(__file__).resolve().parents[1] / "external/poem_official/main.py"
     payload = module.authenticated_bytes(source, module.MAIN_SHA256)
     assert payload.count(NATIVE_LITERAL) == 1
-    derived, override = module.derive_single_corruption(payload, "impulse_noise")
+    # Preserve the authenticated upstream bytes, including legacy docstring escapes.
+    with pytest.warns((SyntaxWarning, DeprecationWarning), match="invalid escape sequence"):
+        derived, override = module.derive_single_corruption(payload, "impulse_noise")
     assert derived == payload.replace(NATIVE_LITERAL, b"['impulse_noise']", 1)
     start, end = override["literal_byte_span"]
     assert payload[start:end] == NATIVE_LITERAL

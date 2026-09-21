@@ -38,6 +38,10 @@ FORBIDDEN_LATEX_PATTERNS = [
 @pytest.mark.parametrize("path", ACTIVE_SOURCE_FILES)
 def test_no_test_max_rga_plus_in_active_source(path):
     p = ROOT / path
+    # ELARA removal (4d6bef2) and document retirement (8070a8b) are intentional.
+    if str(p) in {"docs/research/PAPER_DRAFT_v1.tex", "docs/research/THESIS_CHAPTER_v1.tex", "src/scripts/emit_milestone2_cross_benchmark.py"}:
+        assert not p.exists(), "retired ELARA entrypoint unexpectedly restored"
+        return
     if not p.exists():
         pytest.skip(f"file not found: {p}")
     text = p.read_text()
@@ -52,6 +56,10 @@ def test_no_test_max_rga_plus_in_active_source(path):
 @pytest.mark.parametrize("path", LATEX_FILES)
 def test_no_test_max_rga_plus_in_latex_caption(path):
     p = ROOT / path
+    # ELARA removal (4d6bef2) and document retirement (8070a8b) are intentional.
+    if str(p) in {"docs/research/PAPER_DRAFT_v1.tex", "docs/research/THESIS_CHAPTER_v1.tex", "src/scripts/emit_milestone2_cross_benchmark.py"}:
+        assert not p.exists(), "retired ELARA entrypoint unexpectedly restored"
+        return
     if not p.exists():
         pytest.skip(f"file not found: {p}")
     text = p.read_text()

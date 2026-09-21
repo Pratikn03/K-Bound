@@ -79,7 +79,8 @@ def load_records(path, candidate=None):
     Each record carries Z (the FULL rich Z), B, a0, aa, seed, method (cell).
     Also accepts CIFAR-10.1 per_condition JSON (a_adapted field).
     If candidate is set, keep only records with that adapter name (e.g. eata_online)."""
-    d = json.load(open(path))
+    with open(path, encoding="utf-8") as handle:
+        d = json.load(handle)
     recs = []
     if d.get("records"):
         panel = d.get("evidence_panel", d.get("config", {}).get("evidence_panel",

@@ -829,7 +829,7 @@ def _sync_table(
         )
     tracks["imagenetc_sar"]["verdict"] = (
         "Pooled point estimate is below both fixed policies, with one false adaptation in 135 cells; "
-        "the seed bootstrap touches zero on the freeze side, so CI-robust beats-both is not claimed."
+        "the seed bootstrap touches zero on the freeze side, so CI-robust lower regret than both fixed policies is not claimed."
     )
 
     cifar_panel = panels["cifar10c"]["panel"]
@@ -1020,9 +1020,9 @@ def _sync_table(
             "historical_audit_seal": camelyon_seal,
             "verdict": (
                 "Opened OOD diagnostic: KGA adapts on all 18 conditions and ties always-adapt; "
-                "it is not prospective and not a beats-both result."
+                "it is not prospective and not a lower regret than both fixed policies result."
             ),
-            "source_caveat": camelyon_panel["claim_scope"],
+            "source_caveat": camelyon_panel["claim_scope"].replace("beats-both", "lower regret than both fixed policies"),
             "reproducibility_status": "REPRODUCIBLE_FROM_CANONICAL_COMPACT_SOURCE",
         }
     )
@@ -1097,7 +1097,7 @@ def _sync_table(
                 "Harmful-dominated no-harm diagnostic: KGA freezes on every primary condition "
                 "and ties always-freeze; three independent model seeds reproduce that tie."
             ),
-            "source_note": rxrx_panel["claim_scope"],
+            "source_note": rxrx_panel["claim_scope"].replace("beats-both", "lower regret than both fixed policies"),
         }
     )
 
@@ -1255,7 +1255,7 @@ def _sync_table(
             "quantile_rule": "per-backbone/per-seed exact-rank leave-one-condition-out residual calibration",
             "verdict": (
                 f"Negative four-seed, ten-backbone diagnostic: KGA is worse than always-adapt on "
-                f"{worse}/10 backbones; no architecture has CI-robust beats-both."
+                f"{worse}/10 backbones; no architecture has CI-robust lower regret than both fixed policies."
             ),
             "per_backbone": {
                 name: {
@@ -1466,7 +1466,7 @@ def _sync_uniform_verdicts(
         "Camelyon17 OOD",
         camelyon,
         unit=f"opened OOD test diagnostic n={camelyon['n']}",
-        verdict="ties always-adapt on an all-helpful opened diagnostic; not beats-both",
+        verdict="ties always-adapt on an all-helpful opened diagnostic; not lower regret than both fixed policies",
         evidence_tier="source-hashed opened diagnostic",
         note=panels["camelyon17"]["ood"]["claim_scope"],
     )
@@ -1522,7 +1522,7 @@ def _sync_uniform_verdicts(
         unit="4 run seeds x 10 backbones x 12 conditions",
         verdict="negative architecture-panel diagnostic; KGA is worse than always-adapt on 8/10 backbones",
         evidence_tier="source-hashed current exact-rank replay",
-        note="No backbone has a CI-robust beats-both result.",
+        note="No backbone has a CI-robust lower regret than both fixed policies result.",
     )
 
     historical_h2h = _row_by_track(rows, "Mixed head-to-head (CIFAR-10-C Tent primary)")
@@ -1586,7 +1586,7 @@ def _sync_uniform_verdicts(
         "are also unadjusted; Holm applies only to their archived p-values."
     )
     meta["rule"] = (
-        "Point beats-both means current KGA regret is lower than both fixed policies. No current "
+        "Point improvement over both fixed policies means current KGA regret is lower than both fixed policies. No current "
         "row is promoted as CI-robust unless its current-policy inference explicitly supports it."
     )
     meta["integrity"] = (
@@ -1844,7 +1844,7 @@ def _sync_decision_metrics(
         "Camelyon17",
         camelyon,
         seeds=panels["camelyon17"]["ood"]["replay"]["test_seeds"],
-        note="Opened all-helpful OOD diagnostic; not prospective and not beats-both.",
+        note="Opened all-helpful OOD diagnostic; not prospective and not lower regret than both fixed policies.",
     )
 
     rxrx = panels["rxrx1"]["primary_model_seed0"]["exact_rank_transfer_score"]
@@ -2120,7 +2120,7 @@ def _sync_ledger(
             "artifact_pointer_correction_2026_08_27": (
                 "The sealed reconciliation result and verdict are present and hash-verified. "
                 "They support withdrawal of the pooled Protocol G headline; they do not turn "
-                "the separate opened OOD row into a prospective or beats-both result."
+                "the separate opened OOD row into a prospective or lower regret than both fixed policies result."
             ),
         }
     )
@@ -2138,8 +2138,8 @@ def _sync_ledger(
             "calibration_method": "exact_rank_leave_one_condition_out_residual_calibration",
             "test_split": "27 cross-fitted conditions per seed x 5 seeds",
             "assumptions": ["controlled grid", "seed is the primary inference unit"],
-            "allowed_wording": "pooled point-estimate no-harm; no CI-robust beats-both claim",
-            "forbidden_wording": ["zero false adaptation", "CI-supported beats-both", "natural-shift win"],
+            "allowed_wording": "pooled point-estimate no-harm; no CI-robust lower regret than both fixed policies claim",
+            "forbidden_wording": ["zero false adaptation", "CI-supported lower regret than both fixed policies", "natural-shift win"],
         }
     )
 
@@ -2196,7 +2196,7 @@ def _sync_ledger(
                 "historical researcher-constructed routing aggregate; rerun required under reconciled "
                 "per-track decisions"
             ),
-            "forbidden_wording": ["promoted beats-both claim", "natural-shift win", "transfer result"],
+            "forbidden_wording": ["promoted lower regret than both fixed policies claim", "natural-shift win", "transfer result"],
         }
     )
 
@@ -2395,7 +2395,7 @@ def _sync_ledger(
             "claim_id": "KB-CLAIM-047",
             "claim_text": (
                 "Camelyon17 OOD exact-rank replay is an opened all-helpful diagnostic: KGA adapts "
-                "on all 18 conditions and ties always-adapt, so it is neither prospective nor beats-both."
+                "on all 18 conditions and ties always-adapt, so it is neither prospective nor lower regret than both fixed policies."
             ),
             "claim_type": "empirical",
             "claim_tier": "B",

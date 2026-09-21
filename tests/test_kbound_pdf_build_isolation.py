@@ -229,7 +229,7 @@ def test_all_scientific_validation_precedes_latex_and_metadata_refresh_is_last(b
     assert [call.get("script", "latexmk") for call in calls] == [
         "verify_cifar_current_arithmetic.py", "build_so2sat_numbers.py", "validate_canonical_release_data.py",
         "build_current_policy_interval_diagnostics.py", "validate_manuscript_claims.py",
-        "make_tables.py", "plot_canonical_decision_frontier.py",
+        "make_tables.py", "generate_statistical_synthesis_tables.py", "plot_canonical_decision_frontier.py",
         "plot_conceptual_regime_geometry.py", "make_submission_figures.py",
         "plot_kga_interval_rule.py", "latexmk", "build_docx.py", "build_dashboard_snapshot.py",
     ]

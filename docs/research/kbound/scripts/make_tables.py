@@ -57,7 +57,10 @@ def zero_event_cp95(n):
 
 
 def _load_json(path):
-    return json.load(open(path)) if os.path.exists(path) else {}
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
 
 
 def _locked():

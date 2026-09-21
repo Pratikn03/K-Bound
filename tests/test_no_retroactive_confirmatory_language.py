@@ -32,6 +32,10 @@ def _pre_registered_forbidden_patterns():
 
 @pytest.mark.parametrize("path", [PAPER, THESIS])
 def test_no_retroactive_preregistration_phrase(path):
+    # ELARA removal (4d6bef2) and document retirement (8070a8b) are intentional.
+    if str(path) in {"docs/research/PAPER_DRAFT_v1.tex", "docs/research/THESIS_CHAPTER_v1.tex", "src/scripts/emit_milestone2_cross_benchmark.py"}:
+        assert not path.exists(), "retired ELARA entrypoint unexpectedly restored"
+        return
     if not path.exists():
         pytest.skip(f"{path} missing")
     text = path.read_text()

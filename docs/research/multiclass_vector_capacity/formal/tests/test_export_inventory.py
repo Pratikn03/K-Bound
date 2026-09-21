@@ -3,7 +3,7 @@
 import json
 import unittest
 
-from export_inventory import AuditFailure, parse_messages
+from docs.research.multiclass_vector_capacity.formal.export_inventory import AuditFailure, parse_messages
 
 
 NAME = "MulticlassVectorCapacity.example_theorem"

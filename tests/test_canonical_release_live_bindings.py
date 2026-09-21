@@ -46,6 +46,7 @@ def release_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "docs/research/kbound/kbound_submission.tex",
         "docs/research/kbound/kbound_tmlr.tex",
         *LIVE_SOURCES.values(),
+        "docs/research/kbound/release/policy_reconciliation_v1/policy_original.txt",
     }
     for relative in sorted(paths):
         source = source_root / relative
@@ -87,7 +88,9 @@ def test_canonical_release_rejects_live_drift_despite_consistent_artifact_hashes
     problems = validator.validate()
 
     assert authority.read_bytes() == authority_before
-    assert problems == [f"current-policy family sensitivity {dependency} binding is stale"]
+    expected = ("policy reconciliation hash mismatch: kga/policy.py" if dependency == "policy"
+                else f"current-policy family sensitivity {dependency} binding is stale")
+    assert problems == [expected]
 
 
 def test_canonical_release_rejects_generator_drift_despite_consistent_artifact_hashes(release_copy: Path) -> None:

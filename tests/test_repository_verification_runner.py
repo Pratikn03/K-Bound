@@ -1833,3 +1833,24 @@ def test_public_bundle_command_verifies_output_and_propagates_failure(tmp_path, 
     assert len(calls) == (1 if fail_build else 2)
     if not fail_build:
         assert "--check" in calls[1]
+
+
+def test_native_aline_group_requires_explicit_method_interpreter(monkeypatch):
+    monkeypatch.delenv("ALINE_PYTHON", raising=False)
+    with pytest.raises(runner.InventoryError, match="ALINE_PYTHON"):
+        runner.pytest_group_runtime(("tests/test_aline_native_estimator.py",), python="release-python")
+
+
+def test_native_aline_group_uses_declared_runtime_without_changing_parent(monkeypatch):
+    monkeypatch.setenv("ALINE_PYTHON", sys.executable)
+    monkeypatch.delenv("ALINE_NATIVE_STAGE", raising=False)
+    python, env = runner.pytest_group_runtime(("tests/test_aline_native_estimator.py",), python="release-python")
+    assert python == sys.executable
+    assert env["ALINE_NATIVE_STAGE"] == "1"
+    assert env["ALINE_PYTHON"] == sys.executable
+    assert "ALINE_NATIVE_STAGE" not in os.environ
+
+
+def test_regular_group_does_not_select_method_runtime(monkeypatch):
+    monkeypatch.setenv("ALINE_PYTHON", "/unavailable/method/python")
+    assert runner.pytest_group_runtime(("tests/test_regular.py",), python="release-python") == ("release-python", None)

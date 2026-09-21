@@ -224,7 +224,8 @@ def test_resume_refreshes_weightnorm_derived_weights_without_forward(reference_r
     class WeightNormTiny(TinyClassifier):
         def __init__(self):
             super().__init__()
-            self.fc = torch.nn.utils.weight_norm(self.fc, dim=0)
+            with pytest.warns(FutureWarning, match="weight_norm.*deprecated"):
+                self.fc = torch.nn.utils.weight_norm(self.fc, dim=0)
     session = module.ReferenceSession(WeightNormTiny, tiny_args(), reference_root=reference_root)
     session.initialize_bank([torch.randn(6, 8)])
     session.train_epoch(batches(), 0)

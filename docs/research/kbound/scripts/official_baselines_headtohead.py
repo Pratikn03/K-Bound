@@ -409,7 +409,9 @@ def main():
         final_sha = hashlib.sha256(stream.read()).hexdigest()
     if final_sha != stream_sha:
         raise SystemExit("selected stream changed during scoring; no output was written")
-    json.dump(out, open(a.out,"w"), indent=2); print("wrote", a.out)
+    with open(a.out, "w", encoding="utf-8") as handle:
+        json.dump(out, handle, indent=2)
+    print("wrote", a.out)
     print(f"\n{'policy':16s} {'regret':>8s} {'FA_u':>6s} {'decisive':>8s} {'gap[CI]':>22s} holm")
     for k,s in rows.items():
         g=s["gap_vs_KGA"]

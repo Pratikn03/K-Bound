@@ -35,7 +35,8 @@ def find(d, cands):
     return None
 
 def load_seed(path):
-    d = json.load(open(path))
+    with open(path, encoding="utf-8") as handle:
+        d = json.load(handle)
     kga  = find(d, ("regret_kga","kga","K_Bound","kbound"))
     adpt = find(d, ("regret_adapt","always_adapt","adapt"))
     frz  = find(d, ("regret_freeze","always_freeze","freeze"))

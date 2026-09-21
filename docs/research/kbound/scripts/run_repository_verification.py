@@ -1560,6 +1560,16 @@ def validate_pytest_report(path: Path) -> list[dict[str, str]]:
     return accepted
 
 
+def pytest_group_runtime(paths: Sequence[str], *, python: str) -> tuple[str, dict[str, str] | None]:
+    """Keep the separately pinned native method stage explicit and fail closed."""
+    if tuple(paths) != ("tests/test_aline_native_estimator.py",):
+        return python, None
+    declared = os.environ.get("ALINE_PYTHON")
+    if not declared or not Path(declared).is_file() or not os.access(declared, os.X_OK):
+        raise InventoryError("ALINE_PYTHON must name the prepared executable for the required native ALine stage")
+    return declared, {**os.environ, "ALINE_NATIVE_STAGE": "1"}
+
+
 def _run_pytest_release(
     paths: Sequence[str],
     *,
@@ -1579,8 +1589,9 @@ def _run_pytest_release(
         for group in groups:
             verify_worktree_blob_bindings(repo, {relative: bindings[relative] for relative in group.paths})
             report = Path(temporary) / f"{group.group_id}.xml"
+            group_python, group_environment = pytest_group_runtime(group.paths, python=python)
             command = [
-                python,
+                group_python,
                 "-m",
                 "pytest",
                 "-q",
@@ -1590,7 +1601,8 @@ def _run_pytest_release(
             for row in ALLOWED_PYTEST_WARNINGS:
                 command.extend(["-W", row["filter"]])
             command.extend(["--junitxml", str(report), *group.paths])
-            result = subprocess.run(command, cwd=repo, check=False)
+            runtime_kwargs = {"env": group_environment} if group_environment is not None else {}
+            result = subprocess.run(command, cwd=repo, check=False, **runtime_kwargs)
             executed_group_ids.append(group.group_id)
             if result.returncode != 0:
                 failures.append(f"{group.group_id} ({group.paths[0]}) failed with exit {result.returncode}")

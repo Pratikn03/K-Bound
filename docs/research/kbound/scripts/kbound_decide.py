@@ -510,7 +510,8 @@ def read_json(path):
             f"  -> it is not in this release. See docs/research/kbound/STORAGE_MANIFEST.json\n"
             f"     and DATA.md for how to obtain or regenerate it."
         )
-    raw = open(p, "rb").read()
+    with open(p, "rb") as handle:
+        raw = handle.read()
     if len(raw) == 0 or b"\x00" in raw:
         raise IOError(
             f"Required artifact is an unmaterialised placeholder: {p}\n"

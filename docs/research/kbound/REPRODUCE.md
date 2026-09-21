@@ -16,6 +16,23 @@ retroactively authenticated. The migration receipt is
 `audits/release_runtime_migration_2026_09_20.json`; a passing environment check is
 not a complete publication release pass.
 
+## Required isolated method checks
+
+The strict repository runner also requires `ALINE_PYTHON`, an explicit Python
+3.12.12 interpreter with NumPy 2.0.2, SciPy 1.13.1, statsmodels 0.14.6 and pytest.
+The ALine test group runs in that interpreter with `ALINE_NATIVE_STAGE=1`; it is
+not silently omitted from default discovery. NumPy 2.4.4 was an incompatible
+historical pin for SciPy 1.13.1 (which requires NumPy below 2.3). The corrected pin
+is for current synthetic verification, not retroactive authentication of any
+historical benchmark environment or results. The tests compare against the
+hash-authenticated native notebook functions and never launch a benchmark.
+
+Set `KBOUND_ADACONTRAST_REFERENCE` to the existing authenticated AdaContrast
+source checkout for the synthetic adapter-equivalence tests. The loader verifies
+its declared source hashes. This stage does not load a released checkpoint or
+open experimental target images/outcomes. Supply both variables alongside the
+selected `KBOUND_PYTHON` when invoking the maintained release runbook.
+
 ## Historical reproduction notes
 
 This document reproduces the K-Bound short-paper results from committed artifacts. Every headline
