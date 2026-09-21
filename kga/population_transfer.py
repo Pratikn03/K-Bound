@@ -124,8 +124,8 @@ def compose_conditional_population_interval(
         )
 
     # Validate delta_hat
-    if isinstance(delta_hat, bool) or not isinstance(delta_hat, (int, float)) or math.isnan(delta_hat):
-        raise ValueError(f"delta_hat must be a valid real number, got {delta_hat}")
+    if isinstance(delta_hat, bool) or not isinstance(delta_hat, (int, float)) or not math.isfinite(delta_hat):
+        raise ValueError(f"delta_hat must be a finite real number, got {delta_hat}")
 
     # Validate epsilon
     if isinstance(epsilon, bool) or not isinstance(epsilon, (int, float)) or math.isnan(epsilon):

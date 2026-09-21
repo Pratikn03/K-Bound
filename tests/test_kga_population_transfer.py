@@ -75,6 +75,17 @@ def test_infinite_uncertainty_abstains():
     assert result.interval_upper == float("inf")
 
 
+@pytest.mark.parametrize("estimate", [float("inf"), float("-inf")])
+@pytest.mark.parametrize("radius", [0.1, float("inf")])
+def test_nonfinite_prediction_is_rejected_even_with_unbounded_uncertainty(estimate, radius):
+    """Infinite estimates are not real-valued theorem inputs or valid predictions."""
+    with pytest.raises(ValueError, match="delta_hat.*finite"):
+        compose_conditional_population_interval(
+            delta_hat=estimate, epsilon=radius, r_samp=0.1,
+            alpha_cell=0.05, delta_sampling=0.05, alpha_population=0.10,
+        )
+
+
 def test_expansion_monotonicity():
     """Adding nonnegative sampling radius b cannot create a new strict commitment."""
     # When cell-level is ambiguous (ABSTAIN), population-level cannot commit

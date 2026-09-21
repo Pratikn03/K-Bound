@@ -55,3 +55,13 @@ def test_population_panel_requires_sample_size():
             delta_sampling=0.05,
             alpha_population=0.10,
         )
+
+
+@pytest.mark.parametrize("estimate", [float("inf"), float("-inf")])
+def test_population_panel_rejects_nonfinite_prediction_before_issuing_action(estimate):
+    with pytest.raises(ValueError, match="delta_hat.*finite"):
+        build_population_panel(
+            [{"cell_id": "invalid-estimate", "delta_hat": estimate,
+              "epsilon": 0.02, "sample_size": 2000}],
+            alpha_cell=0.05, delta_sampling=0.05, alpha_population=0.10,
+        )
