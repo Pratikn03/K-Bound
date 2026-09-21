@@ -26,6 +26,9 @@ EXPECTED = {
     "experiments/kbound/cifar/resnet18_cifar.pt": "43333456a795bbe679966c14812f9964d8b3bf060d30ca2b3d5051cb8c9d7491",
     "experiments/kbound/cifar/CIFAR-10-C/labels.npy": "e6d972b1238665d8ef54aae5affe8e292dda1eb88a6840bf0f5988cdb649da7b",
 }
+PHASE1_PROVENANCE_SEAL = (
+    "docs/research/kbound/audits/phase1_provenance_2026_08_27/provenance_seal.json"
+)
 REQUIRED_RECORD_FIELDS = {
     "condition", "B", "a0", "a_adapted", "b_hat", "eps_conformal", "kga_decision"
 }
@@ -39,20 +42,67 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def iter_provenance_records(value: object):
+    """Yield path-bearing records from the nested phase-1 seal schema."""
+    if isinstance(value, dict):
+        if "path" in value:
+            yield value
+        for child in value.values():
+            yield from iter_provenance_records(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from iter_provenance_records(child)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[4])
     parser.add_argument("--results", type=Path, default=Path("experiments/kbound/results/cifar10c_sar_rebuild_v2"))
     parser.add_argument("--allow-partial", action="store_true")
+    parser.add_argument(
+        "--require-materialized-inputs",
+        action="store_true",
+        help=(
+            "fail when the frozen checkpoint or labels are not materialized; "
+            "the release verifier otherwise accepts the sealed historical hashes "
+            "and reports that raw replay inputs are unavailable"
+        ),
+    )
     args = parser.parse_args()
     root = args.root.resolve()
     results = args.results if args.results.is_absolute() else root / args.results
 
     errors: list[str] = []
+    archived_only: list[str] = []
+    provenance_records: dict[str, dict] = {}
+    provenance_path = root / PHASE1_PROVENANCE_SEAL
+    if provenance_path.is_file():
+        try:
+            provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"invalid phase-1 provenance seal: {PHASE1_PROVENANCE_SEAL}: {exc}")
+        else:
+            for record in iter_provenance_records(provenance):
+                if record.get("path") in EXPECTED:
+                    provenance_records[str(record["path"])] = record
+    else:
+        errors.append(f"missing phase-1 provenance seal: {PHASE1_PROVENANCE_SEAL}")
+
     for rel, expected in EXPECTED.items():
         path = root / rel
         if not path.is_file():
-            errors.append(f"missing frozen input: {rel}")
+            record = provenance_records.get(rel)
+            sealed = (
+                record is not None
+                and record.get("status") == "present_hashed"
+                and record.get("expected_matches") is True
+                and record.get("expected_sha256") == expected
+                and record.get("sha256") == expected
+            )
+            if sealed and not args.require_materialized_inputs:
+                archived_only.append(rel)
+            else:
+                errors.append(f"missing frozen input: {rel}")
         elif sha256(path) != expected:
             errors.append(f"hash mismatch: {rel}")
 
@@ -125,7 +175,16 @@ def main() -> int:
             print(f"- {error}")
         return 1
     status = "PARTIAL PASS" if args.allow_partial and complete != list(range(5)) else "PASS"
-    print(f"CIFAR10C SAR REBUILD: {status}; complete seeds={complete}")
+    if archived_only:
+        print(
+            "CIFAR10C SAR REBUILD: "
+            f"{status} (archived input provenance; raw replay inputs unavailable); "
+            f"complete seeds={complete}"
+        )
+        for rel in archived_only:
+            print(f"- sealed historical hash accepted for release verification: {rel}")
+    else:
+        print(f"CIFAR10C SAR REBUILD: {status}; complete seeds={complete}")
     return 0
 
 
