@@ -231,7 +231,7 @@ def test_all_scientific_validation_precedes_latex_and_metadata_refresh_is_last(b
         "build_current_policy_interval_diagnostics.py", "validate_manuscript_claims.py",
         "make_tables.py", "generate_statistical_synthesis_tables.py", "plot_canonical_decision_frontier.py",
         "plot_conceptual_regime_geometry.py", "make_submission_figures.py",
-        "plot_kga_interval_rule.py", "latexmk", "build_docx.py", "build_dashboard_snapshot.py",
+        "plot_kga_interval_rule.py", "sanitize_figure_pdfs.py", "latexmk", "build_docx.py", "build_dashboard_snapshot.py",
     ]
     assert calls[0]["args"] == []
     assert calls[3]["args"] == ["--check"]
@@ -239,9 +239,10 @@ def test_all_scientific_validation_precedes_latex_and_metadata_refresh_is_last(b
     assert (build_replica.paper / "kbound_short_final_draft.docx").read_bytes() == b"test successful DOCX"
 
 
-def test_failed_scientific_validation_never_starts_latex_or_publishes(build_replica):
+@pytest.mark.parametrize("validator", ["validate_manuscript_claims.py", "sanitize_figure_pdfs.py"])
+def test_failed_scientific_validation_never_starts_latex_or_publishes(build_replica, validator):
     canaries = _old_output_canaries(build_replica, ("kbound_short_final_draft.pdf",))
-    result = _run(build_replica, BUILD_TEST_FAIL_VALIDATOR="validate_manuscript_claims.py")
+    result = _run(build_replica, BUILD_TEST_FAIL_VALIDATOR=validator)
     assert result.returncode != 0
     assert not any(event["kind"] == "latexmk" for event in _events(build_replica))
     assert (build_replica.paper / "kbound_short_final_draft.pdf").is_symlink()

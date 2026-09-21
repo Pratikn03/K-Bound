@@ -178,6 +178,9 @@ else
   exit 1
 fi
 
+echo "==> Verifying anonymous figure metadata with exact visual preservation"
+"$PY" scripts/sanitize_figure_pdfs.py
+
 # Keep the paper working directory for relative TeX inputs, but never place
 # latexmk's intermediate files or redirected logs beside cloud-backed sources.
 # The fresh directory is retained for diagnosis on success and failure alike.

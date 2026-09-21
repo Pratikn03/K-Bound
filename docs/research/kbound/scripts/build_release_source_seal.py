@@ -259,6 +259,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "docs/research/kbound/scripts/plot_kga_interval_rule.py",
         "docs/research/kbound/scripts/refresh_storage_manifest.py",
         "docs/research/kbound/scripts/release_privacy.py",
+        "docs/research/kbound/scripts/sanitize_figure_pdfs.py",
         "docs/research/kbound/scripts/policy_source_reconciliation.py",
         "docs/research/kbound/scripts/generate_statistical_synthesis_tables.py",
         "docs/research/kbound/release/table_provenance_audit_v1.json",
