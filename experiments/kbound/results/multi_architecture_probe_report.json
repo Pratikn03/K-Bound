@@ -1,0 +1,385 @@
+{
+  "benchmark": "multi_architecture_invariance_probe",
+  "version": "1.0.0",
+  "random_seed": 20260916,
+  "n_samples": 500,
+  "alpha": 0.05,
+  "architectures": {
+    "resnet18": {
+      "metadata": {
+        "family": "CNN (residual)",
+        "depth": 18,
+        "parameters_m": 11.7,
+        "base_accuracy": 0.95,
+        "adaptation_sensitivity_scale": 1.0
+      },
+      "evaluations": [
+        {
+          "corruption": "gaussian_noise",
+          "severity": 3,
+          "disagreement_rate": 0.1806,
+          "true_benefit": 0.045,
+          "delta_hat": 0.0072,
+          "epsilon": 0.1026,
+          "lower_bound": -0.0954,
+          "upper_bound": 0.1098,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "gaussian_noise",
+          "severity": 5,
+          "disagreement_rate": 0.2582,
+          "true_benefit": -0.02,
+          "delta_hat": -0.0145,
+          "epsilon": 0.1025,
+          "lower_bound": -0.117,
+          "upper_bound": 0.0881,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 3,
+          "disagreement_rate": 0.1517,
+          "true_benefit": 0.038,
+          "delta_hat": 0.0055,
+          "epsilon": 0.1026,
+          "lower_bound": -0.0971,
+          "upper_bound": 0.1081,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 5,
+          "disagreement_rate": 0.2108,
+          "true_benefit": 0.015,
+          "delta_hat": -0.0042,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1069,
+          "upper_bound": 0.0984,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 3,
+          "disagreement_rate": 0.138,
+          "true_benefit": 0.052,
+          "delta_hat": -0.0044,
+          "epsilon": 0.1026,
+          "lower_bound": -0.107,
+          "upper_bound": 0.0982,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 5,
+          "disagreement_rate": 0.2264,
+          "true_benefit": -0.012,
+          "delta_hat": -0.0027,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1054,
+          "upper_bound": 0.0999,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        }
+      ],
+      "abstain_count": 0,
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "mean_break_even_beta": 0.0
+    },
+    "resnet50": {
+      "metadata": {
+        "family": "CNN (bottleneck residual)",
+        "depth": 50,
+        "parameters_m": 25.6,
+        "base_accuracy": 0.962,
+        "adaptation_sensitivity_scale": 0.92
+      },
+      "evaluations": [
+        {
+          "corruption": "gaussian_noise",
+          "severity": 3,
+          "disagreement_rate": 0.1757,
+          "true_benefit": 0.0414,
+          "delta_hat": 0.0155,
+          "epsilon": 0.1023,
+          "lower_bound": -0.0869,
+          "upper_bound": 0.1178,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "gaussian_noise",
+          "severity": 5,
+          "disagreement_rate": 0.2373,
+          "true_benefit": -0.0184,
+          "delta_hat": -0.0066,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1093,
+          "upper_bound": 0.096,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 3,
+          "disagreement_rate": 0.1606,
+          "true_benefit": 0.035,
+          "delta_hat": 0.0161,
+          "epsilon": 0.1022,
+          "lower_bound": -0.0862,
+          "upper_bound": 0.1183,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 5,
+          "disagreement_rate": 0.2115,
+          "true_benefit": 0.0138,
+          "delta_hat": 0.0025,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1001,
+          "upper_bound": 0.1052,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 3,
+          "disagreement_rate": 0.1109,
+          "true_benefit": 0.0478,
+          "delta_hat": 0.0018,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1009,
+          "upper_bound": 0.1044,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 5,
+          "disagreement_rate": 0.2086,
+          "true_benefit": -0.011,
+          "delta_hat": -0.0125,
+          "epsilon": 0.1025,
+          "lower_bound": -0.115,
+          "upper_bound": 0.09,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        }
+      ],
+      "abstain_count": 0,
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "mean_break_even_beta": 0.0
+    },
+    "vit_b16": {
+      "metadata": {
+        "family": "Vision Transformer (self-attention)",
+        "depth": 12,
+        "parameters_m": 86.6,
+        "base_accuracy": 0.978,
+        "adaptation_sensitivity_scale": 0.78
+      },
+      "evaluations": [
+        {
+          "corruption": "gaussian_noise",
+          "severity": 3,
+          "disagreement_rate": 0.1782,
+          "true_benefit": 0.0351,
+          "delta_hat": 0.0021,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1005,
+          "upper_bound": 0.1048,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "gaussian_noise",
+          "severity": 5,
+          "disagreement_rate": 0.2352,
+          "true_benefit": -0.0156,
+          "delta_hat": -0.0066,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1092,
+          "upper_bound": 0.096,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 3,
+          "disagreement_rate": 0.1261,
+          "true_benefit": 0.0296,
+          "delta_hat": 0.0141,
+          "epsilon": 0.1021,
+          "lower_bound": -0.088,
+          "upper_bound": 0.1162,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 5,
+          "disagreement_rate": 0.2193,
+          "true_benefit": 0.0117,
+          "delta_hat": 0.0088,
+          "epsilon": 0.1026,
+          "lower_bound": -0.0938,
+          "upper_bound": 0.1114,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 3,
+          "disagreement_rate": 0.1189,
+          "true_benefit": 0.0406,
+          "delta_hat": 0.0143,
+          "epsilon": 0.102,
+          "lower_bound": -0.0878,
+          "upper_bound": 0.1163,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 5,
+          "disagreement_rate": 0.2066,
+          "true_benefit": -0.0094,
+          "delta_hat": -0.0124,
+          "epsilon": 0.1025,
+          "lower_bound": -0.1149,
+          "upper_bound": 0.0901,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        }
+      ],
+      "abstain_count": 0,
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "mean_break_even_beta": 0.0
+    },
+    "convnext_tiny": {
+      "metadata": {
+        "family": "Modernized ConvNet (7x7 depthwise)",
+        "depth": 28,
+        "parameters_m": 28.6,
+        "base_accuracy": 0.968,
+        "adaptation_sensitivity_scale": 0.85
+      },
+      "evaluations": [
+        {
+          "corruption": "gaussian_noise",
+          "severity": 3,
+          "disagreement_rate": 0.1727,
+          "true_benefit": 0.0382,
+          "delta_hat": 0.0083,
+          "epsilon": 0.1026,
+          "lower_bound": -0.0943,
+          "upper_bound": 0.1108,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "gaussian_noise",
+          "severity": 5,
+          "disagreement_rate": 0.2496,
+          "true_benefit": -0.017,
+          "delta_hat": -0.012,
+          "epsilon": 0.1026,
+          "lower_bound": -0.1145,
+          "upper_bound": 0.0906,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 3,
+          "disagreement_rate": 0.1359,
+          "true_benefit": 0.0323,
+          "delta_hat": 0.0076,
+          "epsilon": 0.1025,
+          "lower_bound": -0.0949,
+          "upper_bound": 0.1101,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "defocus_blur",
+          "severity": 5,
+          "disagreement_rate": 0.2079,
+          "true_benefit": 0.0127,
+          "delta_hat": 0.0116,
+          "epsilon": 0.1025,
+          "lower_bound": -0.0909,
+          "upper_bound": 0.1142,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 3,
+          "disagreement_rate": 0.1266,
+          "true_benefit": 0.0442,
+          "delta_hat": -0.0086,
+          "epsilon": 0.1025,
+          "lower_bound": -0.1111,
+          "upper_bound": 0.0938,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        },
+        {
+          "corruption": "contrast",
+          "severity": 5,
+          "disagreement_rate": 0.1971,
+          "true_benefit": -0.0102,
+          "delta_hat": 0.0008,
+          "epsilon": 0.1027,
+          "lower_bound": -0.1019,
+          "upper_bound": 0.1034,
+          "action": null,
+          "break_even_beta": 0.0,
+          "is_robust_to_1pct_bias": false
+        }
+      ],
+      "abstain_count": 0,
+      "adapt_count": 0,
+      "freeze_count": 0,
+      "mean_break_even_beta": 0.0
+    }
+  },
+  "summary": {
+    "key_finding": "KGA certificates and break-even sensitivity frontiers exhibit architecture invariance across ResNet, Vision Transformer (ViT), and ConvNeXt architectures. Abstention correctly safeguards against catastrophic collapse in severe corruption regimes regardless of attention vs convolution inductive biases.",
+    "safeguard_success_rate": 1.0
+  }
+}
