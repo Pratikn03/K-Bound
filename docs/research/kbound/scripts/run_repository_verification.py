@@ -120,6 +120,17 @@ APLUS_PATHS = (
     "tests/test_smoke_trichotomy.py",
 )
 
+# Pinned Bandit 1.9.4 passes the now-no-op argument to Stevedore 5.9.1.
+# Retain this known dependency diagnostic visibly on every emission. Python -W
+# matches the full literal message below as a prefix (not an equality test),
+# with exact category/module; unmatched warnings and all other subprocesses
+# still run with warnings=error.
+# This is not a suppressed security finding or permission to change runtime.
+BANDIT_DEPRECATION_FILTER = (
+    "always:The verify_requirements argument is now a no-op and is deprecated "
+    "for removal. Remove the argument from calls.:DeprecationWarning:stevedore.extension"
+)
+
 PRE_COMMIT_CONFIG_PATH = ".pre-commit-config.yaml"
 EXPECTED_PRE_COMMIT_HOOKS: dict[str, tuple[str, ...]] = {
     "https://github.com/astral-sh/ruff-pre-commit": ("ruff", "ruff", "ruff-format"),
@@ -1725,6 +1736,8 @@ def _run_quality_gates(
         [python, "-m", "mypy", "kga", "--ignore-missing-imports"],
         [
             python,
+            "-W",
+            BANDIT_DEPRECATION_FILTER,
             "-m",
             "bandit",
             "-q",

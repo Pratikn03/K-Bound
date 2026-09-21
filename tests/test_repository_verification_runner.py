@@ -1063,6 +1063,36 @@ def test_quality_gate_phase_does_not_rerun_tracked_pytest_modules(
     assert format_excluded == set(runner.BYTE_PRESERVING_ARCHIVE_ROOTS)
     assert "docs/research/kbound/archive" not in format_excluded
 
+    assert observed[4][1:3] == ["-W", runner.BANDIT_DEPRECATION_FILTER]
+    assert all("-W" not in command for command in observed[:4])
+
+
+@pytest.mark.parametrize("message,category,module,exit_code", [
+    ("The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
+     "DeprecationWarning", "stevedore.extension", 0),
+    ("A different deprecation", "DeprecationWarning", "stevedore.extension", 1),
+    ("The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
+     "UserWarning", "stevedore.extension", 1),
+    ("The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
+     "DeprecationWarning", "kga.policy", 1),
+])
+def test_bandit_known_deprecation_is_visible_and_other_warnings_stay_fatal(
+    message: str, category: str, module: str, exit_code: int,
+) -> None:
+    import subprocess
+    import sys
+
+    code = (
+        "import warnings; "
+        f"warnings.warn_explicit({message!r}, {category}, filename='synthetic.py', lineno=1, module={module!r})"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-W", "error", "-W", runner.BANDIT_DEPRECATION_FILTER, "-c", code],
+        capture_output=True, text=True, check=False,
+    )
+    assert completed.returncode == exit_code
+    assert message in completed.stderr
+
 
 def test_quality_gate_rejects_empty_source_inventory(tmp_path: Path) -> None:
     with pytest.raises(runner.InventoryError, match="quality inventory is empty"):
