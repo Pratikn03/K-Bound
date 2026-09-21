@@ -225,6 +225,59 @@ def test_explicit_storage_authorization_crosses_the_synthetic_access_canary(
         )
 
 
+@pytest.mark.parametrize("tampered_archive", [False, True])
+def test_authorized_storage_compares_relocated_historical_receipt_without_opening_original(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tampered_archive: bool,
+) -> None:
+    """Exercise the complete opt-in comparison with synthetic files only."""
+    validator = _load_validator()
+    original, relocated = next(iter(validator.HISTORICAL_LOCK_PATH_REMAP.items()))
+    payload = b"synthetic historical receipt\n"
+    recorded_sha = hashlib.sha256(payload).hexdigest()
+    archived_payload = b"changed historical receipt\n" if tampered_archive else payload
+    archived = tmp_path / relocated
+    archived.parent.mkdir(parents=True)
+    archived.write_bytes(archived_payload)
+    storage = tmp_path / "STORAGE_MANIFEST.json"
+    storage.write_text(json.dumps({
+        "artifacts": [],
+        "sealed_evidence_checksums": {relocated: {
+            "status": "present", "size_bytes": len(archived_payload),
+            "sha256": hashlib.sha256(archived_payload).hexdigest(),
+        }},
+        "sealed_evidence_summary": {"files": 1, "present": 1, "absent": 0},
+    }))
+    lock = tmp_path / "LOCK_SEAL.json"
+    lock.write_text(json.dumps({"tracks": {"synthetic": {"files": {original: {
+        "bytes": len(payload), "sha256": recorded_sha,
+    }}}}}))
+    monkeypatch.setattr(validator, "ROOT", tmp_path)
+    monkeypatch.setattr(validator, "STORAGE_MANIFEST", storage)
+    monkeypatch.setattr(validator, "LOCK_SEAL", lock)
+    real_stat, real_open = Path.stat, Path.open
+
+    def guard_stat(path, *args, **kwargs):
+        assert path != tmp_path / original, "retired original was inspected"
+        return real_stat(path, *args, **kwargs)
+
+    def guard_open(path, *args, **kwargs):
+        assert path != tmp_path / original, "retired original was opened"
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", guard_stat)
+    monkeypatch.setattr(Path, "open", guard_open)
+    problems: list[str] = []
+    assert validator.validate_storage_manifest(
+        problems, {}, authorize_protected_so2sat=True,
+    ) == (0, 1)
+    if tampered_archive:
+        assert any("disagrees with nine-track lock metadata" in item for item in problems), problems
+    else:
+        assert problems == []
+
+
 def test_active_claim_corpus_skips_binary_graphics_without_decoding_them(
     tmp_path: Path,
 ) -> None:

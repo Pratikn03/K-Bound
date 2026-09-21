@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Retired orchestration: retain the original body below for provenance only.
+# Do not start historical training, rescoring, or publication from this route.
+printf '%s\n' 'This launcher is retired; review the current release gates in docs/research/kbound/runbooks/release_candidate.sh all. No experiment was started.' >&2
+exit 2
+
 # 85+ readiness audit: theory, repro, smoke report, edge tests, macro drift.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

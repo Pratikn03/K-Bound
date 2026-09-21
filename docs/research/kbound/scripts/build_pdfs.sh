@@ -16,6 +16,13 @@ REPO="$(cd "$ROOT/../../.." && pwd)"
 cd "$ROOT"
 export COPYFILE_DISABLE=1
 
+# Refuse the retired diagnostic route before touching evidence or discovering
+# tools. Unset/0 is harmless for older caller environments; no old PDF is built.
+case "${BUILD_DIAGNOSTIC_IEEE-0}" in
+  0) ;;
+  *) echo "ERROR: diagnostic IEEE build is retired; use the maintained compact and TMLR drivers." >&2; exit 2 ;;
+esac
+
 # Retired split-artifact switches are accepted only as explicit boolean
 # compatibility inputs.  Validate them before any Python/tool discovery so a
 # malformed environment cannot trigger partial regeneration of release data.
@@ -76,9 +83,7 @@ publish_derived() {
     kbound_short_final_draft.pdf|kbound_short_final_draft.log|\
     kbound_submission_build_driver.log|kbound_short_final_build.log|\
     kbound_tmlr.pdf|kbound_tmlr.log|kbound_tmlr_build.log|\
-    kbound_full.pdf|kbound_full.log|kbound_full_build.log|\
-    kbound_short.pdf|kbound_short.log|kbound_full_ieee_diagnostic.pdf|\
-    kbound_full_ieee_diagnostic_build.log) ;;
+    kbound_full.pdf|kbound_full.log|kbound_full_build.log) ;;
     *) echo "ERROR: refusing unexpected derived-output name: $name" >&2; return 1 ;;
   esac
   if [[ "$source" != "$BUILD_TMP_DIR/"* || ! -s "$source" || -L "$source" || -d "$ROOT/$name" ]]; then
@@ -123,6 +128,12 @@ build_pdf() {
   if ! pdfinfo "$BUILD_TMP_DIR/$stem.pdf" >"$BUILD_TMP_DIR/$stem.pdfinfo" 2>&1; then
     echo "ERROR: built PDF failed validation; local diagnostics retained in $BUILD_TMP_DIR" >&2
     tail -80 "$BUILD_TMP_DIR/$stem.pdfinfo" >&2
+    return 1
+  fi
+  # latexmk can exit successfully with unresolved cross-references. A readable
+  # PDF is not enough to replace the maintained artifact in that case.
+  if grep -Eq 'There were (undefined references|undefined citations|multiply-defined labels)' "$BUILD_TMP_DIR/$stem.log"; then
+    echo "ERROR: unresolved references, citations or duplicate labels; diagnostics retained in $BUILD_TMP_DIR" >&2
     return 1
   fi
   publish_derived "$BUILD_TMP_DIR/$stem.pdf" "$stem.pdf"
@@ -182,11 +193,6 @@ fi
 if [[ "$BUILD_FULL" == "1" ]]; then
   echo "==> Building maintained non-anonymous full companion"
   build_pdf kbound_full.tex kbound_full_build.log
-fi
-
-if [[ "${BUILD_DIAGNOSTIC_IEEE:-0}" == "1" ]]; then
-  build_pdf kbound_short.tex kbound_full_ieee_diagnostic_build.log
-  publish_derived "$BUILD_TMP_DIR/kbound_short.pdf" kbound_full_ieee_diagnostic.pdf
 fi
 
 # The maintained outputs are written in place. Historical compatibility PDFs

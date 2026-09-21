@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import json
 import math
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -1300,8 +1301,7 @@ def _sync_table(
         "Earlier-policy cluster and head-to-head "
         "artifacts are retained only in explicitly historical, non-release-eligible blocks."
     )
-    table["nine_track_lock_seal"]["status"] = HISTORICAL_POLICY_STATUS
-    table["nine_track_lock_seal"]["current_policy_authority"] = False
+    relocate_historical_seal(table)
     table.setdefault("withheld_or_pending", {}).pop("cifar10c_sar", None)
     table["withheld_or_pending"].pop("current_policy_cluster_inference", None)
     table["withheld_or_pending"]["current_policy_headtohead"] = (
@@ -2598,6 +2598,26 @@ def _sync_frontier(panel: dict[str, Any], frontier_data: dict[str, Any]) -> None
     }
 
 
+def relocate_historical_seal(table: dict[str, Any]) -> None:
+    """Route an authenticated historical receipt without changing panel numbers."""
+    repo = Path(__file__).resolve().parents[1]
+    if str(repo) not in sys.path:
+        sys.path.insert(0, str(repo))
+    from docs.research.kbound.scripts import seal_nine_track_lock as historical
+
+    _seal, errors = historical.verify_historical_seal()
+    if errors:
+        raise ValueError("historical seal authentication failed: " + "; ".join(errors))
+    route = table["nine_track_lock_seal"]
+    route.update({
+        "path": historical.SEAL_JSON.relative_to(historical.ROOT).as_posix(),
+        "research_lock": historical.LOCK_YAML.relative_to(historical.ROOT).as_posix(),
+        "verify": "python3 docs/research/kbound/scripts/seal_nine_track_lock.py --verify",
+        "status": HISTORICAL_POLICY_STATUS,
+        "current_policy_authority": False,
+    })
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--public-only", action="store_true",
@@ -2607,7 +2627,17 @@ def main() -> None:
         action="store_true",
         help="refresh structured release data without writing generated TeX",
     )
+    parser.add_argument("--relocate-historical-only", action="store_true",
+                        help="authenticate and relocate historical seal metadata only; no scoring or panel refresh")
     args = parser.parse_args()
+    if args.relocate_historical_only:
+        if args.public_only or args.json_only:
+            parser.error("historical relocation cannot be combined with panel synchronization")
+        table = _load(TABLE_PATH)
+        relocate_historical_seal(table)
+        _write(TABLE_PATH, table)
+        print("updated historical seal route only; numerical results unchanged")
+        return
     panel = _load(PANEL_PATH)
     current_cluster = _load(CURRENT_CLUSTER_PATH)
     table = _load(TABLE_PATH)

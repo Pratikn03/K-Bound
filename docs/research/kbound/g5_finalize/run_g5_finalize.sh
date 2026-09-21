@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Retired orchestration: retain the original body below for provenance only.
+# Do not start historical training, rescoring, or publication from this route.
+printf '%s\n' 'This launcher is retired; review the current release gates in docs/research/kbound/runbooks/release_candidate.sh all. No experiment was started.' >&2
+exit 2
+
 # run_g5_finalize.sh — finish WIN_HUNT_v4 arm D (official POEM/AETTA head-to-head).
 # Runs per-sample stress seeds 2-4, then scores ONCE at seeds 0-4 (the official verdict).
 # Guards: interpreter import-check up front; never scores a partial seed set.

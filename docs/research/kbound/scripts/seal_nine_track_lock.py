@@ -1,280 +1,161 @@
 #!/usr/bin/env python3
-"""Seal SHA256 hashes for sealable KBound nine-track evidence artifacts.
+"""Read-only historical verifier; never creates or promotes a nine-track seal.
 
-Usage:
-  python docs/research/kbound/scripts/seal_nine_track_lock.py          # write seal
-  python docs/research/kbound/scripts/seal_nine_track_lock.py --verify # check seal
-
-Locked here means: frozen aggregate + hashed source artifacts (replayable).
-Does NOT change scientific verdicts (beats-both vs no-harm). Does NOT promote
-Office-Home LOO beats-both. Completed null diagnostics are sealed as diagnostics;
-CIFAR SAR remains withheld.
+Use --verify to authenticate archived receipts against their pinned Git source
+and check the historical file inventory. A PASS concerns historical byte
+identity only, not current-policy validity or publication eligibility.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
-import json
-from datetime import datetime, timezone
+import os
+import stat
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
-OUT_DIR = ROOT / "experiments/kbound/results/nine_track_lock_v1"
-SEAL_JSON = OUT_DIR / "LOCK_SEAL.json"
-SEAL_SHA = OUT_DIR / "LOCK_SEAL.sha256"
-LOCK_YAML = ROOT / "research_lock/NINE_TRACK_LOCK_SEAL_v1.yaml"
+SOURCE_COMMIT = "660d893caede49c3b7daa8c18e43bb6cbbce5480"
+ARCHIVE = Path("docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02")
+ARCHIVE_MANIFEST = ROOT / ARCHIVE / "MANIFEST.json"
+RETIRED_MANIFEST = ROOT / ARCHIVE / "RETIRED_SURFACES_MANIFEST.json"
+SEAL_REL = "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+SHA_REL = "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.sha256"
+YAML_REL = "research_lock/NINE_TRACK_LOCK_SEAL_v1.yaml"
+SEAL_JSON = ROOT / ARCHIVE / "retired_tree" / SEAL_REL
+SEAL_SHA = ROOT / ARCHIVE / "retired_tree" / SHA_REL
+LOCK_YAML = ROOT / ARCHIVE / "retired_tree" / YAML_REL
 
-# Canonical artifacts per track. Paths relative to repo root.
-TRACKS = {
-    "cifar10c_tent_eata": {
-        "status": "locked",
-        "verdict": "beats-both (CI utility); SAR withheld",
-        "artifacts": [
-            "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
-            "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_FINDINGS.md",
-        ],
-    },
-    "imagenetc_sar": {
-        "status": "locked",
-        "verdict": "beats-both (pooled paired CI)",
-        "artifacts": [
-            "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed0.json",
-            "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed1.json",
-            "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed2.json",
-            "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed3.json",
-            "experiments/kbound/results/win_hunt_v5_imagenetc_ms/pooled_5seed/per_condition_imagenetc_sar_seed4.json",
-        ],
-    },
-    "camelyon17_ood": {
-        "status": "locked",
-        "verdict": "no-harm (genuine OOD test; ties adapt)",
-        "artifacts": [
-            "audits/integrity_2026-06-20/camelyon_reconciliation/recon_results.json",
-            "audits/integrity_2026-06-20/camelyon_reconciliation/VERDICT_phase1.md",
-            "research_lock/CAMELYON17_PROTOCOL_G_RECONCILED_v2.yaml",
-        ],
-    },
-    "iwildcam_H_v2": {
-        "status": "locked",
-        "verdict": "no-harm (OOF lock; ties freeze)",
-        "artifacts": [
-            "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-            "research_lock/IWILDCAM_PROTOCOL_H_v2.yaml",
-            "experiments/kbound/results/iwildcam_protocol_H_v2/protocol_result.json",
-        ],
-    },
-    "officehome_M_v2": {
-        "status": "locked",
-        "verdict": "no-harm (OOF lock; NOT LOO beats-both)",
-        "artifacts": [
-            "research_lock/KBOUND_WIN_BOOTSTRAP_CIS_oof.json",
-            "experiments/kbound/results/officehome_protocol_M_v2/protocol_result.json",
-        ],
-        "caveat": "Paper promotes OOF no-harm only; do not promote LOO beats-both.",
-    },
-    "rxrx1_J": {
-        "status": "locked",
-        "verdict": "no-harm (ties freeze)",
-        "artifacts": [
-            "experiments/kbound/results/rxrx1_protocol_J_v1/analyze_F_results.json",
-            "research_lock/GPU_EXPERIMENTS_PROTOCOL_v1.md",
-        ],
-    },
-    "three_source_oof": {
-        "status": "locked",
-        "verdict": "beats-both (constructed routing mixture, not transfer)",
-        "artifacts": [
-            "experiments/kbound/results/mixed_protocol_oof_v2/mixed_protocol_oof_v2_result.json",
-            "research_lock/KBOUND_MIXED_STREAM_v2.json",
-        ],
-    },
-    "cifar10_1_K": {
-        "status": "locked_diagnostic_fail",
-        "verdict": "diagnostic fail (transfer bar); no claim",
-        "artifacts": [
-            "experiments/kbound/results/cifar101_multiseed_v1/seed0/result_manifest.json",
-            "experiments/kbound/results/cifar101_multiseed_v1/seed1/result_manifest.json",
-            "experiments/kbound/results/cifar101_multiseed_v1/seed2/result_manifest.json",
-            "experiments/kbound/results/cifar101_multiseed_v1/seed3/result_manifest.json",
-            "experiments/kbound/results/cifar101_multiseed_v1/seed4/result_manifest.json",
-        ],
-    },
-    "pacs_multiseed": {
-        "status": "locked_diagnostic_null",
-        "verdict": "completed 3-seed action-safety diagnostic; no beats-both claim",
-        "artifacts": [
-            "experiments/kbound/results/win_hunt_v5/pacs_aggr/pacs_result.json",
-            "experiments/kbound/results/pacs_seed1.json",
-            "experiments/kbound/results/pacs_seed2.json",
-            "experiments/kbound/results/pacs_multiseed_v1/PACS_MULTISEED_RESULTS.json",
-        ],
-    },
-    "imagenet_r_D": {
-        "status": "locked_diagnostic_null",
-        "verdict": "completed 4-seed, 10-backbone diagnostic; 0/10 CI-supported beats-both",
-        "artifacts": [
-            "experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/MULTISEED_ANALYSIS_RESULTS.json",
-            *[
-                f"experiments/kbound/results/imagenetr_protocol_d_multiseed_v1/per_condition_imagenet-r_{method}_seed{seed}.json"
-                for seed in range(4)
-                for method in (
-                    "convnext_base", "convnext_tiny", "efficientnet_b0", "efficientnet_b3",
-                    "resnet101", "resnet152", "resnext101_32x8d", "swin_b", "swin_t", "vit_b_16",
-                )
-            ],
-        ],
-    },
-}
-
-NOT_LOCKED = {}
-
-# cifar10c_sar is PERMANENTLY WITHHELD: seed-0 aggregate is non-reproducing.
-# The SAR arm is noted as withheld in kbound_short_body.tex and in cifar10c_tent_eata verdict.
-# No lock record will be created for this track. This is a deliberate scientific decision,
-# not an incomplete item. Updated: 2026-08-17.
-PERMANENTLY_WITHHELD = {
-    "cifar10c_sar": "seed-0 aggregate non-reproducing; withheld from paper per SUBMISSION_LEDGER §3; permanently closed 2026-08-17",
-}
+# These inventories' 64 records were compared to SOURCE_COMMIT before repair.
+# Pinning also rejects removed entries and tandem archive/receipt replacement.
+MANIFEST_SHA = "4d561ed33399643413cf7666e64a9a6f936b8933229761ee1f4380d1bffef4be"
+RETIRED_SHA = "e07d8444d1f7b0689c0fdc6e694586a6afcb0f6ae038623ff414f49771e63e8f"
+MAX_FILE_BYTES = 16 * 1024 * 1024
 
 
-
-def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def build_seal() -> dict:
-    tracks_out = {}
-    missing = []
-    for name, spec in TRACKS.items():
-        files = {}
-        for rel in spec["artifacts"]:
-            p = ROOT / rel
-            if not p.is_file():
-                missing.append(rel)
-                continue
-            files[rel] = {
-                "sha256": sha256_file(p),
-                "bytes": p.stat().st_size,
-            }
-        entry = {
-            "status": spec["status"],
-            "verdict": spec["verdict"],
-            "files": files,
-        }
-        if "caveat" in spec:
-            entry["caveat"] = spec["caveat"]
-        tracks_out[name] = entry
-    if missing:
-        raise FileNotFoundError("Missing seal artifacts:\n  " + "\n  ".join(missing))
-    return {
-        "schema_version": 1,
-        "seal_id": "NINE_TRACK_LOCK_SEAL_v1",
-        "sealed_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "policy": (
-            "Locked = frozen aggregate + hashed source artifacts. "
-            "Does not change scientific verdicts. "
-            "Office-Home LOO beats-both is not promoted."
-        ),
-        "tracks": tracks_out,
-        "not_locked": NOT_LOCKED,
-        "permanently_withheld": PERMANENTLY_WITHHELD,
-    }
+def _read_regular(path: Path) -> bytes:
+    for parent in (path, *path.parents):
+        if parent.is_symlink():
+            raise ValueError(f"symlink in historical evidence path: {parent}")
+    before = path.stat()
+    if not stat.S_ISREG(before.st_mode) or before.st_size > MAX_FILE_BYTES:
+        raise ValueError(f"not a bounded regular historical evidence file: {path}")
+    with path.open('rb') as handle:
+        payload = handle.read(MAX_FILE_BYTES + 1)
+        after = os.fstat(handle.fileno())
+    if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (
+        after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns
+    ) or len(payload) != before.st_size:
+        raise ValueError(f"historical evidence changed during read: {path}")
+    return payload
 
 
-def write_yaml_sidecar(seal: dict) -> None:
-    lines = [
-        "# NINE_TRACK_LOCK_SEAL_v1 — sealed evidence inventory for kbound_short",
-        f"# sealed_utc: {seal['sealed_utc']}",
-        "# Auto-generated companion to experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json",
-        "# Verify: python docs/research/kbound/scripts/seal_nine_track_lock.py --verify",
-        "",
-        "seal_id: NINE_TRACK_LOCK_SEAL_v1",
-        "policy: >",
-        "  Locked means frozen aggregate + hashed source artifacts (replayable).",
-        "  Scientific verdicts unchanged. Office-Home LOO beats-both is NOT promoted.",
-        "",
-        "locked_tracks:",
-    ]
-    for name, t in seal["tracks"].items():
-        lines.append(f"  - id: {name}")
-        lines.append(f"    status: {t['status']}")
-        lines.append(f"    verdict: {t['verdict']!r}")
-        if "caveat" in t:
-            lines.append(f"    caveat: {t['caveat']!r}")
-        lines.append("    artifacts:")
-        for rel, meta in t["files"].items():
-            lines.append(f"      - path: {rel}")
-            lines.append(f"        sha256: {meta['sha256']}")
-            lines.append(f"        bytes: {meta['bytes']}")
-    lines.append("")
-    lines.append("not_locked:")
-    for name, reason in seal["not_locked"].items():
-        lines.append(f"  {name}: {reason!r}")
-    lines.append("")
-    lines.append("permanently_withheld:")
-    for name, reason in seal["permanently_withheld"].items():
-        lines.append(f"  {name}: {reason!r}")
-    lines.append("")
-    LOCK_YAML.write_text("\n".join(lines), encoding="utf-8")
+def _baseline(relative: str) -> bytes:
+    result = subprocess.run(
+        ['git', '--no-replace-objects', 'show', f'{SOURCE_COMMIT}:{relative}'],
+        cwd=ROOT, capture_output=True, timeout=15,
+        env={**os.environ, 'GIT_NO_LAZY_FETCH': '1', 'GIT_TERMINAL_PROMPT': '0'},
+    )
+    if result.returncode:
+        raise ValueError(f"pinned historical baseline unavailable: {relative}")
+    return result.stdout
 
 
-def verify(seal: dict) -> list[str]:
-    errors = []
-    for name, t in seal["tracks"].items():
-        for rel, meta in t["files"].items():
-            p = ROOT / rel
-            if not p.is_file():
-                errors.append(f"{name}: missing {rel}")
-                continue
-            got = sha256_file(p)
-            if got != meta["sha256"]:
-                errors.append(f"{name}: hash mismatch {rel}\n  expected {meta['sha256']}\n  got      {got}")
-            elif p.stat().st_size != meta["bytes"]:
-                errors.append(f"{name}: size mismatch {rel}")
-    return errors
+def _match(payload: bytes, metadata: dict, label: str) -> None:
+    if (type(metadata.get('bytes')) is not int or metadata['bytes'] != len(payload)
+            or metadata.get('sha256') != hashlib.sha256(payload).hexdigest()):
+        raise ValueError(f"historical hash/size mismatch: {label}")
+
+
+def verify_historical_seal() -> tuple[dict, list[str]]:
+    """Verify all identities, returning errors without writes or fallback seals."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from docs.research.kbound.scripts.release_privacy import (
+        PrivacyError,
+        strict_json_loads,
+        validate_public_member_path,
+    )
+
+    seal = {}
+    try:
+        routes = {}
+        for manifest_path, branch, expected_hash in (
+            (ARCHIVE_MANIFEST, 'tree', MANIFEST_SHA),
+            (RETIRED_MANIFEST, 'retired_tree', RETIRED_SHA),
+        ):
+            raw = _read_regular(manifest_path)
+            manifest = strict_json_loads(raw)
+            if not isinstance(manifest, dict) or manifest.get('schema_version') != 1:
+                raise ValueError('invalid historical manifest schema')
+            if manifest.get('source_commit') != SOURCE_COMMIT:
+                raise ValueError('historical manifest baseline mismatch')
+            records = manifest.get('records')
+            if not isinstance(records, list) or not records:
+                raise ValueError('missing historical manifest records')
+            for record in records:
+                if not isinstance(record, dict):
+                    raise ValueError('invalid historical manifest record')
+                relative = validate_public_member_path(record['original_path'])
+                try:
+                    archive_path = validate_public_member_path(record['archive_path'])
+                except PrivacyError as exc:
+                    raise ValueError(f'noncanonical archive_path: {exc}') from exc
+                expected_path = (ARCHIVE / branch / relative).as_posix()
+                if archive_path != expected_path or relative in routes:
+                    raise ValueError('noncanonical or duplicated archive_path')
+                routes[relative] = record
+            if hashlib.sha256(raw).hexdigest() != expected_hash:
+                raise ValueError(f'historical manifest differs from pinned baseline: {manifest_path.name}')
+
+        # Never trust a checksum and its replaceable sidecar as sole authority.
+        for relative, record in routes.items():
+            payload = _read_regular(ROOT / record['archive_path'])
+            _match(payload, record, f'retired receipt {relative}')
+            if payload != _baseline(relative):
+                raise ValueError(f'retired receipt differs from pinned baseline: {relative}')
+
+        bound = {}
+        for relative, path, label in (
+            (SEAL_REL, SEAL_JSON, 'retired seal'),
+            (SHA_REL, SEAL_SHA, 'checksum sidecar'),
+            (YAML_REL, LOCK_YAML, 'YAML receipt'),
+        ):
+            payload = _read_regular(path)
+            _match(payload, routes[relative], f'{label} baseline')
+            bound[relative] = payload
+        digest = hashlib.sha256(bound[SEAL_REL]).hexdigest()
+        if bound[SHA_REL] != f'{digest}  LOCK_SEAL.json\n'.encode('ascii'):
+            raise ValueError('malformed historical checksum sidecar')
+        seal = strict_json_loads(bound[SEAL_REL])
+        if not isinstance(seal, dict) or seal.get('seal_id') != 'NINE_TRACK_LOCK_SEAL_v1':
+            raise ValueError('invalid historical seal schema')
+        for name, track in seal['tracks'].items():
+            for relative, metadata in track['files'].items():
+                validate_public_member_path(relative)
+                routed = routes[relative]['archive_path'] if relative in routes else relative
+                _match(_read_regular(ROOT / routed), metadata, f'{name}: {relative}')
+        return seal, []
+    except (OSError, ValueError, TypeError, KeyError, PrivacyError, subprocess.SubprocessError) as exc:
+        return seal, [f'historical verification failed: {exc}']
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--verify", action="store_true", help="Verify existing seal hashes")
-    args = ap.parse_args()
-
-    if args.verify:
-        if not SEAL_JSON.is_file():
-            print(f"FAIL: seal missing: {SEAL_JSON}")
-            return 1
-        seal = json.loads(SEAL_JSON.read_text(encoding="utf-8"))
-        errs = verify(seal)
-        if errs:
-            print("FAIL:")
-            for e in errs:
-                print(" ", e)
-            return 1
-        print(f"OK: verified {len(seal['tracks'])} tracks against {SEAL_JSON}")
-        for name, t in seal["tracks"].items():
-            print(f"  {name}: {t['status']} ({len(t['files'])} files)")
-        print("not_locked:", ", ".join(seal["not_locked"]))
-        return 0
-
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    seal = build_seal()
-    payload = json.dumps(seal, indent=2, sort_keys=True) + "\n"
-    SEAL_JSON.write_text(payload, encoding="utf-8")
-    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    SEAL_SHA.write_text(f"{digest}  LOCK_SEAL.json\n", encoding="utf-8")
-    write_yaml_sidecar(seal)
-    print(f"Wrote {SEAL_JSON}")
-    print(f"Wrote {SEAL_SHA}")
-    print(f"Wrote {LOCK_YAML}")
-    for name, t in seal["tracks"].items():
-        print(f"  sealed {name}: {t['status']} ({len(t['files'])} files)")
-    print("not_locked:", ", ".join(seal["not_locked"]))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--verify', action='store_true')
+    args = parser.parse_args()
+    if not args.verify:
+        parser.error('read-only historical verifier: --verify is required; seal creation is retired')
+    seal, errors = verify_historical_seal()
+    if errors:
+        for error in errors:
+            print(error, file=sys.stderr)
+        return 1
+    print(f"PASS: historical byte verification only, {len(seal['tracks'])} tracks; "
+          'not current-policy authority or release promotion')
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

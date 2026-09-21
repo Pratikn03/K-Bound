@@ -99,7 +99,7 @@ for suffix in ('.aux', '.out', '.fdb_latexmk', '.fls'):
 if os.environ.get('BUILD_TEST_OMIT_PDF') != job:
     (outdir / (job + '.pdf')).write_bytes(b'%PDF-1.7\\nfresh ' + job.encode())
 if os.environ.get('BUILD_TEST_OMIT_LOG') != job:
-    (outdir / (job + '.log')).write_text('fresh TeX log ' + job + '\\n', encoding='utf-8')
+    (outdir / (job + '.log')).write_text('fresh TeX log ' + job + '\\n' + os.environ.get('BUILD_TEST_TEX_WARNING', ''), encoding='utf-8')
 print('fresh driver output ' + job)
 if os.environ.get('BUILD_TEST_FAIL_JOB') == job:
     print('deliberate latex failure after a partial PDF', file=sys.stderr)
@@ -258,20 +258,46 @@ def test_failed_current_cifar_verification_precedes_all_regeneration_and_build_a
 
 
 @pytest.mark.parametrize("long_option", ["BUILD_LONG_TMLR", "BUILD_HISTORICAL_TMLR"])
-def test_long_and_explicit_diagnostic_outputs_keep_existing_contracts(build_replica, long_option):
-    result = _run(build_replica, **{long_option: "1", "BUILD_DIAGNOSTIC_IEEE": "1"})
+def test_long_outputs_keep_maintained_contract(build_replica, long_option):
+    result = _run(build_replica, **{long_option: "1"})
     assert result.returncode == 0, result.stdout + result.stderr
     paper = build_replica.paper
     for name, job in (
         ("kbound_short_final_draft.pdf", "kbound_short_final_draft"),
         ("kbound_tmlr.pdf", "kbound_tmlr"),
-        ("kbound_short.pdf", "kbound_short"),
-        ("kbound_full_ieee_diagnostic.pdf", "kbound_short"),
     ):
         assert (paper / name).read_bytes() == b"%PDF-1.7\nfresh " + job.encode()
-    for name in ("kbound_tmlr.log", "kbound_tmlr_build.log", "kbound_short.log", "kbound_full_ieee_diagnostic_build.log"):
+    for name in ("kbound_tmlr.log", "kbound_tmlr_build.log"):
         assert (paper / name).is_file()
-    assert len([event for event in _events(build_replica) if event["kind"] == "local-output"]) == 3
+    assert len([event for event in _events(build_replica) if event["kind"] == "local-output"]) == 2
+    assert not (paper / "kbound_short.pdf").exists()
+    assert not (paper / "kbound_full_ieee_diagnostic.pdf").exists()
+
+
+@pytest.mark.parametrize("value", ["1", "yes", ""])
+def test_retired_diagnostic_build_refuses_before_any_output_or_evidence_access(build_replica, value):
+    result = _run(build_replica, BUILD_DIAGNOSTIC_IEEE=value)
+    assert result.returncode == 2
+    assert "retired" in result.stderr.lower()
+    assert _events(build_replica) == []
+    assert not (build_replica.paper / "kbound_short_final_draft.pdf").exists()
+
+
+@pytest.mark.parametrize("warning", [
+    "LaTeX Warning: There were undefined references.\n",
+    "Package natbib Warning: There were undefined citations.\n",
+    "LaTeX Warning: There were multiply-defined labels.\n",
+])
+def test_unresolved_references_never_replace_previous_pdf(build_replica, warning):
+    names = ("kbound_short_final_draft.pdf", "kbound_short_final_build.log")
+    canaries = _old_output_canaries(build_replica, names)
+    result = _run(build_replica, BUILD_TEST_TEX_WARNING=warning)
+    assert result.returncode != 0
+    assert "unresolved" in result.stderr.lower()
+    for name, target in canaries.items():
+        assert (build_replica.paper / name).is_symlink()
+        assert target.read_bytes() == b"old output must never be opened or changed\n"
+    assert not any(event.get("script") == "build_dashboard_snapshot.py" for event in _events(build_replica))
 
 
 def test_historical_log_is_not_read_or_copied_on_a_normal_build(build_replica):

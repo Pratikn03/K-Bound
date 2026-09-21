@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Compare a smoke / partial run manifest against locked headline artifacts.
+"""Compare a smoke / partial run manifest against historical summary artifacts.
 
 Usage:
   python smoke_pipeline_report.py --smoke-root experiments/kbound/results/smoke_ms_20260701_120000
   python smoke_pipeline_report.py --manifest path/to/final_manifest_*.json
 
-Prints: per-dataset coverage, delta vs locked regrets, blockers for full run.
+Prints dataset presence and historical point differences, not release verification.
 Exit 1 if any EXPECTED dataset is missing from the smoke manifest.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ LOCKED = {
     "cifar10c": {
         "path": ROOT / "experiments/kbound/results/stress_grid_multiseed_v1/LOCKED_ANALYSIS_RESULTS.json",
         "metric": lambda d: d["candidates"]["tent"]["kga_mean_regret"],
-        "label": "CIFAR Tent regret KGA (locked Holm WIN)",
+        "label": "CIFAR Tent regret KGA (historical summary; not current inference)",
     },
     "imagenetc": {
         "path": ROOT / "docs/research/kbound/results_source.json",
@@ -32,7 +32,7 @@ LOCKED = {
     "officehome": {
         "path": ROOT / "docs/research/kbound/results_source.json",
         "metric": lambda d: d["natural_shifts"]["officehome_M_v2"]["regret_kga"],
-        "label": "Office-Home M v2 regret KGA (CI no-harm headline)",
+        "label": "Office-Home M v2 regret KGA (historical summary)",
     },
     "iwildcam": {
         "path": ROOT / "docs/research/kbound/results_source.json",
@@ -78,16 +78,18 @@ def main() -> int:
     files = man.get("files_scanned", [])
 
     # count CIFAR seeds in manifest file paths
-    cifar_seeds = {p for p in files if "stress_grid_multiseed" in p and "seed" in p
-                   for part in Path(p).parts if part.startswith("seed") and part[4:].isdigit()}
-    cifar_seed_n = len({p.split("seed")[1].split("/")[0] for p in files
-                        if ("stress_grid_multiseed" in p or "cifar10c_stress" in p) and "/seed" in p})
+    cifar_seed_n = len({part[4:] for p in files
+                       if "stress_grid_multiseed" in p or "cifar10c_stress" in p
+                       for part in Path(p).parts
+                       if part.startswith("seed") and part[4:].isdigit()})
 
     print("=" * 72)
     print("SMOKE PIPELINE REPORT")
+    print("Dataset presence and historical point summaries only; not release verification.")
     print("=" * 72)
     print(f"manifest rows: {len(rows)}  files_scanned: {len(files)}")
-    print(f"CIFAR seed dirs seen: ~{cifar_seed_n} (want >={args.seeds_expected} for multiseed smoke)")
+    print(f"CIFAR seed dirs seen: {cifar_seed_n} (want >={args.seeds_expected} for multiseed smoke)")
+    print("Directory names do not establish completed runs or independently trained checkpoints.")
     print()
 
     missing = [d for d in EXPECTED if d not in rows]
@@ -96,7 +98,7 @@ def main() -> int:
     for ds in EXPECTED:
         if ds in rows:
             r = rows[ds]
-            print(f"  OK  {ds:12} n={r['n']:3}  KGA={r['regret_kga']}  beats-both(pt)={r['beats_both']}")
+            print(f"  OK  {ds:12} n={r['n']:3}  KGA={r['regret_kga']}  lower-regret point flag={r['beats_both']}")
         else:
             why = {
                 "rxrx1": "RxRx1 data at ~/kbound_rxrx1_data/rxrx1_v1.0",
@@ -105,7 +107,7 @@ def main() -> int:
             print(f"  MISS {ds:12}  ({why})")
     print()
 
-    print("DELTA VS LOCKED HEADLINES (smoke is indicative only)")
+    print("DELTA VS HISTORICAL SUMMARIES (not a synchronized comparison)")
     print("-" * 72)
     for ds, spec in LOCKED.items():
         if ds not in rows:
@@ -135,17 +137,16 @@ def main() -> int:
     if not rxrx.is_dir():
         blockers.append(f"RxRx1 data not at {rxrx} (required for full run step 5)")
 
-    print("FULL RUN READINESS")
+    print("DIAGNOSTIC INPUT CHECKS (not execution or publication readiness)")
     print("-" * 72)
     if blockers:
         for b in blockers:
             print(f"  ! {b}")
         print()
-        print("Full command (when blockers resolved):")
-        print("  caffeinate -is bash docs/research/kbound/scripts/run_final_showcase.sh \\")
-        print('    --device mps --seeds "0 1 2 3 4"')
     else:
-        print("  All smoke datasets present. Full showcase command is ready.")
+        print("  All smoke datasets present; this does not authenticate the results.")
+    print("Independent release checks remain required; canonical route:")
+    print("  bash docs/research/kbound/runbooks/release_candidate.sh all")
     print("=" * 72)
     return 1 if missing else 0
 

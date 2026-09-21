@@ -1,56 +1,8 @@
 #!/usr/bin/env bash
-# Shrink .git by purging historical bloat (committed mlruns + superseded duplicate
-# PDFs) from ALL history, then force-push.
-#
-#   *** HISTORY REWRITE ***  This rewrites every commit SHA and force-pushes to
-#   origin. Run ONLY when (a) the big data deletion has finished and (b) you are
-#   authenticated to push to GitHub. Any other clones of this repo must be
-#   re-cloned afterwards. A full mirror backup is made first so it is recoverable.
-#
-# Current canonical PDFs (kbound.pdf, kbound_short.pdf) are intentionally KEPT.
-# --- defect D8: portable roots. No machine-local absolute paths in tracked code
-# --- (docs/research/kbound/EXTERNAL_STORAGE_POLICY.md). KB_REPO_ROOT is discovered
-# --- from this script's own location; override with KBOUND_REPO_ROOT.
-_kb_find_root() {
-  d=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)
-  while [ "$d" != "/" ]; do
-    [ -f "$d/pyproject.toml" ] && { printf '%s\n' "$d"; return 0; }
-    d=$(dirname "$d")
-  done
-  echo "ERROR: repository root not found above $(dirname "${BASH_SOURCE[0]:-$0}")" >&2
-  return 1
-}
-KB_REPO_ROOT="${KBOUND_REPO_ROOT:-$(_kb_find_root)}" || exit 1
-
-set -euo pipefail
-REPO="$KB_REPO_ROOT"
-cd "$REPO"
-
-echo "[1/6] Mirror backup of current .git ..."
-BK="${REPO}_gitmirror_backup_$(date +%Y%m%d_%H%M%S).git"
-git clone --mirror "$REPO/.git" "$BK"
-echo "      backup at: $BK   (delete it once the rewrite is verified good)"
-
-echo "[2/6] Install git-filter-repo ..."
-python3 -m pip install --user git-filter-repo
-
-echo "[3/6] Analyze largest blobs (report only) ..."
-python3 -m git_filter_repo --analyze || true
-echo "      report: .git/filter-repo/analysis/blob-shas-and-paths.txt"
-
-echo "[4/6] Purge historical bloat (current PDFs kept) ..."
-python3 -m git_filter_repo --force \
-  --path src/mlruns --invert-paths \
-  --path-glob 'docs/research/kbound/K-Bound_paper*.pdf' --invert-paths \
-  --path-glob 'docs/research/kbound/kbound_results-integrated*.pdf' --invert-paths \
-  --path docs/research/kbound/kbound_submission.pdf --invert-paths
-
-echo "[5/6] Re-add origin (filter-repo removes it) + repack ..."
-git remote add origin https://github.com/Pratikn03/K-Bound.git 2>/dev/null || true
-git reflog expire --expire=now --all
-git gc --prune=now --aggressive
-
-echo "[6/6] Force-push ALL branches and tags ..."
-git push origin --force --all
-git push origin --force --tags
-echo "DONE. .git is now: $(du -sh .git | cut -f1). Collaborators must re-clone."
+# Retired executable; the complete pre-repair body is byte-preserved in
+# output/verification/release-final-draft.dbxP7G/before/shrink_git_history.sh.
+# Do not install packages, rerun experiments, rewrite history or force-push here.
+printf '%s\n' 'ERROR: this legacy launcher is retired.' >&2
+printf '%s\n' 'Use bash docs/research/kbound/runbooks/release_candidate.sh all after its required approvals and preflight.' >&2
+printf '%s\n' 'This command starts no job and changes no evidence or Git state.' >&2
+exit 2

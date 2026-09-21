@@ -127,10 +127,15 @@ The promoted 27-cell-per-seed grid, verified by decomposing the `condition` stri
 |---|---|---|
 | **Library version** | `wilds==2.0.0` | `experiments/kbound/wilds/READINESS.md:5`; `experiments/kbound/results/iwildcam_streaming_pilot/PREREG.md:125`; `run_rxrx1_kbound.py:56` |
 | **PyTorch version** | 2.5.1 (virtual env `~/.venv_wilds`, MPS) | `READINESS.md:5` |
-| **Dataset versions** | `camelyon17_v1.0`, `iwildcam_v2.0`, `rxrx1_v1.0` | `research_lock/KBOUND_6_DATASET_PANEL_v1.yaml:43,112`; `READINESS.md:18`; `run_camelyon17_kbound.py:441` |
+| **Dataset versions** | `camelyon17_v1.0`, `iwildcam_v2.0`, `rxrx1_v1.0` | [Archived v1 dataset census](docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02/retired_tree/research_lock/KBOUND_6_DATASET_PANEL_v1.yaml); historical provenance, not a current execution lock |
 | **Acquisition** | `from wilds import get_dataset; get_dataset(dataset="camelyon17", download=True, root_dir=...)` | `download_all_datasets.sh:57–62` |
 | **Licence** | Camelyon17: CC0 1.0; iWildCam: CC BY 4.0; RxRx1: CC BY-NC-SA 4.0 (per WILDS dataset cards) | Upstream |
 | **Citation** | Koh et al., "WILDS: A Benchmark of in-the-Wild Distribution Shifts," ICML 2021 | Upstream |
+
+The successor `research_lock/KBOUND_6_DATASET_PANEL_v2.yaml` is also marked
+SUPERSEDED. Neither historical panel selects the current experiment or establishes
+a natural-shift win. Current work and access boundaries are recorded in
+`docs/research/kbound/ACTIVE_NATURAL_STUDY_PLAN.md` and the accepted study manifest.
 
 `download_all_datasets.sh:52` is pinned to `wilds==2.0.0` (updated 2026-08-17). Every committed
 manifest was produced under this version.

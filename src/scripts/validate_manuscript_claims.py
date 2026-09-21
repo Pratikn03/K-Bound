@@ -42,7 +42,10 @@ CLAIM_MANIFEST = KBOUND / "KBOUND_SHORT_CLAIM_MANIFEST.md"
 README = KBOUND / "README.md"
 LONG_TMLR = KBOUND / "kbound_tmlr.tex"
 STORAGE_MANIFEST = KBOUND / "STORAGE_MANIFEST.json"
-LOCK_SEAL = ROOT / "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+LOCK_SEAL = (
+    KBOUND / "archive/superseded_empirical_authorities_2026-09-02/retired_tree"
+    / "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+)
 PUBLIC_STORAGE_AUTHORITIES = frozenset(
     {
         "docs/research/kbound/claim_ledger.json",
@@ -1916,9 +1919,12 @@ def validate_storage_manifest(
                 problems.append(f"nine-track lock has conflicting duplicate metadata: {location}")
             locked_records[location] = record
     for location, record in locked_records.items():
-        if location not in sealed_records:
+        # Preserve the original seal. Compare its pinned metadata with the
+        # explicit historical relocation, never by probing the retired path.
+        storage_location = HISTORICAL_LOCK_PATH_REMAP.get(location, location)
+        if storage_location not in sealed_records:
             problems.append(f"nine-track locked evidence is absent from storage manifest: {location}")
-        elif sealed_records[location] != record:
+        elif sealed_records[storage_location] != record:
             problems.append(f"storage manifest disagrees with nine-track lock metadata: {location}")
 
     for location in sorted(set(direct_records) & set(sealed_records)):

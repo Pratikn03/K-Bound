@@ -410,7 +410,10 @@ def test_stale_headline_findings_is_a_non_authoritative_canonical_route() -> Non
 
 def test_current_data_and_storage_indexes_do_not_route_to_retired_originals() -> None:
     data_guide = (ROOT / "DATA.md").read_text(encoding="utf-8")
-    assert "research_lock/KBOUND_6_DATASET_PANEL_v1.yaml" not in data_guide
+    # An authenticated archive link is valid provenance; a bare active v1
+    # execution path is not. Reject the stale route, not the historical name.
+    assert "`research_lock/KBOUND_6_DATASET_PANEL_v1.yaml" not in data_guide
+    assert f"{ARCHIVE.as_posix()}/retired_tree/research_lock/KBOUND_6_DATASET_PANEL_v1.yaml" in data_guide
     assert "research_lock/KBOUND_6_DATASET_PANEL_v2.yaml" in data_guide
 
     storage_manifest = (ROOT / "docs/research/kbound/STORAGE_MANIFEST.json").read_text(encoding="utf-8")
@@ -436,7 +439,6 @@ def test_publication_entry_points_only_name_canonical_outputs() -> None:
         "kbound.pdf",
         "K-Bound_paper.pdf",
         "kbound_full_ieee_diagnostic.pdf",
-        "BUILD_DIAGNOSTIC_IEEE",
     )
     surfaces = (
         "docs/research/kbound/runbooks/finish_empirical_training.sh",
@@ -454,7 +456,9 @@ def test_publication_entry_points_only_name_canonical_outputs() -> None:
     assert "kbound_tmlr.pdf" in combined
     assert "kbound_short_final_draft.docx" in combined
     finish = (ROOT / "docs/research/kbound/runbooks/finish_empirical_training.sh").read_text(encoding="utf-8")
-    assert '" -eq 34 ]]' in finish
+    # The refusal-only compatibility launcher cannot fix the paper's page count.
+    # Its no-execution behavior is tested in test_retired_launcher_boundary.py.
+    assert "retired" in finish.lower()
 
 
 def test_stale_g5_and_showcase_launchers_are_fail_closed() -> None:
