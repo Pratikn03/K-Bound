@@ -1071,12 +1071,12 @@ def _local_snapshot_paths(repo: Path, exact: Sequence[str], roots: Sequence[str]
 
 def _local_snapshot_bytes(repo: Path, relative: str) -> tuple[bytes, str]:
     _require_unredirected_regular_file(repo, relative)
-    blob = _git_blob_digest(repo / relative, object_id_length=40)
-    content = _read_bound_source_bytes(repo, relative, blob)
     metadata = (repo / relative).stat(follow_symlinks=False)
     # Some macOS Python builds omit SF_DATALESS even though stat flags expose it.
     if getattr(metadata, "st_flags", 0) & getattr(stat, "SF_DATALESS", 0x40000000):
         raise InventoryError(f"snapshot source is dataless; explicit recovery is required: {relative}")
+    blob = _git_blob_digest(repo / relative, object_id_length=40)
+    content = _read_bound_source_bytes(repo, relative, blob)
     return content, "100755" if metadata.st_mode & 0o111 else "100644"
 
 

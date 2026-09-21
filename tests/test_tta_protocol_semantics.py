@@ -6,7 +6,6 @@ import pytest
 
 from experiments.kbound.wilds import tta_methods as tm
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -53,11 +52,13 @@ def test_natural_runner_persists_candidate_protocol(relative_path: str) -> None:
 
 
 def test_live_manuscripts_disclose_transductive_candidate_semantics() -> None:
-    for relative_path in (
-        "docs/research/kbound/kbound_submission_body.tex",
-        "docs/research/kbound/kbound_short_body.tex",
-    ):
-        text = (ROOT / relative_path).read_text(encoding="utf-8")
-        assert "candidate TTA" in text
-        assert "transductive" in text
-        assert "evaluation-batch BatchNorm statistics" in text
+    # All maintained drivers share the submission body. The former short body
+    # is retired; requiring it made this guard check a non-published document.
+    from docs.research.kbound.kbound_repro.manuscript_sources import active_source_paths
+
+    body = ROOT / "docs/research/kbound/kbound_submission_body.tex"
+    assert body in active_source_paths(ROOT)
+    text = body.read_text(encoding="utf-8")
+    assert "candidate TTA" in text
+    assert "transductive" in text
+    assert "evaluation-batch BatchNorm statistics" in text

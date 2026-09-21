@@ -21,14 +21,14 @@ def test_supported_commitment_error_claim_uses_current_semantics():
     claim_text = certificate["claim_text"].lower()
 
     assert certificate["status"] == "supported"
-    assert "fixed scalar benefit target" in claim_text
-    assert "evaluation unit" in claim_text
-    assert "valid marginal interval coverage" in claim_text
-    assert "unconditional wrong-direction commitment probability" in claim_text
-    assert "at most alpha" in claim_text
-    assert "does not identify" in claim_text
-    assert "observed batch outcome" in claim_text
-    assert "population risk" in claim_text
+    # The retained ledger states the mathematical implication directly, rather
+    # than the former prose paraphrase. Check the marginal/conditional boundary
+    # and the declared coverage premise, not a retired sentence's vocabulary.
+    assert "p(|b_hat-b|<=epsilon)>=1-alpha" in claim_text
+    assert "p(g=adapt and b<=0)<=alpha" in claim_text
+    assert "does not imply p(b<=0 | g=adapt)<=alpha" in claim_text
+    assert any("same fixed declared scalar target" in item for item in certificate["assumptions"])
+    assert "FA_c <= alpha" in certificate["forbidden_wording"]
 
 
 def test_jackknife_plus_not_claimed_for_stress_grid():

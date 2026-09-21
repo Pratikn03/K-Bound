@@ -317,15 +317,12 @@ INTERPOLATED_RADIUS_ALLOWLIST: dict[str, str] = {
     "docs/research/kbound/theory_v2/realdata/eps_recal/_probe2.py": "labelled 'the superseded rule'; the probe compares the two rules head to head",
     "docs/research/kbound/theory_v2/realdata/eps_recal/eps_recal_camelyon.py": "the eps-recalibration study whose subject IS the archived interpolated radius",
     # -- exploratory sweeps that were never promoted.
-    "docs/research/kbound/gapclose_wave5/win_hunt_A_universal_gate.py": "exploratory win-hunt sweep, not promoted",
-    "docs/research/kbound/gapclose_wave5/win_hunt_E_universal7.py": "exploratory win-hunt sweep, not promoted",
     "docs/research/kbound/realshift_win/verify_realshift_win.py": "exploratory real-shift probe, not promoted",
     "docs/research/kbound/theory_v2/realdata/deepgrid_audit/deepgrid_audit.py": "parametric-bootstrap deviation quantile, not a split-conformal residual radius",
     "experiments/kbound/test_3dadam_bootstrap.py": "3D-ADAM benchmark, not a K-Bound panel track",
     "experiments/kbound/test_3dadam_namedcond.py": "3D-ADAM benchmark, not a K-Bound panel track",
     # -- immutable archived analysis scripts.  These ARE the record of how an
     #    archived number was produced; editing them would falsify the record.
-    "experiments/kbound/results/camelyon17_fullscale_B_v1/_locked_B_analysis.py": "sealed archived analysis script; it documents how the archived number was made",
     "experiments/kbound/results/camelyon17_fullscale_B_v1/estimator_dryrun/dryrun.py": "sealed archived dry-run under the same locked results directory",
     # -- not a certificate radius at all: a baseline router's threshold on a
     #    SOURCE statistic tau, which the K-Bound rule does not govern.

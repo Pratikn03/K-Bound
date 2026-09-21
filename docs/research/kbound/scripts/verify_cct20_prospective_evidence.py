@@ -15,6 +15,7 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -53,10 +54,7 @@ class BridgeIntegrityError(IntegrityError):
     """Raised when the prospective bundle cannot be verified fail-closed."""
 
 
-DEFAULT_SOURCE_SNAPSHOT = Path("/Volumes/T9/kbound-confirmatory-source-v2")
-DEFAULT_EXTERNAL_ROOT = Path(
-    "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cct20_prospective_v1"
-)
+PROTOCOL_RELATIVE = Path('experiments/kbound/cct20/prospective_protocol_v1.yaml')
 RELEASE_DISCLOSURE = (
     "outcome-unopened before model execution; aggregate target metadata had already been "
     "inspected during candidate ranking, so this is not described as literally label-unopened"
@@ -94,14 +92,36 @@ def _assert_sha(value: Any, expected: str, label: str) -> None:
         raise BridgeIntegrityError(f"{label} mismatch: {observed} != {expected}")
 
 
-def _mapped_sealed_path(path: str | Path, source_snapshot: Path) -> Path:
-    """Map paths from the historical checkout to its mounted source snapshot."""
+def _configured_path(value: str | Path | None, variable: str, *, required: bool) -> Path | None:
+    value = value or os.environ.get(variable, '').strip()
+    if not value:
+        if required:
+            raise BridgeIntegrityError(f'{variable} is required; supply the explicit artifact location')
+        return None
+    return Path(value).expanduser().resolve()
 
-    raw = str(Path(path).expanduser())
-    old_root = "/Users/pratik_n/Documents/AutoML_Flagship_V8"
-    if raw == old_root or raw.startswith(old_root + "/"):
-        return source_snapshot / raw[len(old_root) :].lstrip("/")
-    return Path(raw)
+
+def _sealed_source_root(seal: Mapping[str, Any]) -> Path:
+    """Derive relocation only from the already authenticated protocol identity."""
+    raw = (seal.get('authoritative_protocol_file') or {}).get('path', '')
+    path = Path(raw)
+    if (not path.is_absolute() or '..' in path.parts
+            or path.parts[-len(PROTOCOL_RELATIVE.parts):] != PROTOCOL_RELATIVE.parts):
+        raise BridgeIntegrityError('sealed protocol source path is not canonical')
+    root = path.parents[len(PROTOCOL_RELATIVE.parts) - 1]
+    if root == Path(root.anchor):
+        raise BridgeIntegrityError('sealed protocol source path has an unsafe root')
+    return root
+
+
+def _mapped_sealed_path(path: str | Path, source_snapshot: Path, original_root: Path) -> Path:
+    """Relocate the exact sealed source prefix without changing other dependencies."""
+    original = Path(path)
+    if not original.is_absolute() or '..' in original.parts:
+        raise BridgeIntegrityError('sealed dependency path is not canonical')
+    if original.is_relative_to(original_root):
+        return source_snapshot / original.relative_to(original_root)
+    return original
 
 
 def _verify_receipted(path: Path, *, label: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -171,7 +191,7 @@ def _validate_execution_seal_document(
     seal: Mapping[str, Any],
     seal_path: Path,
     *,
-    source_snapshot: Path = DEFAULT_SOURCE_SNAPSHOT,
+    source_snapshot: Path | None = None,
     verify_checkpoints: bool = False,
 ) -> dict[str, Any]:
     if seal.get("schema") != "kbound_cct20_execution_seal_v1":
@@ -245,10 +265,12 @@ def _validate_execution_seal_document(
         raise BridgeIntegrityError("execution seal checkpoint-audit hash mismatch")
     if seal.get("checkpoints") != audit.get("checkpoints"):
         raise BridgeIntegrityError("execution seal checkpoints differ from its audit")
-    rows = copy.deepcopy(dict(audit))
-    for row in rows["checkpoints"]:
-        row["path"] = str(_mapped_sealed_path(row["path"], source_snapshot))
     if verify_checkpoints:
+        source_snapshot = _configured_path(source_snapshot, 'KBOUND_CCT20_SOURCE_SNAPSHOT', required=True)
+        original_root = _sealed_source_root(seal)
+        rows = copy.deepcopy(dict(audit))
+        for row in rows['checkpoints']:
+            row['path'] = str(_mapped_sealed_path(row['path'], source_snapshot, original_root))
         # Import the model runtime only for the optional full checkpoint replay;
         # provenance and score checks remain runnable in a lightweight environment.
         from experiments.kbound.cct20.runner_runtime import (  # noqa: PLC0415
@@ -366,16 +388,18 @@ def _verify_local_release_manifest(path: Path, *, seal_sha256: str, inference_sh
 
 
 def verify_cct20_prospective_bundle(
-    root: str | Path = DEFAULT_EXTERNAL_ROOT,
+    root: str | Path | None = None,
     *,
     local_release_manifest: str | Path | None = None,
-    source_snapshot: str | Path = DEFAULT_SOURCE_SNAPSHOT,
+    source_snapshot: str | Path | None = None,
     verify_large_files: bool = True,
 ) -> dict[str, Any]:
     """Return a strict bridge summary or raise :class:`BridgeIntegrityError`."""
 
-    root = Path(root).expanduser().resolve()
-    source_snapshot = Path(source_snapshot).expanduser().resolve()
+    root = _configured_path(root, 'KBOUND_CCT20_ROOT', required=True)
+    source_snapshot = _configured_path(
+        source_snapshot, 'KBOUND_CCT20_SOURCE_SNAPSHOT', required=verify_large_files
+    )
     seal_path = root / "cct20_execution_seal_v1.json"
     target_manifest_path = root / "target_manifest_label_free.json"
     marker_path = root / "post_target_v1/cct20_one_shot_scoring_marker_v1.json"
@@ -400,8 +424,9 @@ def verify_cct20_prospective_bundle(
     if target_manifest.get("target_role") != "trans_test" or target_manifest.get("target_annotation_envelope_basename") != "trans_test_annotations.json":
         raise BridgeIntegrityError("label-free target manifest role drift")
     if verify_large_files:
+        original_root = _sealed_source_root(seal)
         for dependency in seal.get("dataset_dependencies", []):
-            path = _mapped_sealed_path(dependency.get("path", ""), source_snapshot)
+            path = _mapped_sealed_path(dependency.get("path", ""), source_snapshot, original_root)
             _regular_file(path, f"dataset dependency {dependency.get('name', '')}")
             if path.stat().st_size != dependency.get("bytes") or file_sha256(path) != dependency.get("sha256"):
                 raise BridgeIntegrityError(f"dataset dependency hash mismatch: {path}")
@@ -433,7 +458,7 @@ def verify_cct20_prospective_bundle(
         "verification_outcome": "PASS",
         "protocol_id": PROTOCOL_ID,
         "external_root": str(root),
-        "source_snapshot": str(source_snapshot),
+        "source_snapshot": str(source_snapshot) if source_snapshot is not None else None,
         "artifact_identities": {
             "execution_seal": {
                 "path": str(seal_path),
@@ -495,9 +520,9 @@ def verify_cct20_prospective_bundle(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=DEFAULT_EXTERNAL_ROOT)
+    parser.add_argument("--root", type=Path, help='sealed bundle; or KBOUND_CCT20_ROOT')
     parser.add_argument(
-        "--source-snapshot", type=Path, default=DEFAULT_SOURCE_SNAPSHOT
+        "--source-snapshot", type=Path, help='authenticated source snapshot; or KBOUND_CCT20_SOURCE_SNAPSHOT'
     )
     parser.add_argument("--local-release-manifest", type=Path)
     parser.add_argument("--output", type=Path)

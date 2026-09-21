@@ -171,3 +171,21 @@ def test_theorem_map_registers_corrected_channel_and_ratio_rate_extensions() -> 
     theorem_map = (ROOT / "docs/research/kbound/formal/KBound/TheoremMap.lean").read_text(encoding="utf-8")
     assert "#check KBound.historical_one_bit_decoder_iff_fibre_consistent" in theorem_map
     assert "#check KBound.h_ratio_rate_transfer" in theorem_map
+
+
+def test_all_synthetic_score_outcomes_and_population_truths_are_decision_excluded():
+    """Catch score-sidecar use anywhere in refitting, calibration or decisions.
+
+    This is a whole synthetic score-partition test, not evidence that real
+    environmental groups were held out or exchangeably sampled.
+    """
+    panel = generate_locked_panel(seed=117, n_fit=24, n_cal=39, n_score=12, m=64)
+    before = run_locked_population(panel)
+    changed = copy.deepcopy(panel)
+    for name in ("sealed_score_outcomes", "sealed_population_benefits"):
+        for key, value in changed[name].items():
+            changed[name][key] = -1.0 if value >= 0 else 1.0
+    after = run_locked_population(changed)
+    assert before["scored_outcomes"] != after["scored_outcomes"]
+    assert before["decisions"] == after["decisions"]
+    assert before["decision_path_sha256"] == after["decision_path_sha256"]

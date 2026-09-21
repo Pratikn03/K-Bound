@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -8,17 +9,20 @@ import pytest
 from docs.research.kbound.scripts import verify_cct20_prospective_evidence as bridge
 
 
-T9_ROOT = Path(
-    "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/cct20_prospective_v1"
-)
+def external_bundle() -> Path:
+    location = os.environ.get('KBOUND_CCT20_ROOT', '').strip()
+    if not location:
+        pytest.skip('external sealed CCT-20 bundle not configured; set KBOUND_CCT20_ROOT')
+    root = Path(location).expanduser()
+    assert root.is_dir(), f'configured CCT-20 bundle is missing: {root}'
+    return root
 
 
 def test_verified_cct20_bundle_reports_protocol_scoped_exchangeability() -> None:
-    if not T9_ROOT.is_dir():
-        pytest.skip("the external sealed CCT-20 bundle is not mounted")
+    root = external_bundle()
 
     summary = bridge.verify_cct20_prospective_bundle(
-        T9_ROOT,
+        root,
         local_release_manifest=Path(
             "docs/research/kbound/paper/generated/cct20_release_manifest.json"
         ),
@@ -42,11 +46,10 @@ def test_missing_seal_fails_closed(tmp_path: Path) -> None:
 
 
 def test_tampered_firewall_fails_closed(tmp_path: Path) -> None:
-    if not T9_ROOT.is_dir():
-        pytest.skip("the external sealed CCT-20 bundle is not mounted")
+    root = external_bundle()
     # Copying only the seal is sufficient to exercise the fail-closed firewall
     # check before any large dependency is read.
-    seal = json.loads((T9_ROOT / "cct20_execution_seal_v1.json").read_text())
+    seal = json.loads((root / "cct20_execution_seal_v1.json").read_text())
     seal["firewall"]["target_runner_imports_scorer"] = True
     unsigned = dict(seal)
     unsigned.pop("seal_payload_sha256", None)

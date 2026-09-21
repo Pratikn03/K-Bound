@@ -240,9 +240,29 @@ def test_storage_validator_fails_closed_on_manifest_tampering(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str, expected_problem: str
 ) -> None:
     validator = _load_validator_module()
-    manifest = json.loads(
-        (ROOT / "docs/research/kbound/STORAGE_MANIFEST.json").read_text()
-    )
+    # Test the deep validator only on an entirely synthetic repository. The
+    # default publication gate must not open real protected So2Sat evidence.
+    payload = b"synthetic public and sealed authority\n"
+    digest = hashlib.sha256(payload).hexdigest()
+    artifacts = []
+    for relative in sorted(validator.PUBLIC_STORAGE_AUTHORITIES):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
+        artifacts.append({"expected_location": relative, "tracked": True,
+                          "size_bytes": len(payload), "sha256": digest})
+    (tmp_path / "synthetic_sealed.json").write_bytes(payload)
+    manifest = {
+        "artifacts": artifacts,
+        "sealed_evidence_checksums": {"synthetic_sealed.json": {
+            "status": "present", "size_bytes": len(payload), "sha256": digest}},
+        "sealed_evidence_summary": {"files": 1, "present": 1, "absent": 0},
+        "unsealed_present_artifacts": [],
+    }
+    lock = tmp_path / "LOCK_SEAL.json"
+    lock.write_text('{"tracks": {}}\n')
+    monkeypatch.setattr(validator, "ROOT", tmp_path)
+    monkeypatch.setattr(validator, "LOCK_SEAL", lock)
     if mutation == "tracked_hash":
         tracked = next(row for row in manifest["artifacts"] if row.get("tracked") is True)
         tracked["sha256"] = "0" * 64
@@ -260,9 +280,7 @@ def test_storage_validator_fails_closed_on_manifest_tampering(
     tampered = tmp_path / "STORAGE_MANIFEST.json"
     tampered.write_text(json.dumps(manifest))
     monkeypatch.setattr(validator, "STORAGE_MANIFEST", tampered)
-    generated = json.loads(
-        (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()
-    )
+    generated = {}
     problems = []
-    validator.validate_storage_manifest(problems, generated)
+    validator.validate_storage_manifest(problems, generated, authorize_protected_so2sat=True)
     assert any(expected_problem in problem for problem in problems), problems
