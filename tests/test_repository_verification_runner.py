@@ -1067,17 +1067,35 @@ def test_quality_gate_phase_does_not_rerun_tracked_pytest_modules(
     assert all("-W" not in command for command in observed[:4])
 
 
-@pytest.mark.parametrize("message,category,module,exit_code", [
-    ("The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
-     "DeprecationWarning", "stevedore.extension", 0),
-    ("A different deprecation", "DeprecationWarning", "stevedore.extension", 1),
-    ("The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
-     "UserWarning", "stevedore.extension", 1),
-    ("The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
-     "DeprecationWarning", "kga.policy", 1),
-])
+@pytest.mark.parametrize(
+    "message,category,module,exit_code",
+    [
+        (
+            "The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
+            "DeprecationWarning",
+            "stevedore.extension",
+            0,
+        ),
+        ("A different deprecation", "DeprecationWarning", "stevedore.extension", 1),
+        (
+            "The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
+            "UserWarning",
+            "stevedore.extension",
+            1,
+        ),
+        (
+            "The verify_requirements argument is now a no-op and is deprecated for removal. Remove the argument from calls.",
+            "DeprecationWarning",
+            "kga.policy",
+            1,
+        ),
+    ],
+)
 def test_bandit_known_deprecation_is_visible_and_other_warnings_stay_fatal(
-    message: str, category: str, module: str, exit_code: int,
+    message: str,
+    category: str,
+    module: str,
+    exit_code: int,
 ) -> None:
     import subprocess
     import sys
@@ -1088,7 +1106,9 @@ def test_bandit_known_deprecation_is_visible_and_other_warnings_stay_fatal(
     )
     completed = subprocess.run(
         [sys.executable, "-W", "error", "-W", runner.BANDIT_DEPRECATION_FILTER, "-c", code],
-        capture_output=True, text=True, check=False,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     assert completed.returncode == exit_code
     assert message in completed.stderr
@@ -1875,3 +1895,66 @@ def test_native_poem_group_enables_collected_synthetic_stage(monkeypatch, tmp_pa
     assert env["POEM_NATIVE_STAGE"] == "1"
     assert env["POEM_SOURCE"] == str(tmp_path)
     assert "POEM_NATIVE_STAGE" not in os.environ
+
+
+def test_paper_release_defers_only_physical_camera_artifact_checks() -> None:
+    future = {
+        "docs/research/kbound/edge/tests/test_real_reporting.py",
+        "docs/research/kbound/tests/test_calibration_split_integrity.py",
+    }
+    active = {
+        "docs/research/kbound/edge/tests/test_protocol_inventory_reporting.py",
+        "tests/test_cct20_release_builder.py",
+        "docs/research/kbound/edge/tests/test_new_camera_contract.py",
+    }
+    inventory = runner.classify_test_paths(sorted(future | active))
+    assert set(inventory["pytest_paths"]) == active
+    assert {row["path"]: row["reason"] for row in inventory["excluded_paths"]} == {
+        path: "future_work_physical_camera_outside_paper_release" for path in future
+    }
+    assert inventory["classified_count"] == len(future | active)
+
+
+def test_synthetic_validator_preserves_historical_outputs(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    source = repo / "experiments/kbound/theory_validation/val_example.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("from pathlib import Path\nPath(__file__).with_suffix('.json').write_text('fresh diagnostic')\n")
+    historical = source.with_suffix(".json")
+    historical.write_text("historical evidence")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"],
+        cwd=repo,
+        check=True,
+    )
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    runner._run_validators(
+        [source.relative_to(repo).as_posix()], repo=repo, python=sys.executable, source_commit=commit
+    )
+    assert historical.read_text() == "historical evidence"
+    generated = list((repo / "output/verification").rglob("val_example.json"))
+    assert len(generated) == 1
+    assert generated[0].read_text() == "fresh diagnostic"
+
+
+def test_validator_cannot_pass_with_ignored_resource_warning(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    source = repo / "experiments/kbound/theory_validation/val_warning.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("import sys\nprint('ResourceWarning: unclosed input', file=sys.stderr)\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"],
+        cwd=repo,
+        check=True,
+    )
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    with pytest.raises(runner.InventoryError, match="standalone validators failed"):
+        runner._run_validators(
+            [source.relative_to(repo).as_posix()], repo=repo, python=sys.executable, source_commit=commit
+        )

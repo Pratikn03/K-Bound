@@ -94,5 +94,6 @@ allp = (OUT["lemma_sufficiency_violations"] == 0
         and all(v["pass_"] for v in mmx.values()) and OUT["irreducible"]["pass_"]
         and nec_ok and all(p["match"] for p in prop))
 OUT["ALL_PASS"] = bool(allp)
-open(os.path.join(os.path.dirname(__file__), "results_benefit_frontier.json"), "w").write(json.dumps(OUT, indent=2))
+with open(os.path.join(os.path.dirname(__file__), "results_benefit_frontier.json"), "w") as handle:
+    handle.write(json.dumps(OUT, indent=2))
 print("\nALL_PASS:", allp)

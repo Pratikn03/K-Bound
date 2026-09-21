@@ -498,7 +498,8 @@ print("\n" + "="*80)
 print(f"(total wall time {time.time()-t0:.1f}s)")
 try:
     out = __file__.rsplit("/", 1)[0] + "/unconditional_weakest_results.json"
-    json.dump(dict(passed=PASS, results=RESULTS), open(out, "w"), indent=1)
+    with open(out, "w") as handle:
+        json.dump(dict(passed=PASS, results=RESULTS), handle, indent=1)
     print("results ->", out)
 except OSError:
     print("(results JSON not written -- read-only dir; numbers above)")

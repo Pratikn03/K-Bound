@@ -36,11 +36,11 @@ GRID = np.linspace(-B_SUP, B_SUP, 4001)
 
 def trunc_norm_pdf(x, theta):
     z = np.exp(-0.5 * (x - theta) ** 2)
-    w = np.trapz(np.exp(-0.5 * (GRID - theta) ** 2), GRID)
+    w = np.trapezoid(np.exp(-0.5 * (GRID - theta) ** 2), GRID)
     return z / w
 
 def expect(f, theta):
-    return float(np.trapz(f(GRID) * trunc_norm_pdf(GRID, theta), GRID))
+    return float(np.trapezoid(f(GRID) * trunc_norm_pdf(GRID, theta), GRID))
 
 def cdf_grid(theta):
     p = trunc_norm_pdf(GRID, theta)
@@ -48,7 +48,7 @@ def cdf_grid(theta):
     return np.concatenate([[0.0], c])
 
 def w1_true(t1, t2):
-    return float(np.trapz(np.abs(cdf_grid(t1) - cdf_grid(t2)), GRID))
+    return float(np.trapezoid(np.abs(cdf_grid(t1) - cdf_grid(t2)), GRID))
 
 def sample(theta, m):
     xs = rng.normal(theta, 1.0, size=int(m * 1.6))

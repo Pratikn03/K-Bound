@@ -411,3 +411,20 @@ def test_runbook_all_enforces_real_source_checks_before_later_work(
         expected = "source commit must equal HEAD" if change == "head_during_run" else "maintained release-source paths are dirty"
         assert expected in combined_output
         assert all(event == ["-"] or event[0].endswith("build_release_source_seal.py") for event in events)
+
+
+def test_every_isolated_validator_source_and_input_is_in_release_seal() -> None:
+    from docs.research.kbound.scripts import run_repository_verification as runner
+
+    explicit = {path for paths in seal.EXPLICIT_FILES.values() for path in paths}
+    repository = Path(__file__).resolve().parents[1]
+    commit, _tree = runner.source_identity(repository)
+    active = runner.classify_validator_paths(runner.tracked_paths(repository, commit))
+    candidates = set(runner.VALIDATOR_INPUTS) | set(active["validator_paths"])
+    candidates.update(path for path in runner.VALIDATOR_SUPPORT_SOURCES if path.endswith('.py'))
+    candidates.update(prefix + 'validator_support.py' for prefix in runner.VALIDATOR_PREFIXES)
+    unsealed = {path for path in candidates if path not in explicit and not any(
+        path.startswith(prefix) and path.endswith(suffixes)
+        for _category, prefix, suffixes in seal.SOURCE_PREFIX_RULES
+    )}
+    assert not unsealed

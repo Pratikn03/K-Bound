@@ -38,11 +38,15 @@ ALPHA = 0.05
 
 
 def _load():
-    return json.load(open(OUTJ)) if os.path.exists(OUTJ) else {}
+    if os.path.exists(OUTJ):
+        with open(OUTJ) as handle:
+            return json.load(handle)
+    return {}
 
 
 def _save(d):
-    json.dump(d, open(OUTJ, "w"), indent=2)
+    with open(OUTJ, "w") as handle:
+        json.dump(d, handle, indent=2)
 
 
 def make_world(n=200000, d=3, shift=0.6, seed=1):

@@ -81,5 +81,6 @@ OUT["C3_transfer"] = c3
 allp = (all(OUT[k]["pass_"] for k in OUT if k.startswith("C1")) and OUT["C2_varying"]["pass_"]
         and all(r["pass_"] for r in c3))
 OUT["ALL_PASS"] = bool(allp)
-open(os.path.join(os.path.dirname(__file__), "results_agl.json"), "w").write(json.dumps(OUT, indent=2))
+with open(os.path.join(os.path.dirname(__file__), "results_agl.json"), "w") as handle:
+    handle.write(json.dumps(OUT, indent=2))
 print("\nALL_PASS:", allp)

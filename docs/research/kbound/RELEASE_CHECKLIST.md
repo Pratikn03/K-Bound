@@ -1,6 +1,18 @@
 # K-Bound publication release checklist
 
-## Current routing qualification — 2026-09-20
+## Paper scope update — 2026-09-21
+
+The unfinished physical-device camera study is deferred to post-publication future
+work at the author's request. Its two artifact-dependent modules are explicitly
+classified outside this paper release by `run_repository_verification.py`;
+its protocol and tests remain available for the later study. This exclusion does
+not certify physical recordings, deployment or split integrity. The reported
+CCT-20 benchmark and software/protocol conformance tests remain in scope.
+The paper's current prose already states that no physical-device deployment result
+is claimed. A paper release PASS means the complete declared paper verification
+scope passed; it is not completion of the deferred study or full-foundations theory.
+
+## Historical routing qualification — 2026-09-20
 
 Earlier checked boxes below are scoped historical receipts, not a present full
 release PASS. Follow [the living execution ledger](ACTIVE_NATURAL_STUDY_PLAN.md)
@@ -125,7 +137,7 @@ Required outcomes:
 - [x] refresh the resident paper dashboard bindings and rerun strict canonical validation.
   The paper-only mode preserves the physical-edge payload exactly and explicitly marks it
   not rechecked; a separate full refresh must not substitute missing cloud inputs;
-- [ ] complete the official-baseline audit and full physical-edge generation/verification;
+- [ ] complete the official-baseline audit; physical-edge generation/verification is deferred to post-publication future work;
 - [x] rebuild the current compact and anonymous long PDFs and visually verify every page:
   Section 11 records 34 and 36 pages, respectively, with references before appendices;
 - [x] rebuild and visually verify the current compact Word export: Section 11 records all

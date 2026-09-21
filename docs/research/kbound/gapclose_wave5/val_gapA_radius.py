@@ -95,7 +95,8 @@ def _save(results: dict):
     import os
     prev = {}
     if os.path.exists(STATE):
-        prev = json.load(open(STATE))
+        with open(STATE) as handle:
+            prev = json.load(handle)
     prev.update(results)
     with open(STATE, "w") as f:
         json.dump(prev, f, indent=1, default=float)
@@ -143,8 +144,8 @@ def part_latent():
                                                  sigma_meas=sigl)})
 
 
-def assemble() -> int:
-    results = json.load(open(STATE))
+def summarize(results: dict) -> dict:
+    """Apply the recorded criteria equally to fresh and chunked calculations."""
     a1 = results["V0_baseZ"]["ratio80"] > 2.0
     best = min(("V1_augZ", "V2_augZ", "V3_augZ"),
                key=lambda k: results[k]["ratio80"])
@@ -176,11 +177,20 @@ def assemble() -> int:
     ok = a1 and a2 and a3 and a4
     out = dict(checks=checks, drift_profile=a3_profile, results=results,
                PASS=bool(ok))
-    print(json.dumps(dict(checks=checks, drift_profile=a3_profile,
-                          PASS=bool(ok)), indent=1))
-    with open(__file__.replace(".py", "_results.json"), "w") as f:
-        json.dump(out, f, indent=1, default=float)
-    return 0 if ok else 3
+    return out
+
+
+def publish(out: dict) -> int:
+    print(json.dumps({k: out[k] for k in ("checks", "drift_profile", "PASS")}, indent=1))
+    with open(__file__.replace(".py", "_results.json"), "w") as handle:
+        json.dump(out, handle, indent=1, default=float)
+    return 0 if out["PASS"] else 3
+
+
+def assemble() -> int:
+    with open(STATE) as handle:
+        results = json.load(handle)
+    return publish(summarize(results))
 
 
 def main() -> int:
@@ -198,7 +208,7 @@ def main() -> int:
 
 
 def legacy_main() -> int:
-    results, ok = {}, True
+    results = {}
 
     Zb, Za, B, g, sig = make_grid()
     # published pipeline: base Z (metadata unseen by estimator + radius)
@@ -208,22 +218,11 @@ def legacy_main() -> int:
     for v in ("V1", "V2", "V3"):
         results[v + "_augZ"] = evaluate_variant(Za, B, g, ALPHA, v, sigma_meas=sig)
 
-    a1 = results["V0_baseZ"]["ratio80"] > 2.0
-    best = min(("V1_augZ", "V2_augZ", "V3_augZ"),
-               key=lambda k: results[k]["ratio80"])
-    r = results[best]
-    a2 = (r["ratio80"] < 1.5
-          and r["fa_emp"] <= ALPHA + 2 * r["fa_mc_se"]
-          and r["cov_lo"] >= 0.88 and r["cov_hi"] >= 0.88)
-
-    # A3 gates on MODERATE drift (weighted conformal's valid operating range);
-    # SEVERE drift (cal/deploy support mismatch, ESS collapse) is reported as a
-    # documented boundary — no reweighting method can fix support mismatch.
-    gmax = None
+    # Use the same predeclared drift grid as chunked execution.
     for lvl, sc in DRIFT_SCALE.items():
         Zbd, Zad, Bd, gd, sigd = make_grid(n_per_seed=240, drift_test=True,
                                            drift_scale=sc)
-        gmax = str(int(gd.max()))
+        results[f"_gmax_{lvl}"] = str(int(gd.max()))
         results[f"V1_drift_{lvl}"] = evaluate_variant(
             Zad, Bd, gd, ALPHA, "V1", sigma_meas=sigd)
         results[f"V4_oracle_{lvl}"] = evaluate_variant(
@@ -231,26 +230,13 @@ def legacy_main() -> int:
             weight_fn=make_oracle_weights(sc))
         results[f"V4_estim_{lvl}"] = evaluate_variant(
             Zad, Bd, gd, ALPHA, "V4", sigma_meas=sigd)
-    a3 = (results["V1_drift_moderate"]["cov_lo_by_group"][gmax] < 0.88
-          and results["V4_oracle_moderate"]["cov_lo_by_group"][gmax] >= 0.88)
-
     # A4 irreducible control: latent bias with no observable correlate — a valid
     # method must KEEP coverage (honestly wide radius), not fake a small one.
     Zbl, Zal, Bl, gl, sigl = make_grid(bias_mode="latent")
     v1b = evaluate_variant(Zal, Bl, gl, ALPHA, "V1", sigma_meas=sigl)
-    a4 = v1b["cov_lo"] >= 0.88 and v1b["cov_hi"] >= 0.88
     results["V1_latent_control"] = v1b
 
-    checks = dict(A1_pathology_replicated=bool(a1),
-                  A2_debias_recovers=bool(a2), A2_best_variant=best,
-                  A3_weighted_restores=bool(a3),
-                  A4_no_cheating_on_irreducible=bool(a4))
-    ok = a1 and a2 and a3 and a4
-    out = dict(checks=checks, results=results, PASS=bool(ok))
-    print(json.dumps(out, indent=1, default=float))
-    with open(__file__.replace(".py", "_results.json"), "w") as f:
-        json.dump(out, f, indent=1, default=float)
-    return 0 if ok else 3
+    return publish(summarize(results))
 
 
 if __name__ == "__main__":

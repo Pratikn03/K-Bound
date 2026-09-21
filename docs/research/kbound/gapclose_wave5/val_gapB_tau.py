@@ -93,7 +93,8 @@ def run_power() -> dict:
 
 
 def assemble() -> int:
-    cells = [json.loads(l) for l in open(STATE)]
+    with open(STATE) as handle:
+        cells = [json.loads(line) for line in handle]
     lv = {c["key"]: c for c in cells if c["key"].startswith("K")}
     pw = next(c for c in cells if c["key"] == "power_coadapted")
     ok_level = all(c["level_selfnorm"] <= ALPHA + 2 * c["mc_se"]

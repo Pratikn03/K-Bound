@@ -44,6 +44,13 @@ PYTEST_PROCESS_MODEL = "one_module_per_fresh_interpreter"
 # covers its integration/provenance contract, not upstream baseline internals.
 # New exceptions require source review.
 EXPLICIT_TEST_EXCLUSIONS: dict[str, str] = {
+    # The author deferred the unfinished physical-device study until after
+    # publication. Preserve its real-evidence tests for that future study; this
+    # exact exclusion is a paper-scope decision, never a verified camera result.
+    "docs/research/kbound/edge/tests/test_real_reporting.py": ("future_work_physical_camera_outside_paper_release"),
+    "docs/research/kbound/tests/test_calibration_split_integrity.py": (
+        "future_work_physical_camera_outside_paper_release"
+    ),
     "AETTA/tests/test_dnn_state_initialization.py": ("third_party_baseline_outside_kbound_release_contract"),
     "docs/research/kbound/theory_v2/timing_test.py": ("timing_utility_without_assertions"),
     "experiments/kbound/test_3dadam_bootstrap.py": ("historical_target_analysis_writer"),
@@ -1576,7 +1583,9 @@ def pytest_group_runtime(paths: Sequence[str], *, python: str) -> tuple[str, dic
     if stage == "POEM":
         source = os.environ.get("POEM_SOURCE")
         if not source or not Path(source).is_dir():
-            raise InventoryError("POEM_SOURCE must name the pinned source directory; the native stage authenticates its bytes")
+            raise InventoryError(
+                "POEM_SOURCE must name the pinned source directory; the native stage authenticates its bytes"
+            )
     # POEM delegates its diagnostic to POEM_PYTHON in a child; pytest stays
     # in the release runtime. ALine imports native numerical packages directly.
     return (python if stage == "POEM" else declared), {**os.environ, f"{stage}_NATIVE_STAGE": "1"}
@@ -1655,19 +1664,106 @@ def _run(
         raise InventoryError(f"required release tool is unavailable: {command[0]}") from exc
 
 
+VALIDATOR_INPUTS = ("docs/research/kbound/gapclose_wave5/val_gapB_tau_cells.jsonl",)
+VALIDATOR_SUPPORT_SOURCES = (
+    "kga",
+    "docs/research/kbound/scripts/regression_conjecture_validation.py",
+    "experiments/kbound/conj1_validator.py",
+)
+
+
+def _stage_validator_tree(repo: Path, source_commit: str, destination: Path) -> dict[str, str]:
+    """Copy only pinned synthetic sources and declared saved simulation inputs.
+
+    Historical result files are not writable inputs to a verification run.
+    Fresh outputs remain in the isolated tree for review, never replacing them.
+    """
+    raw = _git(
+        repo,
+        "ls-tree",
+        "-r",
+        "-z",
+        source_commit,
+        "--",
+        *VALIDATOR_PREFIXES,
+        *VALIDATOR_SUPPORT_SOURCES,
+        *VALIDATOR_INPUTS,
+        binary=True,
+    )
+    assert isinstance(raw, bytes)
+    digests: dict[str, str] = {}
+    for relative, (mode, object_type, object_id) in _parse_ls_tree_records(raw).items():
+        if not relative.endswith(".py") and relative not in VALIDATOR_INPUTS:
+            continue
+        _regular_git_blob(relative, (mode, object_type))
+        payload = _read_bound_source_bytes(repo, relative, object_id)
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payload)
+        digests[relative] = hashlib.sha256(payload).hexdigest()
+    return digests
+
+
 def _run_validators(
     paths: Sequence[str],
     *,
     repo: Path,
     python: str,
     source_commit: str,
-) -> None:
+) -> dict[str, Any]:
     if not paths:
         raise InventoryError("tracked standalone validator inventory is empty")
     bindings = revision_blob_bindings(repo, source_commit, paths)
+    output_root = repo / "output/verification"
+    output_root.mkdir(parents=True, exist_ok=True)
+    staged = Path(tempfile.mkdtemp(prefix="standalone-validators-", dir=output_root))
+    source_digests = _stage_validator_tree(repo, source_commit, staged)
+    environment = os.environ.copy()
+    environment.update(PYTHONWARNINGS="error", PYTHONPATH=str(staged), KBOUND_REPO_ROOT=str(staged))
+    for name in ("PART", "STAGE", "BS"):
+        environment.pop(name, None)
+    outcomes: list[dict[str, Any]] = []
+    receipt: dict[str, Any] = {
+        "source_commit": source_commit,
+        "source_sha256": source_digests,
+        "saved_simulation_inputs": list(VALIDATOR_INPUTS),
+        "output_directory": str(staged.relative_to(repo)),
+        "results": outcomes,
+    }
     for relative in paths:
         verify_worktree_blob_bindings(repo, {relative: bindings[relative]})
-        _run([python, relative], repo=repo)
+        try:
+            if relative in SCRIPT_VALIDATORS:
+                _run([python, relative], repo=repo)
+            else:
+                if relative not in source_digests:
+                    raise InventoryError(f"validator is outside the isolated source inventory: {relative}")
+                result = subprocess.run(
+                    [python, relative],
+                    cwd=staged,
+                    env=environment,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                log_name = f"validator-{len(outcomes) + 1:04d}.log"
+                (staged / log_name).write_text(result.stdout + result.stderr)
+                print(result.stdout, end="")
+                print(result.stderr, end="", file=sys.stderr)
+                if result.returncode:
+                    raise InventoryError(f"validator exit {result.returncode}; log: {log_name}")
+                if re.search(r"(?:\b[A-Za-z]*Warning:|Exception ignored)", result.stderr):
+                    raise InventoryError(f"unexpected validator diagnostic; log: {log_name}")
+            outcomes.append({"path": relative, "status": "PASS"})
+        except (InventoryError, OSError, subprocess.SubprocessError) as exc:
+            outcomes.append({"path": relative, "status": "FAIL", "error": str(exc)})
+        write_canonical_json(staged / "execution.json", receipt)
+    failed = [row["path"] for row in outcomes if row["status"] != "PASS"]
+    if failed:
+        raise InventoryError(f"standalone validators failed: {', '.join(failed)}; receipt: {staged / 'execution.json'}")
+    receipt["status"] = "PASS"
+    write_canonical_json(staged / "execution.json", receipt)
+    return receipt
 
 
 def _private_path_scan_bindings(repo: Path, source_commit: str) -> dict[str, str]:
@@ -2060,12 +2156,14 @@ def run_all_gates(payload: Mapping[str, Any], *, repo: Path, python: str) -> Pyt
         python=python,
         source_commit=source_commit,
     )
-    _run_validators(
+    validator_receipt = _run_validators(
         payload["validator_paths"],
         repo=repo,
         python=python,
         source_commit=source_commit,
     )
+    if isinstance(payload, dict):
+        payload["validator_execution"] = validator_receipt
     hook_configuration = validate_immutable_hook_configuration(
         repo=repo,
         source_commit=source_commit,

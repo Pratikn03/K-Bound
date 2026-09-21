@@ -53,5 +53,6 @@ out={"beta":beta,
  "camelyon_like(helpful-dom, no harmful, abst NET-HELPFUL)": multi(0.80,0.00,+0.6),
  "camelyon_like(helpful-dom, tiny harmful, abst ~neutral)": multi(0.78,0.02,0.0),
  "forced_abstention": "structural: |M|<beta admits gamma=+/-beta with opposite sign(Delta) at matched (Z,M) => any commit wrong w.p.>=1/2"}
-json.dump(out,open(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/minimax_frontier/results_v2.json","w"),indent=2)
+with open(KB_REPO_ROOT + "/docs/research/kbound/theory_v2/minimax_frontier/results_v2.json", "w") as handle:
+    json.dump(out, handle, indent=2)
 print(json.dumps(out,indent=2))

@@ -60,5 +60,6 @@ out["camelyon_like"]["beats_adapt"]  = bool(r_cam["STAR"] < r_cam["AA"]-1e-6)
 out["camelyon_like"]["beats_both"]   = bool(r_cam["STAR"]<r_cam["AF"]-1e-6 and r_cam["STAR"]<r_cam["AA"]-1e-6)
 
 os.makedirs(os.path.dirname(__file__), exist_ok=True)
-json.dump(out, open(os.path.join(os.path.dirname(__file__),"results_minimax_frontier.json"),"w"), indent=2)
+with open(os.path.join(os.path.dirname(__file__), "results_minimax_frontier.json"), "w") as handle:
+    json.dump(out, handle, indent=2)
 print(json.dumps(out, indent=2))

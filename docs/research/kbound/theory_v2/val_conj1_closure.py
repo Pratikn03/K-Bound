@@ -137,6 +137,7 @@ fig.tight_layout()
 fig.savefig(__file__.rsplit("/", 1)[0] + "/fig_conj1_closure.png", dpi=140)
 
 path = __file__.rsplit("/", 1)[0] + "/conj1_closure_results.json"
-json.dump(OUT, open(path, "w"), indent=1)
+with open(path, "w") as handle:
+    json.dump(OUT, handle, indent=1)
 print(json.dumps(OUT, indent=1))
 print("saved ->", path)

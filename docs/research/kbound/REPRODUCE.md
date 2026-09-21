@@ -38,9 +38,16 @@ Pytest stays in the approved release runtime; the test launches the explicitly
 selected native interpreter and authenticates the pinned upstream source bytes.
 It uses synthetic inputs and no pretrained checkpoint or benchmark images.
 Set `KBOUND_CCT20_ROOT` to the existing sealed CCT-20 evidence bundle for the
-original bundle integration checks. Missing physical-camera calibration and
-held-out artifacts remain release failures; do not replace these with fixtures
-or permit their skips to certify a completed physical study.
+original bundle integration checks. The author deferred the unfinished physical-device
+camera study to post-publication future work on 2026-09-21. Its artifact-dependent
+`edge/tests/test_real_reporting.py` and `tests/test_calibration_split_integrity.py`
+are explicitly classified as `future_work_physical_camera_outside_paper_release`.
+Their protocol, absent-evidence status and tests are preserved. This paper release
+claims no completed physical-device deployment; it neither verifies nor waives the
+future study's calibration/held-out evidence. Pure software/protocol tests and the
+reported CCT-20 camera-location benchmark remain in the executable release scope.
+Before claiming the future study, restore these exact modules to the required gate
+and authenticate all original recording, calibration, split and held-out artifacts.
 
 ## Historical reproduction notes
 

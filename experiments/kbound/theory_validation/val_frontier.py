@@ -116,5 +116,7 @@ print(f"[T5] unconditional family characterization (all beta) -> {'PASS' if T5ok
 allpass = T1 and bad == 0 and T2 and T5ok and all(v["sound_on_knowable"] and v["all_unknowable_flippable"]
                                          for v in T3.values()) and all(r["match"] for r in T4rows)
 OUT["ALL_PASS"] = bool(allpass)
-d = os.path.dirname(__file__); open(os.path.join(d, "results_frontier.json"), "w").write(json.dumps(OUT, indent=2))
+d = os.path.dirname(__file__)
+with open(os.path.join(d, "results_frontier.json"), "w") as handle:
+    handle.write(json.dumps(OUT, indent=2))
 print("\nALL_PASS:", allpass, "-> results_frontier.json")

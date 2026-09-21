@@ -568,7 +568,8 @@ if __name__ == "__main__":
     res = {}
     if os.path.exists(JSON_PATH):
         try:
-            res = json.load(open(JSON_PATH))
+            with open(JSON_PATH) as handle:
+                res = json.load(handle)
         except Exception:
             res = {}
     res["_meta"] = {
