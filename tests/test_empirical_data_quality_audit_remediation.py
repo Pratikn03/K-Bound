@@ -193,9 +193,14 @@ def test_storage_manifest_internal_hashes_and_summary_match_disk() -> None:
         assert path.stat().st_size == row["current_bytes"], row["path"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == row["current_sha256"], row["path"]
 
-    lock = json.loads(
-        (ROOT / "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json").read_text()
-    )
+    lock_path = ROOT / "experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+    if not lock_path.is_file():
+        lock_path = (
+            ROOT
+            / "docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02"
+            / "retired_tree/experiments/kbound/results/nine_track_lock_v1/LOCK_SEAL.json"
+        )
+    lock = json.loads(lock_path.read_text())
     locked_records = {}
     for track in lock["tracks"].values():
         for location, row in track["files"].items():
@@ -207,7 +212,22 @@ def test_storage_manifest_internal_hashes_and_summary_match_disk() -> None:
         for location, row in manifest["sealed_evidence_checksums"].items()
         if row["status"] == "present"
     }
-    assert locked_records.items() <= sealed_records.items()
+    # Superseded stress-grid evidence was intentionally relocated beneath the
+    # preserved archive tree.  The historical lock retains its original
+    # relative path, while STORAGE_MANIFEST records the immutable archive
+    # location; compare the two authorities by bytes.
+    normalized_locked = {}
+    archive_prefix = "docs/research/kbound/archive/superseded_empirical_authorities_2026-09-02/tree/"
+    for location, record in locked_records.items():
+        if location in sealed_records:
+            normalized_locked[location] = record
+            continue
+        relocated = archive_prefix + location
+        if relocated in sealed_records:
+            normalized_locked[relocated] = record
+            continue
+        normalized_locked[location] = record
+    assert normalized_locked.items() <= sealed_records.items()
 
     generated = json.loads(
         (ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json").read_text()

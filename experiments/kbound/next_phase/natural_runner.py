@@ -12,6 +12,7 @@ import copy
 import gzip
 import hashlib
 import json
+import os
 import resource
 import shutil
 import time
@@ -30,13 +31,26 @@ from experiments.kbound.so2sat.integrity import (
 
 ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL = ROOT / "docs/research/kbound/next_phase/natural_protocol.json"
-REFERENCE = Path("/Users/pratik_n/Desktop/AutoML_Flagship_V8 2")
-DEFAULT_DATA = Path("/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/data/so2sat_lcz42_v4.2/v4")
+REFERENCE = Path(os.environ.get("KBOUND_REFERENCE_ROOT", str(ROOT))).expanduser()
+DEFAULT_DATA = Path(
+    os.environ.get(
+        "KBOUND_NATURAL_DATA",
+        str(ROOT / "experiments/kbound/data/so2sat_lcz42_v4.2/v4"),
+    )
+).expanduser()
 DEFAULT_SOURCE = Path(
-    "/Volumes/T9/uav/AutoML_Flagship_V8/experiments/kbound/results/so2sat_lcz42_prospective_v1/source"
-)
+    os.environ.get(
+        "KBOUND_NATURAL_SOURCE",
+        str(ROOT / "experiments/kbound/results/so2sat_lcz42_prospective_v1/source"),
+    )
+).expanduser()
 DEFAULT_OUTPUT = ROOT / "output/next_phase/natural_v2"
-DEFAULT_OPAQUE = Path("/Volumes/T9/kbound_next_phase_20260921/natural_v2_opaque")
+DEFAULT_OPAQUE = Path(
+    os.environ.get(
+        "KBOUND_NATURAL_OPAQUE",
+        str(ROOT / "output/next_phase/natural_v2_opaque"),
+    )
+).expanduser()
 OPENED_DEV = ROOT / "experiments/kbound/results/so2sat_lcz42_prospective_v1/development_mps_bn_fix_v1"
 
 

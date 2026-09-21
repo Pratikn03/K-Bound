@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from kga.policy import decide_kga
+from kga.crossfit import controlled_grid_crossfit
 
 ROOT = Path(__file__).resolve().parents[1]
 PANEL_ROOT = ROOT / "experiments/kbound/results/reconciled_panels_v1"
@@ -68,9 +68,9 @@ def test_reconciled_conflicts_and_negative_panels_are_locked() -> None:
     assert reconciliation["status"] == "superseded_not_promotable"
 
     sar = panels["imagenetc"]["panel"]["candidates"]["sar"]
-    assert np.isclose(sar["regret"]["kga"], 0.028892592368302522)
-    assert sar["false_adapt_count"] == 1
-    assert sar["point_beats_both"]
+    assert np.isclose(sar["regret"]["kga"], 0.03482037015535213)
+    assert sar["false_adapt_count"] == 2
+    assert not sar["point_beats_both"]
     assert not sar["seed_inference"]["ci_robust_beats_both"]
 
     pacs = panels["pacs"]
@@ -79,7 +79,7 @@ def test_reconciled_conflicts_and_negative_panels_are_locked() -> None:
 
     imagenet_r = panels["imagenet_r"]["panel"]["architecture_panel_aggregate"]
     assert imagenet_r["n"] == 480
-    assert np.isclose(imagenet_r["regret"]["kga"], 0.014968749999999998)
+    assert np.isclose(imagenet_r["regret"]["kga"], 0.013552083333333331)
     assert imagenet_r["regret"]["kga"] > imagenet_r["regret"]["always_adapt"]
     assert not imagenet_r["point_beats_both"]
     kappa_one = next(row for row in imagenet_r["kappa_sweep"] if row["kappa"] == 1.0)
@@ -93,7 +93,7 @@ def test_reconciled_conflicts_and_negative_panels_are_locked() -> None:
 
     imagenetc = panels["imagenetc"]["panel"]["architecture_panel_aggregate"]
     assert np.isclose(imagenetc["radius_diagnostics"]["yield"], imagenetc["decision_coverage"])
-    assert np.isclose(imagenetc["radius_diagnostics"]["eps_mean"], 0.05320361619896232)
+    assert np.isclose(imagenetc["radius_diagnostics"]["eps_mean"], 0.1267331219651026)
 
 
 def test_imagenetc_source_replays_through_canonical_rule() -> None:
@@ -101,7 +101,23 @@ def test_imagenetc_source_replays_through_canonical_rule() -> None:
     records = source["records"]
     prediction = np.asarray([row["b_hat"] for row in records], dtype=float)
     benefit = np.asarray([row["B"] for row in records], dtype=float)
-    epsilon, decision = decide_kga(prediction, benefit, alpha=0.1, calibration="loo")
+    sample_ids = [
+        "|".join(("sar", f"seed={int(row['seed'])}", f"condition={row.get('condition', index)}"))
+        for index, row in enumerate(records)
+    ]
+    current = controlled_grid_crossfit(
+        np.asarray([row["Z"] for row in records], dtype=float),
+        benefit,
+        sample_ids=sample_ids,
+        alpha=0.1,
+        n_folds=5,
+        n_estimators=250,
+        max_depth=2,
+        learning_rate=0.05,
+        subsample=0.8,
+        random_state=0,
+    )
+    epsilon, decision = current.radius, current.action
 
     generated = load("canonical_panel_results.json")["panels"]["imagenetc"]["panel"]
     seed0 = generated["candidates"]["sar"]["per_file"][0]
@@ -136,7 +152,7 @@ def test_missing_locked_tracks_use_exact_rank_and_retain_negative_scope() -> Non
     assert not camelyon["ood"]["headline_promotion"]["eligible"]
 
     b_v2 = camelyon["b_v2_diagnostic"]
-    assert b_v2["panel"]["candidates"]["sar"]["point_beats_both"]
+    assert not b_v2["panel"]["candidates"]["sar"]["point_beats_both"]
     assert not b_v2["headline_promotion"]["eligible"]
     assert "diagnostic" in b_v2["claim_scope"]
 
@@ -426,7 +442,7 @@ def test_historical_policy_artifacts_cannot_imply_a_current_win() -> None:
     assert head["numeric_release_eligible"] is False
     assert head["release_eligible_win"] is False
     assert head["current_exact_rank_reference"]["kga_regret"] == pytest.approx(
-        0.0016453700209105456
+        0.0017925923621212995
     )
     assert "0.0015851849" not in json.dumps(generated)
 
@@ -508,14 +524,14 @@ def test_natural_diagnostic_inventory_preserves_evidence_boundaries() -> None:
         cam_score["regret"]["always_adapt"],
         cam_score["regret"]["always_freeze"],
     ]
-    assert cam_track["point_beats_both"] is True
+    assert cam_track["point_beats_both"] is False
     assert cam_track["ci_robust_beats_both"] is False
     assert cam_track["headline_promotion_eligible"] is False
     assert cam_track["untouched_target_domain_evaluation"] is False
     assert cam_track["independent_checkpoint_identities_recorded"] is False
     cam_metrics = results["KB-CLAIM-053"]["metrics"]
     assert cam_metrics["within_seed_diagnostic"] is True
-    assert cam_metrics["point_beats_both"] is True
+    assert cam_metrics["point_beats_both"] is False
     assert cam_metrics["ci_robust_beats_both"] is False
     assert cam_metrics["headline_promotion_eligible"] is False
 
