@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import http.server
 import json
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -15,7 +15,7 @@ from kga.observability.metrics import METRICS
 class GatewayRequestHandler(http.server.BaseHTTPRequestHandler):
     """Standard-library HTTP request handler for the KGA Autonomous Safety Gateway."""
 
-    gateway: Optional[SafeInferenceGateway] = None
+    gateway: SafeInferenceGateway | None = None
 
     def do_GET(self) -> None:
         """Handle health probes and metrics scraping."""
@@ -99,7 +99,7 @@ class GatewayRequestHandler(http.server.BaseHTTPRequestHandler):
         self.gateway.circuit_breaker.reset()
         self._send_json(200, {"status": "reset", "circuit_state": self.gateway.circuit_breaker.state.value})
 
-    def _send_json(self, code: int, payload: Dict[str, Any]) -> None:
+    def _send_json(self, code: int, payload: dict[str, Any]) -> None:
         encoded = json.dumps(payload, indent=2).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
@@ -110,10 +110,15 @@ class GatewayRequestHandler(http.server.BaseHTTPRequestHandler):
 
 def create_server(
     gateway: SafeInferenceGateway,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
     port: int = 8080,
 ) -> http.server.HTTPServer:
-    """Create a production HTTP server configured with the SafeInferenceGateway."""
+    """Create a loopback-default development HTTP server for the gateway.
+
+    This standard-library adapter has no authentication or TLS. An explicit
+    non-loopback host requires separately configured access controls; this
+    factory alone is not a hardened public-serving deployment.
+    """
     handler = GatewayRequestHandler
     handler.gateway = gateway
     return http.server.HTTPServer((host, port), handler)

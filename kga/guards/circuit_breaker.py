@@ -5,32 +5,33 @@ from __future__ import annotations
 import enum
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 from kga.guards.state_backend import DistributedCircuitState, StateBackend
 
 
 class CircuitState(str, enum.Enum):
     """Lifecycle states of the adaptation circuit breaker."""
-    CLOSED = "closed"        # Normal operational state: adaptation attempts allowed
-    OPEN = "open"            # Tripped: all adaptation halted, 100% traffic routed to frozen base
+
+    CLOSED = "closed"  # Normal operational state: adaptation attempts allowed
+    OPEN = "open"  # Tripped: all adaptation halted, 100% traffic routed to frozen base
     HALF_OPEN = "half_open"  # Cooldown trial: testing stability with limited traffic
 
 
 @dataclass
 class CircuitBreakerStatus:
     """Snapshot of circuit breaker status."""
+
     state: CircuitState
     failure_count: int
     trip_count: int
-    last_trip_reason: Optional[str]
-    last_trip_timestamp: Optional[float]
+    last_trip_reason: str | None
+    last_trip_timestamp: float | None
     time_in_current_state: float
 
 
 class CircuitBreaker:
     """High-reliability circuit breaker governing test-time model adaptation.
-    
+
     Adheres to the fail-closed principle: when open, live traffic is unconditionally
     routed to the frozen baseline model (f0) with zero adaptation attempts.
     Optionally synchronizes with a StateBackend for multi-worker container clusters.
@@ -41,7 +42,7 @@ class CircuitBreaker:
         failure_threshold: int = 3,
         recovery_cooldown_seconds: float = 60.0,
         half_open_success_threshold: int = 2,
-        backend: Optional[StateBackend] = None,
+        backend: StateBackend | None = None,
     ) -> None:
         self.failure_threshold = max(1, int(failure_threshold))
         self.recovery_cooldown_seconds = max(0.0, float(recovery_cooldown_seconds))
@@ -52,7 +53,7 @@ class CircuitBreaker:
         self._failure_count: int = 0
         self._half_open_success_count: int = 0
         self._trip_count: int = 0
-        self._last_trip_reason: Optional[str] = None
+        self._last_trip_reason: str | None = None
         self._last_state_change: float = time.monotonic()
 
         if self.backend is not None:

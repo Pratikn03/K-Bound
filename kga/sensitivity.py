@@ -29,12 +29,13 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Sequence, Union
+from typing import Any
 
 
 @dataclass(frozen=True)
 class SensitivityPoint:
     """A single evaluation point along the sensitivity frontier."""
+
     beta: float
     lower_bound: float
     upper_bound: float
@@ -161,12 +162,14 @@ def compute_sensitivity_frontier(
             action = "FREEZE"
         else:
             action = "ABSTAIN"
-        frontier.append({
-            "beta": round(b, 6),
-            "lower_bound": low,
-            "upper_bound": high,
-            "action": action,
-        })
+        frontier.append(
+            {
+                "beta": round(b, 6),
+                "lower_bound": low,
+                "upper_bound": high,
+                "action": action,
+            }
+        )
     return frontier
 
 

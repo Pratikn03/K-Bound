@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Protocol, Tuple, Union, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
@@ -13,6 +13,7 @@ from kga.policy import Decision
 
 class FallbackReason(str, enum.Enum):
     """Explicit cause for falling back to the frozen base model."""
+
     NONE = "none"  # Not a fallback; adaptation was certified and served
     ZERO_CONTAINMENT = "zero_containment"  # Delta interval contains 0 (uncertainty)
     ESTIMATED_HARMFUL = "estimated_harmful"  # Upper bound is strictly negative (FREEZE)
@@ -28,20 +29,21 @@ class FallbackReason(str, enum.Enum):
 @runtime_checkable
 class Predictor(Protocol):
     """Protocol for model inference."""
-    def __call__(self, x: np.ndarray) -> np.ndarray:
-        ...
+
+    def __call__(self, x: np.ndarray) -> np.ndarray: ...
 
 
 @runtime_checkable
 class FeatureExtractor(Protocol):
     """Protocol for extracting label-free evidence vector Z from calibration and test scores."""
-    def __call__(self, calib_scores: np.ndarray, test_scores: np.ndarray) -> np.ndarray:
-        ...
+
+    def __call__(self, calib_scores: np.ndarray, test_scores: np.ndarray) -> np.ndarray: ...
 
 
 @dataclass(frozen=True)
 class GatewayDecision:
     """Comprehensive decision and audit record emitted by the SafeInferenceGateway."""
+
     action: Decision
     served_model: str  # "frozen_base" (f0) or "adapted_candidate" (fa)
     fallback_reason: FallbackReason
@@ -53,8 +55,8 @@ class GatewayDecision:
     sample_size: int  # m
     input_hash: str  # SHA-256 of test input array
     latency_ms: float
-    guard_status: Dict[str, Any] = field(default_factory=dict)
-    extra: Dict[str, Any] = field(default_factory=dict)
+    guard_status: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
     @property
     def is_fallback(self) -> bool:
@@ -66,7 +68,7 @@ class GatewayDecision:
         """True if the gateway verified positive benefit and routed to the adapted model."""
         return self.served_model == "adapted_candidate"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize decision record to a JSON-compatible dictionary."""
         return {
             "action": self.action.value,

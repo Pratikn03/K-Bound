@@ -5,13 +5,13 @@ from __future__ import annotations
 import hashlib
 import math
 import time
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable
 
 import numpy as np
 
 from kga.gateway.interface import FallbackReason, GatewayDecision, Predictor
 from kga.gateway.modes import DeploymentMode
-from kga.guards.circuit_breaker import CircuitBreaker, CircuitState
+from kga.guards.circuit_breaker import CircuitBreaker
 from kga.guards.evidence_support import EvidenceSupportGuard
 from kga.guards.numerical_health import NumericalHealthGuard
 from kga.guards.streaming_monitor import StreamingDriftMonitor
@@ -22,7 +22,7 @@ from kga.policy import Decision
 
 class SafeInferenceGateway:
     """Audit-grounded, fail-closed safety gate and circuit breaker for test-time adaptation.
-    
+
     Routes traffic between a reliable frozen base model (f0) and a candidate adapted
     model (fa). Upholds the invariant that live user traffic defaults to f0 unless
     a strict mathematical certificate guarantees positive adaptation benefit.
@@ -41,17 +41,17 @@ class SafeInferenceGateway:
         decision_margin: float = 0.0,
         max_latency_ms: float = 100.0,
         mode: DeploymentMode = DeploymentMode.INLINE_GATE,
-        circuit_breaker: Optional[CircuitBreaker] = None,
-        evidence_guard: Optional[EvidenceSupportGuard] = None,
-        numerical_guard: Optional[NumericalHealthGuard] = None,
-        drift_monitor: Optional[StreamingDriftMonitor] = None,
-        audit_logger: Optional[AuditLogger] = None,
+        circuit_breaker: CircuitBreaker | None = None,
+        evidence_guard: EvidenceSupportGuard | None = None,
+        numerical_guard: NumericalHealthGuard | None = None,
+        drift_monitor: StreamingDriftMonitor | None = None,
+        audit_logger: AuditLogger | None = None,
     ) -> None:
         self.base_model = base_model
         self.candidate_adapter = candidate_adapter
         self.benefit_estimator = benefit_estimator
         self.feature_extractor = feature_extractor
-        
+
         self.calibration_epsilon = float(calibration_epsilon)
         self.alpha = float(alpha)
         self.delta = float(delta)
@@ -69,13 +69,13 @@ class SafeInferenceGateway:
     def predict(
         self,
         x: np.ndarray,
-        request_id: Optional[str] = None,
-    ) -> Tuple[np.ndarray, GatewayDecision]:
+        request_id: str | None = None,
+    ) -> tuple[np.ndarray, GatewayDecision]:
         """Execute safe model inference with audit certification and automated fail-closed fallback."""
         t_start = time.monotonic()
         x_arr = np.asarray(x)
         m = int(x_arr.shape[0]) if x_arr.ndim > 0 else 1
-        
+
         # Zero-trust input hashing
         input_hash = hashlib.sha256(x_arr.tobytes()[:4096]).hexdigest()
 
@@ -84,7 +84,12 @@ class SafeInferenceGateway:
 
         # Step 2: Check sample size starvation for concentration bound
         if m < self.m_min:
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.SAMPLE_SIZE_STARVATION.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.SAMPLE_SIZE_STARVATION.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.SAMPLE_SIZE_STARVATION,
@@ -98,7 +103,12 @@ class SafeInferenceGateway:
 
         # Step 3: Check circuit breaker state
         if not self.circuit_breaker.allow_adaptation_attempt():
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.CIRCUIT_BREAKER_OPEN.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.CIRCUIT_BREAKER_OPEN.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.CIRCUIT_BREAKER_OPEN,
@@ -117,7 +127,12 @@ class SafeInferenceGateway:
             adapt_latency_ms = (time.monotonic() - t_adapt_start) * 1000.0
         except Exception as ex:
             self.circuit_breaker.record_failure(f"Adapter exception: {ex}")
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.ADAPTATION_EXCEPTION.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.ADAPTATION_EXCEPTION.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.ADAPTATION_EXCEPTION,
@@ -130,8 +145,15 @@ class SafeInferenceGateway:
             return y_base, decision
 
         if adapt_latency_ms > self.max_latency_ms:
-            self.circuit_breaker.record_failure(f"Adaptation latency {adapt_latency_ms:.1f}ms > SLA {self.max_latency_ms:.1f}ms")
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.LATENCY_TIMEOUT.value)
+            self.circuit_breaker.record_failure(
+                f"Adaptation latency {adapt_latency_ms:.1f}ms > SLA {self.max_latency_ms:.1f}ms"
+            )
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.LATENCY_TIMEOUT.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.LATENCY_TIMEOUT,
@@ -147,7 +169,12 @@ class SafeInferenceGateway:
         health = self.numerical_guard.check_probabilities(y_adapted)
         if not health.is_healthy:
             self.circuit_breaker.record_failure(f"Unhealthy candidate outputs: {health.rejection_reason}")
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.NUMERICAL_INSTABILITY.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.NUMERICAL_INSTABILITY.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.NUMERICAL_INSTABILITY,
@@ -163,7 +190,7 @@ class SafeInferenceGateway:
         z_vector = self.feature_extractor(x_arr, y_base, y_adapted)
 
         # Step 7: Check evidence support against calibration manifold
-        guard_info: Dict[str, Any] = {}
+        guard_info: dict[str, Any] = {}
         if self.evidence_guard is not None:
             support = self.evidence_guard.check(z_vector)
             guard_info["support"] = {
@@ -172,7 +199,12 @@ class SafeInferenceGateway:
                 "max_zscore": support.max_zscore,
             }
             if not support.is_supported:
-                METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.OOD_EVIDENCE.value)
+                METRICS.inc_counter(
+                    "kga_requests_total",
+                    action=Decision.ABSTAIN.value,
+                    served="frozen_base",
+                    reason=FallbackReason.OOD_EVIDENCE.value,
+                )
                 decision = self._create_fallback_decision(
                     action=Decision.ABSTAIN,
                     reason=FallbackReason.OOD_EVIDENCE,
@@ -248,7 +280,9 @@ class SafeInferenceGateway:
         )
 
         # Observability updates
-        METRICS.inc_counter("kga_requests_total", action=action.value, served=served_model, reason=effective_fallback.value)
+        METRICS.inc_counter(
+            "kga_requests_total", action=action.value, served=served_model, reason=effective_fallback.value
+        )
         METRICS.set_gauge("kga_certificate_lower_bound", lower_bound)
         METRICS.set_gauge("kga_certificate_radius", total_radius)
         METRICS.set_gauge("kga_drift_wealth", monitor_status.wealth)
@@ -263,7 +297,7 @@ class SafeInferenceGateway:
         m: int,
         input_hash: str,
         t_start: float,
-        guard_info: Dict[str, Any],
+        guard_info: dict[str, Any],
     ) -> GatewayDecision:
         latency_ms = (time.monotonic() - t_start) * 1000.0
         return GatewayDecision(
@@ -281,6 +315,6 @@ class SafeInferenceGateway:
             guard_status=guard_info,
         )
 
-    def _log_and_emit(self, decision: GatewayDecision, request_id: Optional[str]) -> None:
+    def _log_and_emit(self, decision: GatewayDecision, request_id: str | None) -> None:
         if self.audit_logger is not None:
             self.audit_logger.log_decision(decision, request_id=request_id)

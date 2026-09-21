@@ -6,11 +6,12 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 
 class ProtocolIntegrityError(RuntimeError):
     """Raised when an execution artifact does not match its sealed cryptographic digest."""
+
     pass
 
 
@@ -24,14 +25,14 @@ class SealedProtocolManifest:
     adapter_name: str
     weights_sha256: str
     calibration_data_sha256: str
-    feature_schema: List[str]
+    feature_schema: list[str]
     alpha: float
     delta: float
     m_min: int
     epsilon_calibrated: float
     decision_margin: float = 0.0
-    created_at_iso: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    created_at_iso: str | None = None
+    metadata: dict[str, Any] | None = None
 
     def compute_manifest_digest(self) -> str:
         """Compute authoritative SHA-256 digest of the sealed configuration."""
@@ -54,15 +55,14 @@ class SealedProtocolManifest:
 
     def verify_runtime_artifacts(
         self,
-        actual_weights_hash: Optional[str] = None,
-        actual_calib_hash: Optional[str] = None,
-        actual_feature_schema: Optional[List[str]] = None,
+        actual_weights_hash: str | None = None,
+        actual_calib_hash: str | None = None,
+        actual_feature_schema: list[str] | None = None,
     ) -> bool:
         """Verify that runtime objects strictly match the sealed protocol."""
         if actual_weights_hash is not None and actual_weights_hash != self.weights_sha256:
             raise ProtocolIntegrityError(
-                f"Model weights mismatch: sealed {self.weights_sha256[:16]}... "
-                f"!= actual {actual_weights_hash[:16]}..."
+                f"Model weights mismatch: sealed {self.weights_sha256[:16]}... != actual {actual_weights_hash[:16]}..."
             )
 
         if actual_calib_hash is not None and actual_calib_hash != self.calibration_data_sha256:
@@ -78,7 +78,7 @@ class SealedProtocolManifest:
 
         return True
 
-    def save(self, path: Union[str, Path]) -> None:
+    def save(self, path: str | Path) -> None:
         """Save sealed protocol manifest to JSON file."""
         data = asdict(self)
         data["manifest_sha256"] = self.compute_manifest_digest()
@@ -86,9 +86,9 @@ class SealedProtocolManifest:
             json.dump(data, f, indent=2, sort_keys=True)
 
     @classmethod
-    def load(cls, path: Union[str, Path], verify_seal: bool = True) -> SealedProtocolManifest:
+    def load(cls, path: str | Path, verify_seal: bool = True) -> SealedProtocolManifest:
         """Load and verify a sealed protocol manifest."""
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
         expected_seal = data.pop("manifest_sha256", None)

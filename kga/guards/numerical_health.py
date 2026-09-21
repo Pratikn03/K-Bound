@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -11,16 +10,17 @@ import numpy as np
 @dataclass(frozen=True)
 class HealthAssessment:
     """Result of numerical health inspection."""
+
     is_healthy: bool
     mean_entropy: float
     max_prob: float
     min_prob: float
-    rejection_reason: Optional[str] = None
+    rejection_reason: str | None = None
 
 
 class NumericalHealthGuard:
     """Inspects model outputs (probabilities or logits) for numerical degradation or collapse.
-    
+
     Prevents deploying models experiencing NaN explosions, probability vanishing,
     or degenerate entropy collapse during test-time adaptation.
     """
@@ -40,7 +40,7 @@ class NumericalHealthGuard:
     def check_probabilities(self, probs: np.ndarray) -> HealthAssessment:
         """Inspect a batch of predicted probabilities (shape: [N, num_classes] or [N])."""
         arr = np.asarray(probs, dtype=float)
-        
+
         if arr.size == 0:
             return HealthAssessment(
                 is_healthy=False,
@@ -113,7 +113,7 @@ class NumericalHealthGuard:
         weights_base: np.ndarray,
         weights_adapted: np.ndarray,
         max_relative_divergence: float = 0.5,
-    ) -> Tuple[bool, float, Optional[str]]:
+    ) -> tuple[bool, float, str | None]:
         """Check relative parameter weight divergence ||theta_a - theta_0|| / ||theta_0||."""
         w0 = np.asarray(weights_base, dtype=float).ravel()
         wa = np.asarray(weights_adapted, dtype=float).ravel()

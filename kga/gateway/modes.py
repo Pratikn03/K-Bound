@@ -7,7 +7,7 @@ import enum
 
 class DeploymentMode(str, enum.Enum):
     """Operational deployment modes for the safety gateway."""
-    
+
     INLINE_GATE = "inline_gate"
     """Active synchronous safety gate: routes traffic to adapted model when certified,
     falls back to frozen base model otherwise."""

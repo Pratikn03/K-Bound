@@ -6,7 +6,7 @@ import datetime
 import json
 import threading
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from kga.gateway.interface import GatewayDecision
 
@@ -14,7 +14,7 @@ from kga.gateway.interface import GatewayDecision
 class AuditLogger:
     """Thread-safe append-only structured audit logger for model routing decisions."""
 
-    def __init__(self, log_file_path: Optional[Union[str, Path]] = None) -> None:
+    def __init__(self, log_file_path: str | Path | None = None) -> None:
         self.log_file_path = Path(log_file_path) if log_file_path is not None else None
         self._lock = threading.Lock()
         if self.log_file_path is not None:
@@ -23,9 +23,9 @@ class AuditLogger:
     def log_decision(
         self,
         decision: GatewayDecision,
-        request_id: Optional[str] = None,
-        client_metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        request_id: str | None = None,
+        client_metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Record an audit log entry for a gateway decision."""
         record = {
             "timestamp_iso": datetime.datetime.now(datetime.timezone.utc).isoformat(),

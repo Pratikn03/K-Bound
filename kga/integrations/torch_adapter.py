@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
 
 class TorchModelAdapter:
     """Production adapter bridging PyTorch nn.Module models with the KGA Autonomous Safety Gateway.
-    
+
     Provides standardized forward inference, softmax probability conversion,
     and label-free evidence feature extraction.
     """
@@ -17,7 +17,7 @@ class TorchModelAdapter:
     def __init__(
         self,
         model: Any,
-        device: Optional[str] = None,
+        device: str | None = None,
         is_adapted: bool = False,
     ) -> None:
         self.model = model
@@ -41,7 +41,7 @@ class TorchModelAdapter:
                     logits = logits[0]
                 probs = torch.softmax(logits, dim=-1)
             return probs.detach().cpu().numpy()
-        except ImportError:
+        except ImportError as exc:
             # Zero-dependency duck-typing fallback for environments without torch
             if callable(self.model):
                 out = self.model(x)
@@ -51,7 +51,7 @@ class TorchModelAdapter:
                     exp_arr = np.exp(arr - np.max(arr, axis=-1, keepdims=True))
                     arr = exp_arr / np.sum(exp_arr, axis=-1, keepdims=True)
                 return arr
-            raise RuntimeError("PyTorch is required for TorchModelAdapter with nn.Module instances")
+            raise RuntimeError("PyTorch is required for TorchModelAdapter with nn.Module instances") from exc
 
     @staticmethod
     def extract_standard_evidence_features(
@@ -60,7 +60,7 @@ class TorchModelAdapter:
         adapted_probs: np.ndarray,
     ) -> np.ndarray:
         """Extract standardized 4-dimensional label-free evidence vector Z.
-        
+
         Features:
         1. Mean prediction confidence difference (entropy reduction).
         2. Prediction disagreement rate between f0 and fa.

@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 import math
 import time
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable
 
 import numpy as np
 
@@ -37,11 +37,11 @@ class AsyncSafeInferenceGateway:
         decision_margin: float = 0.0,
         max_latency_ms: float = 100.0,
         mode: DeploymentMode = DeploymentMode.INLINE_GATE,
-        circuit_breaker: Optional[CircuitBreaker] = None,
-        evidence_guard: Optional[EvidenceSupportGuard] = None,
-        numerical_guard: Optional[NumericalHealthGuard] = None,
-        drift_monitor: Optional[StreamingDriftMonitor] = None,
-        audit_logger: Optional[AuditLogger] = None,
+        circuit_breaker: CircuitBreaker | None = None,
+        evidence_guard: EvidenceSupportGuard | None = None,
+        numerical_guard: NumericalHealthGuard | None = None,
+        drift_monitor: StreamingDriftMonitor | None = None,
+        audit_logger: AuditLogger | None = None,
     ) -> None:
         self.base_model = base_model
         self.candidate_adapter = candidate_adapter
@@ -65,8 +65,8 @@ class AsyncSafeInferenceGateway:
     async def predict(
         self,
         x: np.ndarray,
-        request_id: Optional[str] = None,
-    ) -> Tuple[np.ndarray, GatewayDecision]:
+        request_id: str | None = None,
+    ) -> tuple[np.ndarray, GatewayDecision]:
         """Asynchronously execute safe inference with asyncio watchdog timeouts."""
         t_start = time.monotonic()
         x_arr = np.asarray(x)
@@ -78,7 +78,12 @@ class AsyncSafeInferenceGateway:
 
         # Step 2: Sample size check
         if m < self.m_min:
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.SAMPLE_SIZE_STARVATION.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.SAMPLE_SIZE_STARVATION.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.SAMPLE_SIZE_STARVATION,
@@ -92,7 +97,12 @@ class AsyncSafeInferenceGateway:
 
         # Step 3: Circuit breaker check
         if not self.circuit_breaker.allow_adaptation_attempt():
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.CIRCUIT_BREAKER_OPEN.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.CIRCUIT_BREAKER_OPEN.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.CIRCUIT_BREAKER_OPEN,
@@ -113,7 +123,12 @@ class AsyncSafeInferenceGateway:
             )
         except asyncio.TimeoutError:
             self.circuit_breaker.record_failure(f"Async adaptation timeout > SLA {self.max_latency_ms:.1f}ms")
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.LATENCY_TIMEOUT.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.LATENCY_TIMEOUT.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.LATENCY_TIMEOUT,
@@ -126,7 +141,12 @@ class AsyncSafeInferenceGateway:
             return y_base, decision
         except Exception as ex:
             self.circuit_breaker.record_failure(f"Async adapter exception: {ex}")
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.ADAPTATION_EXCEPTION.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.ADAPTATION_EXCEPTION.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.ADAPTATION_EXCEPTION,
@@ -142,7 +162,12 @@ class AsyncSafeInferenceGateway:
         health = self.numerical_guard.check_probabilities(y_adapted)
         if not health.is_healthy:
             self.circuit_breaker.record_failure(f"Unhealthy candidate outputs: {health.rejection_reason}")
-            METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.NUMERICAL_INSTABILITY.value)
+            METRICS.inc_counter(
+                "kga_requests_total",
+                action=Decision.ABSTAIN.value,
+                served="frozen_base",
+                reason=FallbackReason.NUMERICAL_INSTABILITY.value,
+            )
             decision = self._create_fallback_decision(
                 action=Decision.ABSTAIN,
                 reason=FallbackReason.NUMERICAL_INSTABILITY,
@@ -156,7 +181,7 @@ class AsyncSafeInferenceGateway:
 
         # Step 6 & 7: Feature extraction and OOD guard
         z_vector = await asyncio.to_thread(self.feature_extractor, x_arr, y_base, y_adapted)
-        guard_info: Dict[str, Any] = {}
+        guard_info: dict[str, Any] = {}
         if self.evidence_guard is not None:
             support = self.evidence_guard.check(z_vector)
             guard_info["support"] = {
@@ -165,7 +190,12 @@ class AsyncSafeInferenceGateway:
                 "max_zscore": support.max_zscore,
             }
             if not support.is_supported:
-                METRICS.inc_counter("kga_requests_total", action=Decision.ABSTAIN.value, served="frozen_base", reason=FallbackReason.OOD_EVIDENCE.value)
+                METRICS.inc_counter(
+                    "kga_requests_total",
+                    action=Decision.ABSTAIN.value,
+                    served="frozen_base",
+                    reason=FallbackReason.OOD_EVIDENCE.value,
+                )
                 decision = self._create_fallback_decision(
                     action=Decision.ABSTAIN,
                     reason=FallbackReason.OOD_EVIDENCE,
@@ -232,7 +262,9 @@ class AsyncSafeInferenceGateway:
             guard_status=guard_info,
         )
 
-        METRICS.inc_counter("kga_requests_total", action=action.value, served=served_model, reason=effective_fallback.value)
+        METRICS.inc_counter(
+            "kga_requests_total", action=action.value, served=served_model, reason=effective_fallback.value
+        )
         self._log_and_emit(decision, request_id)
         return served_predictions, decision
 
@@ -243,7 +275,7 @@ class AsyncSafeInferenceGateway:
         m: int,
         input_hash: str,
         t_start: float,
-        guard_info: Dict[str, Any],
+        guard_info: dict[str, Any],
     ) -> GatewayDecision:
         latency_ms = (time.monotonic() - t_start) * 1000.0
         return GatewayDecision(
@@ -261,6 +293,6 @@ class AsyncSafeInferenceGateway:
             guard_status=guard_info,
         )
 
-    def _log_and_emit(self, decision: GatewayDecision, request_id: Optional[str]) -> None:
+    def _log_and_emit(self, decision: GatewayDecision, request_id: str | None) -> None:
         if self.audit_logger is not None:
             self.audit_logger.log_decision(decision, request_id=request_id)

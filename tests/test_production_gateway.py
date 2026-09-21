@@ -5,7 +5,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from typing import Optional
+from typing import Optional, get_type_hints
 
 import numpy as np
 
@@ -20,6 +20,30 @@ from kga.observability.audit_logger import AuditLogger
 from kga.observability.metrics import METRICS, InMemoryMetricsCollector
 from kga.policy import Decision
 from kga.registry.sealed_protocol import ProtocolIntegrityError, SealedProtocolManifest
+
+
+def test_weight_divergence_annotations_resolve() -> None:
+    """Release tooling can resolve the public guard's postponed annotations."""
+    hints = get_type_hints(NumericalHealthGuard.check_weight_divergence)
+    assert hints["return"] == tuple[bool, float, Optional[str]]
+
+
+def test_http_server_defaults_to_loopback_and_preserves_explicit_host(monkeypatch) -> None:
+    from kga.server import service
+
+    calls = []
+    sentinel = object()
+
+    def capture_server(address, handler):
+        calls.append(address)
+        return sentinel
+
+    monkeypatch.setattr(service.http.server, "HTTPServer", capture_server)
+    monkeypatch.setattr(service.GatewayRequestHandler, "gateway", None)
+    assert service.create_server(None) is sentinel
+    assert calls == [("127.0.0.1", 8080)]
+    assert service.create_server(None, host="192.0.2.1", port=9000) is sentinel
+    assert calls[-1] == ("192.0.2.1", 9000)
 
 
 class TestProductionGateway(unittest.TestCase):
@@ -478,4 +502,3 @@ class TestGatewayHTTPServer(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

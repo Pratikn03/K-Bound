@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import json
-import os
 import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Protocol, Union
+from typing import Protocol
 
 
 @dataclass
@@ -16,7 +15,7 @@ class DistributedCircuitState:
     state: str  # "closed", "open", "half_open"
     failure_count: int
     trip_count: int
-    last_trip_reason: Optional[str]
+    last_trip_reason: str | None
     last_state_change: float
     evalue_wealth: float
     evalue_step: int
@@ -25,11 +24,9 @@ class DistributedCircuitState:
 class StateBackend(Protocol):
     """Protocol for state synchronization across multi-worker serving instances."""
 
-    def load_state(self) -> DistributedCircuitState:
-        ...
+    def load_state(self) -> DistributedCircuitState: ...
 
-    def save_state(self, state: DistributedCircuitState) -> None:
-        ...
+    def save_state(self, state: DistributedCircuitState) -> None: ...
 
 
 class InMemoryStateBackend:
@@ -67,7 +64,7 @@ class InMemoryStateBackend:
 class FileStateBackend:
     """Inter-process file-backed state backend with atomic file locking for multi-pod Kubernetes clusters."""
 
-    def __init__(self, state_file_path: Union[str, Path]) -> None:
+    def __init__(self, state_file_path: str | Path) -> None:
         self.state_file = Path(state_file_path)
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self.lock_file = self.state_file.with_suffix(".lock")
@@ -98,7 +95,7 @@ class FileStateBackend:
                     evalue_step=0,
                 )
             try:
-                with open(self.state_file, "r", encoding="utf-8") as f:
+                with open(self.state_file, encoding="utf-8") as f:
                     data = json.load(f)
                 return DistributedCircuitState(
                     state=data["state"],

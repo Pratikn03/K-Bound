@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
 
 import numpy as np
 
@@ -11,18 +10,19 @@ import numpy as np
 @dataclass(frozen=True)
 class MonitorStatus:
     """Snapshot of sequential drift monitoring state."""
+
     step: int
     wealth: float
     threshold: float
     tripped: bool
     last_evalue: float
     consecutive_alarms: int
-    trip_reason: Optional[str] = None
+    trip_reason: str | None = None
 
 
 class StreamingDriftMonitor:
     """Sequential anytime drift and harm monitor using Ville's inequality.
-    
+
     Tracks cumulative betting wealth W_t = prod_{i=1}^t E_i.
     Under the safe null hypothesis, E_t is a supermartingale (E[E_t | F_{t-1}] <= 1),
     guaranteeing that P(exists t: W_t >= 1 / alpha) <= alpha for all horizons.
@@ -37,7 +37,7 @@ class StreamingDriftMonitor:
         self.alpha = float(alpha)
         if not (0.0 < self.alpha < 1.0):
             raise ValueError(f"alpha must be in (0, 1), got {alpha}")
-        
+
         self.threshold = 1.0 / self.alpha
         self.wealth_cap = float(wealth_cap)
         self.discount_factor = float(discount_factor)
@@ -46,8 +46,8 @@ class StreamingDriftMonitor:
         self._wealth: float = 1.0
         self._last_evalue: float = 1.0
         self._tripped: bool = False
-        self._trip_reason: Optional[str] = None
-        self._history: List[float] = []
+        self._trip_reason: str | None = None
+        self._history: list[float] = []
 
     @property
     def current_wealth(self) -> float:
@@ -68,7 +68,7 @@ class StreamingDriftMonitor:
 
         # Discounted wealth update: W_t = (W_{t-1}^gamma) * E_t
         if self.discount_factor < 1.0:
-            discounted_prev = self._wealth ** self.discount_factor
+            discounted_prev = self._wealth**self.discount_factor
             self._wealth = min(self.wealth_cap, discounted_prev * e)
         else:
             self._wealth = min(self.wealth_cap, self._wealth * e)
@@ -94,7 +94,7 @@ class StreamingDriftMonitor:
 
     def update_from_margin(self, delta_sample: float, margin_null: float = 0.0, c: float = 0.5) -> MonitorStatus:
         """Construct an anytime betting factor e-value from a observed performance difference.
-        
+
         E_t = 1 + lambda * (margin_null - delta_sample)
         where positive observed benefit decreases wealth, and negative benefit (harm) increases wealth.
         """

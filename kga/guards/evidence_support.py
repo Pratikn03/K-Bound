@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import numpy as np
 
@@ -11,15 +10,16 @@ import numpy as np
 @dataclass(frozen=True)
 class SupportAssessment:
     """Result of evidence support assessment."""
+
     is_supported: bool
     mahalanobis_distance: float
     max_zscore: float
-    rejection_reason: Optional[str] = None
+    rejection_reason: str | None = None
 
 
 class EvidenceSupportGuard:
     """Detects when an incoming test evidence vector Z lies outside calibration support.
-    
+
     Prevents uncertified extrapolation by benefit estimator h(Z).
     """
 
@@ -33,7 +33,7 @@ class EvidenceSupportGuard:
         calib = np.asarray(calibration_features, dtype=float)
         if calib.ndim != 2 or calib.shape[0] < 2:
             raise ValueError(f"calibration_features must be 2D with at least 2 rows, got shape {calib.shape}")
-        
+
         self.dim = calib.shape[1]
         self.mean = np.mean(calib, axis=0)
         self.std = np.std(calib, axis=0)

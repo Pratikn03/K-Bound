@@ -68,8 +68,8 @@ always ABSTAINs.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -349,12 +349,25 @@ def decide_hierarchical_candidates(
     alpha: float = 0.10,
     correction: str = "bonferroni",
 ) -> HierarchicalSelection:
-    """Evaluate multiple adaptation candidates with family-wise Type-I error control.
+    """Rank precomputed interval certificates; never recalibrate their radii.
 
-    Under Bonferroni correction over K candidates, each certificate is evaluated
-    at effective level alpha / K, ensuring overall false-adapt rate <= alpha.
-    Selects the candidate with the greatest certified positive lower bound.
+    For a fixed, predeclared family of K candidates, ``bonferroni`` requires
+    certificates already constructed at levels <= alpha / K. If each lower
+    bound is externally valid for its declared target, a union bound controls
+    the joint event that ADAPT selects a nonbeneficial candidate by alpha;
+    candidate independence is unnecessary. This is not error conditional on
+    ADAPT, optimal-candidate selection, or repeated-deployment protection.
+    ``none`` checks levels <= alpha but supplies no family-alpha guarantee.
+
+    Select the greatest strictly positive lower bound, breaking ties by point
+    estimate and then mapping insertion order. E-value encodings are not
+    numerical interval bounds and are rejected. Numerical checks here cannot
+    establish the calibration or population-transfer assumptions.
     """
+    if not math.isfinite(alpha) or not 0.0 < alpha < 1.0:
+        raise ValueError("alpha must be finite and strictly between 0 and 1")
+    if correction not in {"bonferroni", "none"}:
+        raise ValueError("correction must be 'bonferroni' or 'none'")
     if not candidates:
         return HierarchicalSelection(
             decision=Decision.FREEZE,
@@ -371,8 +384,18 @@ def decide_hierarchical_candidates(
     beneficial_candidates: list[tuple[str, float, float]] = []
 
     for name, cert in candidates.items():
+        if cert.method not in {"conformal", "ebern", "hoeffding"}:
+            raise ValueError(f"candidate {name!r} requires a numerical interval certificate")
+        if not math.isfinite(cert.alpha) or not 0.0 < cert.alpha <= effective_alpha:
+            raise ValueError(f"candidate {name!r} alpha must be in (0, {effective_alpha}]")
+        if isinstance(cert.n, (bool, np.bool_)) or not isinstance(cert.n, (int, np.integer)) or cert.n <= 0:
+            raise ValueError(f"candidate {name!r} n must be a positive integer")
         delta_hat = float(cert.delta_hat)
         eps = float(cert.epsilon)
+        if not math.isfinite(delta_hat):
+            raise ValueError(f"candidate {name!r} delta_hat must be finite")
+        if math.isnan(eps) or eps < 0.0:
+            raise ValueError(f"candidate {name!r} epsilon must be nonnegative and not NaN")
         lower = delta_hat - eps
         upper = delta_hat + eps
         bounds[name] = (lower, upper)

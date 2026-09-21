@@ -98,28 +98,6 @@ from kga.frontier import (
     frontier_action,
     frontier_sensitivity,
 )
-from kga.kga import KGA
-from kga.policy import (
-    Decision,
-    HierarchicalSelection,
-    decide,
-    decide_batch,
-    decide_hierarchical_candidates,
-    decide_kga,
-)
-from kga.population_transfer import (
-    ConditionalPopulationInterval,
-    compose_conditional_population_interval,
-    hoeffding_paired_accuracy_radius,
-)
-from kga.routing import (
-    AnytimeMulticandidatePanel,
-    CandidateCertificate,
-    RoutingDecision,
-    bonferroni_multicandidate_route,
-    multiclass_benefit,
-    route_panel,
-)
 from kga.gateway import (
     AsyncSafeInferenceGateway,
     DeploymentMode,
@@ -140,9 +118,30 @@ from kga.guards import (
     StreamingDriftMonitor,
 )
 from kga.integrations import TorchModelAdapter
+from kga.kga import KGA
+from kga.observability import METRICS, AuditLogger
+from kga.policy import (
+    Decision,
+    HierarchicalSelection,
+    decide,
+    decide_batch,
+    decide_hierarchical_candidates,
+    decide_kga,
+)
+from kga.population_transfer import (
+    ConditionalPopulationInterval,
+    compose_conditional_population_interval,
+    hoeffding_paired_accuracy_radius,
+)
 from kga.registry import ProtocolIntegrityError, SealedProtocolManifest
-from kga.observability import AuditLogger, METRICS
-
+from kga.routing import (
+    AnytimeMulticandidatePanel,
+    CandidateCertificate,
+    RoutingDecision,
+    bonferroni_multicandidate_route,
+    multiclass_benefit,
+    route_panel,
+)
 from kga.sensitivity import (
     SensitivityFrontier,
     SensitivityPoint,

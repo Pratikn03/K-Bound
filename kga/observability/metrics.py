@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import threading
-from typing import Dict, List, Optional, Tuple
 
 
 class InMemoryMetricsCollector:
@@ -12,9 +11,9 @@ class InMemoryMetricsCollector:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         # Counters: (name, label_tuple) -> count
-        self._counters: Dict[Tuple[str, Tuple[Tuple[str, str], ...]], float] = {}
+        self._counters: dict[tuple[str, tuple[tuple[str, str], ...]], float] = {}
         # Gauges: (name, label_tuple) -> value
-        self._gauges: Dict[Tuple[str, Tuple[Tuple[str, str], ...]], float] = {}
+        self._gauges: dict[tuple[str, tuple[tuple[str, str], ...]], float] = {}
 
     def inc_counter(self, name: str, value: float = 1.0, **labels: str) -> None:
         label_tuple = tuple(sorted(labels.items()))
@@ -30,10 +29,10 @@ class InMemoryMetricsCollector:
 
     def generate_prometheus_text(self) -> str:
         """Render metrics in standard Prometheus text exposition format (0.0.4)."""
-        lines: List[str] = []
+        lines: list[str] = []
         with self._lock:
             # Group counters
-            counter_names = sorted(set(k[0] for k in self._counters.keys()))
+            counter_names = sorted({k[0] for k in self._counters})
             for name in counter_names:
                 lines.append(f"# TYPE {name} counter")
                 for (metric_name, label_tuple), val in sorted(self._counters.items()):
@@ -45,7 +44,7 @@ class InMemoryMetricsCollector:
                             lines.append(f"{name} {val}")
 
             # Group gauges
-            gauge_names = sorted(set(k[0] for k in self._gauges.keys()))
+            gauge_names = sorted({k[0] for k in self._gauges})
             for name in gauge_names:
                 lines.append(f"# TYPE {name} gauge")
                 for (metric_name, label_tuple), val in sorted(self._gauges.items()):

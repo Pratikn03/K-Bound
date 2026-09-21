@@ -1,6 +1,7 @@
 """tests.test_distributed_and_async_gateway -- Tests for distributed backends and async gateway."""
 
 import asyncio
+import builtins
 import json
 import tempfile
 import time
@@ -8,6 +9,7 @@ import unittest
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from kga.gateway.async_gateway import AsyncSafeInferenceGateway
 from kga.gateway.interface import FallbackReason
@@ -15,6 +17,21 @@ from kga.guards.circuit_breaker import CircuitBreaker, CircuitState
 from kga.guards.state_backend import DistributedCircuitState, FileStateBackend, InMemoryStateBackend
 from kga.integrations.torch_adapter import TorchModelAdapter
 from kga.policy import Decision
+
+
+def test_torch_adapter_preserves_missing_dependency_cause(monkeypatch) -> None:
+    original_import = builtins.__import__
+    missing = ModuleNotFoundError("test-only missing torch")
+
+    def without_torch(name, *args, **kwargs):
+        if name == "torch":
+            raise missing
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_torch)
+    with pytest.raises(RuntimeError, match="PyTorch is required") as failure:
+        TorchModelAdapter(model=object())(np.zeros((1, 2)))
+    assert failure.value.__cause__ is missing
 
 
 class TestDistributedAndAsyncGateway(unittest.TestCase):
@@ -157,4 +174,3 @@ class TestDistributedAndAsyncGateway(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
