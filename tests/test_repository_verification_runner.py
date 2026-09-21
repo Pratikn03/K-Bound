@@ -1938,6 +1938,9 @@ def test_synthetic_validator_preserves_historical_outputs(tmp_path: Path) -> Non
     generated = list((repo / "output/verification").rglob("val_example.json"))
     assert len(generated) == 1
     assert generated[0].read_text() == "fresh diagnostic"
+    # Copied sources are build artifacts, so a later authored-source census
+    # must not mistake their canonical policy implementation for a new fork.
+    assert generated[0].relative_to(repo).parts[:3] == ("output", "verification", "build")
 
 
 def test_validator_cannot_pass_with_ignored_resource_warning(tmp_path: Path) -> None:

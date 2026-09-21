@@ -1714,7 +1714,9 @@ def _run_validators(
     if not paths:
         raise InventoryError("tracked standalone validator inventory is empty")
     bindings = revision_blob_bindings(repo, source_commit, paths)
-    output_root = repo / "output/verification"
+    # Keep copied sources under the existing generated-build boundary. Their
+    # retained policy copies must not appear as new authored forks on reruns.
+    output_root = repo / "output/verification/build"
     output_root.mkdir(parents=True, exist_ok=True)
     staged = Path(tempfile.mkdtemp(prefix="standalone-validators-", dir=output_root))
     source_digests = _stage_validator_tree(repo, source_commit, staged)
