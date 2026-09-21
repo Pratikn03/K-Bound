@@ -149,12 +149,11 @@ class TestKGADecide:
 # ---------------------------------------------------------------------------
 
 class TestKGADecideFromBatch:
-    def test_raises_importerror_without_torch(self):
+    def test_raises_importerror_without_torch(self, monkeypatch):
         """decide_from_batch must raise ImportError when torch is not installed."""
         import sys
-        # Confirm torch is genuinely absent in this environment
-        if "torch" in sys.modules:
-            pytest.skip("torch is installed; cannot test torch-absent path here")
+        # Exercise the missing optional dependency even when torch is installed.
+        monkeypatch.setitem(sys.modules, "torch", None)
         kga = KGA()
         with pytest.raises(ImportError, match="torch"):
             kga.decide_from_batch(None)

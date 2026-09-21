@@ -29,8 +29,8 @@ FORBIDDEN_CALL_PATTERNS = [
 @pytest.mark.parametrize("path", ACTIVE_FILES)
 def test_no_active_fisher_invocation(path):
     p = ROOT / path
-    # ELARA was removed in 4d6bef2; its retired emitter must stay absent.
-    if path == "src/scripts/emit_milestone2_cross_benchmark.py":
+    # Both ELARA emitters were removed in 4d6bef2 and must stay absent.
+    if path in ACTIVE_FILES:
         assert not p.exists(), "retired ELARA emitter unexpectedly restored"
         return
     if not p.exists():

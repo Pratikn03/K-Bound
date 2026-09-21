@@ -33,6 +33,15 @@ its declared source hashes. This stage does not load a released checkpoint or
 open experimental target images/outcomes. Supply both variables alongside the
 selected `KBOUND_PYTHON` when invoking the maintained release runbook.
 
+The POEM synthetic conformance stage requires `POEM_PYTHON` and `POEM_SOURCE`.
+Pytest stays in the approved release runtime; the test launches the explicitly
+selected native interpreter and authenticates the pinned upstream source bytes.
+It uses synthetic inputs and no pretrained checkpoint or benchmark images.
+Set `KBOUND_CCT20_ROOT` to the existing sealed CCT-20 evidence bundle for the
+original bundle integration checks. Missing physical-camera calibration and
+held-out artifacts remain release failures; do not replace these with fixtures
+or permit their skips to certify a completed physical study.
+
 ## Historical reproduction notes
 
 This document reproduces the K-Bound short-paper results from committed artifacts. Every headline

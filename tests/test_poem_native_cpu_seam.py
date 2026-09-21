@@ -15,7 +15,7 @@ import unittest
 
 
 class NativeCPUSeam(unittest.TestCase):
-    __test__ = False  # pytest source-only discovery must not launch native runtime.
+    __test__ = os.environ.get("POEM_NATIVE_STAGE") == "1"  # Explicit synthetic runtime stage only.
     def test_temperature_source_cdf_update_and_partial_reset_are_bound(self):
         # Catches a CUDA-only constructor, fabricated CDF, missed warmup/update,
         # or a misleading claim that native POEM.reset resets streaming state.

@@ -1854,3 +1854,24 @@ def test_native_aline_group_uses_declared_runtime_without_changing_parent(monkey
 def test_regular_group_does_not_select_method_runtime(monkeypatch):
     monkeypatch.setenv("ALINE_PYTHON", "/unavailable/method/python")
     assert runner.pytest_group_runtime(("tests/test_regular.py",), python="release-python") == ("release-python", None)
+
+
+def test_native_poem_group_requires_explicit_runtime_and_source(monkeypatch):
+    monkeypatch.delenv("POEM_PYTHON", raising=False)
+    monkeypatch.delenv("POEM_SOURCE", raising=False)
+    with pytest.raises(runner.InventoryError, match="POEM_PYTHON"):
+        runner.pytest_group_runtime(("tests/test_poem_native_cpu_seam.py",), python="release-python")
+    monkeypatch.setenv("POEM_PYTHON", sys.executable)
+    with pytest.raises(runner.InventoryError, match="POEM_SOURCE"):
+        runner.pytest_group_runtime(("tests/test_poem_native_cpu_seam.py",), python="release-python")
+
+
+def test_native_poem_group_enables_collected_synthetic_stage(monkeypatch, tmp_path):
+    monkeypatch.setenv("POEM_PYTHON", sys.executable)
+    monkeypatch.setenv("POEM_SOURCE", str(tmp_path))
+    monkeypatch.delenv("POEM_NATIVE_STAGE", raising=False)
+    python, env = runner.pytest_group_runtime(("tests/test_poem_native_cpu_seam.py",), python="release-python")
+    assert python == "release-python"
+    assert env["POEM_NATIVE_STAGE"] == "1"
+    assert env["POEM_SOURCE"] == str(tmp_path)
+    assert "POEM_NATIVE_STAGE" not in os.environ

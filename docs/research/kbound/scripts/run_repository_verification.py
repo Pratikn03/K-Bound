@@ -1562,12 +1562,24 @@ def validate_pytest_report(path: Path) -> list[dict[str, str]]:
 
 def pytest_group_runtime(paths: Sequence[str], *, python: str) -> tuple[str, dict[str, str] | None]:
     """Keep the separately pinned native method stage explicit and fail closed."""
-    if tuple(paths) != ("tests/test_aline_native_estimator.py",):
+    stages = {
+        ("tests/test_aline_native_estimator.py",): "ALINE",
+        ("tests/test_poem_native_cpu_seam.py",): "POEM",
+    }
+    stage = stages.get(tuple(paths))
+    if stage is None:
         return python, None
-    declared = os.environ.get("ALINE_PYTHON")
+    variable = f"{stage}_PYTHON"
+    declared = os.environ.get(variable)
     if not declared or not Path(declared).is_file() or not os.access(declared, os.X_OK):
-        raise InventoryError("ALINE_PYTHON must name the prepared executable for the required native ALine stage")
-    return declared, {**os.environ, "ALINE_NATIVE_STAGE": "1"}
+        raise InventoryError(f"{variable} must name the prepared executable for the required native {stage} stage")
+    if stage == "POEM":
+        source = os.environ.get("POEM_SOURCE")
+        if not source or not Path(source).is_dir():
+            raise InventoryError("POEM_SOURCE must name the pinned source directory; the native stage authenticates its bytes")
+    # POEM delegates its diagnostic to POEM_PYTHON in a child; pytest stays
+    # in the release runtime. ALine imports native numerical packages directly.
+    return (python if stage == "POEM" else declared), {**os.environ, f"{stage}_NATIVE_STAGE": "1"}
 
 
 def _run_pytest_release(
