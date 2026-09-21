@@ -1,5 +1,23 @@
 # K-Bound publication release checklist
 
+## Current routing qualification — 2026-09-20
+
+Earlier checked boxes below are scoped historical receipts, not a present full
+release PASS. Follow [the living execution ledger](ACTIVE_NATURAL_STUDY_PLAN.md)
+for current blockers. The `archive/stale_publication_builds_2026-09-02/` inventory
+now preserves ten recovered historical Git blobs, not a current sealed package.
+Current PDFs and divergent originals remain unchanged. Do not
+seal checksums or a publication bundle until the exact final source, runtime,
+artifact manifest and package gates all pass.
+
+The user approved a **new** Python 3.12.13/macOS-arm64 content identity on
+2026-09-20: `release_python_environment_macos_arm64_v2.json`. The old profile and
+2026-09-02 runtime receipt remain historical evidence. Release consumers now
+require the v2 profile and write a distinct 2026-09-20 runtime receipt. See
+`audits/release_runtime_migration_2026_09_20.json` for the exact identities and
+approval scope. This migration does not restore historical-runtime authenticity
+or constitute source/package/full-CI acceptance.
+
 Scope: local publication freeze and external handoff. External publication actions require the
 author's GitHub, Zenodo, venue, and optionally PyPI credentials. This checklist does not authorize
 a push, tag, upload, or submission.

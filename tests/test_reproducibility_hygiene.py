@@ -17,11 +17,14 @@ review panel ran:
    ``kga/`` and ``tests/`` only -- "the two trees this file can speak for" --
    which is why it passed green while **94 tracked ``.py``/``.sh`` files** still
    carried ``AutoML_Flagship_V8`` / ``/Volumes/T9`` / ``/Users/pratik`` paths.
-   That was defect D8.  :class:`TestNoMachineLocalPaths` now scans the **whole
-   repository**, both ``.py`` and ``.sh``, and also catches the class the
+   That was defect D8.  :class:`TestNoMachineLocalPaths` scans tracked and new
+   nonignored source plus the independent release closure, and also catches the class the
    original guard never looked for: Cowork **session-sandbox** mounts
    (``/sessions/<name>/mnt/...``), which are valid only inside one ephemeral
-   container.  The survivors are named one by one in
+   container. Historical archive scripts are separately hash-verified and
+   rejected if they enter the release source closure; they are not rewritten.
+   Ignored non-source scratch does not define publication code. The remaining
+   detector and pre-existing historical exceptions are named one by one in
    :data:`MACHINE_LOCAL_ALLOWLIST`, each with the reason it is allowed.
 
 3. **Tests must not leak process-global state.**  :class:`TestNoRawEnvironMutation`
@@ -67,9 +70,6 @@ MACHINE_LOCAL_ALLOWLIST: dict[str, str] = {
     "docs/research/kbound/kbound_repro/check_repo.py": "the scanner's CLI; documents what it flags",
     "docs/research/kbound/kbound_repro/paths.py": "documents which paths it replaces, in prose",
     "docs/research/kbound/kbound_repro/tests/test_storage.py": "builds a synthetic violating file to test the scanner",
-    "docs/research/kbound/scrub_submission.py": "the anonymiser; the fragment is a substitution pattern",
-    "docs/research/kbound/scripts/code_audit_uav.py": "one prose line recording the volume's historical name",
-    "scripts/migrate_repo_name_to_kbound.sh": "record of the completed rename; the old name is its subject",
     # -----------------------------------------------------------------------
     # SURFACED 2026-07-26 BY THE iCLOUD MATERIALISATION.  All eight files below
     # were NUL-filled placeholders when the "94 files down to 9" census was
@@ -77,19 +77,14 @@ MACHINE_LOCAL_ALLOWLIST: dict[str, str] = {
     # That census was complete over the READABLE tree, not over the tree.  Every
     # entry is a real violation, newly visible; none is in a promoted code path.
     # -----------------------------------------------------------------------
-    "experiments/kbound/results/gpu_queue_camelyon_then_iwildcam.sh":
-        "a saved GPU submission QUEUE, i.e. a record of the exact command that was "
-        "run on the author's machine. Rewriting it would falsify the run record; it "
-        "is not a reproduction entry point",
-    "experiments/kbound/results/gpu_queue_iwildcam_after_camelyon.sh":
-        "second saved GPU submission queue; same rationale",
-    "experiments/kbound/theory_validation/frontier_decisive/camelyon_recal/camelyon_recal.py":
-        "superseded theory probe (GAP_AUDIT.md / INTEGRITY_FIXES.md both SUPERSEDED); "
-        "the path is an ephemeral Cowork session-sandbox mount, already dead",
-    "experiments/kbound/theory_validation/frontier_decisive/kga_elara/kga_elara_convergence.py":
-        "superseded theory probe; same dead session-sandbox mount",
-    "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py":
-        "superseded theory probe; same dead session-sandbox mount",
+    "experiments/kbound/results/gpu_queue_camelyon_then_iwildcam.sh": "a saved GPU submission QUEUE, i.e. a record of the exact command that was "
+    "run on the author's machine. Rewriting it would falsify the run record; it "
+    "is not a reproduction entry point",
+    "experiments/kbound/results/gpu_queue_iwildcam_after_camelyon.sh": "second saved GPU submission queue; same rationale",
+    "experiments/kbound/theory_validation/frontier_decisive/camelyon_recal/camelyon_recal.py": "superseded theory probe (GAP_AUDIT.md / INTEGRITY_FIXES.md both SUPERSEDED); "
+    "the path is an ephemeral Cowork session-sandbox mount, already dead",
+    "experiments/kbound/theory_validation/frontier_decisive/kga_elara/kga_elara_convergence.py": "superseded theory probe; same dead session-sandbox mount",
+    "experiments/kbound/theory_validation/frontier_decisive/realdata/realdata_frontier.py": "superseded theory probe; same dead session-sandbox mount",
 }
 
 
@@ -126,8 +121,7 @@ class TestStableSeedIsProcessStable:
             [sys.executable, "-c", source],
             env=env,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             check=False,
         )
         assert proc.returncode == 0, proc.stderr
@@ -150,10 +144,14 @@ class TestStableSeedIsProcessStable:
                 f"{CIFAR10C_SUITE} defines no stable_seed(); per-cell seeding must "
                 "come from a fixed digest, not from Python's salted hash()"
             )
-        src = "import hashlib\n" + textwrap.dedent(fn) + (
-            "\nprint([stable_seed('cifar10c_suite', c, s)"
-            " for c in ('gaussian_noise', 'snow', 'jpeg_compression')"
-            " for s in (1, 3, 5)])\n"
+        src = (
+            "import hashlib\n"
+            + textwrap.dedent(fn)
+            + (
+                "\nprint([stable_seed('cifar10c_suite', c, s)"
+                " for c in ('gaussian_noise', 'snow', 'jpeg_compression')"
+                " for s in (1, 3, 5)])\n"
+            )
         )
         assert self._run(src, "0") == self._run(src, "12345")
 
@@ -198,7 +196,7 @@ class TestNoMachineLocalPaths:
             if (directory / "pyvenv.cfg").is_file():
                 directories[:] = []
                 continue
-            directories[:] = sorted(name for name in directories if name != "__pycache__")
+            directories[:] = sorted(name for name in directories if name not in {"__pycache__", ".git"})
             for name in sorted(filenames):
                 path = directory / name
                 if path.suffix not in {".py", ".sh"} or not _readable(path):
@@ -214,8 +212,26 @@ class TestNoMachineLocalPaths:
         return bad
 
     def test_no_machine_local_paths_anywhere_in_the_tree(self):
-        found = self._offending_files(REPO)
-        unexpected = {k: v for k, v in found.items() if k not in MACHINE_LOCAL_ALLOWLIST}
+        from docs.research.kbound.kbound_repro.source_hygiene import check_source_hygiene
+        from docs.research.kbound.scripts.build_release_source_seal import _inventory
+
+        # Git's ignore contract classifies scratch, not archive authenticity.
+        # An ignored path included by release source is independently scanned.
+        raw = subprocess.run(
+            ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.py", "*.sh"],
+            cwd=REPO, capture_output=True, check=True,
+        ).stdout
+        deleted = subprocess.run(
+            ["git", "ls-files", "-z", "--deleted", "--", "*.py", "*.sh"],
+            cwd=REPO, capture_output=True, check=True,
+        ).stdout
+        source = set(raw.decode().split("\0")) - set(deleted.decode().split("\0")) - {""}
+        unexpected = check_source_hygiene(
+            REPO, source,
+            REPO / "docs/research/kbound/audits/preserved_executable_inventory_2026_09_20.json",
+            [path for _, path in _inventory(REPO, "HEAD")],
+            BANNED_PATH_FRAGMENTS, MACHINE_LOCAL_ALLOWLIST,
+        )
         assert not unexpected, (
             "machine-local absolute paths are back in tracked executables "
             f"({len(unexpected)} file(s)): {unexpected}. Use $KBOUND_REPO_ROOT "
@@ -253,9 +269,22 @@ class TestNoMachineLocalPaths:
         unmarked = tmp_path / ".venv_not_an_environment"
         unmarked.mkdir()
         (unmarked / "runner.sh").write_text(BANNED_PATH_FRAGMENTS[0])
-        assert set(self._offending_files(tmp_path)) == {
-            "src/runner.py", ".venv_not_an_environment/runner.sh"
-        }
+        assert set(self._offending_files(tmp_path)) == {"src/runner.py", ".venv_not_an_environment/runner.sh"}
+
+    def test_scan_never_reads_git_recovery_metadata(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(sys.modules[__name__], "REPO", tmp_path)
+        private = tmp_path / ".git" / "recovery"
+        private.mkdir(parents=True)
+        (private / "recovery.py").write_text(BANNED_PATH_FRAGMENTS[0])
+        (tmp_path / "active.py").write_text(BANNED_PATH_FRAGMENTS[0])
+        read = Path.read_bytes
+
+        def deny_metadata(path):
+            assert ".git" not in path.relative_to(tmp_path).parts
+            return read(path)
+
+        monkeypatch.setattr(Path, "read_bytes", deny_metadata)
+        assert set(self._offending_files(tmp_path)) == {"active.py"}
 
 
 class TestNoRawEnvironMutation:

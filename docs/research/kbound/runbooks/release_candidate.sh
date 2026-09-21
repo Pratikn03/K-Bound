@@ -98,8 +98,8 @@ verify_release_python_environment() {
   [[ "${KBOUND_VERIFY_TOOLCHAIN:-0}" == "1" ]] || return 0
   "$PY" "$KB/scripts/verify_python_environment.py" \
     --lock requirements-release-macos-arm64.lock.txt \
-    --content-profile "$KB/release_python_environment_macos_arm64.json" \
-    --output "$KB/audits/python_environment_2026_09_02.json"
+    --content-profile "$KB/release_python_environment_macos_arm64_v2.json" \
+    --output "$KB/audits/python_environment_2026_09_20.json"
 }
 
 # --- 2. steps ---------------------------------------------------------------

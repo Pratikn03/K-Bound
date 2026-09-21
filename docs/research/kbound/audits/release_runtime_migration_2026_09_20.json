@@ -1,0 +1,41 @@
+{
+  "schema": "kbound-release-runtime-migration-v1",
+  "status": "USER_APPROVED_NEW_CONTENT_IDENTITY",
+  "approval": {
+    "source": "explicit user reply in the current task",
+    "question_item_id": "[\"request_user_input_async\",\"call_qJoNpd5amqHmJaSySB908fHD\",0]",
+    "answer": "Approve the new runtime identity",
+    "scope": "Release packaging only; no downloads, training, deletion or Git commits."
+  },
+  "historical_profile": {
+    "path": "docs/research/kbound/release_python_environment_macos_arm64.json",
+    "sha256": "4dbd8a4729aa96e41454ffbea411190cd0662ca9eeb1d8c95ae4e46a84a2121a",
+    "preserved_unchanged": true,
+    "historical_runtime_authentication_restored": false
+  },
+  "new_profile": {
+    "path": "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
+    "sha256": "466bd425f2eeaf5be100c0951ca4500d97be194f8380bc3b4ca1b6a88b09d959",
+    "aggregate_sha256": "28c665a6581c575d9cadb2c28eef02bff27bd3eb69bb4d41ab73581f1246c263",
+    "python": "3.12.13",
+    "platform": "macos-arm64",
+    "distribution_count": 137,
+    "lock_path": "requirements-release-macos-arm64.lock.txt",
+    "lock_sha256": "b2d5b11642672957daa90bc13187efac4b18cabc5d114ea1755615cc4c109f8f"
+  },
+  "evidence": {
+    "independent_review_path": "output/verification/release-reconciliation.yi7Mvy/independent-review.md",
+    "independent_review_sha256": "5222aa280ef4c5272d8050573016ef33acef4125fe88dcaf5beb862fe1f664ec",
+    "candidate_recheck_path": "output/verification/release-reconciliation.yi7Mvy/runtime-candidate-recheck.json",
+    "candidate_recheck_sha256": "e7af449f7eb741d3c34633040f41fbc32bc1e75c51c86df1ceac685649b97857",
+    "comparison_path": "output/verification/release_gates_20260919/runtime-exhaustive-diff.json",
+    "comparison_sha256": "e2626e69e60e356b8091b9aa99fb39cdc374278039336a87fae105416a81236f"
+  },
+  "qualifications": [
+    "The historical tree is missing 674 candidate-listed paths across seven distributions; old-only paths were not exhaustively inventoried.",
+    "Compared launcher bodies agree, but complete equivalence to or restoration of the historical sealed runtime is not established.",
+    "Installed-distribution content verification does not independently authenticate the interpreter binary or wheel origin beyond the verifier's recorded checks.",
+    "Approval of this new runtime identity does not accept the dirty source tree, historical scientific results, protected-original disposition, full CI or the publication package."
+  ],
+  "publication_sealed": false
+}

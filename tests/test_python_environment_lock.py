@@ -95,7 +95,7 @@ def test_release_content_profile_is_sealed_and_required_by_preflight() -> None:
     assert len(profile["aggregate_sha256"]) == 64
 
     runbook = (ROOT / "docs/research/kbound/runbooks/release_candidate.sh").read_text(encoding="utf-8")
-    assert '--content-profile "$KB/release_python_environment_macos_arm64.json"' in runbook
+    assert '--content-profile "$KB/release_python_environment_macos_arm64_v2.json"' in runbook
     source_seal = (ROOT / "docs/research/kbound/scripts/build_release_source_seal.py").read_text(encoding="utf-8")
     assert "docs/research/kbound/release_python_environment_macos_arm64.json" in source_seal
     checksum_verifier = (ROOT / "docs/research/kbound/scripts/verify_release_checksums.py").read_text(encoding="utf-8")
@@ -120,6 +120,49 @@ def test_release_profile_and_lock_include_every_python_release_gate_tool() -> No
         profile_name = "bandit[toml]" if name == "bandit" else name
         assert f"{profile_name}=={version}" in profile
         assert lock.packages[name] == version
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    ["build_cct20_public_bundle", "build_anonymous_supplement", "build_release_source_seal"],
+)
+@pytest.mark.parametrize("tampered", [False, True])
+def test_release_consumers_use_new_identity_and_reject_changed_content(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, module_name: str, tampered: bool
+) -> None:
+    """Catch consumers selecting the historical profile or skipping content validation."""
+    module = importlib.import_module(f"docs.research.kbound.scripts.{module_name}")
+    kb = tmp_path / "docs/research/kbound"
+    kb.mkdir(parents=True)
+    historical = {"aggregate_sha256": "1" * 64}
+    approved = {"aggregate_sha256": "2" * 64}
+    changed = {"aggregate_sha256": "3" * 64}
+    old_path = kb / "release_python_environment_macos_arm64.json"
+    new_path = kb / "release_python_environment_macos_arm64_v2.json"
+    old_path.write_text(json.dumps(historical), encoding="utf-8")
+    new_path.write_text(json.dumps(changed if tampered else approved), encoding="utf-8")
+    old_bytes = old_path.read_bytes()
+    monkeypatch.setattr(module, "__file__", str(kb / "scripts" / f"{module_name}.py"))
+    if module_name == "build_release_source_seal":
+        monkeypatch.setattr(module, "ROOT", tmp_path)
+
+    # Only replace expensive installed-distribution enumeration; real profile
+    # comparison and failure propagation remain exercised at every consumer.
+    checks = []
+
+    def verify_installed_fixture(lock_path: Path, profile_path: Path):
+        assert lock_path == tmp_path / "requirements-release-macos-arm64.lock.txt"
+        checks.append(profile_path)
+        return module.verify_python_environment.verify_content_profile(profile_path, approved)
+
+    monkeypatch.setattr(module.verify_python_environment, "verify_exact_content_profile", verify_installed_fixture)
+    if tampered:
+        with pytest.raises(ValueError, match="installed Python content does not match"):
+            module.verify_release_python_content()
+    else:
+        module.verify_release_python_content()
+    assert checks == [new_path]
+    assert old_path.read_bytes() == old_bytes
 
 
 @pytest.mark.parametrize(

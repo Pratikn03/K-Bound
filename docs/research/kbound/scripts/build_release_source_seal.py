@@ -37,11 +37,11 @@ SO2SAT_SOURCE_PATHS = repository_verification.SO2SAT_SOURCE_PATHS
 
 
 def verify_release_python_content() -> None:
-    """Require the sealed release interpreter before source-seal semantics."""
+    """Require the approved v2 runtime content before source-seal semantics."""
 
     verify_python_environment.verify_exact_content_profile(
         ROOT / "requirements-release-macos-arm64.lock.txt",
-        ROOT / "docs/research/kbound/release_python_environment_macos_arm64.json",
+        ROOT / "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
     )
 
 
@@ -111,6 +111,9 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    "preservation_policy": (
+        "docs/research/kbound/audits/preserved_executable_inventory_2026_09_20.json",
+    ),
     "so2sat_source": SO2SAT_SOURCE_PATHS,
     "reader_surface": (
         "DATA.md",
@@ -283,6 +286,8 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
         "requirements-release.txt",
         "requirements-release-macos-arm64.lock.txt",
         "docs/research/kbound/release_python_environment_macos_arm64.json",
+        "docs/research/kbound/release_python_environment_macos_arm64_v2.json",
+        "docs/research/kbound/audits/release_runtime_migration_2026_09_20.json",
         "docs/research/kbound/release_toolchain_macos_arm64.json",
         "requirements-paper.txt",
         "requirements-paper.lock.txt",
@@ -298,6 +303,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
     ),
     "verified_release_environment": (
         "docs/research/kbound/audits/python_environment_2026_09_02.json",
+        "docs/research/kbound/audits/python_environment_2026_09_20.json",
         "docs/research/kbound/audits/release_toolchain_2026_09_02.json",
     ),
     "immutable_release_locks": (
