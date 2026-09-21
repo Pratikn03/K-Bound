@@ -1,3 +1,5 @@
+> Current-status addendum (2026-09-21): this dated audit preserves its original scope. Consult `TASK1_4_FINAL_CLOSEOUT.md`, `release/recovered_gemini_evidence_v1/RECOVERY_AUDIT.json`, and `release/table_provenance_audit_v1.json` for recovered mixed-sign receipts, rank-clipping limits, and simulation versus measurement corrections. Old proof counts, protocol descriptions and build passes are not current-source release acceptance.
+
 # K-Bound Claim-To-Artifact Manifest
 
 Evidence-synchronization date: 2026-08-29

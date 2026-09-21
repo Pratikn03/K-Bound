@@ -33,7 +33,7 @@
 #   SEEDS="0 1 2"               >=3 recommended for the multi-seed CIs
 #   PY=<repo>/.venv/bin/python  python with torch (+wilds for Camelyon17)
 #   IMAGENETR_DIR=<repo>/experiments/kbound/data/imagenet-r
-#   WILDS_DATA_ROOT=$HOME/datasets/wilds
+#   WILDS_DATA_ROOT=<explicit dataset root>
 #   INR_BATCH=24                ImageNet-R frozen-eval batch (lower if MPS OOMs)
 #   INR_NEVAL=500               ImageNet-R class-balanced eval pool size
 #   NBOOT=10000                 paired-bootstrap resamples for the CI analysis
@@ -133,16 +133,15 @@ PYEOF
 # GAP B1 -- Camelyon17 SAR completion (candidate set already includes SAR)
 # =============================================================================
 run_camelyon () {
-  local WILDS_DATA_ROOT="${WILDS_DATA_ROOT:-$HOME/datasets/wilds}"
+  local WILDS_DATA_ROOT="${WILDS_DATA_ROOT:?Set WILDS_DATA_ROOT to the authorized dataset root}"
   local RUN_NAME="camelyon17_fullscale_B_v2"
   local OUT="$ROOT/experiments/kbound/results/$RUN_NAME"
   local F0_TEMPLATE="experiments/kbound/results/camelyon17_fullscale_B_v1/f0_seed{seed}.pt"
   mkdir -p "$OUT"
-  # Camelyon17 needs torch + wilds. Prefer a dedicated wilds venv if present.
-  local CPY="$PY"
-  if [[ -x "$HOME/.venv_wilds/bin/python" ]]; then CPY="$HOME/.venv_wilds/bin/python"; fi
+  # Select a dedicated runtime explicitly when required.
+  local CPY="${WILDS_PYTHON:-$PY}"
   if ! "$CPY" -c "import wilds" 2>/dev/null; then
-    echo "[B1] ERROR: $CPY has no 'wilds'. Install (pip install wilds) or set PY/.venv_wilds."
+    echo "[B1] ERROR: $CPY has no 'wilds'. Install (pip install wilds) or set WILDS_PYTHON."
     echo "[B1] Skipping Camelyon17."
     return 0
   fi

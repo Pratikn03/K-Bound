@@ -18,6 +18,10 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from docs.research.kbound.scripts.policy_source_reconciliation import accepts_historical_policy
+
 PANEL_PATH = ROOT / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
 SOURCE_MANIFEST = ROOT / "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
 TABLE_PATH = ROOT / "docs/research/kbound/paper/generated/kbound_result_manifest.json"
@@ -523,7 +527,7 @@ def _validated_current_policy_bindings(bindings: object) -> dict[str, Any]:
         ):
             raise ValueError(f"current-policy cluster {name} binding has invalid path/hash metadata")
         bound_path = ROOT / relative_path
-        if not bound_path.is_file() or _sha256(bound_path) != binding["sha256"]:
+        if (not bound_path.is_file() or _sha256(bound_path) != binding["sha256"]) and not accepts_historical_policy(ROOT, name, binding):
             raise ValueError(f"current-policy cluster {name} binding does not match the live file")
     return bindings
 

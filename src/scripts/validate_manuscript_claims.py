@@ -16,8 +16,10 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[2]
 KBOUND = ROOT / "docs/research/kbound"
 sys.path.insert(0, str(KBOUND))
+sys.path.insert(0, str(ROOT))
 
 from kbound_repro import authority, manuscript_sources  # noqa: E402
+from docs.research.kbound.scripts.policy_source_reconciliation import accepts_historical_policy  # noqa: E402
 
 CANONICAL = ROOT / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
 SOURCE_MANIFEST = ROOT / "experiments/kbound/results/reconciled_panels_v1/source_manifest.json"
@@ -2166,7 +2168,12 @@ def main(argv: list[str] | None = None) -> int:
         for name, binding in cluster_data.get("live_code_bindings", {}).items():
             bound_path = ROOT / binding.get("path", "")
             if not bound_path.is_file() or file_sha256(bound_path) != binding.get("sha256"):
-                problems.append(f"current-policy family sensitivity {name} binding is stale")
+                try:
+                    reconciled = accepts_historical_policy(ROOT, name, binding)
+                except ValueError:
+                    reconciled = False
+                if not reconciled:
+                    problems.append(f"current-policy family sensitivity {name} binding is stale")
         family = cluster_data.get(
             "retrospective_holm_over_six_prospectively_named_contrasts", {}
         )

@@ -109,7 +109,7 @@ _HOME_ALIAS_RE = re.compile(r"(?:\$HOME|\$\{HOME\}|%USERPROFILE%)[/\\]", re.IGNO
 _WINDOWS_PRIVATE_RE = re.compile(
     r"(?<![A-Za-z0-9])(?:[A-Za-z]:\\(?:Users|home|Volumes|private|tmp|var|data|"
     r"work|Documents|Desktop|Downloads)(?:\\[^\s\x00<>\"']+)+|"
-    r"\\\\[^\\\s]+\\[^\\\s]+)",
+    r"\\\\[\w.-]+\\+[\w$.-][^\\\s\x00<>\"'|?*:{}]*(?=\\|\s|[\"']|$))",
     re.IGNORECASE,
 )
 _TRACK_CHANGE_RE = re.compile(r"<(?:w:)?(?:ins|del)\b|\bw:author\s*=", re.IGNORECASE)

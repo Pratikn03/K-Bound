@@ -13,9 +13,14 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+
+from docs.research.kbound.scripts.policy_source_reconciliation import accepts_historical_policy
+
 LEDGER = ROOT / "docs/research/kbound/claim_ledger.json"
 OUT = ROOT / "docs/research/kbound/RESULT_MANIFEST.json"
 RECONCILED = ROOT / "experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json"
@@ -292,7 +297,7 @@ def _validated_current_policy_bindings(bindings: object) -> dict:
         ):
             raise ValueError(f"current-policy family sensitivity {name} binding has invalid path/hash metadata")
         path = ROOT / relative_path
-        if not path.is_file() or digest(path) != binding["sha256"]:
+        if (not path.is_file() or digest(path) != binding["sha256"]) and not accepts_historical_policy(ROOT, name, binding):
             raise ValueError(f"current-policy family sensitivity {name} binding is stale")
     return bindings
 

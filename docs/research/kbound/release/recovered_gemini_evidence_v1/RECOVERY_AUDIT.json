@@ -1,0 +1,134 @@
+{
+  "schema": "kbound-recovered-gemini-evidence-v1",
+  "origin_task": "e88e7831-3e95-4532-b5ed-e26732f74984",
+  "origin_execution_step": 13492,
+  "recovery_date": "2026-09-21",
+  "recovered_files": [
+    {
+      "path": "b6_fold_configuration.json",
+      "sha256": "fdb93264279b63538df7477220a478ef2e6f47d047a1412f88e3e0c060ef9b28",
+      "bytes": 9271
+    },
+    {
+      "path": "b6_outcome_exclusion_receipt.json",
+      "sha256": "b2fa0fe6e940849a59991f5d8d927b17ae53a16f6d031da36e93631b5ee1d9ad",
+      "bytes": 50800
+    },
+    {
+      "path": "comparator_alignment.json",
+      "sha256": "dcbbc84ed197882c93cf54c8b304ff919565dcaeb0b17c47798654a6a2f2be7f",
+      "bytes": 127067
+    }
+  ],
+  "source_hashes": {
+    "task1_mixed_sign_records_checkpoint.json": "5455978be011e46899ed2358b0ee1e2ab1a87998f3bc7b257f0855d70c51b0d5",
+    "aetta_mixed_sign_results.json": "bd35e99d65778ba737475f932af40da4ef5dd7da465645467a58276845c5c962",
+    "task1_mixed_sign_summary.json": "94275293ca423a7aed8fd8b765ce97ee375b4d40969b371769aa74cdcd24c705",
+    "task1_mixed_sign_disjoint_replay.json": "ba71035a210d7518a21db0c283be3ef54001be76f9a2be402921ea9e97fe20fd"
+  },
+  "input_hash_matches": 4,
+  "independently_checked_arithmetic_and_identity_assertions": 1512,
+  "all_checked_assertions_passed": true,
+  "b6_saved_summary_matches": true,
+  "metrics": {
+    "Model 0 (Canonical)": {
+      "aetta": {
+        "n": 36,
+        "regret": 0.003569447331958347,
+        "false_adapt_count": 5,
+        "actions": {
+          "FREEZE": 10,
+          "ADAPT": 26
+        }
+      },
+      "kga_loo": {
+        "n": 36,
+        "regret": 0.0008472220765219794,
+        "false_adapt_count": 0,
+        "actions": {
+          "FREEZE": 9,
+          "ABSTAIN": 9,
+          "ADAPT": 18
+        }
+      },
+      "kga_b6": {
+        "n": 36,
+        "regret": 0.011430553264088102,
+        "false_adapt_count": 0,
+        "actions": {
+          "ABSTAIN": 20,
+          "FREEZE": 2,
+          "ADAPT": 14
+        }
+      }
+    },
+    "Model 101 (Independent)": {
+      "aetta": {
+        "n": 36,
+        "regret": 0.0017777797248628405,
+        "false_adapt_count": 4,
+        "actions": {
+          "FREEZE": 12,
+          "ADAPT": 24
+        }
+      },
+      "kga_loo": {
+        "n": 36,
+        "regret": 0.0009166664547390408,
+        "false_adapt_count": 1,
+        "actions": {
+          "FREEZE": 5,
+          "ABSTAIN": 12,
+          "ADAPT": 19
+        }
+      },
+      "kga_b6": {
+        "n": 36,
+        "regret": 0.0023333347505993312,
+        "false_adapt_count": 0,
+        "actions": {
+          "ABSTAIN": 19,
+          "ADAPT": 17
+        }
+      }
+    },
+    "Model 102 (Independent)": {
+      "aetta": {
+        "n": 36,
+        "regret": 0.003625000516573588,
+        "false_adapt_count": 5,
+        "actions": {
+          "FREEZE": 10,
+          "ADAPT": 26
+        }
+      },
+      "kga_loo": {
+        "n": 36,
+        "regret": 0.002305554019080268,
+        "false_adapt_count": 0,
+        "actions": {
+          "FREEZE": 6,
+          "ABSTAIN": 13,
+          "ADAPT": 17
+        }
+      },
+      "kga_b6": {
+        "n": 36,
+        "regret": 0.004624999231762356,
+        "false_adapt_count": 0,
+        "actions": {
+          "ABSTAIN": 22,
+          "ADAPT": 14
+        }
+      }
+    }
+  },
+  "intervention_status": "Saved producer/log/108 intervention records recovered; original intervention was not independently rerun in this release pass.",
+  "limitations": [
+    "Retrospective saved-feature replay; no new neural runs or prospective promotion.",
+    "Helpful-only panel execution receipts remain unresolved; recovered mixed-sign records do not authenticate that separate panel.",
+    "B6 producer clips rank9 to8 with only8 calibration residuals at alpha0.10. This does not support exact90percent split-conformal coverage; observed point estimates remain descriptive.",
+    "Recovered LOO decisions support arithmetic accounting; complete original fitted models/environment snapshot is not supplied by these JSONs.",
+    "Publication/source-seal readiness remains a separate gate."
+  ]
+}

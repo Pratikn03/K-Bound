@@ -155,7 +155,7 @@ configuration selection and multiplicity~\cite{angelopoulos2025ltt}.
 \centering
 \footnotesize
 \caption{Closest roles, targets, and remaining distinctions. Literature comparisons are conceptual here;
-a historical AETTA comparison is reported in \KBSuppRef{app:baseline-audit}{Appendix}{the supplementary baseline audit}, subject to missing KGA execution receipts, while native TTA/ALine and full POEM comparisons remain incomplete.}
+a historical AETTA comparison is reported in \KBSuppRef{app:baseline-audit}{Appendix}{the supplementary baseline audit}, with recovered mixed-sign KGA receipts and a rank-clipped calibration caveat, while native TTA/ALine and full POEM comparisons remain incomplete.}
 \label{tab:related-comparison}
 \begin{tabular}{@{}p{0.20\textwidth}p{0.27\textwidth}p{0.43\textwidth}@{}}
 \toprule
@@ -957,29 +957,27 @@ A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{A
 \subsection{Cross-Architecture and Parameter-Restricted Adaptation Probes}
 \label{sec:architecture-partial-adaptation}
 
-As a preliminary diagnostic probe into whether certificate scale varies across model topologies, we inspected four distinct architectures under systematic covariate shift: ResNet-18 (standard residual), ResNet-50 (bottleneck residual), ViT-B/16 (vision transformer), and ConvNeXt-Tiny (depthwise convolutional; Table~\ref{tab:multi-architecture-invariance}).
+Two historical probes require a distinction from measured benchmarks. The recovered four-architecture producer samples synthetic paired outcomes using architecture-labeled constants; it does not execute those backbones. Table~\ref{tab:multi-architecture-invariance} now reports only saved simulation summaries. The separate ImageNet-R architecture experiment retains its own measured results and limitations.
 
 \begin{table*}[t]
 \centering
 \small
-\caption{Preliminary cross-architecture diagnostic probe across four model topologies under synthetic covariate shift. Disagreement measure $\mu(D)$, conformal radius $r$, break-even margin $\beta^*$, and action distributions are diagnostic summaries; similar radii do not establish empirical coverage or cross-topology transfer.}
+\caption{Synthetic four-architecture probe, recovered from its saved report. Architecture names label simulation settings, not executed models. All saved actions are null; no observed false-ADAPT rate or architecture-transfer claim follows. The saved mean break-even margins are zero, correcting the earlier literal value of one.}
 \label{tab:multi-architecture-invariance}
 \resizebox{\textwidth}{!}{\input{paper/generated/tab_multi_architecture_invariance.tex}}
 \end{table*}
 
-Across the four topologies, the disagreement region measure $\mu(D)$ ($0.1727$--$0.1806$) and the calibrated certificate radius $r = \varepsilon + b$ ($0.1023$--$0.1026$) exhibit comparable scale on these evaluation batches. However, similar radii do not establish empirical coverage, which requires held-out inclusion testing. In this probe, KGA issued only FREEZE or ABSTAIN decisions and therefore retained the frozen predictor throughout. The zero observed false-ADAPT rate reflects the absence of ADAPT decisions, not successful selection of beneficial updates.
-
-Furthermore, we explored parameter-restricted adaptation hierarchies as an exploratory development ablation to understand the conservative retention observed on camera-trap shifts (Table~\ref{tab:cct20-partial-adaptation}).
+The parameter-restricted probe also samples synthetic benefits at five hardcoded locations rather than loading CCT-20 images or executing the proposed adapters. Its numerical break-even summaries are retained as simulation outputs in Table~\ref{tab:cct20-partial-adaptation}; the saved null actions do not support a routing result.
 
 \begin{table*}[t]
 \centering
 \small
-\caption{Exploratory parameter-restricted adaptation probe on CCT-20 camera-trap deployments. Frozen-model retention denominator is 45/45 evaluated cells (9 target locations $\times$ 5 checkpoints) serving the frozen baseline. The break-even margin $\beta^*$ indicates the local empirical tolerance for overturning the decision, not population truth.}
+\caption{Synthetic parameter-restricted adaptation probe. Five simulated locations per regime; no real-cell retention denominator or measured gate action. These rows do not inherit the authenticated CCT-20 benchmark's 45-cell endpoint.}
 \label{tab:cct20-partial-adaptation}
 \resizebox{\textwidth}{!}{\input{paper/generated/tab_cct20_partial_adaptation.tex}}
 \end{table*}
 
-On the 45 CCT-20 evaluation cells, unconstrained full adaptation harms accuracy on 44 of 45 cells. KGA served the frozen model across all 45 cells (100\% frozen-model retention: 44 FREEZE, 1 ABSTAIN, 0 ADAPT), avoiding the measured adaptation degradation. In exploratory development probes restricting updates to normalization statistics or prediction heads, drift is dampened ($\beta^* = 0.013$--$0.022$, where $\beta^*$ denotes the local empirical break-even margin), though within the maintained benchmark, all 45 cells consistently retain the frozen baseline.
+Separately, the authenticated CCT-20 benchmark retained the frozen model across all 45 cells (44 FREEZE, 1 ABSTAIN, 0 ADAPT). That safe-utility result does not establish positive selective adaptation or validate any of the simulated restricted-adapter regimes.
 
 \section{Limitations and Broader Impact}
 \label{sec:compact-sensitivity}
@@ -993,13 +991,7 @@ The useful object is the class-dependent feasible set, not the algebraic inequal
 
 \paragraph{Ablation: Empirical surrogate for $\beta$.}
 \label{par:beta-surrogate-failure}
-We evaluated whether an empirical benefit-scale proxy computed from development shifts could serve
-as an operational surrogate for $\beta$. On CIFAR-10-C, this heuristic surrogate proved $1.4$--$50\times$
-too small for operational soundness: 24--73\% of evaluation cells produced measured outcomes outside
-the proxy-declared interval, and commit error reached 0.4--16.6\%. On ImageNet-C, the heuristic returned
-zero commitments across all 405 evaluation cells in 5 of 10 configurations.
-This operational failure directly corroborates Theorem~\ref{thm:compact-beta-minimax}: processing unchanged evidence
-cannot replace a justified structural assumption.
+An earlier draft reported an empirical benefit-scale proxy as a surrogate for $\beta$. The raw sweep artifact has not been recovered, so the previously reported numerical failure ranges remain unverified historical summaries, consistently with the supplementary provenance note. They cannot empirically corroborate Theorem~\ref{thm:compact-beta-minimax}. That theorem independently establishes a conditional identification obstruction: processing unchanged evidence cannot replace a justified structural assumption.
 The theorem does not attribute this failure to any single cause. Rather,
 Theorem~\ref{thm:compact-beta-minimax} proves that $\beta$ cannot be audited from label-free target
 data alone within this rich kernel class. Consequently, population guarantees within this framework without coupled target labels
@@ -1033,7 +1025,7 @@ We consolidate the essential empirical boundaries of the current evidence into f
   experiments evaluate retrospective, opened panels under Protocol B cross-fitting. While these report empirical
   commitment and inclusion diagnostics on opened records, prospective evaluation on unopened environments is
   required to assess distribution-transfer properties.
-  \item \textbf{Independent-Checkpoint Replication:} The original 2,160-cell CIFAR-10-C panel reused one source checkpoint. Subsequent records describe two independently trained ResNet-18 checkpoints and helpful-only and mixed-sign 36-condition evaluations (\KBSuppRef{app:model-replication}{Appendix}{the supplementary model replication}). On the mixed-sign panel, 39--42\% of conditions were harmful; saved summaries report lower KGA point oracle regret than both fixed policies on all three source models. However, the historical per-cell KGA decisions and fitted-predictor/split receipts have not been recovered, so these routing summaries are not a fully regenerated execution authority (\KBSuppRef{app:replication-provenance}{Appendix}{the supplementary replication-provenance qualification}). A retrospective cross-architecture diagnostic is reported in \KBSuppRef{app:architecture-generalization}{Appendix}{B.8.2}, while prospective architecture-level transfer to unseen model families and environments remains untested.
+  \item \textbf{Independent-Checkpoint Replication:} The original 2,160-cell CIFAR-10-C panel reused one source checkpoint. Subsequent records describe two independently trained ResNet-18 checkpoints and helpful-only and mixed-sign 36-condition evaluations (\KBSuppRef{app:model-replication}{Appendix}{the supplementary model replication}). On the mixed-sign panel, 39--42\% of conditions were harmful; saved summaries report lower KGA point oracle regret than both fixed policies on all three source models. Recovered mixed-sign per-cell decisions and B6 split receipts support the reported arithmetic; original fitted-model/environment identities and helpful-only execution remain incomplete, and B6 rank clipping prevents a nominal coverage claim (\KBSuppRef{app:replication-provenance}{Appendix}{the supplementary replication-provenance qualification}). A retrospective cross-architecture diagnostic is reported in \KBSuppRef{app:architecture-generalization}{Appendix}{B.8.2}, while prospective architecture-level transfer to unseen model families and environments remains untested.
   \item \textbf{Hardware and External Baseline Dependencies:} The synchronized baseline comparison
   (Table~\ref{tab:synchronized-baselines}) and scoped native panel
   (\KBSuppRef{app:historical-ports}{Appendix}{the supplementary historical ports section}, \KBSuppRef{tab:native-component-45}{Table}{the supplementary native-component table}) evaluate fixed policies and

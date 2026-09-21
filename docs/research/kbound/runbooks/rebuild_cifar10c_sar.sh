@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
-PY="${KBOUND_SAR_PYTHON:-/opt/anaconda3/envs/ag311/bin/python}"
+PY="${KBOUND_SAR_PYTHON:?Set KBOUND_SAR_PYTHON to the reviewed SAR runtime}"
 DEVICE="${KB_DEVICE:-mps}"
 DATA="${KBOUND_CIFAR_ROOT:-$ROOT/experiments/kbound/cifar}"
 OUT="${KBOUND_SAR_OUTPUT:-$ROOT/experiments/kbound/results/cifar10c_sar_rebuild_v2}"

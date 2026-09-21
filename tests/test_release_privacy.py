@@ -358,3 +358,26 @@ def test_recursive_zip_scan_checks_directory_entry_metadata() -> None:
 
     with pytest.raises(privacy.PrivacyError, match="ZIP member metadata"):
         privacy.scan_member("nested.zip", payload.getvalue())
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        rb'pattern = r"\\newcommand\{\\([A-Za-z]+)\}\{([^}]*)\}"',
+        rb'pattern = rf"\\{formatting}\s*"',
+        rb'pattern = r"\\(?:hspace|kern|mkern)\*?"',
+        rb'pattern = r"\\section\*?"',
+        rb'pattern = rf"\\newcommand\s*\{{\\{name}\}}"',
+    ],
+)
+def test_latex_regex_is_not_misclassified_as_a_unc_path(payload: bytes) -> None:
+    privacy.scan_member("validator.py", payload)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [rb'\\server\share\secret.txt', rb'\\server.local\C$\secret.txt', rb'\\192.168.1.2\share\secret.txt'],
+)
+def test_unc_disclosures_remain_rejected_in_source(payload: bytes) -> None:
+    with pytest.raises(privacy.PrivacyError, match="Windows"):
+        privacy.scan_member("validator.py", payload)

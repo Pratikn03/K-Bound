@@ -1,0 +1,317 @@
+{
+  "protocol": "B6 Three-Way Outcome-Disjoint Cross-Fitting",
+  "description": "Deterministic 3-way partition of 36 mixed-sign conditions for outcome-disjoint evaluation",
+  "random_seed": 42,
+  "n_conditions": 36,
+  "n_folds": 3,
+  "alpha": 0.1,
+  "gbr_hyperparameters": {
+    "n_estimators": 250,
+    "max_depth": 2,
+    "learning_rate": 0.05,
+    "subsample": 0.8,
+    "random_state": 42
+  },
+  "folds": [
+    {
+      "fold_index": 0,
+      "score": {
+        "count": 12,
+        "fraction": 0.3333333333333333,
+        "indices": [
+          35,
+          13,
+          26,
+          30,
+          16,
+          31,
+          21,
+          12,
+          8,
+          17,
+          9,
+          34
+        ],
+        "conditions": [
+          "pixelate|s1|large_iid|iid|mild|r0",
+          "defocus_blur|s1|small|iid|mild|r0",
+          "jpeg_compression|s5|large_iid|iid|mild|r0",
+          "fog|s5|large_iid|iid|mild|r0",
+          "jpeg_compression|s1|large_iid|iid|mild|r0",
+          "fog|s5|small|iid|mild|r0",
+          "gaussian_noise|s5|tiny|iid|mild|r0",
+          "defocus_blur|s1|large_iid|imbalanced|mild|r0",
+          "jpeg_compression|s1|large_iid|single_class|aggressive|r0",
+          "gaussian_noise|s1|tiny|imbalanced|aggressive|r0",
+          "jpeg_compression|s1|small|single_class|aggressive|r0",
+          "gaussian_noise|s1|large_iid|iid|mild|r0"
+        ]
+      },
+      "estimator_fit": {
+        "count": 16,
+        "fraction": 0.4444444444444444,
+        "indices": [
+          24,
+          2,
+          19,
+          22,
+          4,
+          32,
+          29,
+          1,
+          10,
+          23,
+          25,
+          27,
+          6,
+          14,
+          20,
+          15
+        ],
+        "conditions": [
+          "pixelate|s5|small|iid|mild|r0",
+          "defocus_blur|s1|small|single_class|aggressive|r0",
+          "gaussian_noise|s5|large_iid|iid|aggressive|r0",
+          "pixelate|s5|large_iid|iid|mild|r0",
+          "fog|s1|large_iid|single_class|aggressive|r0",
+          "contrast|s5|large_iid|iid|mild|r0",
+          "defocus_blur|s5|small|iid|mild|r0",
+          "defocus_blur|s1|large_iid|single_class|aggressive|r0",
+          "pixelate|s1|small|single_class|aggressive|r0",
+          "pixelate|s5|large_iid|iid|aggressive|r0",
+          "pixelate|s5|tiny|iid|mild|r0",
+          "jpeg_compression|s5|small|iid|mild|r0",
+          "contrast|s1|large_iid|imbalanced|aggressive|r0",
+          "contrast|s1|large_iid|iid|mild|r0",
+          "gaussian_noise|s5|small|iid|mild|r0",
+          "fog|s1|large_iid|iid|mild|r0"
+        ]
+      },
+      "residual_calibration": {
+        "count": 8,
+        "fraction": 0.2222222222222222,
+        "indices": [
+          5,
+          3,
+          0,
+          18,
+          7,
+          11,
+          33,
+          28
+        ],
+        "conditions": [
+          "fog|s1|small|single_class|aggressive|r0",
+          "defocus_blur|s1|tiny|single_class|aggressive|r0",
+          "defocus_blur|s1|large_iid|imbalanced|aggressive|r0",
+          "gaussian_noise|s5|large_iid|iid|mild|r0",
+          "contrast|s1|small|single_class|aggressive|r0",
+          "pixelate|s1|tiny|single_class|aggressive|r0",
+          "contrast|s5|small|iid|mild|r0",
+          "defocus_blur|s5|large_iid|iid|mild|r0"
+        ]
+      },
+      "disjointness_certified": true
+    },
+    {
+      "fold_index": 1,
+      "score": {
+        "count": 12,
+        "fraction": 0.3333333333333333,
+        "indices": [
+          0,
+          4,
+          29,
+          15,
+          19,
+          5,
+          11,
+          1,
+          24,
+          2,
+          33,
+          3
+        ],
+        "conditions": [
+          "defocus_blur|s1|large_iid|imbalanced|aggressive|r0",
+          "fog|s1|large_iid|single_class|aggressive|r0",
+          "defocus_blur|s5|small|iid|mild|r0",
+          "fog|s1|large_iid|iid|mild|r0",
+          "gaussian_noise|s5|large_iid|iid|aggressive|r0",
+          "fog|s1|small|single_class|aggressive|r0",
+          "pixelate|s1|tiny|single_class|aggressive|r0",
+          "defocus_blur|s1|large_iid|single_class|aggressive|r0",
+          "pixelate|s5|small|iid|mild|r0",
+          "defocus_blur|s1|small|single_class|aggressive|r0",
+          "contrast|s5|small|iid|mild|r0",
+          "defocus_blur|s1|tiny|single_class|aggressive|r0"
+        ]
+      },
+      "estimator_fit": {
+        "count": 16,
+        "fraction": 0.4444444444444444,
+        "indices": [
+          23,
+          22,
+          32,
+          6,
+          25,
+          34,
+          8,
+          10,
+          14,
+          13,
+          27,
+          35,
+          7,
+          16,
+          18,
+          31
+        ],
+        "conditions": [
+          "pixelate|s5|large_iid|iid|aggressive|r0",
+          "pixelate|s5|large_iid|iid|mild|r0",
+          "contrast|s5|large_iid|iid|mild|r0",
+          "contrast|s1|large_iid|imbalanced|aggressive|r0",
+          "pixelate|s5|tiny|iid|mild|r0",
+          "gaussian_noise|s1|large_iid|iid|mild|r0",
+          "jpeg_compression|s1|large_iid|single_class|aggressive|r0",
+          "pixelate|s1|small|single_class|aggressive|r0",
+          "contrast|s1|large_iid|iid|mild|r0",
+          "defocus_blur|s1|small|iid|mild|r0",
+          "jpeg_compression|s5|small|iid|mild|r0",
+          "pixelate|s1|large_iid|iid|mild|r0",
+          "contrast|s1|small|single_class|aggressive|r0",
+          "jpeg_compression|s1|large_iid|iid|mild|r0",
+          "gaussian_noise|s5|large_iid|iid|mild|r0",
+          "fog|s5|small|iid|mild|r0"
+        ]
+      },
+      "residual_calibration": {
+        "count": 8,
+        "fraction": 0.2222222222222222,
+        "indices": [
+          26,
+          28,
+          30,
+          17,
+          12,
+          9,
+          20,
+          21
+        ],
+        "conditions": [
+          "jpeg_compression|s5|large_iid|iid|mild|r0",
+          "defocus_blur|s5|large_iid|iid|mild|r0",
+          "fog|s5|large_iid|iid|mild|r0",
+          "gaussian_noise|s1|tiny|imbalanced|aggressive|r0",
+          "defocus_blur|s1|large_iid|imbalanced|mild|r0",
+          "jpeg_compression|s1|small|single_class|aggressive|r0",
+          "gaussian_noise|s5|small|iid|mild|r0",
+          "gaussian_noise|s5|tiny|iid|mild|r0"
+        ]
+      },
+      "disjointness_certified": true
+    },
+    {
+      "fold_index": 2,
+      "score": {
+        "count": 12,
+        "fraction": 0.3333333333333333,
+        "indices": [
+          32,
+          23,
+          27,
+          10,
+          22,
+          18,
+          25,
+          6,
+          20,
+          7,
+          14,
+          28
+        ],
+        "conditions": [
+          "contrast|s5|large_iid|iid|mild|r0",
+          "pixelate|s5|large_iid|iid|aggressive|r0",
+          "jpeg_compression|s5|small|iid|mild|r0",
+          "pixelate|s1|small|single_class|aggressive|r0",
+          "pixelate|s5|large_iid|iid|mild|r0",
+          "gaussian_noise|s5|large_iid|iid|mild|r0",
+          "pixelate|s5|tiny|iid|mild|r0",
+          "contrast|s1|large_iid|imbalanced|aggressive|r0",
+          "gaussian_noise|s5|small|iid|mild|r0",
+          "contrast|s1|small|single_class|aggressive|r0",
+          "contrast|s1|large_iid|iid|mild|r0",
+          "defocus_blur|s5|large_iid|iid|mild|r0"
+        ]
+      },
+      "estimator_fit": {
+        "count": 16,
+        "fraction": 0.4444444444444444,
+        "indices": [
+          12,
+          26,
+          15,
+          13,
+          3,
+          17,
+          8,
+          4,
+          21,
+          19,
+          0,
+          31,
+          34,
+          29,
+          24,
+          16
+        ],
+        "conditions": [
+          "defocus_blur|s1|large_iid|imbalanced|mild|r0",
+          "jpeg_compression|s5|large_iid|iid|mild|r0",
+          "fog|s1|large_iid|iid|mild|r0",
+          "defocus_blur|s1|small|iid|mild|r0",
+          "defocus_blur|s1|tiny|single_class|aggressive|r0",
+          "gaussian_noise|s1|tiny|imbalanced|aggressive|r0",
+          "jpeg_compression|s1|large_iid|single_class|aggressive|r0",
+          "fog|s1|large_iid|single_class|aggressive|r0",
+          "gaussian_noise|s5|tiny|iid|mild|r0",
+          "gaussian_noise|s5|large_iid|iid|aggressive|r0",
+          "defocus_blur|s1|large_iid|imbalanced|aggressive|r0",
+          "fog|s5|small|iid|mild|r0",
+          "gaussian_noise|s1|large_iid|iid|mild|r0",
+          "defocus_blur|s5|small|iid|mild|r0",
+          "pixelate|s5|small|iid|mild|r0",
+          "jpeg_compression|s1|large_iid|iid|mild|r0"
+        ]
+      },
+      "residual_calibration": {
+        "count": 8,
+        "fraction": 0.2222222222222222,
+        "indices": [
+          33,
+          35,
+          30,
+          5,
+          1,
+          9,
+          2,
+          11
+        ],
+        "conditions": [
+          "contrast|s5|small|iid|mild|r0",
+          "pixelate|s1|large_iid|iid|mild|r0",
+          "fog|s5|large_iid|iid|mild|r0",
+          "fog|s1|small|single_class|aggressive|r0",
+          "defocus_blur|s1|large_iid|single_class|aggressive|r0",
+          "jpeg_compression|s1|small|single_class|aggressive|r0",
+          "defocus_blur|s1|small|single_class|aggressive|r0",
+          "pixelate|s1|tiny|single_class|aggressive|r0"
+        ]
+      },
+      "disjointness_certified": true
+    }
+  ]
+}

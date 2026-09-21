@@ -12,8 +12,6 @@ MODE="${1:-preflight}"
 select_python() {
   if [[ -n "${KBOUND_PYTHON:-}" ]]; then
     printf '%s\n' "$KBOUND_PYTHON"
-  elif [[ -x "$HOME/.venv_wilds/bin/python" ]]; then
-    printf '%s\n' "$HOME/.venv_wilds/bin/python"
   elif [[ -x "$ROOT/.venv/bin/python" ]]; then
     printf '%s\n' "$ROOT/.venv/bin/python"
   else

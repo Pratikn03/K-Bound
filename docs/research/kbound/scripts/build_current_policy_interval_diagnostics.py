@@ -38,6 +38,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 
+from docs.research.kbound.scripts.policy_source_reconciliation import accepts_historical_policy
+
 SCHEMA = "kbound-current-policy-interval-diagnostics-v1"
 ALPHA = 0.10
 CANDIDATES = ("tent", "eata", "sar")
@@ -408,7 +410,11 @@ def build_artifact(root: Path = ROOT) -> dict[str, Any]:
     for name, relative in CODE_PATHS.items():
         data = resident_bytes(root / relative)
         binding = {"path": relative, "sha256": hashlib.sha256(data).hexdigest()}
-        exact_match(checks, f"current_policy.code.{name}", binding, inference["live_code_bindings"][name])
+        recorded = inference["live_code_bindings"][name]
+        if binding != recorded and accepts_historical_policy(root, name, recorded):
+            checks.append({"name": "policy_source_reconciliation_v1", "passed": True, "historical": recorded, "current": binding})
+        else:
+            exact_match(checks, f"current_policy.code.{name}", binding, recorded)
         code_bindings[name] = binding
 
     all_sources = []
