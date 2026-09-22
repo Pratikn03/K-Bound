@@ -289,7 +289,9 @@ jobs:
           python docs/research/kbound/scripts/validate_closure_protocol.py
           python docs/research/kbound/scripts/run_frontier_kga_bridge.py
           python docs/research/kbound/scripts/audit_natural_target_provenance.py
-          python docs/research/kbound/scripts/audit_official_baselines.py --repo .
+          # Missing native evidence is reported as OPEN, without a benchmark claim.
+          python docs/research/kbound/scripts/audit_official_baselines.py \
+            --repo . --out-dir output/ci/official_baselines
       - name: Certificate drift guard
         run: pytest tests/test_certificate_drift_guard.py -q
       - name: Canonical script wrappers resolve
