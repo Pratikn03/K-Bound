@@ -40,7 +40,7 @@ class TorchModelAdapter:
                 if isinstance(logits, tuple):
                     logits = logits[0]
                 probs = torch.softmax(logits, dim=-1)
-            return probs.detach().cpu().numpy()
+            return np.asarray(probs.detach().cpu().numpy())
         except ImportError as exc:
             # Zero-dependency duck-typing fallback for environments without torch
             if callable(self.model):
