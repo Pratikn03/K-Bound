@@ -106,7 +106,7 @@ def test_main_is_a_20_to_28_page_paper_without_supplement_labels(split_builds: d
     _assert_clean_reference_log(log)
 
 
-def test_supplement_compiles_independently_as_appendices_a_through_n(
+def test_supplement_compiles_independently_as_appendices_a_through_q(
     split_builds: dict[str, Path],
 ) -> None:
     """Catches missing appendices and any dependency on the main paper's auxiliary file."""
@@ -129,8 +129,11 @@ def test_supplement_compiles_independently_as_appendices_a_through_n(
         "app:theorem-dependencies",
         "app:compact-formal",
         "sec:compact-repro",
+        "app:nextphase-calibration",
+        "app:nextphase-paired-proof",
+        "app:comparison-provenance",
     )
-    for letter, label in zip("ABCDEFGHIJKLMN", appendix_labels, strict=True):
+    for letter, label in zip("ABCDEFGHIJKLMNOPQ", appendix_labels, strict=True):
         assert rf"\newlabel{{{label}}}{{{{{letter}}}" in aux
     _assert_clean_reference_log(log)
 

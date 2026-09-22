@@ -1,6 +1,7 @@
 \appendix
 \providecommand{\KBMainRef}[3]{#2~\ref{#1}}
 \providecommand{\KBMainEqRef}[2]{Eq.~\eqref{#1}}
+\providecommand{\KBSuppRef}[3]{#2~\ref{#1}}
 
 \section{A Rigorous Bridge from Cell Coverage to Population Coverage}
 \label{app:population-transfer}
@@ -2321,7 +2322,7 @@ available as simulation outputs; the saved null actions do not support a routing
 \label{app:comparison-provenance}
   \paragraph{Independent-Checkpoint Replication:} The original 2,160-cell CIFAR-10-C panel reused one source checkpoint. Subsequent records describe two independently trained ResNet-18 checkpoints and helpful-only and mixed-sign 36-condition evaluations (\KBSuppRef{app:model-replication}{Appendix}{the supplementary model replication}). On the mixed-sign panel, 39--42\% of conditions were harmful; saved summaries report lower KGA point oracle regret than both fixed policies on all three source models. Recovered mixed-sign per-cell decisions and B6 split receipts support the reported arithmetic; original fitted-model/environment identities and helpful-only execution remain incomplete, and B6 rank clipping prevents a nominal coverage claim (\KBSuppRef{app:replication-provenance}{Appendix}{the supplementary replication-provenance qualification}). A retrospective cross-architecture diagnostic is reported in \KBSuppRef{app:architecture-generalization}{Appendix}{B.8.2}, while prospective architecture-level transfer to unseen model families and environments remains untested.
   \paragraph{Hardware and External Baseline Dependencies:} The synchronized baseline comparison
-  (Table~\ref{tab:synchronized-baselines}) and scoped native panel
+  (\KBMainRef{tab:synchronized-baselines}{Table}{the main paper's synchronized-baseline table}) and scoped native panel
   (\KBSuppRef{app:historical-ports}{Appendix}{the supplementary historical ports section}, \KBSuppRef{tab:native-component-45}{Table}{the supplementary native-component table}) evaluate fixed policies and
   internal benefit estimators on common saved features. The multi-model mixed-sign AETTA-estimator comparison and its explicit recovery rule are reported separately in \KBSuppRef{app:baseline-audit}{Appendix}{the supplementary baseline audit}, subject to the historical KGA provenance qualification above. Historical scalar proxies and local ports are not validated equivalents of the published methods. Scoped native-component execution is reported separately with its architecture, protocol, warnings, and method-availability limits; it does not authenticate every original learner loop or retroactively promote the ports. In particular, Baek et al.'s ALine~\cite{baek2022aol} is not a substitute for unavailable native Kim et al.\ TTA/ALine~\cite{kim2024ttaline}. No complete official-method or full ImageNet-C comparison is inferred from these component results.
 

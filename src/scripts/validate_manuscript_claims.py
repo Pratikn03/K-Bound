@@ -2071,7 +2071,7 @@ def main(argv: list[str] | None = None) -> int:
         r"\Delta=R_T(f_0)-R_T(f_a)": "benefit convention",
         r"if and only if $|M|>\beta$": "strict-commitment frontier",
         r"does not numerically apply $|M|>\beta$": "population/KGA separation",
-        r"validity, commitment-control, and rollback layer": "claim-scope framing",
+        r"software behavior, not the statistical validity of the certificate or field reliability": "claim-scope framing",
     }
     for token, reason in required.items():
         if token not in corpus and token not in normalized_corpus:

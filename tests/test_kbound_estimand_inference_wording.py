@@ -225,7 +225,7 @@ def test_primary_display_rejects_result_body_normalization(tmp_path: Path) -> No
         r"\Delta_j^{\mathrm{cell}} =S(f_a;\mathcal E_j)-S(f_0;\mathcal E_j).",
         "Regret is the policy's score shortfall from that oracle",
         r"|\widehat\Delta-\Delta^{\mathrm{cell}}|\le\varepsilon",
-        "A population application would instead require coverage of",
+        "A population interpretation requires both cell-level coverage and a separate sampling bound:",
         "No such sampling-error bound is established for the reported panels",
     ],
 )
@@ -255,7 +255,7 @@ def test_shared_body_requires_nominal_bootstrap_and_coordinatewise_null(fragment
     "fragment",
     [
         "observed evaluation-cell benefit",
-        "empirical companion, not an implementation of this frontier",
+        "empirical companion, not an implementation of the population frontier",
         "labeled historical outcomes",
         "do not establish interval coverage",
         "population-risk protection on unseen natural shifts",
@@ -270,9 +270,11 @@ def test_cct20_manuscript_uses_display_without_reinterpreting_locked_pass() -> N
     assert r"\input{paper/generated/cct20_primary_table_display.tex}" in body
     assert r"\input{paper/generated/cct20_primary_table.tex}" not in body
     assert r"nominal pointwise 95\% bootstrap lower endpoints" in body
-    assert "The unchanged locked rule therefore returns pass on the stored cells" in body
-    assert "not a finite-sample population-safety guarantee" in body
-    assert r"The recorded verdict remains \CCTVerdict" in body
+    assert "The predeclared utility-retention endpoint was therefore met" in body
+    assert "The stronger selective-routing criterion was not" in body
+    assert "KGA issued no ADAPT decisions and failed to select the single helpful candidate" in body
+    assert "names this protocol endpoint, not a population guarantee" in body
+    assert r"The release verdict remains \CCTVerdict" in body
 
 
 def test_interval_figure_is_an_explicitly_illustrative_static_rule() -> None:
@@ -379,7 +381,8 @@ def _load_verdict_checker() -> dict:
 
 def test_prose_may_qualify_the_sealed_claim_without_expanding_it() -> None:
     namespace = _load_verdict_checker()
-    body = BODY.read_text(encoding="utf-8")
+    # Publication provenance is in the supplement; validate the complete manuscript.
+    body = BODY.read_text(encoding="utf-8") + "\n" + SUPPLEMENT.read_text(encoding="utf-8")
     assert r"\CCTManuscriptClaim" not in body
     # The historical macro is still required in sealed generated metadata.
     assert "CCTManuscriptClaim" in namespace["REQUIRED_CCT20_NUMBER_MACROS"]
