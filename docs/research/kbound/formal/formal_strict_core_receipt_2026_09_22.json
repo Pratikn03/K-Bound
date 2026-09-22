@@ -1,5 +1,5 @@
 {
-  "status": "FAIL",
+  "status": "PASS",
   "build_checked": true,
   "build_ok": true,
   "declared_theorem_count": 150,
@@ -834,9 +834,9 @@
   },
   "forbidden_token_hits": [],
   "missing_theorem_map_checks": [],
-  "strict_core_checked": false,
+  "strict_core_checked": true,
   "legacy_strict_100_alias_used": false,
-  "full_foundations_checked": true,
+  "full_foundations_checked": false,
   "foundational_probability_limits": [],
   "foundation_layers": [
     {
@@ -890,9 +890,7 @@
     }
   ],
   "full_foundations_scope_complete": false,
-  "strict_blockers": [
-    "full historical one-bit channel sufficiency and H/ratio-rate extension"
-  ],
+  "strict_blockers": [],
   "build_output_tail": "      KBound.OrbitFibreCounterexample.selected p ∧\n        KBound.OrbitFibreCounterexample.selected q ∧\n          KBound.OrbitFibreCounterexample.evidence p = KBound.OrbitFibreCounterexample.evidence q ∧\n            0 < KBound.OrbitFibreCounterexample.benefit p ∧ KBound.OrbitFibreCounterexample.benefit q < 0\ninfo: KBound/TheoremMap.lean:291:0: KBound.OrbitFibreCounterexample.no_evidence_decoder :\n  ¬∃ decision,\n      ∀ (w : KBound.OrbitFibreCounterexample.World),\n        KBound.OrbitFibreCounterexample.selected w → decision (KBound.OrbitFibreCounterexample.evidence w) = w.2\ninfo: KBound/TheoremMap.lean:292:0: KBound.bool_decoder_iff_constant_on_fibres.{u_1, u_2} {W : Type u_1} {E : Type u_2} (C : Set W) (observable : W → E)\n  (label : W → Bool) :\n  (∃ decision, ∀ w ∈ C, decision (observable w) = label w) ↔\n    ∀ u ∈ C, ∀ v ∈ C, observable u = observable v → label u = label v\ninfo: KBound/TheoremMap.lean:293:0: KBound.historical_one_bit_decoder_iff_fibre_consistent.{u_1, u_2} {W : Type u_1} {E : Type u_2} (C : Set W)\n  (observable : W → E) (label : W → Bool) :\n  (∃ decision, ∀ w ∈ C, decision (observable w) = label w) ↔\n    ∀ u ∈ C, ∀ v ∈ C, observable u = observable v → label u = label v\ninfo: KBound/TheoremMap.lean:294:0: KBound.h_ratio_rate_transfer (contract : KBound.HRatioRateContract) : contract.targetMiss ≤ contract.H * contract.alpha\ninfo: KBound/TheoremMap.lean:295:0: KBound.h_ratio_rate_budget (contract : KBound.HRatioRateContract) (hH : contract.H ≤ 1) :\n  contract.targetMiss ≤ contract.alpha\nBuild completed successfully (3522 jobs).",
   "receipt_metadata": {
     "schema": "kbound.formal-exact-source-receipt.v1",
@@ -900,7 +898,7 @@
     "source_checkout": "/Users/pratik_n/.codex/worktrees/kbound-nextphase-20260921/docs/research/kbound/formal",
     "git_head": "69adf3805dba029d5050c0b74fbca9de00a77be9",
     "audit_script": "formal_audit.py",
-    "command": "python3 formal_audit.py --build --full-foundations --json-out formal_foundations_report.json",
+    "command": "python3 formal_audit.py --build --strict-core --json-out formal_audit_report.json",
     "source_manifest_sha256": "3ff8a7d277b54d608e2b3076cea2020b4ca3f53b5d9eca38fbf4c6556c032e6f",
     "source_manifest_file_count": 46,
     "registry_composition": {
@@ -908,7 +906,7 @@
       "foundation_capstones": 80,
       "total": 150
     },
-    "strict_core_receipt": "formal_strict_core_receipt_2026_09_22.json",
+    "full_foundations_receipt": "formal_foundations_report.json",
     "full_foundations_status": "FAIL_EXPECTED",
     "open_blocker": "full historical one-bit channel sufficiency and H/ratio-rate extension"
   }

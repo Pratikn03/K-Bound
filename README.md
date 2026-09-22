@@ -1,11 +1,35 @@
 # K-Bound: When Is Label-Free Adaptation Knowable?
 
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Lean 4](https://img.shields.io/badge/formal_audit-142_scoped_declarations-purple.svg)](docs/research/kbound/formal/)
+[![Lean 4](https://img.shields.io/badge/formal_audit-150_registered_checks-purple.svg)](docs/research/kbound/formal/)
 [![Target Venue](https://img.shields.io/badge/venue-TMLR-orange.svg)](docs/research/kbound/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **K-Bound** studies a decision that comes before committing a test-time adaptation (TTA) update: **When target labels are unavailable, does the available evidence support adaptation, freezing, or abstention?** Its population result is class-dependent; its practical interval rule requires a justified coverage premise.
+
+## Paper and supporting evidence
+
+The [2026-09-22 release](https://github.com/Pratikn03/K-Bound/releases/tag/kbound-2026-09-22)
+provides the full and appendix-free PDF/Word manuscripts, the TMLR companion,
+source and evidence archives, result JSONs, execution snapshots, verification
+records, and SHA-256 inventories. The repository contains the maintained code,
+protocols, compact historical records, and
+[next-phase evidence manifest](docs/research/kbound/next_phase/evidence_manifest.json).
+The release archive supplies the manifest-bound files under `output/next_phase/`,
+which are intentionally excluded from normal Git tracking.
+
+Start with the release's README and outer archive receipt. The package verifier
+checks archived bytes, including nested source and evidence archives; the
+[release checklist](docs/research/kbound/next_phase/RELEASE_CHECKLIST.md) explains
+how to repeat the source-bound checks. Download all assets from the same release
+and verify their published hashes before combining them. External datasets and
+checkpoint tensors are governed by their original distribution terms; acquisition
+instructions and recorded identities are provided in [DATA.md](DATA.md).
+
+These records support scoped, reproducible claims. Historical provenance gaps,
+poor held-out interval inclusion, stopped natural-shift studies, and conditional
+theory assumptions remain explicit in the paper and
+[scientific assessment](docs/research/kbound/next_phase/FINAL_ASSESSMENT.md).
 
 ---
 
@@ -32,7 +56,7 @@ graph LR
 ## ✨ Key Features & Technical Highlights
 
 * 🛡️ **Finite-Sample Error Control**: Bounds the unconditional false-adaptation event ($FA_u \le \alpha$) when the declared one-sided or split-conformal coverage premise holds.
-* 📐 **Lean 4 Formal Audit**: 142 registered declarations cover the finite core and five measurable probability/construction layers under explicit assumptions. A verified counterexample limits the historical sixth-layer one-bit extension; full six-layer closure is not claimed.
+* 📐 **Lean 4 Formal Audit**: 150 registered checks comprise 70 legacy checks and 80 foundation capstones under explicit assumptions. The unrestricted historical one-bit/H extension remains outside the verified scope. This count is not the number of paper theorems or every authored Lean declaration.
 * ⚡ **Candidate-Adapter Interface**: The decision layer has protocol-specific integrations for **Tent**, **EATA**, and **SAR**; each adapter still requires its own locked configuration, benefit calibration, and validation.
 * 📊 **Stress-Grid and Shift Audits**: The repository covers controlled grids and several natural-shift panels. Evidence strength varies by dataset, and iWildCam numerical/action evidence is withheld pending an official-metric rerun; see the table below.
 

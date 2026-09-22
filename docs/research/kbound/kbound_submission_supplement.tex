@@ -1125,7 +1125,7 @@ frontier. Appendix~\ref{app:population-transfer} gives a separate population-tra
 requiring an additional sampling-error bound $b(m,\delta)$ and an enlarged radius $\varepsilon+b$.
 The currently reported transductive benchmark panels do not establish these additional premises.
 
-For the historical $\beta$ proxy, \KBMainRef{sec:compact-sensitivity}{Section}{the main sensitivity discussion} discloses the negative result.
+An earlier draft used a development-domain benefit-scale proxy as a surrogate for $\beta$. Its raw sweep has not been recovered, so the numerical ranges below are unverified historical summaries and cannot empirically corroborate the evidence-fibre theorem.
 The historical summary ($1.4$--$50\times$ undersizing, $24$--$73\%$ proxy interval violations,
 and $0.4$--$16.6\%$ decision errors on CIFAR-10-C) represents the operational failure of a development-based
 proxy heuristic, not a verified numerical measurement of latent theoretical-class violations on evaluation cells.
@@ -1156,7 +1156,7 @@ Strict-commitment frontier (theorem) & \KBMainRef{thm:headline}{Thm.}{the main s
 Marginal false-adapt control (operational proposition) & \KBMainRef{thm:certificate}{Prop.}{the main marginal-error certificate} under \KBMainEqRef{eq:compact-coverage}{the main paper's marginal-coverage condition} for the measured cell target & neither population-risk nor conditional $\mathrm{FA}_{\mathrm c}$ control follows \\
 CIFAR-10-C Tent regret (empirical) & \KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table} and~\ref{tab:compact-current-family}; frozen Tent controlled-grid protocol & lower empirical order-statistic point regret; nominal family-bootstrap intervals favor KGA; retrospective Holm is nonconfirmatory \\
 CIFAR-10-C EATA regret (empirical) & \KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table} and~\ref{tab:compact-current-family}; frozen EATA controlled-grid protocol & adapt-side family interval includes zero; retrospective Holm is nonconfirmatory \\
-Natural-shift conservative rows (empirical) & Tables~\ref{tab:compact-canonical}, \ref{tab:auxiliary-balanced}, and \KBMainRef{tab:cct20-safe-utility}{}{the main CCT-20 safe-utility table}; each split and candidate remain fixed & often zero ADAPT exposure \\
+Natural-shift conservative rows (empirical) & Tables~\ref{tab:compact-canonical}, \ref{tab:auxiliary-balanced}, and \KBMainRef{tab:cct20-safe-utility}{}{the main CCT-20 utility-retention table}; each split and candidate remain fixed & often zero ADAPT exposure \\
 So2Sat development stop (diagnostic) & \KBMainRef{sec:so2sat-development-stop}{Sec.}{the main So2Sat development-stop section}; locked v1 feasibility rules and unopened target boundary & no eligible candidate, gate calibration, or target score \\
 ImageNet-C candidate scope (diagnostic) & Table~\ref{tab:compact-canonical}; candidate rows interpreted separately & candidate-specific evidence \\
 PACS/ImageNet-R/CIFAR-10.1 scope (diagnostic) & Tables~\ref{tab:compact-canonical} and~\ref{tab:auxiliary-balanced}; canonical replay scope retained & observed behavior does not prove unknowability \\
@@ -1645,6 +1645,70 @@ rollback outcome, latency components, and configuration hash. Labels, if later r
 in a separate offline audit table. This separation makes it possible to verify that the live
 decision was target-label-free.
 
+\subsection{Local Implementation and Workload Measurements}
+\label{app:deployment-measurements}
+\paragraph{Natural-shift calibration and candidate costs.}
+Calibration took 36.55 minutes including input verification and maintenance
+overhead. The 95 full cell executions summed to 33.63 minutes; median cell cost
+was 15.15 seconds, p95 was 63.34 seconds, and the maximum was 65.65 seconds.
+Process peak RSS was 697 MiB, and the largest MPS driver allocation sampled after
+a cell was 1,164 MiB. The latter is not a continuously measured peak.
+
+The controller averages probe features across all five checkpoints. It therefore
+pays for five shadow candidates before routing a city, including when its final
+action retains the frozen model. Calibration maintenance, candidate construction,
+probe inference, and subsequent serving inference must be counted separately.
+
+A separate stage profile used the already-opened Cairo development city,
+with 8,606 probe images and 8,839 evaluation images, all five checkpoints,
+and three repetitions on this host's MPS device. The sum of five checkpoint
+resets, source probes, Tent updates, candidate probes, feature extraction,
+and city-mean prediction was 203.22--208.24 seconds per repetition
+(median 207.44 seconds), excluding subsequent serving inference and cleanup.
+Across 15 checkpoint executions, median source-probe/statistic computation,
+Tent update, and candidate-probe inference took 24.33, 9.66, and 6.89 seconds.
+Inference on the evaluation images took a median 7.04 seconds for a source
+model or 7.06 seconds for a candidate; both alternatives were measured separately,
+not served as an ensemble. Setup and identity verification took 69.10 seconds;
+the entire profile took 902.84 seconds. Process peak RSS was 675 MiB and the
+largest sampled post-stage MPS driver allocation was 1,138 MiB.
+These are descriptive costs from one opened city, without label reads,
+explicit warmup, or exclusive-host isolation; document builds overlapped
+some repetitions. They establish neither new efficacy nor a production latency
+guarantee. Calibration acquisition, energy, and long-duration maintenance
+costs remain unmeasured.
+
+
+\paragraph{Lifecycle and local API measurements.}
+The reference lifecycle keeps source checkpoint bytes immutable and binds each
+decision to source, candidate, input batch, adapter, estimator, calibration,
+and schema identities. It rechecks calibration expiry after candidate execution
+and journal persistence, rejects malformed or outcome-bearing evidence, and
+preserves the source on failed estimates or journal writes. A validity window
+and engineering request limits do not establish statistical validity under
+adaptive repeated use. Callbacks remain trusted application code; content hashes
+authenticate identities, not the truth of calibration or transfer assumptions.
+The contract also caps retained receipts and journal bytes; capacity exhaustion
+permanently closes the session and requires source fallback. Model retention is
+bounded by the configured assessment count and must be sized to checkpoint bytes.
+In 1,000 measured byte-fixture requests, median lifecycle overhead was
+$0.114$\,ms and p95 was $0.184$\,ms; all 1,027 journal records, including warmups
+and fault cases, passed hash-chain verification. These figures exclude neural
+candidate execution. Forty-six lifecycle regressions cover expiry, failed writes,
+concurrent retries, invalid evidence, and capacity boundaries.
+
+We also exercise the existing certificate API in local Docker production mode,
+with a read-only root filesystem, a non-root process, authentication, and a
+loopback-only port. This endpoint processes supplied certificate inputs; it
+does not execute neural candidates or integrate the new lifecycle automatically.
+These are local integration and load measurements, not independent production
+deployments or a field reliability result.
+For 100 sequential requests, median latency was $2.40$\,ms and p95 was
+$3.78$\,ms; with four concurrent workers and 100 requests, these were
+$6.00$\,ms and $12.90$\,ms. The image's 54 code and lock-file hashes matched
+the source used for that measurement. This short local load test does not measure long-duration
+availability, energy, or independently replicated production utility.
+
 \section{Prospective Natural-Shift Confirmation Protocol}
 \label{app:compact-confirmation}
 
@@ -1892,7 +1956,7 @@ a target miss budget at most $H\alpha$, assuming $H\geq0$ and the supplied domin
 premise $\mathrm{targetMiss}\leq H\,\mathrm{sourceMiss}$. It does not derive that premise,
 estimate $H$, or establish benchmark exchangeability. The unrestricted historical
 claims are excluded from this compact submission. The
-\texttt{--full-foundations} gate therefore remains failing for the sixth layer; the scoped
+\texttt{--full-foundations} gate therefore remains failing for the unrestricted historical extension; the scoped
 kernel audit checks the registered results and rejects nonstandard proof axioms.
 
 The formal build and empirical build answer different questions. Lean checks that a proposition
@@ -1905,6 +1969,13 @@ The authoritative compact artifacts are layered: (1)~this source and its compile
 Historical drafts, dashboards, and exploratory search folders can remain useful development
 records, but they are not evidence sources for this compact submission unless referenced by the
 canonical manifest.
+
+\subsection{Population-to-Cell Correspondence}
+The deterministic action layer for this bridge is verified within our formal mathematics suite: an outcome-blind estimate, cell radius, and independently justified sampling radius define the compound interval, and strict \adapt/\freeze actions are sound whenever the target benefit is inside that interval. The companion evaluation interface enforces outcome-blindness by rejecting outcome-dependent inputs. Because historical canonical benchmark records do not contain fresh-sample draws, no population-transfer number is promoted into those empirical tables.
+
+\paragraph{Formal Theorem--Code Correspondence.}
+Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The 150 registered checks cover the scoped results described above. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
+
 
 \section{Reproducibility and Release Procedures}
 \label{sec:compact-repro}
@@ -2216,3 +2287,43 @@ An official MaC-LP execution was unavailable after checking the primary paper
 and targeted author-code sources; it was not replaced with a purported native
 implementation. Monte Carlo intervals are descriptive within regimes and are
 not simultaneous inference over all reported configurations.
+
+\subsection{Simulation-Only Architecture and Parameter Probes}
+\label{sec:architecture-partial-adaptation}
+
+The following recovered probes are retained here as simulation diagnostics rather than measured
+benchmark results. The architecture names and adapter settings label synthetic configurations; the
+named backbones and proposed adapters were not executed in these probes. Their values preserve the
+historical numbers and provenance, but they do not support an architecture-transfer claim, a
+real-cell routing claim, or an observed false-ADAPT rate.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Synthetic four-architecture probe, recovered from its saved report. Architecture names label simulation settings, not executed models. All saved actions are null; no observed false-ADAPT rate or architecture-transfer claim follows. The saved mean break-even margins are zero, correcting the earlier literal value of one.}
+\label{tab:multi-architecture-invariance}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_multi_architecture_invariance.tex}}
+\end{table*}
+
+The parameter-restricted probe samples synthetic benefits at five hardcoded locations rather than
+loading CCT-20 images or executing the proposed adapters. Its numerical break-even summaries remain
+available as simulation outputs; the saved null actions do not support a routing result.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Synthetic parameter-restricted adaptation probe. Five simulated locations per regime; no real-cell retention denominator or measured gate action. These rows do not inherit the authenticated CCT-20 benchmark's 45-cell endpoint.}
+\label{tab:cct20-partial-adaptation}
+\resizebox{\textwidth}{!}{\input{paper/generated/tab_cct20_partial_adaptation.tex}}
+\end{table*}
+
+\section{Additional Comparison Provenance}
+\label{app:comparison-provenance}
+  \paragraph{Independent-Checkpoint Replication:} The original 2,160-cell CIFAR-10-C panel reused one source checkpoint. Subsequent records describe two independently trained ResNet-18 checkpoints and helpful-only and mixed-sign 36-condition evaluations (\KBSuppRef{app:model-replication}{Appendix}{the supplementary model replication}). On the mixed-sign panel, 39--42\% of conditions were harmful; saved summaries report lower KGA point oracle regret than both fixed policies on all three source models. Recovered mixed-sign per-cell decisions and B6 split receipts support the reported arithmetic; original fitted-model/environment identities and helpful-only execution remain incomplete, and B6 rank clipping prevents a nominal coverage claim (\KBSuppRef{app:replication-provenance}{Appendix}{the supplementary replication-provenance qualification}). A retrospective cross-architecture diagnostic is reported in \KBSuppRef{app:architecture-generalization}{Appendix}{B.8.2}, while prospective architecture-level transfer to unseen model families and environments remains untested.
+  \paragraph{Hardware and External Baseline Dependencies:} The synchronized baseline comparison
+  (Table~\ref{tab:synchronized-baselines}) and scoped native panel
+  (\KBSuppRef{app:historical-ports}{Appendix}{the supplementary historical ports section}, \KBSuppRef{tab:native-component-45}{Table}{the supplementary native-component table}) evaluate fixed policies and
+  internal benefit estimators on common saved features. The multi-model mixed-sign AETTA-estimator comparison and its explicit recovery rule are reported separately in \KBSuppRef{app:baseline-audit}{Appendix}{the supplementary baseline audit}, subject to the historical KGA provenance qualification above. Historical scalar proxies and local ports are not validated equivalents of the published methods. Scoped native-component execution is reported separately with its architecture, protocol, warnings, and method-availability limits; it does not authenticate every original learner loop or retroactively promote the ports. In particular, Baek et al.'s ALine~\cite{baek2022aol} is not a substitute for unavailable native Kim et al.\ TTA/ALine~\cite{kim2024ttaline}. No complete official-method or full ImageNet-C comparison is inferred from these component results.
+
+\paragraph{Camelyon17 decision-history qualification.}
+A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure. The earlier 31-\adapt partition is withdrawn as routing evidence: it thresholded ground-truth benefit post hoc, rather than a saved outcome-blind prediction. It remains documented only to explain the historical discrepancy. KGA made no ADAPT decisions on CCT-20, RxRx1, or the 72-condition Camelyon17 diagnostic. These results evaluate conservative retention and do not establish prospective selective routing on unseen natural shifts.

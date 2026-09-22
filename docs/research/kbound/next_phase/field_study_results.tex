@@ -10,10 +10,11 @@ $\alpha=.10$. Under exchangeability, this construction targets simultaneous
 coverage of the five checkpoints for one new city. It does not give simultaneous
 coverage of ten target cities, coverage conditional on passing an eligibility
 screen, or a demonstrated guarantee under the held-out geographic shift.
-The recorded chronology is an internal execution record rather than external
-proof of universal historical nonaccess.
+The chronology documents the study sequence but does not establish general prospective validity.
 
-The locked calibration completed all 95 city--checkpoint cells. Its radius was
+The locked calibration completed all 95 city--checkpoint cells. Helpful and harmful
+development effects were both present, but the uncertainty interval was too wide to
+meet the pre-target action-exposure criterion. Its radius was
 $0.14224$ (14.224 percentage points), and its decisions were 2 \adapt,
 0 direct \freeze, and 93 \abstain. Both accepted updates were helpful in the
 calibration records, but they occurred in only one city; no city supplied a
@@ -34,64 +35,15 @@ screen reflects insufficient prediction accuracy and interval informativeness,
 rather than an absence of helpful and harmful candidates. This diagnosis did
 not refit the controller, alter the screen, or authorize target access.
 
-Calibration took 36.55 minutes including input verification and maintenance
-overhead. The 95 full cell executions summed to 33.63 minutes; median cell cost
-was 15.15 seconds, p95 was 63.34 seconds, and the maximum was 65.65 seconds.
-Process peak RSS was 697 MiB, and the largest MPS driver allocation sampled after
-a cell was 1,164 MiB. The latter is not a continuously measured peak.
-
-The controller averages probe features across all five checkpoints. It therefore
-pays for five shadow candidates before routing a city, including when its final
-action retains the frozen model. Calibration maintenance, candidate construction,
-probe inference, and subsequent serving inference must be counted separately.
-
-A separate stage profile used the already-opened Cairo development city,
-with 8,606 probe images and 8,839 evaluation images, all five checkpoints,
-and three repetitions on this host's MPS device. The sum of five checkpoint
-resets, source probes, Tent updates, candidate probes, feature extraction,
-and city-mean prediction was 203.22--208.24 seconds per repetition
-(median 207.44 seconds), excluding subsequent serving inference and cleanup.
-Across 15 checkpoint executions, median source-probe/statistic computation,
-Tent update, and candidate-probe inference took 24.33, 9.66, and 6.89 seconds.
-Inference on the evaluation images took a median 7.04 seconds for a source
-model or 7.06 seconds for a candidate; both alternatives were measured separately,
-not served as an ensemble. Setup and identity verification took 69.10 seconds;
-the entire profile took 902.84 seconds. Process peak RSS was 675 MiB and the
-largest sampled post-stage MPS driver allocation was 1,138 MiB.
-These are descriptive costs from one opened city, without label reads,
-explicit warmup, or exclusive-host isolation; document builds overlapped
-some repetitions. They establish neither new efficacy nor a production latency
-guarantee. Calibration acquisition, energy, and long-duration maintenance
-costs remain unmeasured.
+Calibration took 36.55 minutes. The controller requires five shadow candidates before routing
+a city, so retaining the frozen model does not avoid candidate-construction cost. In a separate
+profile on one opened development city, that process took a median 207.44 seconds, excluding
+subsequent serving inference and cleanup. These measurements are workload-specific; calibration
+acquisition, energy, and long-duration maintenance costs remain unmeasured. Stage timings,
+memory measurements, and measurement conditions are reported in
+\KBSuppRef{app:deployment-measurements}{Appendix}{the implementation and cost measurements}.
 
 \subsection{A Local Deployment Integration}
 \label{sec:nextphase-deployment}
 
-The reference lifecycle keeps source checkpoint bytes immutable and binds each
-decision to source, candidate, input batch, adapter, estimator, calibration,
-and schema identities. It rechecks calibration expiry after candidate execution
-and journal persistence, rejects malformed or outcome-bearing evidence, and
-preserves the source on failed estimates or journal writes. A validity window
-and engineering request limits do not establish statistical validity under
-adaptive repeated use. Callbacks remain trusted application code; content hashes
-authenticate identities, not the truth of calibration or transfer assumptions.
-The contract also caps retained receipts and journal bytes; capacity exhaustion
-permanently closes the session and requires source fallback. Model retention is
-bounded by the configured assessment count and must be sized to checkpoint bytes.
-In 1,000 measured byte-fixture requests, median lifecycle overhead was
-$0.114$\,ms and p95 was $0.184$\,ms; all 1,027 journal records, including warmups
-and fault cases, passed hash-chain verification. These figures exclude neural
-candidate execution. Forty-six lifecycle regressions cover expiry, failed writes,
-concurrent retries, invalid evidence, and capacity boundaries.
-
-We also exercise the existing certificate API in local Docker production mode,
-with a read-only root filesystem, a non-root process, authentication, and a
-loopback-only port. This endpoint processes supplied certificate inputs; it
-does not execute neural candidates or integrate the new lifecycle automatically.
-These are local integration and load measurements, not independent production
-deployments or a field reliability result.
-For 100 sequential requests, median latency was $2.40$\,ms and p95 was
-$3.78$\,ms; with four concurrent workers and 100 requests, these were
-$6.00$\,ms and $12.90$\,ms. The image's 54 code and lock-file hashes matched
-the current source. This short local load test does not measure long-duration
-availability, energy, or independently replicated production utility.
+We also implemented a local fail-closed deployment lifecycle that isolates the candidate from the active checkpoint, rejects malformed or outcome-bearing evidence, and retains the frozen model when assessment fails. The implementation records calibration and model identities and exercises rollback and persistence failures. These tests evaluate software behavior, not the statistical validity of the certificate or field reliability. Detailed fault tests, integrity records, and workload-specific latency measurements are reported in \KBSuppRef{app:deployment-measurements}{Appendix}{the implementation and cost measurements}.

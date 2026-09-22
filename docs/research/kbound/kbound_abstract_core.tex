@@ -1,2 +1,18 @@
 % Shared abstract text for both maintained drivers.
-Test-time adaptation updates models without target labels, but updates can help or harm. We ask when evidence justifies replacing a frozen model with an adapted candidate. K-Bound answers this for a binary population model under an exogenous bound $\beta$ on target calibration residual. Preserving label-free observations, we derive exact feasible intervals for paired population benefit: a strict choice is justified precisely when $|M|>\beta$ on disagreement; inside $|M|\le\beta$, no strict choice is uniformly justified. An audit theorem shows why unchanged observable laws cannot justify a smaller uniform residual bound. A finite-sample extension optimizes paired benefit over probability tables under a declared conditional-transport budget. Synthetic examples show joint-prediction decision value and failure under assumption violations. Knowability-Guided Adaptation (\KGA) is an empirical companion, not an implementation of this frontier. Trained on labeled historical outcomes, it predicts observed evaluation-cell benefit and selects \adapt, \freeze, or \abstain through residual intervals. A shared-predictor, held-out-corruption comparison finds a calibration advantage for CIFAR Tent at one prespecified utility--harm trade-off; SAR favors always-adapt and simple margins often win. Nominal 90\% constant-cell inclusion falls to $50.51$--$60.69\%$ on held-out CIFAR corruptions. On CCT-20 there were no ADAPT decisions. Historical replays remain descriptive. These empirical diagnostics do not establish interval coverage or population-risk protection on unseen natural shifts. Useful prospective routing and independent deployment validation remain open.
+Test-time adaptation can improve or degrade a model, leaving a separate decision: when does
+label-free evidence justify replacing the frozen predictor? K-Bound characterizes this decision
+in a binary population model under an externally declared calibration-residual bound $\beta$.
+Holding label-free observations fixed, we derive the exact feasible interval for paired benefit:
+a strict decision is justified precisely when $|M|>\beta$ on disagreement. An evidence-fibre audit
+shows why the same observations cannot justify a smaller uniform residual bound without additional
+structure. A separate finite-sample multiclass construction bounds paired benefit under an explicit
+conditional-transport budget; synthetic examples illustrate its value and failure under assumption
+violations. Knowability-Guided Adaptation (\KGA) is an empirical companion, not an implementation
+of the population frontier. Using labeled historical outcomes, it predicts observed evaluation-cell
+benefit and chooses \adapt, \freeze, or \abstain through residual intervals. Controlled studies
+show candidate-dependent routing gains, while SAR favors always-adapt. A shared-predictor comparison
+finds a calibration advantage for CIFAR Tent at a prespecified utility--harm trade-off, but simpler
+rules often win. Nominal 90\% constant-cell inclusion is only $50.51$--$60.69\%$ on held-out CIFAR
+corruptions. CCT-20 has no ADAPT decisions, and So2Sat stops before target scoring. These findings
+do not establish interval coverage or population-risk protection on unseen natural shifts; useful
+prospective routing remains open.
