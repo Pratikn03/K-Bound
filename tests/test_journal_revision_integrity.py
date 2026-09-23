@@ -56,7 +56,19 @@ def test_register_rejects_duplicate_ids_and_validator_as_scientific_status(tmp_p
 
 def test_journal_reports_and_builders_are_in_source_seal_scope():
     prefix = "docs/research/kbound/journal_revision/"
-    assert any(p == prefix and {".md", ".json", ".tex"} <= set(ext) for _category, p, ext in seal.SOURCE_PREFIX_RULES)
+    suffixes = {ext for _category, p, extensions in seal.SOURCE_PREFIX_RULES if p == prefix for ext in extensions}
+    assert {".md", ".json", ".tex", ".csv"} <= suffixes
     assert prefix.rstrip("/") in seal.MAINTAINED_WORKTREE_SCOPES
     explicit = {p for values in seal.EXPLICIT_FILES.values() for p in values}
     assert "docs/research/kbound/scripts/validate_journal_revision.py" in explicit
+
+
+def test_journal_tex_closure_and_metadata_have_unique_inventory_roles(tmp_path, monkeypatch):
+    tex = "docs/research/kbound/journal_revision/empirical_tables.tex"
+    csv = "docs/research/kbound/journal_revision/empirical_rows_v1.csv"
+    monkeypatch.setattr(seal, "EXPLICIT_FILES", {})
+    monkeypatch.setattr(seal, "_validated_manuscript_closure", lambda repo: [tex])
+    monkeypatch.setattr(seal, "_tree_blobs", lambda *args: {tex: "a" * 40, csv: "b" * 40})
+    inventory = seal._inventory(tmp_path, "source")
+    assert inventory.count(("paper_source", tex)) == 1
+    assert ("journal_revision", csv) in inventory

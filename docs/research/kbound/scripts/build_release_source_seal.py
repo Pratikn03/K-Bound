@@ -395,7 +395,8 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
 # Never walk datasets, historical experiment results, Lake caches, distributions,
 # or generated reports to construct the source inventory.
 SOURCE_PREFIX_RULES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
-    ("journal_revision", "docs/research/kbound/journal_revision/", (".md", ".json", ".tex", ".csv")),
+    ("journal_revision", "docs/research/kbound/journal_revision/", (".md", ".json", ".csv")),
+    ("paper_source", "docs/research/kbound/journal_revision/", (".tex",)),
     ("next_phase_metadata", "docs/research/kbound/next_phase/", (".md", ".json")),
     ("next_phase_software", "experiments/kbound/next_phase/", (".py", ".md")),
     ("formal_source", "docs/research/kbound/formal/KBound/", (".lean",)),
