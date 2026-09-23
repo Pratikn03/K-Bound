@@ -19,6 +19,8 @@ The two original questions have more precise answers after this work:
 
 ## Evidence and verification
 
+[Read the inspected 69-page revision draft](KBound_Theory_Assumptions_Revision.pdf). Its source and PDF hash are recorded in [verification.json](verification.json). It is separate from the frozen release; no new Word or TMLR export is claimed.
+
 - [Theorem register](theorem_register.json) and [proof review](theorem_review.md): 13 named results, seven supporting claims, explicit formal correspondence and historical exclusions.
 - [Assumption register](assumption_register.json) and [statistical review](statistical_review.md): 20 assumptions and 20 study groups, including unfavorable and withdrawn findings.
 - [Formal result](random_radius_formalization.md), [strict receipt](formal_random_radius_strict_receipt.json), [log](formal_random_radius_strict.log), and [source snapshot](formal_random_radius_source_snapshot.json): 162 registered declarations passed the fresh Lean build and axiom audit. The new snapshot binds 47 formal source/configuration files. The frozen 150-declaration receipt remains unchanged.
