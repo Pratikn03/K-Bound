@@ -595,7 +595,7 @@ To resolve whether KGA's decision value on SAR was confounded by an aggressive s
 an earlier development-only matched control matrix was reported on the same ImageNet-C source checkpoint
 (ResNet-50; shot and impulse noise, all five severities, three batch regimes with batch sizes $\{16, 32, 64\}$,
 64 images per cell, two sample windows per condition, 60 cells per arm, seed 0). The raw 60-cell
-records and reconciliation manifest for that report are not resident in the current checkout, so it is
+records and reconciliation manifest for that report are not recovered in the maintained evidence package, so it is
 retained as historical context and is not release-promoted. Table~\ref{tab:sar-arm-config}
 defines the reported five-arm configuration matrix isolating learning rate and parameter mask factors.
 Table~\ref{tab:imagenetc-sar-matched} reproduces that historical summary; it is not a current
@@ -604,7 +604,7 @@ authenticated benchmark result.
 \begin{table}[t]
 \centering
 \small
-\caption{Historical configuration matrix for the five ImageNet-C SAR matched-control arms (ResNet-50, seed 0). The raw 60-cell records are not resident in the current checkout, so this matrix is not release-promotable. All reported arms perform test-time Batch Normalization statistics updates with per-batch model resets. Learning rate $\eta$, adapted affine parameters, and layer 4 status define each arm.}
+\caption{Historical configuration matrix for the five ImageNet-C SAR matched-control arms (ResNet-50, seed 0). The raw 60-cell records are not recovered in the maintained evidence package, so this matrix is not release-promotable. All reported arms perform test-time Batch Normalization statistics updates with per-batch model resets. Learning rate $\eta$, adapted affine parameters, and layer 4 status define each arm.}
 \label{tab:sar-arm-config}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llccc@{}}
@@ -624,7 +624,7 @@ Arm & Description & Learning Rate $\eta$ & Adapted Layers & Layer 4 State \\
 \begin{table*}[t]
 \centering
 \small
-\caption{Historical, non-promotable ImageNet-C SAR control summary on 60 development cells per arm (ResNet-50, shot/impulse noise [2 types], all five severities [5 levels], three batch sizes $\{16, 32, 64\}$ [3 sizes], evaluated across 2 distinct sample windows per condition: $2 \times 5 \times 3 \times 2 = 60$ cells; seed 0). The raw cell records and reconciliation manifest are not resident in the current checkout. The 5 arms and Protocol A definitions are retained for historical context only; the separate 27-cell saved-feature audit is reported in Table~\ref{tab:sar-27cell-audit}.}
+\caption{Historical, non-promotable ImageNet-C SAR control summary on 60 development cells per arm (ResNet-50, shot/impulse noise [2 types], all five severities [5 levels], three batch sizes $\{16, 32, 64\}$ [3 sizes], evaluated across 2 distinct sample windows per condition: $2 \times 5 \times 3 \times 2 = 60$ cells; seed 0). The raw cell records and reconciliation manifest are not recovered in the maintained evidence package. The 5 arms and Protocol A definitions are retained for historical context only; the separate 27-cell saved-feature audit is reported in Table~\ref{tab:sar-27cell-audit}.}
 \label{tab:imagenetc-sar-matched}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}lcccccc@{}}
@@ -697,7 +697,7 @@ endpoints, and action unchanged; the decision boundary remains fixed at zero.
 This verifies exclusion from the saved-feature replay, not upstream feature
 construction, environment-held-out validity, or prospective coverage. None of
 these gates achieves lower empirical regret than always-adapt. The full replay is stored in the September 12
-condition-ID replay receipt in the task-closure evidence directory.
+condition-ID replay receipt in the archived September 12 evidence record.
 
 \paragraph{Development Replay of Corrected-BN Seed 0.}
 An execution-path audit also found that these historical local runs excluded
@@ -2020,7 +2020,7 @@ point-estimate panel. The generated result manifest indexes every promoted claim
 To resolve provenance and pipeline differences across benchmark tables:
 (1)~\textbf{\KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table} (Primary CIFAR-10-C):} ResNet-18, Tent/EATA/SAR. The canonical manifest binds compact per-condition records to their archived source files. The current generator, \path{scripts/reconcile_result_panels.py}, refits from saved $Z,B$ under Protocol B and ignores historical prediction/radius/action fields. Per seed: 432 records, five score folds of 86 or 87, 104 residual-calibration records and 242 or 241 estimator-fit records. Calibration rank is $\lceil(104+1)(1-0.10)\rceil=95$. Exact literal candidate/seed/condition identifiers determine disjoint folds; each pooled row has weight $1/2160$. The earlier Protocol-A description with pool 431 and rank 389 describes a historical procedure, not this current table. A pinned-runtime replay reproduced all Tent predictions, radii and actions for five seeds; changing one scored outcome per seed left that cell's decision inputs and action unchanged. This is saved-feature cell-level verification, not upstream or environment-held-out independence.
 (2)~\textbf{\KBMainRef{tab:synchronized-baselines}{Table}{the main synchronized-baseline table} (Current Synchronized Baselines):} Tent, six internal decision rules on the same canonical paired scores and current predictions as item (1), under Protocol B. \path{docs/research/kbound/scripts/replay_cifar_current_arithmetic.py} emits JSON, per-cell decisions and LaTeX into \path{paper/generated/current_cifar_baselines_20260912/}; it authenticates inputs against an explicitly hash-bound audit and does not refit or tune. Its generated policy arrays and metrics were independently recomputed. The separate \path{PINNED_CANONICAL_REPLAY_VERIFICATION.json} records exact five-seed refitting and five outcome interventions in Python 3.12.13, NumPy 2.4.4 and scikit-learn 1.8.0. Both fixed-policy regrets match item (1) exactly. The historical synchronized/P4 tables are excluded from current results: their cited aggressive archive has 270 cells per seed, and all inspected 432-cell synchronized paired arrays equal the primary arrays. Source hashes, comparisons and preserved historical text are indexed by \path{PAIRED_ARRAY_PROVENANCE_AUDIT.json}; its location is retained in the release checklist. This authenticates saved-record calculations, not image-level sample identity, independent source training or native baseline execution.
-(3)~\textbf{Table~\ref{tab:imagenetc-sar-matched} (Matched SAR Controls):} Historical ResNet-50, 5 SAR arms (Table~\ref{tab:sar-arm-config}). The cited 60-cell raw records and reconciliation manifest are not resident in the current checkout, so this table is not release-promoted. Historical configuration: per-cell adaptation with $b \in \{16, 32, 64\}$ on 64-image windows, evaluated under Protocol A (LOO residual calibration, $n=60$, pool $n_{\mathrm{cal}} = 59$, rank $k = 54$ at $\alpha=0.10$, equal weights $1/60$). The current resident 27-cell reference-SAR audit is reported separately in Table~\ref{tab:sar-27cell-audit}.
+(3)~\textbf{Table~\ref{tab:imagenetc-sar-matched} (Matched SAR Controls):} Historical ResNet-50, 5 SAR arms (Table~\ref{tab:sar-arm-config}). The cited 60-cell raw records and reconciliation manifest are not recovered in the maintained evidence package, so this table is not release-promoted. Historical configuration: per-cell adaptation with $b \in \{16, 32, 64\}$ on 64-image windows, evaluated under Protocol A (LOO residual calibration, $n=60$, pool $n_{\mathrm{cal}} = 59$, rank $k = 54$ at $\alpha=0.10$, equal weights $1/60$). The maintained 27-cell reference-SAR audit is reported separately in Table~\ref{tab:sar-27cell-audit}.
 (4)~\textbf{Table~\ref{tab:imagenetc-decision-baselines} (ImageNet-C Baselines):} ResNet-50, Tent/EATA/SAR (8 decision rules). \emph{Records:} \path{decision_baselines_sarfix/decision_baselines.json} and \path{checkpoint.json}. 36 noise conditions $\times$ 3 candidates ($N=108$). Evaluated under Protocol A (leave-one-condition-out GBR on 11-dim features, $\alpha=0.10$, equal weights).}
 \paragraph{Study-specific estimator settings.}
 Estimator settings differ across studies. Within each fold of the shared-predictor
