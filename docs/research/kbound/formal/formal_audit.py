@@ -92,6 +92,20 @@ LEGACY_CORE_THEOREMS = [
 # Explicit capstones, not a count of every supporting lemma in the project.
 # All names are checked by Lean and their transitive axioms are inspected below.
 FOUNDATION_THEOREMS = {
+    "RandomRadiusCertificate": [
+        "extendedCertificate_infinite",
+        "extendedCertificate_finite",
+        "extendedCertificate_lower_zero",
+        "extendedCertificate_upper_zero",
+        "extendedCertificate_zero_zero",
+        "extended_adapt_sound_on_coverage",
+        "extended_freeze_sound_on_coverage",
+        "measurableSet_randomRadiusCoverageEvent",
+        "measure_randomRadius_false_adapt_le_alpha",
+        "measure_randomRadius_false_freeze_le_alpha",
+        "measure_randomRadius_either_error_le_alpha",
+        "measure_randomRadius_either_error_le_alpha_of_measurable",
+    ],
     "MeasureConformal": [
         "exchangeable_scoreLaw_miss_le",
         "exchangeable_scores_rank_miss_le",
@@ -200,6 +214,12 @@ ALLOWED_AXIOMS = frozenset({"propext", "Classical.choice", "Quot.sound"})
 # hold. A successful --build is still required to verify this source revision.
 FOUNDATION_LAYERS: list[dict[str, str]] = [
     {
+        "item": "coverage-to-action with random extended-nonnegative radii",
+        "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
+        "scope": "finite real benefit and estimate maps, random radii in [0,infinity], measurable coverage event, directional errors and their union, infinite-radius and exact-zero-endpoint abstention",
+        "limits": "marginal coverage is assumed; this does not prove label-blind construction, empirical exchangeability, conditional-on-selection error or repeated-use protection",
+    },
+    {
         "item": "measure-theoretic split-conformal exchangeability",
         "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
         "scope": "measurable exchangeable score laws, ties, calibration thresholds, and one-shot residual coverage/error bounds",
@@ -256,12 +276,14 @@ OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = [
 ]
 
 CLOSURE_RECORD = {
-    "revision": "measurable-foundations-2026-08-31",
-    "date": "2026-08-31",
+    "revision": "random-extended-radius-2026-09-23",
+    "date": "2026-09-23",
     "scope": (
         "Legacy finite/algebraic spine plus general exchangeable residual coverage, "
         "filtered Ville/predictable betting, KL/TV finite-product testing, concentration, "
-        "and measurable target-law frontier. The unrestricted historical orbit-only "
+        "and measurable target-law frontier, extended by exact random-radius "
+        "coverage-to-action with infinite-radius and strict-endpoint behavior. "
+        "The unrestricted historical orbit-only "
         "one-bit/H extension is refuted; corrected fibre-consistency and conditional "
         "H-rate statements are mechanized, but prospective empirical provenance remains open."
     ),

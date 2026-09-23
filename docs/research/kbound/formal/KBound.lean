@@ -21,6 +21,7 @@ import KBound.Probability.LeCamMeasure
 import KBound.Probability.Rates
 import KBound.Probability.Ville
 import KBound.Probability.MeasureCertificate
+import KBound.Probability.RandomRadiusCertificate
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
 import KBound.Probability.MeasureConformal

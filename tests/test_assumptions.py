@@ -94,6 +94,32 @@ def test_empty_residuals_do_not_produce_a_radius():
     assert out["n"] == 0
 
 
+@pytest.mark.parametrize("alpha", [-0.1, 0.0, 1.0, 1.1, np.nan, np.inf])
+def test_invalid_probability_does_not_produce_a_conformal_radius(alpha):
+    with pytest.raises(ValueError, match="alpha"):
+        conformal_radius([0.1, 0.2, 0.3], alpha)
+
+
+@pytest.mark.parametrize("residuals", [[np.nan], [np.inf], [[0.1], [0.2]]])
+def test_conformal_rank_requires_a_finite_vector(residuals):
+    with pytest.raises(ValueError, match="residuals"):
+        conformal_radius(residuals, 0.1)
+
+
+def test_group_count_must_correspond_to_the_observed_rows():
+    with pytest.raises(ValueError, match="groups"):
+        effective_units(np.arange(20), 1)
+    with pytest.raises(ValueError, match="groups"):
+        effective_units(np.array([[0, 1], [2, 3]]), 4)
+
+
+def test_empty_residual_gate_is_diagnostic_instead_of_a_formatting_crash():
+    report = run_gate(record=_clean_record(), alpha=0.1, residuals=[])
+    assert report.theoretical_coverage_claimed is False
+    assert report.deployment_gate == GateDecision.DIAGNOSTIC_ONLY.value
+    assert any("no calibration residuals" in message for message in report.limitations)
+
+
 # --------------------------------------------------------------------------- #
 # observed coverage
 # --------------------------------------------------------------------------- #
@@ -408,6 +434,10 @@ def test_valid_external_basis_can_be_recorded_but_is_not_created_by_diagnostics(
     assert rep.theoretical_coverage_claimed is True
     assert rep.coverage_type == CoverageType.THEORETICAL.value
     assert rep.coverage_claim_basis["protocol_sha256"] == HASH
+    basis_check = rep.diagnostics["coverage_claim_basis"]
+    assert basis_check["validation_scope"] == "syntax_and_protocol_record_consistency_only"
+    assert basis_check["artifact_bytes_authenticated"] is False
+    assert basis_check["distributional_assumptions_established"] is False
 
 
 def test_leakage_rejects_and_nothing_downstream_can_upgrade_it():

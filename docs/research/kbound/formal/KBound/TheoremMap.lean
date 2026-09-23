@@ -25,6 +25,7 @@ import KBound.Probability.LeCamMeasure
 import KBound.Probability.Rates
 import KBound.Probability.Ville
 import KBound.Probability.MeasureCertificate
+import KBound.Probability.RandomRadiusCertificate
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
 import KBound.Probability.MeasureConformal
@@ -78,6 +79,10 @@ import KBound.Probability.HistoricalExtension
   measure-level error bounds, and one-shot residual coverage derived from
   exchangeable measurable scores (including ties) and a calibration threshold
   (`MeasureConformal`), not an assumed uniform-rank conclusion.
+* FORMALIZED: finite real benefit/estimate maps and random extended-nonnegative
+  radii, including infinite-radius abstention, zero-endpoint abstention, both
+  directional errors, and their union bounded by the same marginal miss budget
+  (`RandomRadiusCertificate`). Coverage remains an explicit premise.
 * NOT CLAIMED FORMALIZED: calibration transfer for the paper's heterogeneous deployment tracks or
   a general theorem that leave-one-condition-out empirical calibration is exact conformal.
 
@@ -106,6 +111,19 @@ namespace KBoundTheoremMap
 #check KBound.measure_false_adapt_le_alpha
 #check KBound.measure_false_freeze_le_alpha
 #check KBound.measure_false_adapt_le_alpha_of_measurable
+-- Exact random-extended-radius coverage-to-action and boundary behavior.
+#check KBound.extendedCertificate_infinite
+#check KBound.extendedCertificate_finite
+#check KBound.extendedCertificate_lower_zero
+#check KBound.extendedCertificate_upper_zero
+#check KBound.extendedCertificate_zero_zero
+#check KBound.extended_adapt_sound_on_coverage
+#check KBound.extended_freeze_sound_on_coverage
+#check KBound.measurableSet_randomRadiusCoverageEvent
+#check KBound.measure_randomRadius_false_adapt_le_alpha
+#check KBound.measure_randomRadius_false_freeze_le_alpha
+#check KBound.measure_randomRadius_either_error_le_alpha
+#check KBound.measure_randomRadius_either_error_le_alpha_of_measurable
 #check KBound.card_high_strictRank_le
 #check KBound.card_low_strictRank_ge
 #check KBound.uniformIndex_miss_eq

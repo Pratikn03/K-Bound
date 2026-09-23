@@ -1,9 +1,12 @@
 # K-Bound Lean 4 formalization
 
-The maintained strict audit checks **150 registered declarations** (70 legacy
-finite/algebraic/deterministic checks and 80 measurable-foundation,
+The maintained strict audit checks **162 registered declarations** (70 legacy
+finite/algebraic/deterministic checks and 92 measurable-foundation,
 counterexample, and conditional-extension checks). The count is a registry
 count, not a count of paper claims or independent scientific results.
+The frozen 2026-09-23 release retains its original 150-declaration receipt. This
+separate revision adds 12 checks for random extended-radius coverage-to-action
+and its boundary cases; it does not retroactively change that frozen receipt.
 
 Use the existing pinned dependency checkout. Do not run `lake update` for a
 release verification. Lean and Mathlib are pinned to v4.29.1 by `lean-toolchain`,
@@ -23,7 +26,10 @@ is **expected to fail** because the unrestricted historical orbit-only one-bit
 sufficiency assertion is refuted; the full historical H/ratio-rate extension
 has not been established. Do not remove that blocker to make this gate green.
 
-The fresh journal audit is recorded in
+The random-radius revision audit is recorded in
+`../theorem_assumption_revision/formal_random_radius_strict_receipt.json`.
+Its scope includes the new module and all previous registered declarations.
+The earlier journal audit is recorded in
 `formal_strict_core_receipt_journal_2026_09_22.json` and
 `formal_strict_core_journal_2026_09_22.log`;
 the full-scope receipt and log use `formal_full_scope_receipt_journal_2026_09_22.json`
@@ -40,7 +46,7 @@ recorded source snapshot, not to later manuscript edits or a later commit.
 | `lem:reduction`, `lem:fibre` | `Probability/MeasureTarget.lean`: `measurable_label_kernel_freedom`, `measurable_target_benefit_reduction`, `measurable_correctness_identified_interval`, `measurable_target_frontier_attainment` | Genuine measurable joint laws; labels on disagreement supported on the two predictions. Binary classification satisfies this support condition. |
 | `thm:frontier`, `lem:nonid`, `prop:closed-band` | `Probability/MeasureFrontier.lean`: `measurable_frontier_adapt_iff`, `measurable_frontier_freeze_iff`, `measurable_closed_band_zero_target`, `measurable_open_band_opposite_targets` | Full correctness-field class, measurable predictors/kernels, feasible margin, positive disagreement mass. No `RichAt` premise in these capstones. |
 | `cor:matched-abstain` | `Impossibility.lean`: `matched_opposite_worlds_force_abstain` and action-probability arithmetic | Conditional on matched laws and both directional error bounds. |
-| `thm:certificate` | `Certificate.lean`, `Probability/MeasureCertificate.lean` | Event containment and measure bounds. Named certificate corollaries use a fixed real radius; the generic event-containment theorem supports the argument for random coverage sets. The full extended-real-radius manuscript statement is not one identical Lean declaration. |
+| `thm:certificate` | `Certificate.lean`, `Probability/MeasureCertificate.lean`, `Probability/RandomRadiusCertificate.lean` | The random-radius module directly covers finite real benefit/estimate maps and radii in `[0,∞]`. Each directional error and their union are bounded by the same marginal coverage budget. Infinite radii and exact-zero interval endpoints abstain. Coverage remains an assumption; independence of radius and estimate is not required. |
 | Split-conformal coverage | `Probability/MeasureConformal.lean`: `exchangeable_residual_coverage_ge`, `exchangeable_residual_either_error_le` | Measurable exchangeable residuals, including ties; calibration threshold and augmented rank construction. Earlier `ConformalExchangeability.lean` alone is only finite-rank algebra. |
 | Population transfer | `Population.lean`, `Probability/Concentration.lean`: `paired_benefit_hoeffding_coverage` | Deterministic compound interval and bounded independent sampling layer. Benchmark sampling assumptions are external. |
 | Anytime/Ville | `Probability/FilteredVille.lean`: `filtered_ville`, `filtered_optional_stopping_le`, `bounded_predictable_betting_anytime` | Filtered nonnegative supermartingales, bounded optional stopping, countable-time crossing, explicit conditional null/integrability. |
@@ -54,4 +60,4 @@ A kernel pass does not verify deployment-class restrictions, empirical
 exchangeability, calibration transfer, target-law transport, preprocessing,
 prospective provenance, numerical LP/inverse-CDF correctness, or scientific
 novelty. The unrestricted historical extension remains excluded even when all
-150 registered declarations pass.
+162 registered declarations pass.

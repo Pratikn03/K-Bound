@@ -42,7 +42,7 @@ The quantities have different definitions. The declared bound $\beta$ limits the
 \end{remark}
 
 \begin{proposition}[Cell-to-population transfer via compound bound]\label{thm:population-transfer}
-Let $\Delta^{\mathrm{cell}}=\frac{1}{m}\sum_{j=1}^m W_j$ be the measured cell benefit on $m$ fresh,
+Let $m\ge1$ be an integer and let $\Delta^{\mathrm{cell}}=\frac{1}{m}\sum_{j=1}^m W_j$ be the measured cell benefit on $m$ fresh,
 conditionally i.i.d.\ evaluation draws, where
 $W_j=\mathbf 1\{f_a(X_j)=Y_j\}-\mathbf 1\{f_0(X_j)=Y_j\}\in[-1,1]$, with conditional mean $\Delta$.
 Suppose an independently fitted benefit predictor $h$ and split-conformal radius $\varepsilon$
@@ -69,8 +69,9 @@ direction by $\alpha_{\mathrm{cell}}+\delta$.
 \end{proof}
 
 \begin{remark}[Direct empirical sampling of the population frontier]\label{rem:direct-sampled-frontier}
-An alternative route directly operationalizes the population frontier $|M|>\beta$. Given fresh
-unlabeled target inputs, let $n_D>0$ fall in $D$. The empirical disagreement margin
+An alternative route directly operationalizes the population frontier $|M|>\beta$. Fix the
+predictor pair and score independently of a fresh i.i.d.\ sample of unlabeled target inputs,
+and let $n_D>0$ of those inputs fall in $D$. The empirical disagreement margin
 $\widehat M=\frac{1}{n_D}\sum_{X_i\in D}s(X_i)-\frac{1}{2}$ concentrates with radius
 $r_M=\sqrt{\log(2/\alpha)/(2n_D)}$. Under the externally declared bound $|\gamma|\le\beta$, the rule
 $\widehat M-r_M>\beta\Rightarrow\adapt$, $\widehat M+r_M<-\beta\Rightarrow\freeze$, and $\abstain$

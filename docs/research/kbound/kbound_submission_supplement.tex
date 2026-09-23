@@ -148,7 +148,8 @@ population-benefit coverage and strict directional error control.
 
 \begin{theorem}[Finite-sample population benefit certificate]\label{thm:app-pop-cert}
 Under protocol \textbf{(P1)}--\textbf{(P5)}, let $\alpha_{\mathrm{cell}} \in (0, 1)$ and $\delta \in (0, 1)$ be
-predeclared error budgets such that $\alpha_{\mathrm{cell}} + \delta < 1$. Let $\varepsilon$ be the order-statistic
+predeclared error budgets such that $\alpha_{\mathrm{cell}} + \delta < 1$. Let $N\ge0$ and $m\ge1$
+be integers giving the calibration-episode count and evaluation sample size. Let $\varepsilon$ be the order-statistic
 split-conformal radius over $N$ calibration residuals:
 \begin{equation}
  k = \lceil(N+1)(1-\alpha_{\mathrm{cell}})\rceil, \qquad
@@ -306,8 +307,9 @@ Finally, for completeness, we formalize an alternative operationalization that d
 population frontier $|M| > \beta$ rather than training a learned benefit regressor $\widehat\Delta = h(Z)$.
 
 \begin{proposition}[Sampled population frontier]\label{prop:sampled-frontier}
-Let $(f_0, f_a)$ be fixed binary predictors and let $s : \mathcal X \to [0, 1]$ be a source-fitted score.
-Suppose target inputs $X_1, \dots, X_m \sim \mu_T$ are drawn independently, and let
+Let $(f_0, f_a)$ be fixed binary predictors and let $s : \mathcal X \to [0, 1]$ be a fixed source-fitted score.
+For an integer $m\ge0$, suppose target inputs $X_1, \dots, X_m \sim \mu_T$ are drawn independently
+of one another and of the fitting data and randomness used to select this pair and score. Let
 $D_m = \{i \in \{1, \dots, m\} : f_0(X_i) \neq f_a(X_i)\}$ be the observed disagreement indices with count $n_D = |D_m|$.
 If $n_D > 0$, define the empirical disagreement margin:
 \begin{equation}
@@ -329,8 +331,9 @@ satisfies $\Pr(g_{\mathrm{margin}} = \adapt, \Delta \le 0) \le \alpha$ and $\Pr(
 \end{proposition}
 
 \begin{proof}
-Conditional on $n_D > 0$, the disagreement samples $\{X_i : i \in D_m\}$ are i.i.d.\ draws from the conditional
-marginal $\mu_T \mid D$. Since $s(X) \in [0, 1]$, Hoeffding's inequality for variables of range $1$ gives:
+For each $k\ge1$ with $\Pr(n_D=k)>0$, conditional on $n_D=k$, the disagreement samples
+in their original order are i.i.d.\ draws from $\mu_T\mid D$.
+Since $s(X) \in [0, 1]$, Hoeffding's inequality for variables of range $1$ gives:
 \begin{align*}
  \Pr\left(|\widehat M - M| > r_M \;\middle|\; n_D\right)
  &\le 2\exp\left(-\frac{2n_D^2 r_M^2}{n_D(1)^2}\right) \\
@@ -341,7 +344,9 @@ On the coverage event $|\widehat M - M| \le r_M$, the condition $\widehat M - r_
  M \ge \widehat M - r_M > \beta \ge |\gamma| \ge -\gamma \implies M + \gamma > 0.
 \]
 By the disagreement reduction (\KBMainRef{lem:reduction}{Lemma}{the main disagreement-reduction lemma}), $\Delta = 2d(M + \gamma) > 0$.
-Thus, a false adaptation requires $|\widehat M - M| > r_M$, which has probability at most $\alpha$.
+Thus, conditional on each positive count, a false adaptation requires
+$|\widehat M - M| > r_M$, which has probability at most $\alpha$.
+Averaging over the counts preserves the bound, since $n_D=0$ always gives abstention.
 The freeze case is identical by symmetry.
 \end{proof}
 
@@ -1912,8 +1917,8 @@ In particular, deployment-class richness,
 risk alignment of a learned evidence map, exchangeability of a benchmark split, and correctness of
 data preprocessing remain outside the proof assistant unless separately encoded.
 
-The current strict-core audit kernel-checks 150 named declarations: 70 finite, algebraic,
-and deterministic population-transfer results, and 80 probability, construction,
+The current strict-core audit kernel-checks 162 named declarations: 70 finite, algebraic,
+and deterministic population-transfer results, and 92 probability, construction,
 counterexample, and corrected conditional-extension results. The added modules derive one-shot residual
 coverage from exchangeable measurable scores, including ties; filtered Ville and bounded
 optional-stopping bounds; general KL/TV testing bounds for finite product experiments; and
@@ -1968,10 +1973,15 @@ follows from formal assumptions. The reconciliation scripts check that displayed
 saved records under implemented definitions. Neither checks the truth of an unencoded deployment
 assumption, and neither substitutes for independent experimental replication.
 The exact evidence-fibre supremum audit and the paired-transport polytope proof are LaTeX
-arguments, not additional one-to-one entries in the 150-declaration registry. The printed
-coverage-to-action proposition permits a random extended-real radius; its event-containment
-argument is broader than the fixed-real-radius formal corollaries. No end-to-end formal proof
-of numerical inverse-beta evaluation and the LP solver is claimed.
+arguments, not additional one-to-one entries in the registered inventory. The
+\texttt{RandomRadiusCertificate} module covers the printed coverage-to-action proposition's
+random radius in $[0,\infty]$, with finite real benefit and prediction. It proves abstention
+at infinite radius and at zero-touching endpoints, and bounds the union of the two directional
+errors by the same marginal coverage-failure budget. Coverage remains a premise; this
+formalization does not establish calibration transfer or label-blind data collection.
+The randomized matched-evidence bound, conditional episode transfer, and sampled-disagreement
+procedure still require the printed arguments connecting their mechanized components.
+No end-to-end formal proof of numerical inverse-beta evaluation and the LP solver is claimed.
 
 The authoritative compact artifacts are layered: (1)~this source and its compiled PDF; (2)~shared theorem inputs for exact proofs; (3)~canonical JSON and generated LaTeX for numbers; (4)~the source manifest for record-level provenance; and (5)~package tests and Lean logs for implementation and formal checks.
 
@@ -1983,7 +1993,7 @@ canonical manifest.
 The deterministic action layer for this bridge is verified within our formal mathematics suite: an outcome-blind estimate, cell radius, and independently justified sampling radius define the compound interval, and strict \adapt/\freeze actions are sound whenever the target benefit is inside that interval. The companion evaluation interface enforces outcome-blindness by rejecting outcome-dependent inputs. Because historical canonical benchmark records do not contain fresh-sample draws, no population-transfer number is promoted into those empirical tables.
 
 \paragraph{Formal Theorem--Code Correspondence.}
-Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The 150 registered checks cover the scoped results described above. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
+Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The 162 registered checks cover the scoped results described above. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
 
 
 \section{Reproducibility and Release Procedures}
