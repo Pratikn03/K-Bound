@@ -34,4 +34,14 @@ import KBound.Probability.MeasureTarget
 import KBound.Probability.MeasureFrontier
 import KBound.Probability.ChannelCounterexample
 import KBound.Probability.HistoricalExtension
+import KBound.Probability.MatchedAbstention
+import KBound.Probability.AuditFloor
+import KBound.Probability.CompoundCoverage
+import KBound.Probability.CellPopulationCounterexample
+import KBound.Probability.PairedTransport
+import KBound.Probability.PairedTransportCompactness
+import KBound.Probability.SampledDisagreement
+import KBound.Probability.RawSampledFrontier
+import KBound.Probability.CalibrationOrderStatistic
+import KBound.Probability.PairedEvaluation
 import KBound.TheoremMap

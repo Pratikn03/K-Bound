@@ -1,0 +1,1208 @@
+{
+  "schema": "kbound-statistical-assumption-register/1",
+  "base_commit": "11a3c6aed1f44f8b8c8b558e151c1b0bbdb6c462",
+  "audit_date": "2026-09-23",
+  "audit_scope": "Active compact main/supplement scientific claims, their preserved result summaries and the maintained assumption/transport helpers. No training, protected target scoring or historical-authority rewriting.",
+  "scope_statement": "This register audits explicit premises and evidentiary support. It is not proof of distributional assumptions for every real setting and not a fresh rerun of all experiments. Completion register adds mechanized capstones and fixed-frame retrospective audits; it does not establish deployment exchangeability.",
+  "status_vocabulary": {
+    "conditional_only": "Mathematical claim follows only when the named premise holds.",
+    "unestablished_for_deployment": "No general empirical or design authority establishes this premise for intended future deployments.",
+    "study_specific_only": "Inspectable design/measurement facts support the bounded study; distributional validity is separate.",
+    "unestablished_for_historical_panels": "Current historical records do not supply this premise.",
+    "qualified_not_end_to_end": "Numerical subclaim is bounded and separate from exact statistical validity.",
+    "descriptive_only": "Recorded results or sensitivity support description, not a population guarantee.",
+    "implemented_guard": "Software enforces a limited check; it does not establish scientific assumptions."
+  },
+  "assumptions": [
+    {
+      "id": "A_BINARY",
+      "requirement": "The exact disagreement identity uses binary 0/1 loss, measurable fixed predictors and d=P(D)>0.",
+      "kind": "structural_model",
+      "status": "conditional_only",
+      "what_is_established": "On binary disagreement exactly one prediction is correct; d=0 gives zero benefit and requires no conditional margin.",
+      "what_is_not_established": "The identical identity for unrestricted multiclass tasks or other losses.",
+      "verification_route": "Check theorem domain and metric before use; retain the paired multiclass construction as a separate theorem.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        }
+      ]
+    },
+    {
+      "id": "A_RICHNESS",
+      "requirement": "Necessity/attainability quantify the full class of allowed disagreement-region label kernels.",
+      "kind": "structural_model",
+      "status": "conditional_only",
+      "what_is_established": "Compatible-kernel construction in the active population proof.",
+      "what_is_not_established": "Real benchmark populations are not shown to equal this rich class; narrower classes may identify more.",
+      "verification_route": "Retain full-class quantifiers for necessity; sufficiency may carry to a subclass satisfying the same bound.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        }
+      ]
+    },
+    {
+      "id": "A_BETA",
+      "requirement": "The target residual obeys the externally supplied absolute bound beta.",
+      "kind": "external_scientific_premise",
+      "status": "unestablished_for_deployment",
+      "what_is_established": "Conditional frontier and evidence-fibre audit obstruction state what follows from a declared bound.",
+      "what_is_not_established": "A nontrivial universal beta learned from the same label-free observations; empirical epsilon is not beta.",
+      "verification_route": "Require external domain knowledge, target-label evidence with valid sampling, or an explicit transfer restriction; otherwise no strict population claim.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        }
+      ]
+    },
+    {
+      "id": "A_RISK_ALIGNMENT",
+      "requirement": "Evidence-law fibres exclude opposite population signs when invoking sign identifiability.",
+      "kind": "structural_model",
+      "status": "conditional_only",
+      "what_is_established": "Population definition distinguishes sign identification from predictive calibration.",
+      "what_is_not_established": "Label-free diagnostics do not verify risk alignment; alignment alone does not supply interval coverage or rule out a zero-versus-positive fibre.",
+      "verification_route": "State the fibre restriction explicitly; do not substitute an observed support-overlap score.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        }
+      ]
+    },
+    {
+      "id": "A_COVERAGE",
+      "requirement": "The interval covers its declared scalar benefit and unit marginally with probability at least 1-alpha.",
+      "kind": "distributional_premise",
+      "status": "conditional_only",
+      "what_is_established": "Coverage-to-action event containment; both wrong-direction events are contained in a coverage miss.",
+      "what_is_not_established": "Observed hit rates, a coverage-basis metadata record or passing validators cannot establish the premise on an arbitrary target distribution.",
+      "verification_route": "Support via a theorem with matching sampling design, or report descriptive inclusion only; abstain as an operational fallback when unsupported.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        },
+        {
+          "path": "kga/assumptions.py",
+          "sha256": "35ffee820137eeb937e4baf9d6f51406f0bdc696e49dd1a25a1bc300091b67ef"
+        }
+      ]
+    },
+    {
+      "id": "A_EXCHANGEABILITY",
+      "requirement": "Calibration and next-unit scores are jointly exchangeable under the same fitting and candidate-construction rule.",
+      "kind": "distributional_premise",
+      "status": "unestablished_for_deployment",
+      "what_is_established": "Exact-rank algebra, no clipping, and disjoint computational roles are checkable.",
+      "what_is_not_established": "Disjoint rows or folds do not imply exchangeability across corruption families, checkpoints or geography. Poor held-out inclusion challenges the particular transfer use, not every possible exchangeability model.",
+      "verification_route": "Declare the sampling population and score construction; independent development fitting plus exchangeable calibration/new units is sufficient. Record finite-rank ineligibility separately.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/calibration_value_results.md",
+          "sha256": "614334c97ebd3a63f79ad33d84dcf63e44e468e508b06252c02feb71d2da32aa"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/field_study_results.tex",
+          "sha256": "98188f83dbbd95cfc502b815291f1b2578c0241d04e5dfc7dbc2200611269475"
+        }
+      ]
+    },
+    {
+      "id": "A_UNIT",
+      "requirement": "Sampling, calibration aggregation and uncertainty units match the population claim.",
+      "kind": "sampling_design",
+      "status": "study_specific_only",
+      "what_is_established": "Recorded cell, corruption-family, checkpoint, camera-location and city denominators are distinct. The helper counts declared groups and validates label count.",
+      "what_is_not_established": "Unique labels do not prove independence. Multiple checkpoints in one city or cells in one corruption do not create independent environments.",
+      "verification_route": "Bind group membership and aggregation before analysis; group-max score for simultaneous within-unit coverage requires exchangeable complete units.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        },
+        {
+          "path": "kga/assumptions.py",
+          "sha256": "35ffee820137eeb937e4baf9d6f51406f0bdc696e49dd1a25a1bc300091b67ef"
+        }
+      ]
+    },
+    {
+      "id": "A_FIXED_FRESH",
+      "requirement": "For sampling concentration, predictor pair and score are fixed independently of fresh evidence/evaluation observations, conditional on allowed development randomness.",
+      "kind": "sampling_design",
+      "status": "unestablished_for_historical_panels",
+      "what_is_established": "Fresh-draw conditions are explicit in the population bridge and transport construction.",
+      "what_is_not_established": "Transductive candidate updates and evaluation-batch normalization do not meet independent fresh-sample assumptions merely because labels are hidden.",
+      "verification_route": "Use separate adaptation and evaluation samples or prove a valid dependence-aware replacement; do not reinterpret historical m=2000 as an independent-sample count.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        }
+      ]
+    },
+    {
+      "id": "A_LABEL_LOCK",
+      "requirement": "Evaluation outcomes do not tune candidate, predictor, radius, thresholds or stopping before scoring.",
+      "kind": "design_and_provenance",
+      "status": "study_specific_only",
+      "what_is_established": "Outcome-exclusion perturbation tests support the inspected saved-feature computation; receipts preserve execution chronology for scoped runs.",
+      "what_is_not_established": "Metadata hashes do not establish universal historical nonaccess or absent upstream leakage. CCT candidate ranking used label metadata.",
+      "verification_route": "Bind executable protocol before the eligible data role opens, archive decisions before scoring, and state exactly which level of access was excluded.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/field_study_results.tex",
+          "sha256": "98188f83dbbd95cfc502b815291f1b2578c0241d04e5dfc7dbc2200611269475"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/calibration_value_results.md",
+          "sha256": "614334c97ebd3a63f79ad33d84dcf63e44e468e508b06252c02feb71d2da32aa"
+        }
+      ]
+    },
+    {
+      "id": "A_LOO_STABILITY",
+      "requirement": "Peer-dependent LOO residuals need a valid LOO theorem or an independently justified stability argument, not split-conformal rank algebra alone.",
+      "kind": "estimator_and_sampling",
+      "status": "unestablished_for_historical_panels",
+      "what_is_established": "The maintained text discloses indirect dependence in Protocol A; B6 additionally clips an unavailable rank.",
+      "what_is_not_established": "A uniform estimator stability bound for historical LOO panels; an exact nominal-90% B6 guarantee.",
+      "verification_route": "Retain LOO/B6 as descriptive; for a new study use a genuinely disjoint calibration design or prove the appropriate estimator theorem.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        },
+        {
+          "path": "docs/research/kbound/release/recovered_gemini_evidence_v1/README.md",
+          "sha256": "8c79564b2bd0d531aade2915edda2271aa0fdfbbe80c5122aa3285054d59cb02"
+        }
+      ]
+    },
+    {
+      "id": "A_RHO",
+      "requirement": "Paired transport requires the externally declared target-prior-weighted conditional-TV budget rho.",
+      "kind": "external_scientific_premise",
+      "status": "unestablished_for_deployment",
+      "what_is_established": "Conditional feasible-set argument and explicit same-evidence violated-budget diagnostic.",
+      "what_is_not_established": "Unlabeled source/target prediction counts alone cannot identify the missing transport restriction.",
+      "verification_route": "Justify rho externally and report sensitivity; remain conditional when such justification is unavailable.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        }
+      ]
+    },
+    {
+      "id": "A_BINOMIAL",
+      "requirement": "Probability boxes and conditional-risk bounds need the appropriate binomial sampling law; risk trials require common conditional error probability as well as independence.",
+      "kind": "distributional_premise",
+      "status": "conditional_only",
+      "what_is_established": "Source-class stratification and target marginal counts receive simultaneous Bonferroni binomial boxes. Zero-count bins/classes are retained.",
+      "what_is_not_established": "Independence alone is insufficient for heterogeneous Bernoulli group errors to use an ordinary binomial bound; current historical groups are not established iid trials.",
+      "verification_route": "Bind the source-class sampling design, target sampling law and fixed threshold family; no target-label selection. Treat current conditional-risk rows as descriptive.",
+      "source_refs": [
+        {
+          "path": "kga/paired_transport.py",
+          "sha256": "ac4b16841081ee3d4999a6219f5b32d762b87bd9032038b9ee4e3dfe400f74f5"
+        },
+        {
+          "path": "kga/calibration_value.py",
+          "sha256": "37c22db4fb59aef353c24f3375fcee1b256cc2e40621917d4882ebcc9f505590"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/calibration_value_results.md",
+          "sha256": "614334c97ebd3a63f79ad33d84dcf63e44e468e508b06252c02feb71d2da32aa"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        }
+      ]
+    },
+    {
+      "id": "A_NUMERICAL",
+      "requirement": "Numerical probability bounds and LP bounds must enclose the exact quantities they claim to certify.",
+      "kind": "numerical_guarantee",
+      "status": "qualified_not_end_to_end",
+      "what_is_established": "Directed weak-dual arithmetic bounds the exact binary64 LP objective for every feasible point of the supplied problem.",
+      "what_is_not_established": "One-ULP expansion of scipy inverse-beta quantiles is not a certified exact Clopper-Pearson implementation; residual checks do not prove exact primal feasibility/nonemptiness.",
+      "verification_route": "Retain this boundary unless validated quantile enclosures and exact feasibility witnesses are implemented and checked. Statistical theorem and implementation certificate remain separate.",
+      "source_refs": [
+        {
+          "path": "kga/paired_transport.py",
+          "sha256": "ac4b16841081ee3d4999a6219f5b32d762b87bd9032038b9ee4e3dfe400f74f5"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "A_SELECTION",
+      "requirement": "Marginal coverage must not be promoted to error conditional on ADAPT, a selected environment, or passing a data-dependent screen.",
+      "kind": "scope_of_probability",
+      "status": "conditional_only",
+      "what_is_established": "FA_u and FA_c use distinct denominators; zero ADAPT leaves FA_c undefined. So2Sat screen has no selection-conditional theorem.",
+      "what_is_not_established": "Pr(B<=0|ADAPT)<=alpha from a marginal interval guarantee; a valid screened-target guarantee.",
+      "verification_route": "Use a separately valid selection-conditional construction if required; otherwise state unconditional scope and report accepted exposure.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/field_study_results.tex",
+          "sha256": "98188f83dbbd95cfc502b815291f1b2578c0241d04e5dfc7dbc2200611269475"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        }
+      ]
+    },
+    {
+      "id": "A_REPEATED",
+      "requirement": "Multiple candidates, repeated decisions and adaptive stopping need an explicit joint/time-uniform error construction.",
+      "kind": "scope_of_probability",
+      "status": "unestablished_for_deployment",
+      "what_is_established": "The active single-decision statements explicitly exclude automatic repeated-use control.",
+      "what_is_not_established": "Per-decision alpha does not imply family-wise alpha, anytime alpha or adaptive-reuse validity.",
+      "verification_route": "A prespecified finite family can allocate budgets with a union bound only when each premise remains valid under the actual selection process; adaptive reuse needs a suitable conditional/time-uniform theorem.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        }
+      ]
+    },
+    {
+      "id": "A_BOOTSTRAP",
+      "requirement": "Bootstrap uncertainty requires a sampling model at the declared cluster level and sufficient support for the intended inference.",
+      "kind": "inferential_reference_model",
+      "status": "descriptive_only",
+      "what_is_established": "Paired resampling preserves observed within-cluster relationships; low-N sensitivity and leave-one-cluster-out results are recorded.",
+      "what_is_not_established": "Six CIFAR families or three ImageNet/checkpoint clusters do not establish reliable population-level coverage. A positive endpoint is not itself evidence of valid coverage.",
+      "verification_route": "Keep nominal/descriptive labels; collect genuinely independent environments for a predeclared inferential claim.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "A_SIGNFLIP",
+      "requirement": "Sign-flip reference validity requires joint coordinatewise sign invariance under the null.",
+      "kind": "inferential_reference_model",
+      "status": "unestablished_for_deployment",
+      "what_is_established": "Enumeration exactly computes the stated reference statistic; independent zero-symmetric cluster gaps suffice.",
+      "what_is_not_established": "Exchangeability, marginal symmetry or only a global sign symmetry is insufficient; all-positive observed gaps do not verify the null model.",
+      "verification_route": "State the reference model; retain p-values as conditional reference values unless the sampling/randomization design supports it.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "A_MULTIPLICITY",
+      "requirement": "Multiplicity correction requires valid constituent tests/intervals and does not undo exploratory selection.",
+      "kind": "inferential_design",
+      "status": "descriptive_only",
+      "what_is_established": "Declared families and retrospective analysis choices are distinguished in the source.",
+      "what_is_not_established": "Holm over selected rows cannot turn a posthoc panel into a prospectively confirmatory family or fix invalid marginal tests.",
+      "verification_route": "Prespecify every primary comparison and retain failures for a new confirmatory design; report current sensitivity as exploratory.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "A_METRIC",
+      "requirement": "The benefit target, class universe, aggregation and loss definition must match the claimed theorem and comparison.",
+      "kind": "measurement_contract",
+      "status": "study_specific_only",
+      "what_is_established": "Accuracy regret, weighted 100L5, interval inclusion and macro-F1 are separated; invalid iWildCam metrics remain withheld.",
+      "what_is_not_established": "Macro-F1 does not inherit the bounded per-image accuracy Hoeffding bridge; universal accuracy/F1 improvement is not established.",
+      "verification_route": "Recompute from the declared metric contract and pair exactly aligned records; preserve null/undefined values and absent-class conventions.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "A_DIAGNOSTIC_SCOPE",
+      "requirement": "A diagnostic can withhold action when it detects a warning but cannot establish an unobserved coverage premise or benefit sign.",
+      "kind": "implementation_guard",
+      "status": "implemented_guard",
+      "what_is_established": "The corrected legacy API returns unresolved/abstain for no-warning inputs; current coverage-basis validation explicitly reports syntax-only scope.",
+      "what_is_not_established": "The frozen legacy v1 applies/ADAPT fields and old gate reports do not establish statistical assumptions.",
+      "verification_route": "Use the new correction record; leave original bytes intact and never promote not_falsified to verified.",
+      "source_refs": [
+        {
+          "path": "kga/assumptions.py",
+          "sha256": "35ffee820137eeb937e4baf9d6f51406f0bdc696e49dd1a25a1bc300091b67ef"
+        },
+        {
+          "path": "docs/research/kbound/kbound_pkg/assumption_audit/__init__.py",
+          "sha256": "e835bbfcfcd9a2eeb19f7b9a0da58b0caa8d1b7a378949484cc3c9ceb520c794"
+        },
+        {
+          "path": "docs/research/kbound/theorem_assumption_revision/legacy_assumption_audit_replay_v2/assumption_audit_v2.json",
+          "sha256": "aa9929e8cbaae28e886d8542a49f3766be9a0690f3420c06178bf6926a89137c"
+        }
+      ]
+    }
+  ],
+  "studies": [
+    {
+      "id": "S_CIFAR_PRIMARY",
+      "name": "Current Protocol-B CIFAR-10-C Tent/EATA/SAR",
+      "unit": "condition/stream-seed cells; six families for sensitivity; one archived source checkpoint",
+      "evidence_status": "retrospective_descriptive",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_FIXED_FRESH",
+        "A_BOOTSTRAP",
+        "A_SIGNFLIP",
+        "A_MULTIPLICITY",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Three-way fit/calibration/score outcome disjointness",
+        "Paired fixed-policy comparisons"
+      ],
+      "limitations": [
+        "Cells share checkpoints/residual pools; five stream seeds are not five trained models",
+        "Fresh-sample population bridge not supplied",
+        "SAR favors always-adapt"
+      ],
+      "allowed_claim": "Candidate-dependent point regret on recorded cells; nominal family sensitivity without deployment-generalization guarantee.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_IMAGENET_CONTROLS",
+      "name": "ImageNet-C diagnostics and SAR repair/control panels",
+      "unit": "condition and stream-seed cells, historical execution identities separate",
+      "evidence_status": "retrospective_descriptive",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_FIXED_FRESH",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Outcome-perturbation checks bind the implemented exclusion path",
+        "Corrected-BN five-stream-seed panel is separate from historical 27/60-cell records"
+      ],
+      "limitations": [
+        "Numerical perturbation tests are not a universal theorem",
+        "Seeds are stream variation and condition-family dependence remains",
+        "Local execution reconstruction is not missing historical authority"
+      ],
+      "allowed_claim": "Scoped candidate/control evidence and saved-record arithmetic.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_CCT20",
+      "name": "CCT-20 utility retention",
+      "unit": "five checkpoints crossed with nine target camera locations; nine cis calibration locations",
+      "evidence_status": "outcome_blind_retention_only",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_BOOTSTRAP",
+        "A_SIGNFLIP",
+        "A_SELECTION",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Internal protocol seal and saved actions before cell outcome scoring",
+        "45 calibration rows aggregate to nine locations",
+        "Two-way checkpoint/location bootstrap and nine-location sign-flip reference model stated"
+      ],
+      "limitations": [
+        "Two fit locations; cis-to-trans exchangeability unverified",
+        "Aggregate label metadata used during candidate ranking",
+        "0 ADAPT; one helpful candidate missed; conditional accepted error undefined",
+        "Bootstrap/symmetry models not verified from observations"
+      ],
+      "allowed_claim": "The locked retention endpoint was met; useful selective adaptation and prospective population coverage were not demonstrated.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        }
+      ]
+    },
+    {
+      "id": "S_SHARED_PREDICTOR",
+      "name": "Shared predictor calibration-value study",
+      "unit": "whole scored corruption types; checkpoints and joint holds; cells within related groups",
+      "evidence_status": "retrospective_transfer_diagnostic",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_BINOMIAL",
+        "A_SELECTION",
+        "A_BOOTSTRAP",
+        "A_MULTIPLICITY",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Fixed loss grid and tuning-only margin selection before new fitting",
+        "Held-out outcome perturbations leave predictor/radius/action bytes unchanged",
+        "Exact finite rank/infinity; equal-exposure controls; all arms retained"
+      ],
+      "limitations": [
+        "Already opened source records",
+        "CIFAR constant inclusion 50.51-60.69% vs nominal90%; group-max cell vs simultaneous-group inclusion differ",
+        "No eligible independently excluded calibration environments",
+        "10% group-risk arm needs53 exposed groups for13 thresholds at delta=.05; largest partition45; zero exposure undefined",
+        "Tent gain nearly vanishes without JPEG and margin ordering reverses in that sensitivity"
+      ],
+      "allowed_claim": "Localized loss advantage and informative transfer failure, not broadly superior calibration or new-environment coverage.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/next_phase/calibration_value_results.md",
+          "sha256": "614334c97ebd3a63f79ad33d84dcf63e44e468e508b06252c02feb71d2da32aa"
+        },
+        {
+          "path": "docs/research/kbound/journal_revision/empirical_synthesis_v1.md",
+          "sha256": "3747e62daf8d0df26575cbd14edf7286f8f9beadbbeff3534782fa1fe1b4646b"
+        },
+        {
+          "path": "kga/calibration_value.py",
+          "sha256": "37c22db4fb59aef353c24f3375fcee1b256cc2e40621917d4882ebcc9f505590"
+        }
+      ]
+    },
+    {
+      "id": "S_SO2SAT_V1",
+      "name": "So2Sat development feasibility stop",
+      "unit": "opened development cities/checkpoints",
+      "evidence_status": "failed_pre_target_screen",
+      "assumption_ids": [
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_SELECTION"
+      ],
+      "design_checks": [
+        "Locked feasibility criteria retained",
+        "Target evaluation not authorized"
+      ],
+      "limitations": [
+        "No eligible candidate/gate calibration/target score from v1"
+      ],
+      "allowed_claim": "A documented negative development result.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_SO2SAT_V2",
+      "name": "So2Sat city calibration and failed eligibility screen",
+      "unit": "19 calibration cities with five checkpoints each; max residual per city",
+      "evidence_status": "failed_pre_target_screen",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_SELECTION",
+        "A_REPEATED",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Controller fixed from nine opened development cities",
+        "Rank18 of19 city maxima at alpha=.10",
+        "95 cells complete;2 ADAPT,0 direct FREEZE,93 ABSTAIN",
+        "Required seven ADAPT cities and seven FREEZE cities both fail; target remains unopened"
+      ],
+      "limitations": [
+        "Calibration outcomes set radius/screen and cannot independently validate utility",
+        "City exchangeability under geographic shift unverified",
+        "Single-city simultaneous-checkpoint coverage does not cover ten cities jointly or condition on screen passage",
+        "Chronology is not proof of universal historical nonaccess"
+      ],
+      "allowed_claim": "Calibration-only failed feasibility study with recorded costs; no useful target-routing or target-coverage result.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/next_phase/field_study_results.tex",
+          "sha256": "98188f83dbbd95cfc502b815291f1b2578c0241d04e5dfc7dbc2200611269475"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/natural_results.md",
+          "sha256": "5a546c815d166e487fffbc8de15f6bcd53c796e53d70838ac00a70fab8eca4fc"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/natural_protocol.json",
+          "sha256": "d39ab32871a0d3f5d8069043fae05bb8951dc61aca31c4d04a0db887807d9c0f"
+        }
+      ]
+    },
+    {
+      "id": "S_POPULATION_SIMULATION",
+      "name": "Oracle and non-oracle population diagnostics",
+      "unit": "independent simulated episodes/trials within declared generator",
+      "evidence_status": "synthetic_only",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_EXCHANGEABILITY",
+        "A_FIXED_FRESH",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Fresh iid synthetic samples and known population quantities",
+        "Unavailable ranks use infinite radius",
+        "Null/tie directional errors identified separately"
+      ],
+      "limitations": [
+        "Finite Monte Carlo inclusion is not proof of universal coverage",
+        "100% population inclusion may be conservative and does not demonstrate real-data usefulness"
+      ],
+      "allowed_claim": "Behavior consistent with the conditional construction in these simulated models.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_IMAGENET_POPULATION_REPLAY",
+      "name": "108-cell ImageNet population-radius replay",
+      "unit": "existing development cells; m=2000 is a sensitivity input",
+      "evidence_status": "retrospective_descriptive",
+      "assumption_ids": [
+        "A_FIXED_FRESH",
+        "A_COVERAGE",
+        "A_UNIT"
+      ],
+      "design_checks": [
+        "Existing cell records replayed under enlarged radius"
+      ],
+      "limitations": [
+        "No new independent sampling; m is not verified fresh iid sample count",
+        "No empirical demonstration of the population bridge"
+      ],
+      "allowed_claim": "Arithmetic sensitivity of the enlarged-radius formula only.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_PAIRED_TRANSPORT",
+      "name": "Paired transport synthetic regimes",
+      "unit": "fixed finite probability tables; nine scenarios/three sizes/three budgets/60 trials",
+      "evidence_status": "synthetic_conditional",
+      "assumption_ids": [
+        "A_RHO",
+        "A_BINOMIAL",
+        "A_FIXED_FRESH",
+        "A_NUMERICAL",
+        "A_SELECTION",
+        "A_REPEATED"
+      ],
+      "design_checks": [
+        "All bins retained",
+        "Synthetic truth supplies valid/violated transport status",
+        "Same observable streams reused for violated-budget negative world"
+      ],
+      "limitations": [
+        "60 harmful accepts under violated assumption show missing premise matters",
+        "One-ULP inverse-beta qualification and exact-feasibility boundary remain",
+        "No target-label-free validation of rho and no natural-shift effectiveness"
+      ],
+      "allowed_claim": "Conditional construction can exploit pairing under its assumptions and fails when those assumptions are violated.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/table_sources/paired_transport_summary.json",
+          "sha256": "e24468294bdbc1308e3def160fe83b1a56c6c306f276e068a83db8c5b4227b29"
+        }
+      ]
+    },
+    {
+      "id": "S_B6_HISTORICAL",
+      "name": "Mixed-sign checkpoint replication, LOO/B6 and native AETTA-estimator rule",
+      "unit": "three source models crossed with36 conditions; same108 rows recur",
+      "evidence_status": "historical_partly_recovered",
+      "assumption_ids": [
+        "A_LOO_STABILITY",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Recovered per-cell predictions/radii/actions and split receipts support arithmetic",
+        "Outcome-disjoint B6 computational roles recorded"
+      ],
+      "limitations": [
+        "Required B6 rank9 clipped to8; no nominal90% claim",
+        "LOO peer dependence",
+        "Helpful-only execution authority and original fitted-model/environment identities incomplete",
+        "Different development-information budgets and estimator scope prevent full published-system equivalence"
+      ],
+      "allowed_claim": "Historical point trade-offs and scoped replication arithmetic only.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        },
+        {
+          "path": "docs/research/kbound/release/recovered_gemini_evidence_v1/README.md",
+          "sha256": "8c79564b2bd0d531aade2915edda2271aa0fdfbbe80c5122aa3285054d59cb02"
+        }
+      ]
+    },
+    {
+      "id": "S_OFFICEHOME",
+      "name": "Office-Home canonical and54-cell stream-seed replay",
+      "unit": "domain/stream-seed cells",
+      "evidence_status": "retrospective_descriptive",
+      "assumption_ids": [
+        "A_LOO_STABILITY",
+        "A_UNIT",
+        "A_EXCHANGEABILITY",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Distinct historical protocols kept separate"
+      ],
+      "limitations": [
+        "No declared uniform full-fit/OOF stability bound",
+        "Independent checkpoint identities absent for three run seeds",
+        "Seed interval includes zero"
+      ],
+      "allowed_claim": "Conservative retention and limited point-regret diagnostic.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_OFFICEHOME_INVALID",
+      "name": "Five-checkpoint Office-Home candidate opportunity audit",
+      "unit": "five checkpoints and three target domains",
+      "evidence_status": "routing_withdrawn",
+      "assumption_ids": [
+        "A_BINARY",
+        "A_LOO_STABILITY",
+        "A_METRIC",
+        "A_MULTIPLICITY"
+      ],
+      "design_checks": [
+        "Checkpoint identity and candidate accuracy available"
+      ],
+      "limitations": [
+        "Binary identification used on65 classes, sign-indeterminate/unbounded estimate",
+        "Three LOO cells/checkpoint inadequate;57 literal Infinity JSON values",
+        "SAR chosen posthoc; routing outputs have no certificate meaning"
+      ],
+      "allowed_claim": "Posthoc candidate opportunity only; no KGA routing claim.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_CAMELYON17",
+      "name": "Camelyon17 OOD and candidate diagnostics",
+      "unit": "historical cells;72 slide subsets under one source checkpoint for Tent-online",
+      "evidence_status": "retrospective_retention",
+      "assumption_ids": [
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_LABEL_LOCK",
+        "A_SELECTION",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Canonical and exploratory snapshots distinguished",
+        "Original outcome-blind72-cell decisions preserved"
+      ],
+      "limitations": [
+        "Already-opened target and incomplete independent-checkpoint identity in earlier SAR panels",
+        "72-cell study:0 ADAPT,2 FREEZE,70 ABSTAIN",
+        "Withdrawn ground-truth-thresholded reconstruction cannot support routing"
+      ],
+      "allowed_claim": "Retrospective candidate behavior and conservative retention only.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_RXRX1",
+      "name": "RxRx1 checkpoint retention audit",
+      "unit": "experiment-group cells;three independently trained checkpoints in separate audit",
+      "evidence_status": "retrospective_retention",
+      "assumption_ids": [
+        "A_UNIT",
+        "A_EXCHANGEABILITY",
+        "A_SELECTION"
+      ],
+      "design_checks": [
+        "All-freeze behavior replicated across model variation"
+      ],
+      "limitations": [
+        "No ADAPT exposure; no useful selective routing or prospective transfer"
+      ],
+      "allowed_claim": "Reproducible conservative retention.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_IWILDCAM",
+      "name": "iWildCam archived diagnostic",
+      "unit": "unsealed target population/sample records",
+      "evidence_status": "withheld_invalid_metric",
+      "assumption_ids": [
+        "A_METRIC",
+        "A_LABEL_LOCK",
+        "A_UNIT"
+      ],
+      "design_checks": [
+        "Known metric mismatch explicitly disclosed"
+      ],
+      "limitations": [
+        "Archived macro-F1 class universe differs from official label-present convention",
+        "Runtime/sample/population identity not sealed; overlap unauditable"
+      ],
+      "allowed_claim": "Audit history only until a separately eligible correctly scored study exists.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_OTHER_BOUNDARIES",
+      "name": "PACS, ImageNet-R and CIFAR-10.1 boundary/architecture diagnostics",
+      "unit": "domain/seed/backbone condition panels, not independent deployments",
+      "evidence_status": "retrospective_descriptive",
+      "assumption_ids": [
+        "A_LOO_STABILITY",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_SELECTION",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Candidate/architecture behavior and adverse rows retained",
+        "ImageNet-R reports unconditional and acceptance-conditional errors separately"
+      ],
+      "limitations": [
+        "PACS lacks residual detail for full gate replay",
+        "Backbone panels do not supply prospective architecture transfer",
+        "Low-margin all-freeze CIFAR10.1 cannot prove non-identifiability",
+        "Low unconditional error can coexist with100% error among scarce accepts"
+      ],
+      "allowed_claim": "Behavioral/transfer limitations on archived protocols, not universal identification or improvement.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_NATIVE_COMPONENTS",
+      "name": "Scoped native components and historical local ports",
+      "unit": "matched saved or executed component workloads",
+      "evidence_status": "scope_limited_comparison",
+      "assumption_ids": [
+        "A_LABEL_LOCK",
+        "A_UNIT",
+        "A_METRIC"
+      ],
+      "design_checks": [
+        "Current native-component execution scope and unavailable methods stated"
+      ],
+      "limitations": [
+        "Scalar/local estimates are not full published learners",
+        "Source authentication does not equal fair matched development-information access",
+        "Historical p-values retain the old resampling/selection limitations"
+      ],
+      "allowed_claim": "Component/decision-rule comparison only where the exact information access and execution scope match.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_SIMULATION_PROBES",
+      "name": "Historical four-architecture and partial-adaptation probes",
+      "unit": "synthetic named configurations",
+      "evidence_status": "synthetic_only",
+      "assumption_ids": [
+        "A_METRIC",
+        "A_UNIT"
+      ],
+      "design_checks": [
+        "Simulation status and null actions explicit"
+      ],
+      "limitations": [
+        "Named architectures/adapters not executed",
+        "No real CCT retention denominator or observed false-adapt count"
+      ],
+      "allowed_claim": "Synthetic diagnostic values only.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_supplement.tex",
+          "sha256": "894292e33ab2e3deb0974e74377f74b25fba6967448fec02665c136ae65cbab6"
+        }
+      ]
+    },
+    {
+      "id": "S_DEPLOYMENT",
+      "name": "Local fail-closed integration and workload profile",
+      "unit": "local lifecycle/fault tests;one opened-city profile",
+      "evidence_status": "software_and_cost_only",
+      "assumption_ids": [
+        "A_COVERAGE",
+        "A_FIXED_FRESH",
+        "A_REPEATED"
+      ],
+      "design_checks": [
+        "Candidate isolation, input validation and frozen fallback",
+        "Stage-specific neural workload cost distinct from gate bookkeeping"
+      ],
+      "limitations": [
+        "No field reliability or statistical-assumption validation",
+        "No demonstrated net benefit, long-duration maintenance or physical camera result"
+      ],
+      "allowed_claim": "Reference implementation behavior and workload-specific measurements.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/next_phase/field_study_results.tex",
+          "sha256": "98188f83dbbd95cfc502b815291f1b2578c0241d04e5dfc7dbc2200611269475"
+        }
+      ]
+    },
+    {
+      "id": "S_LEGACY_DIAGNOSTICS",
+      "name": "Legacy assumption_audit_v1 and old emitted gate snapshots",
+      "unit": "saved features and simulated residuals;historical NUMBERS_PACK tracks",
+      "evidence_status": "superseded_scientific_interpretation",
+      "assumption_ids": [
+        "A_DIAGNOSTIC_SCOPE",
+        "A_EXCHANGEABILITY",
+        "A_UNIT",
+        "A_RISK_ALIGNMENT"
+      ],
+      "design_checks": [
+        "Original authorities remain byte-preserved",
+        "Separate v2 correction withdraws guarantee/ADAPT fields",
+        "Current API basis is metadata/syntax, not assumption proof"
+      ],
+      "limitations": [
+        "v1 concept witness not actually constructed;helpful/margin labels unsupported by benefit inputs",
+        "Different observed seed rates do not logically disprove exchangeability",
+        "Historical report emitter agreement is artifact consistency only"
+      ],
+      "allowed_claim": "Diagnostic outcomes with unresolved distributional premises; no certificate from passing diagnostics.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/results/assumption_audit_v1.json",
+          "sha256": "ffd0a354d11ce2c8333f58374980a206aec788423a5bb89d501385d91a8f5edf"
+        },
+        {
+          "path": "docs/research/kbound/reports/assumption_audit_v1.md",
+          "sha256": "540c001333b81e73d3751e000620fc3ad00333284aa261c375e3c2873cfe9461"
+        },
+        {
+          "path": "docs/research/kbound/theorem_assumption_revision/legacy_assumption_audit_replay_v2/assumption_audit_v2.json",
+          "sha256": "aa9929e8cbaae28e886d8542a49f3766be9a0690f3420c06178bf6926a89137c"
+        },
+        {
+          "path": "research_lock/assumption_reports/cifar10c_sar.assumption_report.json",
+          "sha256": "1c3e08866a37ac844b7e58617857af2b12853fa65f756f3c0e75c18f23d88772"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F_LEGACY_PROMOTION",
+      "status": "fixed_in_new_revision",
+      "scope": "legacy_diagnostic_API",
+      "description": "No-warning label-free evidence incorrectly emitted guarantee applies and ADAPT.",
+      "remediation": "Return unresolved and abstain; absent residual drift is null; reject malformed inputs. Preserve original v1 authorities and issue separately bound posthoc correction.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_pkg/assumption_audit/__init__.py",
+          "sha256": "e835bbfcfcd9a2eeb19f7b9a0da58b0caa8d1b7a378949484cc3c9ceb520c794"
+        },
+        {
+          "path": "tests/test_legacy_assumption_audit_scope.py",
+          "sha256": "4b9307c3c2b4fe05da4709078c0d42802b4b0adfac0da3fea2d7a6450edba4e7"
+        },
+        {
+          "path": "docs/research/kbound/theorem_assumption_revision/legacy_assumption_audit_replay_v2/assumption_audit_v2.json",
+          "sha256": "aa9929e8cbaae28e886d8542a49f3766be9a0690f3420c06178bf6926a89137c"
+        }
+      ]
+    },
+    {
+      "id": "F_RANK_INPUTS",
+      "status": "fixed_in_new_revision",
+      "scope": "current_assumptions_helper",
+      "description": "Invalid alpha and residual shapes/nonfinite values could produce a misleading rank; mismatched group length could inflate declared-unit count; empty residuals crashed gate formatting.",
+      "remediation": "Validate alpha and finite vector shape, align group labels with rows, keep empty radius infinite and gate diagnostic; count is explicitly not independence proof.",
+      "source_refs": [
+        {
+          "path": "kga/assumptions.py",
+          "sha256": "35ffee820137eeb937e4baf9d6f51406f0bdc696e49dd1a25a1bc300091b67ef"
+        },
+        {
+          "path": "tests/test_assumptions.py",
+          "sha256": "e0553cee2cad33079abf5e25c8e286d3cc94d1c9894a6c69e6fb636b7c7889f6"
+        }
+      ]
+    },
+    {
+      "id": "F_BASIS_SCOPE",
+      "status": "clarified_in_new_revision",
+      "scope": "coverage_basis_serialization",
+      "description": "CoverageClaimBasis.validate checks syntax and record unit consistency, not source bytes or statistical assumption truth.",
+      "remediation": "Serialize validation_scope, artifact_bytes_authenticated=false, distributional_assumptions_established=false. A recorded theoretical claim remains conditional.",
+      "source_refs": [
+        {
+          "path": "kga/assumptions.py",
+          "sha256": "35ffee820137eeb937e4baf9d6f51406f0bdc696e49dd1a25a1bc300091b67ef"
+        },
+        {
+          "path": "tests/test_assumptions.py",
+          "sha256": "e0553cee2cad33079abf5e25c8e286d3cc94d1c9894a6c69e6fb636b7c7889f6"
+        }
+      ]
+    },
+    {
+      "id": "F_LEGACY_SCOPE",
+      "status": "documented_not_promoted",
+      "scope": "inactive_or_historical_sources",
+      "description": "Inactive A7 prose omits the LOO coverage-event premise in its contrapositive. Old report seed heterogeneity is described as proof of nonexchangeability; these snapshots are not active main-panel authorities.",
+      "remediation": "Do not cite them as current theorem or assumption validation; use active source and this scoped register. Preserved bytes are historical evidence, not endorsed claims.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/paper/sections/assumption_contract.tex",
+          "sha256": "746d4dc514bbab11c569feb6aa925ce3ac7dc0a7fde09288821384a568c606ad"
+        },
+        {
+          "path": "research_lock/assumption_reports/cifar10c_sar.assumption_report.json",
+          "sha256": "1c3e08866a37ac844b7e58617857af2b12853fa65f756f3c0e75c18f23d88772"
+        }
+      ]
+    },
+    {
+      "id": "F_UNPROVABLE_UPGRADE",
+      "status": "scientific_limit_remains",
+      "scope": "all_real_deployment_claims",
+      "description": "No computational audit can establish every target exchangeability law, external beta/rho, future transfer or complete missing historical execution.",
+      "remediation": "Require specific external arguments/new eligible design before strengthening claims; preserve conditional or descriptive status.",
+      "source_refs": [
+        {
+          "path": "docs/research/kbound/kbound_submission_body.tex",
+          "sha256": "fba172a604531044dc89450106ca95baedcb77568298025b5229cec2002335d0"
+        },
+        {
+          "path": "docs/research/kbound/paper/sections/theory_certificate.tex",
+          "sha256": "47ea3516b581313fdc5fa3a325759fbce78b6f2c3fe76cd5d8e2230681730cb4"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/field_study_results.tex",
+          "sha256": "98188f83dbbd95cfc502b815291f1b2578c0241d04e5dfc7dbc2200611269475"
+        },
+        {
+          "path": "docs/research/kbound/next_phase/paired_transport_theory.md",
+          "sha256": "fcc583c52da0fd4a0bbebe787e54295ef287b1042973e1162c0282ac6d72a30a"
+        }
+      ]
+    }
+  ],
+  "historical_authorities_preserved": [
+    {
+      "path": "docs/research/kbound/results/assumption_audit_v1.json",
+      "sha256": "ffd0a354d11ce2c8333f58374980a206aec788423a5bb89d501385d91a8f5edf"
+    },
+    {
+      "path": "docs/research/kbound/reports/assumption_audit_v1.md",
+      "sha256": "540c001333b81e73d3751e000620fc3ad00333284aa261c375e3c2873cfe9461"
+    },
+    {
+      "path": "research_lock/assumption_audit_v1.yaml",
+      "sha256": "d92f8e9a66949ceeae3deb47c71886e8f910e27769045bace37d0d5c934566f7"
+    },
+    {
+      "path": "research_lock/assumption_reports/cifar10c_sar.assumption_report.json",
+      "sha256": "1c3e08866a37ac844b7e58617857af2b12853fa65f756f3c0e75c18f23d88772"
+    }
+  ],
+  "completion_evidence": {
+    "formal_receipt": "docs/research/kbound/theorem_assumption_completion/formal_completion_receipt.json",
+    "finite_frame_cct20": "docs/research/kbound/theorem_assumption_completion/cct20_finite_frame_replay_01/summary.json",
+    "transport_numerical_replay": "docs/research/kbound/theorem_assumption_completion/transport_numerical_replay_01/transport_numerical_verification.json",
+    "scope": "retrospective or conditional evidence; not prospective deployment validation"
+  }
+}

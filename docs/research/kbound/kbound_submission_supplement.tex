@@ -1917,8 +1917,8 @@ In particular, deployment-class richness,
 risk alignment of a learned evidence map, exchangeability of a benchmark split, and correctness of
 data preprocessing remain outside the proof assistant unless separately encoded.
 
-The current strict-core audit kernel-checks 162 named declarations: 70 finite, algebraic,
-and deterministic population-transfer results, and 92 probability, construction,
+The current strict-core audit kernel-checks 238 named declarations: 70 finite, algebraic,
+and deterministic population-transfer results, and 168 probability, construction,
 counterexample, and corrected conditional-extension results. The added modules derive one-shot residual
 coverage from exchangeable measurable scores, including ties; filtered Ville and bounded
 optional-stopping bounds; general KL/TV testing bounds for finite product experiments; and
@@ -1972,16 +1972,19 @@ The formal build and empirical build answer different questions. Lean checks tha
 follows from formal assumptions. The reconciliation scripts check that displayed aggregates match
 saved records under implemented definitions. Neither checks the truth of an unencoded deployment
 assumption, and neither substitutes for independent experimental replication.
-The exact evidence-fibre supremum audit and the paired-transport polytope proof are LaTeX
-arguments, not additional one-to-one entries in the registered inventory. The
+The exact evidence-fibre supremum audit, paired-transport true-table feasibility,
+and finite-extrema layers now have scoped one-to-one entries in the registered
+inventory. The
 \texttt{RandomRadiusCertificate} module covers the printed coverage-to-action proposition's
 random radius in $[0,\infty]$, with finite real benefit and prediction. It proves abstention
 at infinite radius and at zero-touching endpoints, and bounds the union of the two directional
 errors by the same marginal coverage-failure budget. Coverage remains a premise; this
 formalization does not establish calibration transfer or label-blind data collection.
-The randomized matched-evidence bound, conditional episode transfer, and sampled-disagreement
-procedure still require the printed arguments connecting their mechanized components.
-No end-to-end formal proof of numerical inverse-beta evaluation and the LP solver is claimed.
+The randomized matched-evidence bound, conditional episode transfer, and
+sampled-disagreement procedure now have probability-level capstones under their
+stated premises. No end-to-end formal proof of numerical inverse-beta evaluation
+or the Python LP solver is claimed; those are covered by separate numerical
+receipts and conservative abstention paths.
 
 The authoritative compact artifacts are layered: (1)~this source and its compiled PDF; (2)~shared theorem inputs for exact proofs; (3)~canonical JSON and generated LaTeX for numbers; (4)~the source manifest for record-level provenance; and (5)~package tests and Lean logs for implementation and formal checks.
 
@@ -1993,7 +1996,7 @@ canonical manifest.
 The deterministic action layer for this bridge is verified within our formal mathematics suite: an outcome-blind estimate, cell radius, and independently justified sampling radius define the compound interval, and strict \adapt/\freeze actions are sound whenever the target benefit is inside that interval. The companion evaluation interface enforces outcome-blindness by rejecting outcome-dependent inputs. Because historical canonical benchmark records do not contain fresh-sample draws, no population-transfer number is promoted into those empirical tables.
 
 \paragraph{Formal Theorem--Code Correspondence.}
-Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The 162 registered checks cover the scoped results described above. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
+Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The 238 registered checks cover the scoped results described above. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
 
 
 \section{Reproducibility and Release Procedures}
@@ -2328,16 +2331,32 @@ Weak duality gives the conservative bound
 The implementation evaluates this bound with directed 60-digit decimal
 operations starting from exact binary64 coefficients, then rounds outward
 when converting to binary64. Maximization uses a separately bounded negative
-objective. Residual and primal--dual-gap checks detect poor solver output but
-do not prove exact primal feasibility or certify that a feasible set is
-nonempty. Detected infeasibility, nonfinite output, and failed checks cause
-abstention; a $10^{-10}$ numerical sign margin is applied. Approximate primal
-tables are diagnostic witnesses. The weak-dual bounds are valid for every
-exact feasible point of the supplied floating-point problem; they do not
-certify that such a point exists. Binomial endpoints use numerical inverse-beta
-quantiles expanded by one floating-point unit, not a formally certified inverse
-CDF. Accordingly, the statistical theorem concerns the exact intervals, while
-the numerical certificate concerns its supplied endpoints.
+objective. The maintained implementation additionally reconstructs a rational
+primal point and checks every equality, inequality, and variable bound exactly.
+Numerical feasibility tolerances alone cannot justify a decision. Failure to
+obtain an exact witness causes abstention; it is not proof that the set is empty.
+A $10^{-10}$ numerical sign margin remains in force. Binary64 inputs denote
+their exact represented values. Explicit rational or decimal probability inputs
+are converted to documented outward boxes; they are not silently normalized.
+
+Binomial quantiles now serve only as proposals. Directed arithmetic bounds the
+positive binomial-tail polynomial, using a geometric remainder bound when
+truncated; exact comparisons verify outward endpoints on a dyadic grid.
+Unresolved comparisons or resource limits widen the interval, up to $[0,1]$.
+Error budgets are allocated by exact rational division; only the displayed
+floating-point allocation is rounded downward. These numerical certificates
+preserve the binomial construction's finite-sample coverage under its stated sampling law;
+they do not establish that law for deployment data or constitute a Lean proof
+of the Python implementation.
+
+The archived 4,860-trial study below retains its original execution scope:
+inverse-beta endpoints expanded by one floating-point unit and approximate
+primal witnesses. Its saved outputs have not been relabeled as executions of
+the revised solver. A separate numerical replay spans all nine scenarios,
+three sample sizes, and three transport budgets once each. All 81 cases
+obtained exactly checked feasible witnesses, with 16 ADAPT, 2 FREEZE, and
+63 ABSTAIN outputs. This replay checks the revised numerical procedure; it is
+not a replacement Monte Carlo study or evidence of natural-shift effectiveness.
 
 The synthetic protocol fixes nine scenarios, three source class sample sizes,
 three sensitivity budgets, and 60 trials per combination before count sampling.
@@ -2391,3 +2410,4 @@ available as simulation outputs; the saved null actions do not support a routing
 A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure. The earlier 31-\adapt partition is withdrawn as routing evidence: it thresholded ground-truth benefit post hoc, rather than a saved outcome-blind prediction. It remains documented only to explain the historical discrepancy. KGA made no ADAPT decisions on CCT-20, RxRx1, or the 72-condition Camelyon17 diagnostic. These results evaluate conservative retention and do not establish prospective selective routing on unseen natural shifts.
 
 \input{journal_revision/journal_synthesis.tex}
+\input{theorem_assumption_completion/audit_assisted_appendix.tex}

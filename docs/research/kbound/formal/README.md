@@ -1,12 +1,12 @@
 # K-Bound Lean 4 formalization
 
-The maintained strict audit checks **162 registered declarations** (70 legacy
-finite/algebraic/deterministic checks and 92 measurable-foundation,
+The maintained strict audit checks **238 registered declarations** (70 legacy
+finite/algebraic/deterministic checks and 168 measurable-foundation,
 counterexample, and conditional-extension checks). The count is a registry
 count, not a count of paper claims or independent scientific results.
 The frozen 2026-09-23 release retains its original 150-declaration receipt. This
-separate revision adds 12 checks for random extended-radius coverage-to-action
-and its boundary cases; it does not retroactively change that frozen receipt.
+separate theorem-assumption revision adds scoped probability, finite-audit and
+transport capstones; it does not retroactively change that frozen receipt.
 
 Use the existing pinned dependency checkout. Do not run `lake update` for a
 release verification. Lean and Mathlib are pinned to v4.29.1 by `lean-toolchain`,
@@ -39,6 +39,17 @@ limitations are in `../journal_revision/theory_task_report.md` and
 The older dated receipt is preserved unchanged. These receipts bind to the
 recorded source snapshot, not to later manuscript edits or a later commit.
 
+The completion-phase receipt is
+`../theorem_assumption_completion/formal_completion_receipt.json`. It records
+238 declarations, a 3,534-job Lean build, and the allowed kernel axiom set.
+The completion directory also contains module-level receipts and source-bound
+reports for randomized matched-evidence abstention, the arbitrary fibre
+supremum, conditional episode coverage, raw iid random-count sampling, the
+finite counterexample, paired transport and compact extrema, and fresh fixed
+pair evaluation. Binomial confidence-box coverage, deployment exchangeability,
+external residual/transport bounds, correct labels, and random-source integrity
+remain explicit premises; a registry count cannot establish them.
+
 ## Paper correspondence and actual scope
 
 | Paper claim | Mechanized layer | Boundary |
@@ -53,11 +64,11 @@ recorded source snapshot, not to later manuscript edits or a later commit.
 | Le Cam/KL/TV | `Probability/GeneralLeCam.lean` | Arbitrary probability measures, measurable randomized tests, TV identity, Bretagnolle–Huber and finite iid products; not only the old two-point implementation. |
 | Concentration | `Probability/Concentration.lean` | Independent bounded Hoeffding and adapted martingale-difference results; not automatic concentration for correlated benchmark cells. |
 | Historical one-bit/H extension | `Probability/ChannelCounterexample.lean`, `MeasureSwap.lean`, `HistoricalExtension.lean` | Orbit-only sufficiency refuted. Corrected fibre-consistent decoder and conditional H-budget propagation mechanized. |
-| `thm:compact-beta-minimax`, `prop:nextphase-transport` | LaTeX proofs audited separately | No claim of complete one-to-one Lean encoding of the fibre-supremum audit floor, paired LP, Clopper–Pearson construction, or numerical inverse-beta implementation. |
+| `thm:compact-beta-minimax`, `prop:nextphase-transport` | `Probability/AuditFloor.lean`, `Probability/PairedTransport.lean`, `Probability/PairedTransportCompactness.lean` | The fibre supremum and finite true-table/extrema layers are mechanized. Binomial confidence coverage and Python numerical evaluation remain separate premises and receipts. |
 
 `KBound/TheoremMap.lean` and `formal_audit.py` identify the complete registry.
 A kernel pass does not verify deployment-class restrictions, empirical
 exchangeability, calibration transfer, target-law transport, preprocessing,
 prospective provenance, numerical LP/inverse-CDF correctness, or scientific
 novelty. The unrestricted historical extension remains excluded even when all
-162 registered declarations pass.
+238 registered declarations pass.

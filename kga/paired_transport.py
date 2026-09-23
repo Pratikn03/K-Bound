@@ -14,7 +14,15 @@ from typing import Any
 import numpy as np
 from scipy import sparse
 from scipy.optimize import linprog
-from scipy.stats import beta as beta_distribution
+
+from kga.transport_numerics import (
+    binomial_interval_certificate,
+    exact_primal_certificate,
+    fraction_record,
+    outward_float,
+    probability_array,
+    rational,
+)
 
 
 def _array(value: Any, ndim: int, name: str) -> np.ndarray:
@@ -36,18 +44,9 @@ def _counts(value: Any, ndim: int) -> np.ndarray:
 
 
 def binomial_interval(successes: int, trials: int, alpha: float) -> tuple[float, float]:
-    """Two-sided Clopper--Pearson interval; no observations means [0, 1]."""
-    for number in (successes, trials):
-        if isinstance(number, (bool, np.bool_)) or not isinstance(number, (int, np.integer)):
-            raise TypeError("Binomial observations must be integers")
-    if not 0 <= successes <= trials or not np.isfinite(alpha) or not 0 < alpha < 1:
-        raise ValueError("Invalid binomial observations or error budget")
-    if trials == 0:
-        return 0.0, 1.0
-    lo = 0.0 if successes == 0 else float(beta_distribution.ppf(alpha / 2, successes, trials - successes + 1))
-    hi = 1.0 if successes == trials else float(beta_distribution.ppf(1 - alpha / 2, successes + 1, trials - successes))
-    # Outward expansion protects against ordinary floating point quantile rounding.
-    return max(0.0, float(np.nextafter(lo, -np.inf))), min(1.0, float(np.nextafter(hi, np.inf)))
+    """Rigorously outward CP bounds; resource limits conservatively return [0,1]."""
+    lo, hi, _ = binomial_interval_certificate(successes, trials, alpha)
+    return lo, hi
 
 
 @dataclass(frozen=True)
@@ -61,6 +60,7 @@ class ConfidenceBounds:
     per_interval_alpha: float
     source_class_counts: tuple[int, ...]
     target_count: int
+    numerical_certificate: dict[str, Any] = field(default_factory=dict)
 
 
 def confidence_bounds(source_counts: Any, target_counts: Any, *, alpha: float = 0.05) -> ConfidenceBounds:
@@ -71,19 +71,40 @@ def confidence_bounds(source_counts: Any, target_counts: Any, *, alpha: float = 
     zeros, must be retained. Target counts contain observable bins only.
     """
     source, target = _counts(source_counts, 2), _counts(target_counts, 1)
-    if source.shape[0] != target.size or not np.isfinite(alpha) or not 0 < alpha < 1:
+    family_budget = rational(alpha)
+    if source.shape[0] != target.size or not 0 < family_budget < 1:
         raise ValueError("Invalid dimensions or family error budget")
     count = source.size + target.size
-    budget = float(alpha) / count
+    budget = family_budget / count
     sl, su = np.empty(source.shape), np.empty(source.shape)
-    totals = source.sum(axis=0)
+    totals = [sum(map(int, source[:, y])) for y in range(source.shape[1])]
+    certificates = []
     for r, y in np.ndindex(source.shape):
-        sl[r, y], su[r, y] = binomial_interval(int(source[r, y]), int(totals[y]), budget)
+        sl[r, y], su[r, y], proof = binomial_interval_certificate(int(source[r, y]), totals[y], budget)
+        certificates.append({"entry": ["source", r, y], "certificate": proof})
     tl, tu = np.empty(target.size), np.empty(target.size)
-    total_target = int(target.sum())
+    total_target = sum(map(int, target))
     for r in range(target.size):
-        tl[r], tu[r] = binomial_interval(int(target[r]), total_target, budget)
-    return ConfidenceBounds(sl, su, tl, tu, float(alpha), count, budget, tuple(map(int, totals)), total_target)
+        tl[r], tu[r], proof = binomial_interval_certificate(int(target[r]), total_target, budget)
+        certificates.append({"entry": ["target", r], "certificate": proof})
+    return ConfidenceBounds(
+        sl,
+        su,
+        tl,
+        tu,
+        float(alpha),
+        count,
+        outward_float(budget, upper=False),
+        tuple(totals),
+        total_target,
+        {
+            "family_alpha_exact": fraction_record(family_budget),
+            "per_interval_alpha_exact": fraction_record(budget),
+            "allocation_sum_equals_family_alpha": True,
+            "all_endpoints_outward_verified": True,
+            "entries": certificates,
+        },
+    )
 
 
 def accuracy_contrasts(pairs: Any, classes: int) -> np.ndarray:
@@ -105,16 +126,45 @@ class TransportSpec:
     contrast: Any
     rho: float = 0.0
     assumption_contract: str | None = None
+    confidence_certificate: dict[str, Any] | None = None
+    numerical_input_metadata: dict[str, Any] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
+        enclosures = {}
         for name, ndim in (
             ("source_lower", 2),
             ("source_upper", 2),
             ("target_lower", 1),
             ("target_upper", 1),
-            ("contrast", 2),
         ):
-            object.__setattr__(self, name, _array(getattr(self, name), ndim, name))
+            converted, changes = probability_array(getattr(self, name), ndim, upper=name.endswith("upper"))
+            object.__setattr__(self, name, converted)
+            enclosures[name] = changes
+        raw_contrast = np.asarray(self.contrast, dtype=object)
+        converted_contrast = _array(self.contrast, 2, "contrast")
+        if any(
+            rational(original) != rational(converted)
+            for original, converted in zip(raw_contrast.flat, converted_contrast.flat)
+        ):
+            raise ValueError(
+                "Contrast must be exactly representable in binary64; rational objective enclosure is not supplied"
+            )
+        object.__setattr__(self, "contrast", converted_contrast)
+        exact_rho = rational(self.rho)
+        object.__setattr__(self, "rho", outward_float(exact_rho, upper=True))
+        object.__setattr__(
+            self,
+            "numerical_input_metadata",
+            {
+                "LP_coefficients": "exact_binary64_rationals",
+                "float_probability_inputs": "unchanged_exact_binary64",
+                "rational_probability_inputs": "outward_enclosed_in_binary64_boxes",
+                "outward_enclosures": enclosures,
+                "rho_input_exact": fraction_record(exact_rho),
+                "rho_outer_bound": self.rho,
+                "confidence_certificate": self.confidence_certificate,
+            },
+        )
         shape = self.source_lower.shape
         if (
             self.source_upper.shape != shape
@@ -128,7 +178,11 @@ class TransportSpec:
         for lo, hi in ((self.source_lower, self.source_upper), (self.target_lower, self.target_upper)):
             if np.any(lo < 0) or np.any(hi > 1) or np.any(lo > hi):
                 raise ValueError("Probability boxes must satisfy 0 <= lower <= upper <= 1")
-            if np.any(lo.sum(axis=0) > 1 + 1e-12) or np.any(hi.sum(axis=0) < 1 - 1e-12):
+            lower_columns = lo.reshape(lo.shape[0], -1).T
+            upper_columns = hi.reshape(hi.shape[0], -1).T
+            if any(sum(map(rational, column)) > 1 for column in lower_columns) or any(
+                sum(map(rational, column)) < 1 for column in upper_columns
+            ):
                 raise ValueError("Probability boxes do not intersect the simplex")
         if isinstance(self.rho, bool) or not np.isfinite(self.rho) or not 0 <= self.rho <= 1:
             raise ValueError("Transport sensitivity rho must lie in [0,1]")
@@ -139,7 +193,15 @@ class TransportSpec:
 
     @classmethod
     def from_confidence(cls, bands: ConfidenceBounds, contrast: Any, **kwargs):
-        return cls(bands.source_lower, bands.source_upper, bands.target_lower, bands.target_upper, contrast, **kwargs)
+        return cls(
+            bands.source_lower,
+            bands.source_upper,
+            bands.target_lower,
+            bands.target_upper,
+            contrast,
+            confidence_certificate=bands.numerical_certificate,
+            **kwargs,
+        )
 
 
 @dataclass(frozen=True)
@@ -252,9 +314,10 @@ def _minimize(program, objective):
     result = linprog(objective, A_ub=aub, b_ub=bub, A_eq=aeq, b_eq=beq, bounds=[(0.0, 1.0)] * n, method="highs")
     if not result.success:
         return None, {
-            "status": "infeasible" if result.status == 2 else "solver_failed",
+            "status": "solver_reported_infeasible" if result.status == 2 else "solver_failed",
             "solver_status": int(result.status),
             "message": str(result.message),
+            "exact_infeasibility_proved": False,
         }
     x = np.asarray(result.x)
     try:
@@ -271,6 +334,9 @@ def _minimize(program, objective):
         gap = primal - lower
         if residual > 1e-7 or gap < -1e-8 or gap > 1e-6:
             raise ValueError("Primal residual or conservative dual gap exceeds verification tolerance")
+        exact_solution, exact_proof = exact_primal_certificate(aub, bub, aeq, beq, x)
+        if exact_solution is None:
+            return None, {"status": "exact_primal_not_certified", "exact_primal": exact_proof}
     except (ValueError, TypeError, AttributeError, OverflowError) as error:
         return None, {"status": "numerical_verification_failed", "message": str(error)}
     return lower, {
@@ -283,10 +349,13 @@ def _minimize(program, objective):
         "solution": x.tolist(),
         "inequality_dual": result.ineqlin.marginals.tolist(),
         "equality_dual": result.eqlin.marginals.tolist(),
+        "exact_primal": exact_proof,
     }
 
 
 def _result(spec, lower, upper, witnesses) -> TransportResult:
+    for witness in witnesses.values():
+        witness["numerical_input_metadata"] = spec.numerical_input_metadata
     if lower is None or upper is None:
         status = next((v["status"] for v in witnesses.values() if v["status"] != "checked"), "solver_failed")
         return TransportResult(None, None, "ABSTAIN", status, False, witnesses, spec.assumption_contract)
@@ -346,8 +415,8 @@ def break_even_budget(spec: TransportSpec) -> TransportResult:
     """Lower bound the smallest external TV allowance admitting nonpositive benefit.
 
     The lower endpoint is a directed weak-duality certificate. No upper endpoint
-    is returned: approximate primal feasibility is not a rigorous upper-bound
-    certificate. The witness objective is diagnostic only.
+    is returned in this API. The exact rational feasible witness is separately
+    recorded; the historical approximate objective remains diagnostic only.
     """
     program = _program(spec, budget=False, harmful=True)
     objective = np.zeros(program[4])

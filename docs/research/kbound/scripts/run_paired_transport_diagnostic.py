@@ -83,7 +83,12 @@ def seal(protocol_path, output):
     validate_protocol(protocol)
     output.mkdir(parents=True, exist_ok=False)
     (output / "protocol.json").write_bytes(protocol_path.read_bytes())
-    sources = [ROOT / "kga/paired_transport.py", Path(__file__).resolve(), ROOT / "tests/test_paired_transport.py"]
+    sources = [
+        ROOT / "kga/paired_transport.py",
+        ROOT / "kga/transport_numerics.py",
+        Path(__file__).resolve(),
+        ROOT / "tests/test_paired_transport.py",
+    ]
     theory = ROOT / "docs/research/kbound/next_phase/paired_transport_theory.md"
     if theory.exists():
         sources.append(theory)
@@ -195,8 +200,10 @@ def summarize(output):
                 np.mean([max(o["benefit"], 0) - (o["benefit"] if d["action"] == "ADAPT" else 0) for d, o in values])
             ),
             "mean_decision_seconds": float(np.mean([d["decision_seconds"] for d, _ in values])),
-            "infeasible_count": sum(d["status"] == "infeasible" for d, _ in values),
-            "numerical_failure_count": sum(d["status"] == "numerical_verification_failed" for d, _ in values),
+            "infeasible_count": sum(d["status"] in ("infeasible", "solver_reported_infeasible") for d, _ in values),
+            "numerical_failure_count": sum(
+                d["status"] in ("numerical_verification_failed", "exact_primal_not_certified") for d, _ in values
+            ),
         }
         rows.append(row)
     write_json(

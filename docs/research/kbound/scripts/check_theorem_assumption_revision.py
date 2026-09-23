@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
-REVISION = Path("docs/research/kbound/theorem_assumption_revision")
+REVISION = Path("docs/research/kbound/theorem_assumption_completion")
 ENVIRONMENTS = "theorem|lemma|proposition|corollary"
 BEGIN = re.compile(r"\\begin\{(" + ENVIRONMENTS + r")\}(?:\[([^\]]*)\])?")
 INPUT = re.compile(r"\\(?:input|include)\s*\{([^{}]+)\}")
@@ -243,11 +243,13 @@ def check_register(root: Path, register: dict, assumptions: dict | None = None) 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--register-directory", type=Path, default=REVISION,
+                        help="Repository-relative directory of versioned theorem and assumption registers")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
-    register_path = root / REVISION / "theorem_register.json"
-    assumptions_path = root / REVISION / "assumption_register.json"
+    register_path = local_path(root, str(args.register_directory / "theorem_register.json"))
+    assumptions_path = local_path(root, str(args.register_directory / "assumption_register.json"))
     report = check_register(root, json.loads(register_path.read_text()), json.loads(assumptions_path.read_text()))
     report["registers"] = [
         {"path": str(path.relative_to(root)), "sha256": digest(path)} for path in (register_path, assumptions_path)

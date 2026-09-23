@@ -6,6 +6,7 @@ import json
 import math
 import subprocess
 import sys
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -19,8 +20,8 @@ def api():
 
 def example(rho=0.0, contract="synthetic-fixed-pair-iid-transport"):
     p = api()
-    a = np.array([[0.2, 0.2, 0], [0.8, 0.8, 0], [0, 0, 1.0]])
-    q = np.array([0.2, 0.8, 0.0])
+    a = np.array([[Fraction(1, 5), Fraction(1, 5), 0], [Fraction(4, 5), Fraction(4, 5), 0], [0, 0, 1]], dtype=object)
+    q = np.array([Fraction(1, 5), Fraction(4, 5), 0], dtype=object)
     c = p.accuracy_contrasts([(2, 0), (2, 1), (2, 2)], 3)
     return p.TransportSpec(a, a, q, q, c, rho=rho, assumption_contract=contract)
 
@@ -74,7 +75,8 @@ def test_empty_polytope_fails_closed():
     a = np.array([[1.0, 1.0], [0.0, 0.0]])
     spec = p.TransportSpec(a, a, [0.0, 1.0], [0.0, 1.0], np.zeros((2, 2)), assumption_contract="analytic")
     result = p.solve_benefit(spec)
-    assert result.status == "infeasible"
+    assert result.status == "solver_reported_infeasible"
+    assert result.witnesses["lower"]["exact_infeasibility_proved"] is False
     assert not result.verified and result.action == "ABSTAIN"
     assert result.lower is None and result.upper is None
 
@@ -163,11 +165,11 @@ def test_corrupted_solver_witness_cannot_produce_a_certificate(monkeypatch):
 
 def test_interval_contains_every_prior_on_a_small_exact_grid():
     p = api()
-    a = np.array([[0.2, 0.2, 0], [0.8, 0.8, 0], [0, 0, 1.0]])
+    a = np.array([[Fraction(1, 5), Fraction(1, 5), 0], [Fraction(4, 5), Fraction(4, 5), 0], [0, 0, 1]], dtype=object)
     c = p.accuracy_contrasts([(2, 0), (2, 1), (2, 2)], 3)
     for i in range(5):
         for j in range(5 - i):
-            pi = np.array([i, j, 4 - i - j]) / 4
+            pi = np.array([Fraction(i, 4), Fraction(j, 4), Fraction(4 - i - j, 4)], dtype=object)
             q = a @ pi
             spec = p.TransportSpec(a, a, q, q, c, assumption_contract="analytic")
             result = p.solve_benefit(spec)

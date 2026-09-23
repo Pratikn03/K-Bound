@@ -1,0 +1,75 @@
+\section{Audit-Assisted Bounds for a Fixed Finite Frame}
+\label{app:finite-frame-audit}
+
+Additional labels permit a different, design-based question. Fix a finite frame
+of $N$ observations, its frozen and adapted predictions, and its scoring rule.
+Draw audit indices independently and uniformly with replacement after fixing
+these objects. Conditional on the frame and its labels, any fixed correctness
+indicator evaluated at the sampled indices is iid Bernoulli with its
+finite-frame frequency as success probability. Dependence among the original
+images does not invalidate this randomization argument; it does prevent
+interpreting the frame as independent future environments. Correct labels,
+faithful identities and the specified randomization remain premises.
+
+\paragraph{Paired accuracy and the binary residual.}
+Let $D$ be the known prediction-disagreement stratum and $d=|D|/N$.
+When $d>0$, audit draws are independently uniform within $D$, with replacement.
+Outside $D$ the paired correctness difference is zero. Within $D$, let
+$p_+$ and $p_-$ denote helpful and harmful outcome frequencies. Two outward
+binomial intervals with error budgets $\alpha/2$ give
+\[
+ \Delta_N\in d[L_+-U_-,\ U_+-L_-]
+\]
+with probability at least $1-\alpha$ over the audit draws. No independence
+between the two intervals is required. This construction also permits
+set-valued labels: both differing predictions can be correct, or both wrong.
+It gives no macro-F1 guarantee.
+
+For a single-label binary task, exactly one prediction is correct on $D$.
+A single interval $[L,U]$ for adapted correctness gives
+$\Delta_N\in2d[L-1/2,U-1/2]$. If $\bar s$ is the known fixed score mean on $D$,
+then $\gamma_N\in[L-\bar s,U-\bar s]$, yielding
+\[
+ \widehat\beta=\max\{|L-\bar s|,|U-\bar s|\}.
+\]
+This is a labeled-audit confidence bound for the fixed frame, not a label-free
+estimate of a uniform residual-class radius. When $D$ is empty,
+$\Delta_N=0$ and the conditional residual is undefined.
+
+\paragraph{An audit-assisted transport budget.}
+For a fixed single-label class partition and bin map, independently uniform
+sampling within each source and target frame gives binomial class-bin counts
+conditional on their class counts. Allocate $\alpha/(2RK+K)$ to each source
+and target class-bin interval and target-prior interval. The union bound gives
+simultaneous containment. Given source bounds $[a^-_{ry},a^+_{ry}]$ and target
+bounds $[b^-_{ry},b^+_{ry}]$, define
+\[
+ v_y=\min\left\{1,\frac12\sum_r
+ \max\{|b^-_{ry}-a^+_{ry}|,|b^+_{ry}-a^-_{ry}|\}\right\}.
+\]
+Maximizing $\sum_y\pi_yv_y$ over the simplex intersected with the target-prior
+boxes gives an upper confidence bound for the aggregate conditional-TV
+budget. The implementation uses exact rational allocation in descending
+$v_y$ order. Empty prior intersections return the vacuous bound one. An absent
+source class has no uniquely defined conditional law; its bounds cover any
+declared normalized extension. Multilabel memberships are not this partition.
+The random budget's failure probability must be added to the subsequent
+paired-transport certificate's budget. These derivations remain written
+arguments; the Python audit implementation is not claimed as fully mechanized.
+
+\paragraph{Retrospective CCT-20 check.}
+We applied the paired-accuracy procedure to all 45 previously evaluated
+checkpoint-by-location cells, preserving the original set-membership
+correctness rule and excluding only the original adaptation-probe role.
+Each cell used 512 independent draws with replacement from its disagreement
+stratum and error budget $1/900$, giving family budget $0.05$. All draw
+inventories were stored before the new scorer joined the already opened
+historical labels. The 23,040 draws gave 16,428 distinct label uses when
+summed across cells and 8,954 distinct image IDs overall. These are simulated
+label lookups, not measured annotation labor. Shared images across checkpoints
+are not independent deployments. Every full-frame benefit reconstructed the original scoring
+authority and lay inside its audit interval. The audit issued 35 FREEZE and
+10 ABSTAIN decisions, with no ADAPT decision among 44 harmful and one helpful
+frame. Thus it did not demonstrate useful adaptation selection. This is a
+retrospective label-budget simulation on fixed recorded predictions, not a
+new prospective natural-shift study or validation of KGA's calibration transfer.
