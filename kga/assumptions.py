@@ -44,7 +44,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 
@@ -343,7 +343,13 @@ def conformal_radius(residuals: Sequence[float] | np.ndarray, alpha: float) -> d
     lower bound n/(n+1), not a ceiling on true coverage (ties may increase it,
     and an infinite interval covers every finite target).
     """
-    if not np.isscalar(alpha) or not np.isfinite(alpha) or not 0 < alpha < 1:
+    if not np.isscalar(alpha):
+        raise ValueError("alpha must be finite and lie in (0, 1)")
+    try:
+        alpha_value = float(cast(float, alpha))
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError("alpha must be finite and lie in (0, 1)") from None
+    if not math.isfinite(alpha_value) or not 0.0 < alpha_value < 1.0:
         raise ValueError("alpha must be finite and lie in (0, 1)")
     raw = np.asarray(residuals, dtype=float)
     if raw.ndim != 1 or not np.all(np.isfinite(raw)):
@@ -358,7 +364,7 @@ def conformal_radius(residuals: Sequence[float] | np.ndarray, alpha: float) -> d
             "best_attainable_coverage": None,
             "level_attainable": False,
         }
-    k = math.ceil((n + 1) * (1 - alpha))
+    k = math.ceil((n + 1) * (1.0 - alpha_value))
     attainable = k <= n
     return {
         "radius": float(r[k - 1]) if attainable else float("inf"),

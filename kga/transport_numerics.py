@@ -85,14 +85,17 @@ def _exact_tail_leq(k: int, n: int, p: Fraction, threshold: Fraction) -> bool:
         return True
     if p == 1:
         return Fraction(1) <= threshold
-    a, den = p.numerator, p.denominator
+    a = int(p.numerator)
+    den = int(p.denominator)
     b = den - a
-    term = math.comb(n, k) * pow(a, k) * pow(b, n - k)
-    total = term
+    term: int = math.comb(n, k) * pow(a, k) * pow(b, n - k)
+    total: int = term
     for j in range(k, n):
         term = term * (n - j) * a // ((j + 1) * b)
         total += term
-    return total * threshold.denominator <= threshold.numerator * pow(den, n)
+    lhs: int = total * int(threshold.denominator)
+    rhs: int = int(threshold.numerator) * pow(den, n)
+    return lhs <= rhs
 
 
 def binomial_tail_certificate(k: int, n: int, p: Fraction, threshold: Fraction) -> dict:
