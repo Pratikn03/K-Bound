@@ -143,6 +143,36 @@ execution evidence.
 
 ## Build and inspect documents
 
+For the bounded publication-text pass after source `16f705a`, the approval boundary
+and proposed candidate-only commands are in
+[`../FINAL_PUBLICATION_DECISIONS.md`](../FINAL_PUBLICATION_DECISIONS.md).
+Editing source does not authorize any operation in this section. In particular,
+`build_pdfs.sh` validates frozen authorities, checks CIFAR arithmetic, regenerates
+numbers/tables/figures, sanitizes figure PDFs, compiles documents and refreshes
+dashboard metadata. It is not a compiler-only command. Do not substitute the
+compatibility `release_candidate.sh all` wrapper for the explicit sequence above.
+
+The supplement uses stable artifact identifiers instead of printing checksums
+and temporary directory suffixes. Their existing locations are:
+
+| Displayed identifier | Repository or evidence-archive location |
+| --- | --- |
+| `reconciled_panels_v1/source_manifest.json` | `experiments/kbound/results/reconciled_panels_v1/source_manifest.json` |
+| `PAIRED_ARRAY_PROVENANCE_AUDIT.json` | `experiments/kbound/results/cifar_paired_array_audit_20260912.Q4GKLg/PAIRED_ARRAY_PROVENANCE_AUDIT.json` |
+| `cct20_release_manifest.json` | `docs/research/kbound/paper/generated/cct20_release_manifest.json`; inference identity: `upstream_artifacts.two_way_inference` |
+| `task4_matched_sar_v1/TASK4_MATCHED_SAR_MANIFEST.json` | `experiments/kbound/results/task4_matched_sar_v1/TASK4_MATCHED_SAR_MANIFEST.json` |
+| `calibration_value_v1/FINAL_RESULTS_SUMMARY.json` | `output/next_phase/calibration_value_v1/FINAL_RESULTS_SUMMARY.json` |
+| `paired_transport_v1/receipt.json` | `output/next_phase/paired_transport_v1/receipt.json` |
+| `natural_v2/precalibration_seal_v2.json` | `output/next_phase/natural_v2/precalibration_seal_v2.json` |
+| `kbound_decide.py` | `docs/research/kbound/scripts/kbound_decide.py`; maintained LOO implementation, not original historical execution identity |
+| `fit_and_calibration_receipts.json` (CIFAR/checkpoints) | `output/next_phase/calibration_value_v1/report_03/fit_and_calibration_receipts.json` |
+| `release/cct20_public_evidence_bundle.zip` | `docs/research/kbound/release/cct20_public_evidence_bundle.zip` |
+| `tent_citymean5_checkpoint_ridge_v2.json` | `experiments/kbound/so2sat/tent_citymean5_checkpoint_ridge_v2.json` |
+
+The existing evidence manifest resolves `output/next_phase` authorities and their
+executed-source records. This table changes display pointers only; it does not
+replace checksums, result authorities, original receipts or execution snapshots.
+
 ```bash
 PYTHON="$KBOUND_PYTHON" BUILD_LONG_TMLR=1 BUILD_DOCX=0 \
   bash docs/research/kbound/scripts/build_pdfs.sh

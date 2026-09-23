@@ -49,9 +49,12 @@ For example, with typical values $d = 0.20$, $M = 0.15$, and $\beta = 0.05$, the
 \end{align*}
 The interval center is $0.06$ and its half-width on the risk-reduction scale is $0.02$. The declared residual
 budget is $\beta = 0.05$, whereas the benefit-scale radius is $0.02$. Equating $\varepsilon$ and $\beta$
-conflates two fundamentally different inferential paradigms: $\beta$ bounds the absolute target disagreement-conditional calibration residual $|\gamma|$, whereas $\varepsilon$ is a calibrated prediction-error radius for the declared empirical cell-benefit target. Because \KBMainRef{thm:compact-beta-minimax}{Theorem}{3} proves $\beta$ cannot be audited
-from label-free data alone, \KGA purposefully departs from the deductive parameter $\beta$ in favor of the inductive
-empirical radius $\varepsilon$.
+conflates two different targets: $\beta$ bounds the absolute target disagreement-conditional calibration residual $|\gamma|$, whereas $\varepsilon$ is a calibrated prediction-error radius for the declared empirical cell-benefit target.
+The audit floor in \KBMainRef{thm:compact-beta-minimax}{Theorem}{the main audit theorem}
+rules out a uniformly tighter bound from the same label-free evidence over the declared class.
+It does not rule out a conservative bound or a tighter conclusion after adding justified
+information or restricting the class. KGA calibrates prediction error for measured cell benefit;
+this empirical radius does not estimate the population residual bound.
 
 \subsection{Counterexample: Perfect Cell Prediction Does Not Imply Population Coverage}
 \label{app:cell-counterexample}
@@ -347,8 +350,9 @@ This direct route demonstrates the additive relationship between uncertainties:
  \text{decision threshold} ={} &\underbrace{r_M(n_D, \alpha)}_{\text{finite-sample margin uncertainty}} \\
  &+ \;\underbrace{\beta}_{\text{structural calibration uncertainty}}.
 \end{align*}
-While this rule directly embodies \KBMainRef{thm:frontier}{Theorem}{the main frontier theorem}, it still requires an externally declared
-budget $\beta$, proving once again that label-free data alone cannot resolve structural non-identifiability.
+This rule controls sampling uncertainty in the observed margin while retaining the externally
+declared residual budget $\beta$ in \KBMainRef{thm:frontier}{Theorem}{the main frontier theorem}.
+It does not tighten the unresolved residual range on the same evidence fibre.
 
 \subsection{Explicit Implementation Boundaries and Operational Scope}
 \label{app:implementation-boundaries}
@@ -489,14 +493,15 @@ Candidate & \shortstack{Regret\\cell / compound} & \shortstack{Cell gate\\A / F 
 \end{tabular}
 \end{table*}
 
-\section{Supplementary Results and Non-Promoted Studies}
+\section{Supplementary Results and Diagnostic Studies}
 \label{app:auxiliary-results}
 \suppressfloats[t]
 
 This section preserves the evidence outside the two primary protocols. The presentation separates
 ordinary accuracy from balanced accuracy; no value is pooled across metrics, datasets, candidates,
-or protocols. The source-manifest identity is \hashtext{\SourceManifestSHA}. Historical, incomplete,
-and invalid studies keep their original scope instead of being silently removed.
+or protocols. The record identities and checksums are retained in
+\path{reconciled_panels_v1/source_manifest.json}. Historical, incomplete, and invalid
+studies are identified where their results appear.
 
 \subsection{Accuracy-Based Diagnostic Replays}
 
@@ -602,7 +607,7 @@ authenticated benchmark result.
 Arm & Description & Learning Rate $\eta$ & Adapted Layers & Layer 4 State \\
 \midrule
 1 & BN-statistics only & $0.0$ (no grad) & None & Frozen \\
-2 & Reference SAR (official) & $2.5\times 10^{-4}$ & Layers 1--3 affine & Frozen \\
+2 & Reference SAR (published settings) & $2.5\times 10^{-4}$ & Layers 1--3 affine & Frozen \\
 3 & Rate only & $4.0\times 10^{-3}$ & Layers 1--3 affine & Frozen \\
 4 & Mask only & $2.5\times 10^{-4}$ & Layers 1--4 affine & Adapted \\
 5 & Historical combined & $4.0\times 10^{-3}$ & Layers 1--4 affine & Adapted \\
@@ -614,7 +619,7 @@ Arm & Description & Learning Rate $\eta$ & Adapted Layers & Layer 4 State \\
 \begin{table*}[t]
 \centering
 \small
-\caption{Historical, non-promotable ImageNet-C SAR control summary on 60 development cells per arm (ResNet-50, shot/impulse noise [2 types], all five severities [5 levels], three batch sizes $\{16, 32, 64\}$ [3 sizes], evaluated across 2 distinct sample windows per condition: $2 \times 5 \times 3 \times 2 = 60$ cells; seed 0). The raw cell records and reconciliation manifest are not resident in the current checkout. The 5 arms and Protocol A definitions are retained for historical context only; current authenticated evidence is the separate 27-cell audit in Table~\ref{tab:sar-27cell-audit}.}
+\caption{Historical, non-promotable ImageNet-C SAR control summary on 60 development cells per arm (ResNet-50, shot/impulse noise [2 types], all five severities [5 levels], three batch sizes $\{16, 32, 64\}$ [3 sizes], evaluated across 2 distinct sample windows per condition: $2 \times 5 \times 3 \times 2 = 60$ cells; seed 0). The raw cell records and reconciliation manifest are not resident in the current checkout. The 5 arms and Protocol A definitions are retained for historical context only; the separate 27-cell saved-feature audit is reported in Table~\ref{tab:sar-27cell-audit}.}
 \label{tab:imagenetc-sar-matched}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}lcccccc@{}}
@@ -675,8 +680,8 @@ Historical LOO KGA (Protocol A)           & 0.4318 & 0.0024 & 0.000 (0/27) & 20 
 }
 \end{table*}
 
-On these 27 audit cells, Clean Cross-Fit KGA (Protocol B) achieves accuracy $0.4301$ (shortfall of only $0.0041$ regret vs.\ Always Adapt), zero false adaptations ($\mathrm{FA}_u = 0.000$), and captures $19$ of $25$ beneficial updates ($76.0\%$), issuing $19$ \adapt, $0$ \freeze, and $8$ \abstain decisions. Historical LOO KGA (Protocol A) achieves accuracy $0.4318$ ($0.0024$ regret, $20/25$ helpful captured, actions $20/0/7$). A whole-pipeline perturbation test changed one scored outcome by a large amount while leaving that cell's fitted prediction, radius, and action unchanged, confirming that each scored cell's outcome is strictly excluded from its own fit and calibration path under Protocol B.
-We emphasize that the resident 27-cell audit in Table~\ref{tab:sar-27cell-audit} and the historical 60-cell matched-control summary in Table~\ref{tab:imagenetc-sar-matched} represent distinct experimental configurations: the historical summary described 2 noise types $\times$ 5 severities $\times$ 3 batch sizes $\times$ 2 windows (and is not currently raw-record authenticated), whereas the resident audit evaluates 3 noise types $\times$ 3 severities $\times$ 3 compositions at small batch regime. The 27-cell panel provides formal pipeline verification; it evaluates a distinct configuration and does not establish that seeds 1--4 are complete.
+On these 27 audit cells, Clean Cross-Fit KGA (Protocol B) achieves accuracy $0.4301$ (shortfall of only $0.0041$ regret vs.\ Always Adapt), zero false adaptations ($\mathrm{FA}_u = 0.000$), and captures $19$ of $25$ beneficial updates ($76.0\%$), issuing $19$ \adapt, $0$ \freeze, and $8$ \abstain decisions. Historical LOO KGA (Protocol A) achieves accuracy $0.4318$ ($0.0024$ regret, $20/25$ helpful captured, actions $20/0/7$). A saved-feature perturbation check changed one scored outcome by a large amount while leaving that cell's fitted prediction, radius, and action unchanged. This supports outcome exclusion for the tested cell and replay path; it does not establish exclusion for every cell or for upstream feature construction.
+The resident 27-cell audit in Table~\ref{tab:sar-27cell-audit} and the historical 60-cell matched-control summary in Table~\ref{tab:imagenetc-sar-matched} represent distinct experimental configurations: the historical summary described 2 noise types $\times$ 5 severities $\times$ 3 batch sizes $\times$ 2 windows (and is not currently raw-record authenticated), whereas the resident audit evaluates 3 noise types $\times$ 3 severities $\times$ 3 compositions at small batch regime. The 27-cell panel includes a saved-feature outcome-perturbation check; it evaluates a distinct configuration and does not establish that seeds 1--4 are complete.
 An additional September 12 replay retains the original audit's literal condition-string
 sample identifiers. It exactly reproduces every seed-0 prediction, radius, and action.
 For seeds 0/1/2, Protocol-B accuracy is 43.01/43.20/41.07\%, with
@@ -734,9 +739,8 @@ Each arm record in the raw audit ledger contains a recorded path/label sample ha
 \input{paper/generated/tab_task4_matched_sar.tex}
 
 \paragraph{Distinct SAR execution identities.}
-The retained historical table labels ``Authenticated'' and ``Reference SAR
-(official)'' name the archived presentation; they do not establish authenticated
-native execution fidelity.
+The matched reference arm uses SAR reference parameters in a local execution;
+the saved records do not establish fidelity to the complete native execution.
 The corrected five-seed run and this seed-0 matched-arm study are not one
 interchangeable execution. Joining their 27 seed-0 condition identifiers gives
 equal frozen scores in every pair (mean $40.9528\%$), but different candidate
@@ -824,7 +828,7 @@ corresponding to an adapt rate of $0.06$ and commitment rate of $0.39$), with no
 Zero observed false ADAPT under two ADAPT decisions is descriptive rather than large-sample confirmation. The interval rule controls the declared marginal
 directional error when its coverage premise holds. This diagnostic does not establish that premise under arbitrary drift.
 
-\subsubsection{CIFAR-10-C Systematic Decision Rule Comparison (Task 3)}
+\subsubsection{CIFAR-10-C Decision-Rule Comparison}
 \label{app:cifar10c-decision-rules}
 
 To comprehensively evaluate decision rules on the identical deployment testbed, we evaluated nine same-prediction decision rules across the $2{,}160$ authoritative Protocol~B Tent CIFAR-10-C cells (comprising the primary and protocol subsets defined in the condition manifest). Table~\ref{tab:cifar10c-decision-rules} reports performance and action counts; Table~\ref{tab:cifar10c-decision-rules-errors} reports directional error rates and benefit capture. Heuristic 1D gates (confidence and entropy) suffer high false-adaptation rates ($\mathrm{FA}_u \approx 0.25$, committing harmful adaptation updates on $75\%$ of harmful cells). Uncalibrated point-benefit regression achieves low regret ($0.0004$) but accepts a $4.1\%$ false adaptation rate ($\mathrm{FA}_u = 0.0407$, deploying updates on $12.2\%$ of cells with $B \le 0$). In contrast, KGA records zero observed false ADAPT decisions on this evaluated panel ($\mathrm{FA}_u = 0.0000$, $0\%$ harmful adaptation) with competitive regret ($0.0018$) while executing $1{,}094$ ADAPT commitments on $1{,}439$ helpful cells ($76.0\%$ cell capture). On this Tent panel, an exploratory fixed $\pm 0.02$ margin (chosen near the empirical mean half-width) achieves a similar operating point, illustrating that conservative gating can be approximated by a calibrated scalar threshold on this specific benchmark; KGA automates this thresholding via data-driven conformal radii without manual margin tuning.
@@ -834,7 +838,7 @@ To comprehensively evaluate decision rules on the identical deployment testbed, 
 \input{paper/generated/tab_cifar10c_decision_rules_errors.tex}
 
 
-\subsubsection{Model Replication \& Checkpoint Inventory (Task 1)}
+\subsubsection{Independent-Checkpoint Diagnostics and Calibration Audit}
 \label{app:model-replication}
 
 \paragraph{Historical routing authority qualification.}
@@ -1224,7 +1228,7 @@ because its archived actions were scored under the wrong macro-F1 contract.
 \begin{table*}[!t]
 \centering
 \scriptsize
-\caption{Action exposure across evaluated tracks. Counts are evaluation units within the protocol shown, not independent experiments. The primary controlled rows reflect authoritative \emph{Protocol B cell-outcome-disjoint cross-fitting} (matching \KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table}), yielding 1,094/334/732 for CIFAR-10-C Tent ($\mathrm{FA}_u = 0.0000$), 1,207/118/835 for EATA ($\mathrm{FA}_u = 0.0000$), and 1,430/0/730 for SAR ($\mathrm{FA}_u = 0.0005$). The earlier \emph{Historical LOO Diagnostic Replay} (Protocol A order statistics on archived $\widehat{b}$) yielded 1,107/359/694 for Tent, 1,241/132/787 for EATA, and 1,446/0/714 for SAR (all with $\mathrm{FA}_u = 0.0000$). Harm and false adaptation are defined by measured cell outcomes, not population risks. Counts were regenerated from source manifest SHA-256 \texttt{\SourceManifestSHA}.}
+\caption{Action exposure across evaluated tracks. Counts are evaluation units within the protocol shown, not independent experiments. The primary controlled rows reflect authoritative \emph{Protocol B cell-outcome-disjoint cross-fitting} (matching \KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table}), yielding 1,094/334/732 for CIFAR-10-C Tent ($\mathrm{FA}_u = 0.0000$), 1,207/118/835 for EATA ($\mathrm{FA}_u = 0.0000$), and 1,430/0/730 for SAR ($\mathrm{FA}_u = 0.0005$). The earlier \emph{Historical LOO Diagnostic Replay} (Protocol A order statistics on archived $\widehat{b}$) yielded 1,107/359/694 for Tent, 1,241/132/787 for EATA, and 1,446/0/714 for SAR (all with $\mathrm{FA}_u = 0.0000$). Harm and false adaptation are defined by measured cell outcomes, not population risks. Counts derive from the records indexed by \protect\path{reconciled_panels_v1/source_manifest.json}.}
 \label{tab:compact-actions}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}p{0.19\textwidth}rrrrrrp{0.35\textwidth}@{}}
@@ -1389,7 +1393,7 @@ Track & Released status & Present evidence & Remaining limitation \\
 CIFAR-10-C & replayable & per-condition $\Delta^{\mathrm{cell}}$, $\widehat\Delta$, radius, action; 5 seeds; 3 candidates & related grid cells; no untouched corruption-family test in canonical table \\
 ImageNet-C & replayable & per-condition records for 5 seeds and Tent/EATA/SAR & 27-cell controlled configuration; candidate-specific, not one policy \\
 Office-Home & replayable & canonical primary and 54-cell stream-seed records; later five-checkpoint audit reported separately & full-fit-versus-OOF transfer-stability premise not predeclared \\
-iWildCam & withheld & archived opened test-split records; non-promoted official-metric diagnostic & wrong archived metric; population was not sealed and overlap is unauditable \\
+iWildCam & withheld & archived opened test-split records; metric-mismatched diagnostic & wrong archived metric; population was not sealed and overlap is unauditable \\
 Camelyon17 & replayable diagnostic & archived opened OOD row plus separate B--v2 diagnostics & OOD row is one-sided and non-prospective; B--v2 is not untouched-domain evidence \\
 RxRx1 & replayable & displayed model-seed-0 row plus three model-checkpoint records and source hashes & all three checkpoints freeze throughout; no helpful test conditions \\
 CCT-20 & sealed complete & 5 independent checkpoints, 9 target locations, actions, predictions, score, and inference hashes & only two fit locations; no ADAPT exposure; trans-target extrapolation \\
@@ -1437,9 +1441,9 @@ release chain also records the numeric-v2 stabilization in a sealed addendum cre
 That stabilization replaced an unstable divergence calculation with a stable Gaussian KL computation; it
 did not change the model, data split, or scoring rule. We treat it as protocol provenance, not
 result-driven tuning. All primary outcome values and action/effect counts come from the sealed,
-content-addressed, receipt-linked CCT-20 release manifest and its generated macros
-(canonicalized inference-document SHA-256
-\hashtext{\CCTInferenceSHA}).
+content-addressed, receipt-linked CCT-20 release manifest and its generated macros.
+The inference document is identified by the \texttt{upstream\_artifacts.two\_way\_inference}
+entry in \path{cct20_release_manifest.json}, which retains its checksum.
 
 \begin{table*}[t]
 \centering
@@ -1570,7 +1574,7 @@ Office-Home uses 18 features and also records source-prior KL and mean candidate
 model and its radius are valid only for the schema on which they were calibrated. Missing,
 reordered, or invalid features force non-commitment.
 
-The controlled and archived GBRT protocols use scikit-learn's
+The principal CIFAR Protocol-B replay uses scikit-learn's
 \texttt{GradientBoostingRegressor}~\cite{pedregosa2011sklearn} with squared-error loss,
 250 trees, depth 2, learning rate $0.05$, subsample $0.8$, and random seed 0. The fit is specific
 to each dataset and adapter. CCT-20 instead uses its sealed ridge model, as described in
@@ -1986,10 +1990,11 @@ Our formalization strictly distinguishes population-level guarantees from empiri
 \label{sec:compact-repro}
 
 \subsection{Canonical Numerical Source of Truth}
+\label{app:estimator-settings}
 
 The CIFAR primary rows and the supplementary reconciled point estimates have one numerical source:
-\path{experiments/kbound/results/reconciled_panels_v1/canonical_panel_results.json}. Its compact
-source manifest has SHA-256 \hashtext{\SourceManifestSHA}. Named auxiliary artifacts support only
+\path{reconciled_panels_v1/canonical_panel_results.json} in the accompanying reproducibility archive.
+Record identities and checksums are in \path{reconciled_panels_v1/source_manifest.json}. Named auxiliary artifacts support only
 their stated roles. Current-policy family sensitivity is retrospective: Holm adjustment over six
 prospectively named contrasts gives reference values of $0.09375$ for both Tent comparisons, but
 the corruption-family unit and test were not preregistered. The earlier Tent cluster artifact and
@@ -2001,9 +2006,52 @@ point-estimate panel. The generated result manifest indexes every promoted claim
 {\footnotesize
 To resolve provenance and pipeline differences across benchmark tables:
 (1)~\textbf{\KBMainRef{tab:primary-cifar}{Table}{the main CIFAR-10-C table} (Primary CIFAR-10-C):} ResNet-18, Tent/EATA/SAR. The canonical manifest binds compact per-condition records to their archived source files. The current generator, \path{scripts/reconcile_result_panels.py}, refits from saved $Z,B$ under Protocol B and ignores historical prediction/radius/action fields. Per seed: 432 records, five score folds of 86 or 87, 104 residual-calibration records and 242 or 241 estimator-fit records. Calibration rank is $\lceil(104+1)(1-0.10)\rceil=95$. Exact literal candidate/seed/condition identifiers determine disjoint folds; each pooled row has weight $1/2160$. The earlier Protocol-A description with pool 431 and rank 389 describes a historical procedure, not this current table. A pinned-runtime replay reproduced all Tent predictions, radii and actions for five seeds; changing one scored outcome per seed left that cell's decision inputs and action unchanged. This is saved-feature cell-level verification, not upstream or environment-held-out independence.
-(2)~\textbf{\KBMainRef{tab:synchronized-baselines}{Table}{the main synchronized-baseline table} (Current Synchronized Baselines):} Tent, six internal decision rules on the same canonical paired scores and current predictions as item (1), under Protocol B. \path{docs/research/kbound/scripts/replay_cifar_current_arithmetic.py} emits JSON, per-cell decisions and LaTeX into \path{paper/generated/current_cifar_baselines_20260912/}; it authenticates inputs against an explicitly hash-bound audit and does not refit or tune. Its generated policy arrays and metrics were independently recomputed. The separate \path{PINNED_CANONICAL_REPLAY_VERIFICATION.json} records exact five-seed refitting and five outcome interventions in Python 3.12.13, NumPy 2.4.4 and scikit-learn 1.8.0. Both fixed-policy regrets match item (1) exactly. The historical synchronized/P4 tables are excluded from current results: their cited aggressive archive has 270 cells per seed, and all inspected 432-cell synchronized paired arrays equal the primary arrays. Source hashes, comparisons and preserved historical text are under \path{experiments/kbound/results/cifar_paired_array_audit_20260912.Q4GKLg/}. This authenticates saved-record calculations, not image-level sample identity, independent source training or native baseline execution.
+(2)~\textbf{\KBMainRef{tab:synchronized-baselines}{Table}{the main synchronized-baseline table} (Current Synchronized Baselines):} Tent, six internal decision rules on the same canonical paired scores and current predictions as item (1), under Protocol B. \path{docs/research/kbound/scripts/replay_cifar_current_arithmetic.py} emits JSON, per-cell decisions and LaTeX into \path{paper/generated/current_cifar_baselines_20260912/}; it authenticates inputs against an explicitly hash-bound audit and does not refit or tune. Its generated policy arrays and metrics were independently recomputed. The separate \path{PINNED_CANONICAL_REPLAY_VERIFICATION.json} records exact five-seed refitting and five outcome interventions in Python 3.12.13, NumPy 2.4.4 and scikit-learn 1.8.0. Both fixed-policy regrets match item (1) exactly. The historical synchronized/P4 tables are excluded from current results: their cited aggressive archive has 270 cells per seed, and all inspected 432-cell synchronized paired arrays equal the primary arrays. Source hashes, comparisons and preserved historical text are indexed by \path{PAIRED_ARRAY_PROVENANCE_AUDIT.json}; its location is retained in the release checklist. This authenticates saved-record calculations, not image-level sample identity, independent source training or native baseline execution.
 (3)~\textbf{Table~\ref{tab:imagenetc-sar-matched} (Matched SAR Controls):} Historical ResNet-50, 5 SAR arms (Table~\ref{tab:sar-arm-config}). The cited 60-cell raw records and reconciliation manifest are not resident in the current checkout, so this table is not release-promoted. Historical configuration: per-cell adaptation with $b \in \{16, 32, 64\}$ on 64-image windows, evaluated under Protocol A (LOO residual calibration, $n=60$, pool $n_{\mathrm{cal}} = 59$, rank $k = 54$ at $\alpha=0.10$, equal weights $1/60$). The current resident 27-cell reference-SAR audit is reported separately in Table~\ref{tab:sar-27cell-audit}.
 (4)~\textbf{Table~\ref{tab:imagenetc-decision-baselines} (ImageNet-C Baselines):} ResNet-50, Tent/EATA/SAR (8 decision rules). \emph{Records:} \path{decision_baselines_sarfix/decision_baselines.json} and \path{checkpoint.json}. 36 noise conditions $\times$ 3 candidates ($N=108$). Evaluated under Protocol A (leave-one-condition-out GBR on 11-dim features, $\alpha=0.10$, equal weights).}
+\paragraph{Study-specific estimator settings.}
+Estimator settings differ across studies. Within each fold of the shared-predictor
+comparison, score-based arms share the fitted point predictor; this does not imply
+a shared fitted model across folds, candidates or studies. The following crosswalk
+distinguishes recorded replay settings from historical implementation defaults.
+\begin{description}[leftmargin=1em,style=nextline]
+\item[Principal CIFAR, Protocol B.]
+The saved-feature replay specifies GBRT with 250 trees, depth 2, learning rate
+0.05, subsample 0.8 and model seed 0 in \path{scripts/reconcile_result_panels.py}.
+The pinned canonical replay receipt identifies the runtime and reproduced outputs.
+\item[Historical Protocol A.]
+The maintained LOO implementation, \path{kbound_decide.py} (located through the
+release checklist), defaults to
+the same 250/2/0.05/0.8/0 settings. The compact historical CIFAR records do not
+preserve the fitted estimator configuration, so these defaults do not establish
+the original execution settings.
+\item[Shared-predictor comparison.]
+Paths in this item are relative to \path{output/next_phase/calibration_value_v1/}.
+The sealed configurations specify GBRT with 100 trees, depth 2, learning rate
+0.05, subsample 1.0 and model seed 20260921. CIFAR/checkpoint execution code and
+configuration are preserved in \path{attempt_02/executed_source/};
+\path{report_03/protocol_seal.json}, \path{report_03/fit_and_calibration_receipts.json} and
+\path{report_03/reporting_correction_receipt.json} record the fitting identity and retained decisions.
+That report corrects scoring without refitting; these receipts are not serialized
+fitted models. The ImageNet authority is
+\path{attempt_04_imagenet_schema_corrected/}, with its own protocol seal and
+executed source. These paths are resolved by
+\path{FINAL_RESULTS_SUMMARY.json}. The
+\path{group_risk_report_05/GROUP_RISK_CORRECTION_RECEIPT.json} records further
+scoring of sealed decisions, with no new estimator fit.
+\item[CCT-20.]
+The development-gate object in \path{release/cct20_public_evidence_bundle.zip}
+records standardized ridge with penalty 10 and an unpenalized intercept,
+consistent with the archived \path{cct20/prospective_protocol_v1.yaml}.
+\item[So2Sat v2.]
+The locked city-mean/checkpoint ridge has penalty 1 and an unpenalized intercept.
+Its controller is \path{tent_citymean5_checkpoint_ridge_v2.json}, bound by
+\path{natural_v2/precalibration_seal_v2.json}.
+\end{description}
+Model seeds above are estimator random-state settings, not stream or checkpoint
+replications. Parameters omitted from an executed configuration remain library
+defaults; current defaults are not evidence of a historical execution.
+
 \begin{table*}[t]
 \centering
 \small
@@ -2019,24 +2067,17 @@ The macOS release profile pins Python~3.12.13 and package hashes in
 publication-tool identity checks. The Linux API image has a separate
 Python~3.11 lock; an API or paper-only environment does not satisfy the
 repository-wide research dependencies, including PyTorch~\cite{paszke2019pytorch}.
-After providing the authenticated evidence and required toolchains, the intended
-full release command from the repository root is:
-\par\vspace{1pt}\noindent\hangindent=1em{\small\texttt{KBOUND\_PYTHON=.venv/bin/python bash }%
-\path{docs/research/kbound/runbooks/release_candidate.sh}\texttt{ all}}\par\vspace{1pt}
-It runs the read-only preflight, validates and regenerates result authorities, executes software and
-formal checks, builds the two PDFs and compact DOCX, renders every PDF page, and emits release
-checksums. It consumes frozen model outputs and never launches training.
+The explicit reproduction sequence and artifact locations are maintained in
+\path{next_phase/RELEASE_CHECKLIST.md}. That sequence distinguishes validation,
+table and figure regeneration, document compilation, conversion, inspection and
+release sealing. It uses frozen model outputs and does not launch training.
 Release acceptance requires receipts bound to the exact source and generated artifacts. Earlier software, Lean and presentation passes apply to their recorded snapshots. They do not establish a current all-gates pass. Containerized API and network-isolated deployment checks require execution against the selected release image; their status must be read from the final release receipt. A rendered PDF alone is not a release seal.
 
 
-For presentation-only rebuilding from already validated authorities, the command is:
-\par\vspace{1pt}\noindent\hangindent=1em{\small\texttt{BUILD\_LONG\_TMLR=1 BUILD\_DOCX=1 bash }%
-\path{docs/research/kbound/scripts/build_pdfs.sh}}\par\vspace{1pt}
-This shorter command validates the frozen authorities, regenerates presentation tables and figures,
-and builds the maintained PDFs and DOCX. Before generation, the current CIFAR
-arithmetic checker authenticates the seven saved inputs and regenerates all three
-table artifacts in a fresh temporary directory; a mismatch stops the build.
-It does not replace the full release gate or create new empirical evidence.
+The document-build wrapper also validates frozen authorities, checks saved CIFAR
+arithmetic and regenerates presentation tables and figures; it is not a
+compiler-only operation. These presentation steps do not replace source-bound
+verification or create new empirical evidence.
 
 \subsection{Calibration Identity and Implementation Contract}
 
@@ -2086,9 +2127,9 @@ The study in \KBMainRef{sec:nextphase-calibration}{Section}{the main additional 
 uses 32 allowlisted, hash-bound inputs from opened historical records. Its primary
 authority combines the corrected CIFAR/checkpoint scoring report with the corrected
 ImageNet grouping report. The source summaries and their immutable report history
-are retained under \path{output/next_phase/calibration_value_v1/}; these summaries
-authenticate the new calculations without supplying missing original training or
-adaptation execution evidence.
+are indexed by \path{calibration_value_v1/FINAL_RESULTS_SUMMARY.json} and
+\path{next_phase/evidence_manifest.json}. These records bind the saved-feature
+calculations without supplying missing original training or adaptation execution evidence.
 
 \paragraph{Separation and evaluation units.}
 Each fold fits one benefit predictor shared across all policies. Semantic groups
@@ -2097,9 +2138,14 @@ and scoring. CIFAR and ImageNet outer folds exclude whole corruption types.
 Checkpoint-only evaluation excludes the scored source model and rotates held-out
 semantic groups; joint evaluation excludes both the scored checkpoint and the
 complete corruption type. Local scale estimation uses grouped
-out-of-fold residuals within the development data. Held-out score outcomes are
-loaded only after serialized decisions; outcome-perturbation tests preserve the
-fitted hashes, radii, thresholds, and decision bytes for the scored fold.
+out-of-fold residuals within the development data. The decision phase consumes
+prepared feature-only scoring inputs; the separate scoring phase reads the held-out
+outcome file after decisions have been serialized. Preparation itself reads the
+historical outcomes to construct the separated files. A synthetic full-fold outcome-perturbation
+regression preserves the predictor hash, calibrated radii, selected thresholds and
+returned decision structures for the tested scoring fold. These checks concern
+saved-feature outcome exclusion, not untouched historical outcomes, upstream image
+independence or invariance of timing-bearing receipts.
 These computational separations do not make the already opened environments
 exchangeable or independent deployments.
 
@@ -2286,7 +2332,8 @@ the numerical certificate concerns its supplied endpoints.
 The synthetic protocol fixes nine scenarios, three source class sample sizes,
 three sensitivity budgets, and 60 trials per combination before count sampling.
 All counts, decisions, outcomes, approximate witnesses, receipts, and executed
-source snapshots are preserved under \path{output/next_phase/paired_transport_v1/}.
+source snapshots are indexed by \path{paired_transport_v1/receipt.json} and
+\path{next_phase/evidence_manifest.json}.
 The separate-accuracy arm is a coupling relaxation on the identical polytope.
 An official MaC-LP execution was unavailable after checking the primary paper
 and targeted author-code sources; it was not replaced with a purported native

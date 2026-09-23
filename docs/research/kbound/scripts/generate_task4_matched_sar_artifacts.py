@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[4]
 
 ARM_CONFIGS = {
     "arm1": {"label": "BN-only (zero grad)", "lr": "--", "lr_md": "$0.0$", "mask": "None", "bn": "Test Stats"},
-    "arm2": {"label": "Reference SAR (official)", "lr": r"$2.5\times 10^{-4}$", "lr_md": r"$2.5\times 10^{-4}$", "mask": "Layers 1--3", "bn": "Test Stats"},
+    "arm2": {"label": "SAR reference parameters; local execution", "lr": r"$2.5\times 10^{-4}$", "lr_md": r"$2.5\times 10^{-4}$", "mask": "Layers 1--3", "bn": "Test Stats"},
     "arm3": {"label": "Rate only", "lr": r"$4.0\times 10^{-3}$", "lr_md": r"$4.0\times 10^{-3}$", "mask": "Layers 1--3", "bn": "Test Stats"},
     "arm4": {"label": "Mask only", "lr": r"$2.5\times 10^{-4}$", "lr_md": r"$2.5\times 10^{-4}$", "mask": "Layers 1--4", "bn": "Test Stats"},
     "arm5": {"label": "Historical combined", "lr": r"$4.0\times 10^{-3}$", "lr_md": r"$4.0\times 10^{-3}$", "mask": "Layers 1--4", "bn": "Test Stats"},
@@ -30,7 +30,7 @@ def generate_latex_table(manifest: dict[str, Any], kga_summary: dict[str, Any], 
         r"\begin{table*}[t]",
         r"\centering",
         r"\small",
-        r"\caption{\textbf{Task 4 Authenticated Matched SAR Control Study on ImageNet-C.} Five-arm matched ablation varying learning rate $\eta$ and parameter mask (with layer 4 frozen vs adapted) on a shared 27-condition ImageNet-C noise panel ($n=27$ cells, ResNet-50 source checkpoint, small batch regime $b=16$, seed 0). Candidate accuracy $a_{\mathrm{cand}}$, benefit $\Delta = a_{\mathrm{cand}} - a_0$, parameter update norm $\|\Delta \theta\|_2$, Protocol~B KGA routed accuracy $a_{\mathrm{KGA}}$, oracle regret $R_{\mathrm{KGA}}$, unconditional false adapt rate $\mathrm{FA}_u$, and decision counts (Adapt / Freeze / Abstain) under exact rank conformal routing ($\alpha=0.10, \tau=0$). Always Freeze regret is $3.30$--$3.31\,\text{pp}$ across arms ($3.30\,\text{pp}$ for Arms 1--4, $3.31\,\text{pp}$ for Arm 5); Always Adapt regret is $0.00\,\text{pp}$. Benefit $\Delta$, accuracy, and regret are reported in percentage points. Raw per-condition records, sample hashes, and computational flags are archived in \texttt{experiments/kbound/results/task4\_matched\_sar\_v1/raw/}.}",
+        r"\caption{\textbf{Matched SAR Control Study on ImageNet-C.} Five-arm matched ablation varying learning rate $\eta$ and parameter mask (with layer 4 frozen vs adapted) on a shared 27-condition ImageNet-C noise panel ($n=27$ cells, ResNet-50 source checkpoint, small batch regime $b=16$, seed 0). Candidate accuracy $a_{\mathrm{cand}}$, benefit $\Delta = a_{\mathrm{cand}} - a_0$, parameter update norm $\|\Delta \theta\|_2$, Protocol~B KGA routed accuracy $a_{\mathrm{KGA}}$, oracle regret $R_{\mathrm{KGA}}$, unconditional false adapt rate $\mathrm{FA}_u$, and decision counts (Adapt / Freeze / Abstain) under exact rank conformal routing ($\alpha=0.10, \tau=0$). Always Freeze regret is $3.30$--$3.31\,\text{pp}$ across arms ($3.30\,\text{pp}$ for Arms 1--4, $3.31\,\text{pp}$ for Arm 5); Always Adapt regret is $0.00\,\text{pp}$. Accuracy is reported as a percentage; benefit $\Delta$ and regret are reported in percentage points. Saved records support these comparisons; complete execution identities remain unavailable. Per-condition records and declared execution fields are indexed by \texttt{task4\_matched\_sar\_v1/TASK4\_MATCHED\_SAR\_MANIFEST.json}.}",
         r"\label{tab:task4_matched_sar}",
         r"\resizebox{\textwidth}{!}{%",
         r"\begin{tabular}{@{}llccccccccc@{}}",

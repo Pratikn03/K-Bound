@@ -9,7 +9,7 @@
 
 ## Paper and supporting evidence
 
-The [2026-09-22 release](https://github.com/Pratikn03/K-Bound/releases/tag/kbound-2026-09-22)
+The [2026-09-23 frozen publication release](https://github.com/Pratikn03/K-Bound/releases/tag/kbound-frozen-2026-09-23)
 provides the full and appendix-free PDF/Word manuscripts, the TMLR companion,
 source and evidence archives, result JSONs, execution snapshots, verification
 records, and SHA-256 inventories. The repository contains the maintained code,
@@ -17,6 +17,13 @@ protocols, compact historical records, and
 [next-phase evidence manifest](docs/research/kbound/next_phase/evidence_manifest.json).
 The release archive supplies the manifest-bound files under `output/next_phase/`,
 which are intentionally excluded from normal Git tracking.
+
+The bounded final publication edits are recorded in
+[FINAL_PUBLICATION_DECISIONS.md](docs/research/kbound/FINAL_PUBLICATION_DECISIONS.md)
+and the release manifest identifies their exact source commit. The preceding
+[journal release](https://github.com/Pratikn03/K-Bound/releases/tag/kbound-journal-2026-09-22)
+is preserved. Use the PDF as the authoritative mathematical reading copy;
+the editable Word exports include a separate rendering and inspection record.
 
 Start with the release's README and outer archive receipt. The package verifier
 checks archived bytes, including nested source and evidence archives; the
@@ -142,7 +149,7 @@ that disabled runner is a certified FREEZE or a completed target experiment.
 | Evidence Domain | Benchmark Datasets | KGA Performance & Behavior | Safety Impact |
 | :--- | :--- | :--- | :--- |
 | **Controlled stress grids** | CIFAR-10-C, ImageNet-C | Tent and EATA have pooled CIFAR-10-C point advantages; SAR does not. Retrospective Holm adjustment over the six prospectively named contrasts gives adjusted Tent p=0.09375; non-confirmatory. | Controlled evidence only; no confirmatory or natural-shift win is claimed. |
-| **Prospective natural shift** | CCT-20 | KGA makes 44 FREEZE, 0 ADAPT, and 1 ABSTAIN decisions, tying always-freeze while avoiding the measured degradation from always-adapt. | Passes the locked safe-utility check at its nominal bootstrap level; not a population-safety guarantee or bidirectional routing result. |
+| **Locked natural-shift retention** | CCT-20 | KGA makes 44 FREEZE, 0 ADAPT, and 1 ABSTAIN decisions, tying always-freeze while avoiding the measured degradation from always-adapt. | Passes the locked safe-utility check at its nominal bootstrap level; not a population-safety guarantee or bidirectional routing result. |
 | **Prospective development gate (v1)** | So2Sat-LCZ42 | Adapter selection found no feasible candidate and stopped before gate calibration. The target was never opened, so no target score exists. | Preserved negative development-only evidence. |
 | **Locked calibration gate (v2)** | So2Sat-LCZ42 | All 19 cities × 5 checkpoints completed: 2 ADAPT, 0 direct FREEZE and 93 ABSTAIN. Only one city supplied ADAPT and none supplied FREEZE, failing the fixed seven-city requirements. Target remains unopened. | Two helpful accepted calibration updates do not establish target routing value; the calibration utilities are descriptive. |
 | **Natural diagnostics** | Office-Home, Camelyon17, RxRx1, PACS, ImageNet-R, CIFAR-10.1 | Results are ties, point-only findings, one-sided regimes, or negative diagnostics. iWildCam numbers are withheld pending an official-metric rerun. | No valid natural dataset currently establishes a confidence-supported win over both fixed policies. |

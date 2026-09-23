@@ -1476,11 +1476,50 @@ def bibliography_paragraphs(doc: Document, *, required: bool = True) -> list:
     return paragraphs[start:end]
 
 
+def normalize_repeated_table_captions(doc: Document) -> None:
+    """Shorten Pandoc's duplicate captions for consecutive parts of one float.
+
+    Match both text and complete native-math XML, since paragraph.text omits
+    OMML. Only caption/table/empty-paragraph/caption/table sequences qualify;
+    a distinct caption or intervening prose must remain unchanged.
+    """
+    captions = {}
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name != "Table Caption":
+            continue
+        match = re.match(r"^Table (\d+)\. ", paragraph.text)
+        if match is None or paragraph._p.xpath(".//w:drawing | .//w:fldChar"):
+            continue
+        signature = tuple(
+            (node.tag, node.text if node.tag == qn("w:t") else ElementTree.tostring(node, encoding="unicode"))
+            for node in paragraph._p.xpath(".//w:t | .//m:oMath")
+        )
+        captions[paragraph._p] = (match.group(1), signature)
+
+    for paragraph in doc.paragraphs:
+        identity = captions.get(paragraph._p)
+        following = paragraph._p.getnext()
+        if identity is None or following is None or following.tag != qn("w:tbl"):
+            continue
+        preceding = paragraph._p.getprevious()
+        while (preceding is not None and preceding.tag == qn("w:p")
+               and all(child.tag == qn("w:pPr") for child in preceding)
+               and not preceding.xpath("./w:pPr/w:sectPr")):
+            preceding = preceding.getprevious()
+        if preceding is None or preceding.tag != qn("w:tbl"):
+            continue
+        if captions.get(preceding.getprevious()) != identity:
+            continue
+        paragraph.text = f"Table {identity[0]} (continued)."
+        paragraph.paragraph_format.keep_with_next = True
+
+
 def postprocess(raw_docx: Path, output: Path) -> None:
     doc = Document(raw_docx)
     preserve_equation_tag_spacing(doc)
     configure_styles(doc)
     normalize_compact_heading_hierarchy(doc)
+    normalize_repeated_table_captions(doc)
     for section in doc.sections:
         section.orientation = WD_ORIENT.PORTRAIT
         section.page_width = Inches(8.5)

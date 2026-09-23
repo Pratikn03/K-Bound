@@ -325,6 +325,63 @@ def test_table_caption_stays_with_table_without_binding_image_captions() -> None
     assert doc.styles["Caption"].paragraph_format.keep_with_next is not True
 
 
+def _caption_with_math(doc, number="16", symbol="β"):
+    caption = doc.add_paragraph(f"Table {number}. Bound ", style="Table Caption")
+    math = OxmlElement("m:oMath")
+    run = OxmlElement("m:r")
+    text = OxmlElement("m:t")
+    text.text = symbol
+    run.append(text)
+    math.append(run)
+    caption._p.append(math)
+    return caption
+
+
+def test_duplicate_subtable_caption_is_continued_without_losing_unique_math(tmp_path):
+    doc = Document()
+    doc.styles.add_style("Table Caption", WD_STYLE_TYPE.PARAGRAPH)
+    _caption_with_math(doc)
+    doc.add_table(rows=1, cols=1).cell(0, 0).text = "First subtable"
+    doc.add_paragraph()
+    _caption_with_math(doc)
+    second = doc.add_table(rows=1, cols=1)
+    second.cell(0, 0).text = "Second subtable"
+    _caption_with_math(doc, number="17", symbol="ε")
+    doc.add_table(rows=1, cols=1).cell(0, 0).text = "Other table"
+    raw, output = tmp_path / "raw.docx", tmp_path / "out.docx"
+    doc.save(raw)
+
+    MODULE.postprocess(raw, output)
+
+    result = Document(output)
+    captions = [p for p in result.paragraphs if p.style.name == "Table Caption"]
+    assert [p.text for p in captions] == ["Table 16. Bound ", "Table 16 (continued).", "Table 17. Bound "]
+    assert [p._p.xpath(".//m:t/text()") for p in captions] == [["β"], [], ["ε"]]
+    assert captions[1].paragraph_format.keep_with_next is True
+    assert [t.cell(0, 0).text for t in result.tables] == ["First subtable", "Second subtable", "Other table"]
+    # Reprocessing does not shorten or otherwise alter the retained captions.
+    MODULE.postprocess(output, output)
+    assert [p.text for p in Document(output).paragraphs if p.style.name == "Table Caption"] == [p.text for p in captions]
+
+
+@pytest.mark.parametrize("difference", ["math", "prose", "number"])
+def test_distinct_or_nonadjacent_table_captions_are_unchanged(difference):
+    doc = Document()
+    doc.styles.add_style("Table Caption", WD_STYLE_TYPE.PARAGRAPH)
+    _caption_with_math(doc)
+    doc.add_table(rows=1, cols=1)
+    if difference == "prose":
+        doc.add_paragraph("A separate study follows.")
+    _caption_with_math(doc, number="17" if difference == "number" else "16",
+                       symbol="ε" if difference == "math" else "β")
+    doc.add_table(rows=1, cols=1)
+    before = doc._element.xml
+
+    MODULE.normalize_repeated_table_captions(doc)
+
+    assert doc._element.xml == before
+
+
 def test_header_only_table_does_not_bind_following_prose() -> None:
     doc = Document()
     table = doc.add_table(rows=1, cols=2)

@@ -152,8 +152,8 @@ Indistinguishable adaptation problems are already central to domain-adaptation i
 ~\cite{bendavid2010theory,bendavid2010impossibility}. K-Bound's specific contribution is a
 disagreement-conditional label-kernel construction, its clipped benefit set, and the associated
 residual-audit floor. The proof does not introduce label-free impossibility.
-Jhawar and Wang~\cite{jhawar2026identifiable} independently study when an unlabeled
-observation channel identifies the best TTA action. Their September 2026 preprint
+The study in \cite{jhawar2026identifiable} independently examines when an unlabeled
+observation channel identifies the best TTA action. That September 2026 preprint
 includes a finite-batch Gaussian keep/recenter boundary and benchmark examples
 where stream structure changes the preferred action. Thus action identification
 being weaker than mechanism identification is not a unique claim of this paper.
@@ -166,7 +166,7 @@ Risk-estimation assumptions based on conditional independence~\cite{steinhardt20
 restrict the compatible laws. Likewise, MMD-credal risk intervals impose RKHS and covariate-shift
 structure~\cite{ariq2026mmd}. Such restrictions can change the identified set; they are not
 contradicted by a converse theorem for a richer class.
-Li, Han, and Ma~\cite{li2026matrixconstraints} construct finite-sample label-shift
+The construction in \cite{li2026matrixconstraints} obtains finite-sample label-shift
 confidence regions through matrix constraints and linear programming. Consequently,
 optimizing a compatible probability table is established machinery. The separate
 paired-transport extension evaluated here targets the benefit contrast directly,
@@ -517,9 +517,10 @@ the class. The same number is also the population abstention radius:
  =\text{population abstention radius}=\beta \quad (0 \le \beta \le \tfrac12)
  \end{gathered}}
 \]
-This equality connects the audit problem to the strict-commitment frontier. Crucially,
-Theorem~\ref{thm:compact-beta-minimax} establishes that $\beta$ must be treated as an
-\emph{exogenous sensitivity parameter}, by analogy to Rosenbaum's sensitivity
+This equality connects the audit problem to the strict-commitment frontier. For the full
+declared class, Theorem~\ref{thm:compact-beta-minimax} rules out a uniformly tighter residual
+budget from the same evidence. We therefore treat $\beta$ as an
+\emph{externally justified sensitivity parameter}, by analogy to Rosenbaum's sensitivity
 parameter $\Gamma$ for unobserved confounding in observational studies~\cite{rosenbaum2002observational}
 or the ambiguity set radius in distributionally robust optimization (an analogy, not a mathematical
 equivalence). Extended exploratory formulations of break-even sensitivity frontiers and continuous selection odds-ratio curves are preserved in the supplementary research archive; the primary manuscript retains the exact population frontier $\Delta(\mathcal{C}_\beta)$ established in Theorem~\ref{thm:headline}.
@@ -677,9 +678,11 @@ An unhedged point rule ($\operatorname{sign}(\widehat\Delta)$) incurs a $30.9\%$
 
 The controlled implementation stores 11 label-free features, with algebraic rank at most 9 because two
 features are deterministic differences. They summarize confidence, class balance, model
-disagreement, and update size. For each dataset and adapter, a separate
-\texttt{GradientBoostingRegressor}~\cite{pedregosa2011sklearn} uses squared-error loss, 250 trees,
-depth 2, learning rate $0.05$, subsample $0.8$, and seed 0.
+disagreement, and update size. The current principal CIFAR replay fits a separate
+\texttt{GradientBoostingRegressor}~\cite{pedregosa2011sklearn} for each adapter, stream seed and score fold,
+using squared-error loss, 250 trees, depth 2, learning rate $0.05$, subsample $0.8$, and model seed 0.
+The later shared-predictor comparison has a separately specified estimator configuration
+(\KBSuppRef{app:estimator-settings}{Appendix}{the study-specific estimator settings}).
 Natural protocols retain their own fitted model and feature schema; for example, CCT-20 uses a
 ridge model. Details are in \KBSuppRef{app:compact-evidence}{Appendix}{the supplementary evidence specification}. A common interface does not imply
 that an estimator or radius transfers across adapters.
@@ -703,9 +706,9 @@ images inside them.
 
 The paper distinguishes current outcome-disjoint calibration, Protocol B, from the historical leave-one-cell-out replay, Protocol A.
 
-\emph{Protocol B:Three-way cell-outcome-disjoint cross-fitting} (used in the current primary CIFAR table, interval diagnostics, the 108-cell ImageNet-C population replay, and the \KBSuppRef{app:sar-official-controls}{Appendix}{the supplementary SAR controls} 27-cell audit). For each score fold, its entire complement is partitioned into strictly disjoint estimator-fit and residual-calibration subsets, ensuring that scored cell outcomes enter neither predictor training nor conformal calibration. Historical saved LOO predictions and radii do not determine these current CIFAR results.
+\emph{Protocol B: Three-way cell-outcome-disjoint cross-fitting} (used in the current primary CIFAR table, interval diagnostics, the 108-cell ImageNet-C population replay, and the \KBSuppRef{app:sar-official-controls}{Appendix}{the supplementary SAR controls} 27-cell audit). For each score fold, its entire complement is partitioned into strictly disjoint estimator-fit and residual-calibration subsets, ensuring that scored cell outcomes enter neither predictor training nor conformal calibration. Historical saved LOO predictions and radii do not determine these current CIFAR results.
 
-\emph{Protocol A:Leave-one-cell-out empirical order-statistic calibration} (used in historical controlled grids). Benefit predictions $\widehat\Delta_i$ were cross-fitted on the remaining $n-1$ cells, and each scored residual $r_i = |\widehat\Delta_i - \Delta_i^{\mathrm{cell}}|$ was excluded from the pool used to compute its own radius $\varepsilon_i$. However, this historical leave-one-out construction is peer-dependent: for $j \neq i$, the model $h_{-j}$ was fitted on training data containing $\Delta_i^{\mathrm{cell}}$, so the scored cell's outcome can indirectly influence other residuals $r_j$ in its calibration pool through model fitting.
+\emph{Protocol A: Leave-one-cell-out empirical order-statistic calibration} (used in historical controlled grids). Benefit predictions $\widehat\Delta_i$ were cross-fitted on the remaining $n-1$ cells, and each scored residual $r_i = |\widehat\Delta_i - \Delta_i^{\mathrm{cell}}|$ was excluded from the pool used to compute its own radius $\varepsilon_i$. However, this historical leave-one-out construction is peer-dependent: for $j \neq i$, the model $h_{-j}$ was fitted on training data containing $\Delta_i^{\mathrm{cell}}$, so the scored cell's outcome can indirectly influence other residuals $r_j$ in its calibration pool through model fitting.
 Where historical stress grids retain pooled LOO residuals (Protocol A), they are reported with this peer-dependence caveat rather than claiming full outcome disjointness. Natural protocols use separated development, calibration, and target partitions where the archived design records that separation.
 
 \begin{algorithm}[t]
@@ -1064,12 +1067,16 @@ calibration. Scaled calibration reduces CIFAR Tent loss from $0.2867$ to $0.1429
 percentage points versus point prediction, and from $0.2264$ versus the tuned
 margin. Its loss at matched exposure is only modestly lower than point ranking
 ($0.1429$ versus $0.1610$). Simple margins do better on CIFAR EATA and SAR;
-point or margin policies do better in the other cohorts. Constant-radius gates
-have exactly the point predictor's ranking at equal exposure: their role is
-choosing an operating point, rather than improving ranking.
+point or margin policies do better in the other cohorts. Within a fixed scoring fold,
+subtracting the same finite radius from the same point predictions preserves their ordering.
+At matched ADAPT exposure, the constant-radius rule selects the same cells as the
+point-ranking control, using the same tie rule. This does not compare rankings across
+separately fitted folds or studies; locally varying radii can change the ordering.
 The favorable Tent comparison is a point estimate on six observed corruption types.
-Uncertainty across those types and the influence of individual corruptions must therefore
-be considered separately from the number of scored cells
+Omitting JPEG only as an influence diagnostic nearly removes the advantage over point
+prediction and reverses the comparison with the tuned margin; all six corruption types
+remain in the primary estimate. Paired bootstrap ranges across these types describe
+sensitivity, not a population confidence interval or multiplicity-adjusted discovery
 (\KBSuppRef{app:journal-empirical}{Appendix}{the supplementary empirical synthesis}).
 
 Nominal 90\% constant-cell intervals include only $50.51$--$60.69\%$ of held-out
@@ -1227,7 +1234,9 @@ A unified statistical synthesis matrix consolidating sample sizes, evaluation un
 
 A rejected update can prevent adaptation harm, but retaining a frozen model is not proof that the
 model is accurate or suitable for a high-stakes setting. Misinterpreting an abstention as a
-certificate would be particularly risky. In safety-critical deployments (e.g., automated diagnostics or autonomous navigation), a FREEZE or ABSTAIN action should not be assumed to guarantee safety; rather, it should function as an automated fallback trigger, preserving the frozen baseline while routing ambiguous cases to human clinical review or secondary fail-safe systems.
+certificate would be particularly risky. In high-stakes applications, an unresolved assessment
+calls for an application-specific fallback, with domain-expert review where appropriate;
+the choice depends on the consequences of continuing with the frozen model.
 The reported experiments do not validate clinical, safety-critical, or autonomous operation.
 No held-out physical camera deployment or common end-to-end latency result is claimed.
 
@@ -1250,7 +1259,7 @@ KGA makes the empirical question concrete by predicting paired evaluation-cell b
 calibrating an interval around that prediction. Its value is candidate- and operating-point-dependent.
 Controlled routing gains coexist with simpler-rule wins. In the shared-predictor comparison,
 scaled calibration has lower observed CIFAR Tent harm-weighted loss, but the advantage narrows at matched
-exposure, and nominal 90\% constant-cell inclusion falls to $50.51$--$60.69\%$ on held-out CIFAR
+exposure and depends on the corruption mix. Nominal 90\% constant-cell inclusion falls to $50.51$--$60.69\%$ on held-out CIFAR
 corruptions. Useful decisions and reliable intervals must therefore be evaluated separately.
 
 Natural-shift evidence is more limited: CCT-20 demonstrates retention without ADAPT exposure,
@@ -1258,4 +1267,4 @@ and So2Sat stops before target scoring. The present studies do not establish pop
 protection or useful selective routing on unseen natural environments. The next empirical test
 is whether independently supported calibration can accept beneficial updates and reject harmful
 ones under a fixed protocol. Where the available information cannot support either strict sign,
-abstention remains the justified decision.
+abstention records the unresolved decision; it does not certify that the retained model is safe.
