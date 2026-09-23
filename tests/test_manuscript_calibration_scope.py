@@ -27,7 +27,7 @@ def test_current_disjoint_protocol_does_not_require_historical_loo_wording(capsy
             "Protocol A must remain historical",
         ),
         (
-            "Protocol B: Three-way cell-outcome-disjoint cross-fitting",
+            "Protocol B:Three-way cell-outcome-disjoint cross-fitting",
             "Protocol B: Leave-one-condition-out cross-fitted empirical residual calibration",
             "current Protocol B must specify three-way cell-outcome-disjoint cross-fitting",
         ),
@@ -97,3 +97,15 @@ def test_truthful_protocol_text_cannot_mask_an_additional_current_loo_label(
 
     assert result == 1
     assert "current Protocol B must not be labeled leave-one-out calibration" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("first", ["A", "B"])
+def test_protocol_guards_are_independent_of_exposition_order(monkeypatch, capsys, first):
+    sources, corpus = VALIDATOR._active_manuscript_corpus(VALIDATOR.ROOT, VALIDATOR.ACTIVE_SOURCES)
+    start = corpus.index(r"\emph{Protocol B:")
+    middle = corpus.index(r"\emph{Protocol A:", start)
+    end = corpus.index(r"\begin{algorithm}", middle)
+    b, a = corpus[start:middle], corpus[middle:end]
+    changed = corpus[:start] + (a + b if first == "A" else b + a) + corpus[end:]
+    monkeypatch.setattr(VALIDATOR, "_active_manuscript_corpus", lambda root, paths: (sources, changed))
+    assert VALIDATOR.main([]) == 0, capsys.readouterr().out

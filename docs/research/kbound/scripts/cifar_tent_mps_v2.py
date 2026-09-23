@@ -359,7 +359,7 @@ def make_figures(tag, per_method, fig_dir):
         plt.figure(figsize=(6.4, 4.2))
         plt.plot(p, [c["always_adapt"] for c in cur], "-o", color="#e76f51", label="always-adapt")
         plt.plot(p, [c["always_freeze"] for c in cur], "-o", color="#457b9d", label="always-freeze")
-        plt.plot(p, [c["K_Bound"] for c in cur], "-o", color="#2a9d8f", label="K-Bound")
+        plt.plot(p, [c["K_Bound"] for c in cur], "-o", color="#2a9d8f", label="KGA")
         plt.xlabel("harmful fraction p of deployment stream")
         plt.ylabel("mean regret vs oracle")
         plt.title(f"{tag} ({mname}): KGA is Pareto-optimal across mixes")

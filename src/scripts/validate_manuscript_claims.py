@@ -1945,9 +1945,15 @@ def validate_calibration_protocol_scope(corpus: str) -> list[str]:
     """Check each declared protocol's scope rather than requiring legacy LOO globally."""
 
     normalized = _normalize_claim_text(corpus)
-    before_b, _separator, protocol_b = normalized.partition("protocol b:")
-    _before_a, _separator, protocol_a = before_b.partition("protocol a:")
-    protocol_b = re.split(r"\\(?:begin|section|subsection)\b", protocol_b, maxsplit=1)[0]
+    # Each protocol has its own context. Exposition may put the current rule
+    # before the historical rule; neither may borrow the other's safeguards.
+    def context(name: str) -> str:
+        _before, _separator, after = normalized.partition(f"protocol {name}:")
+        return re.split(
+            r"\bprotocol [ab]:|\\(?:begin|section|subsection)\b", after, maxsplit=1
+        )[0]
+
+    protocol_a, protocol_b = context("a"), context("b")
     requirements = (
         (protocol_a, "used in historical controlled grids", "Protocol A must remain historical"),
         (

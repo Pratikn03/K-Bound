@@ -111,8 +111,8 @@ def test_interval_audit_cannot_be_promoted_to_fresh_group_validation():
     body = words(PAPER / "kbound_submission_body.tex")
     supplement = words(PAPER / "kbound_submission_supplement.tex")
     for token in (
-        "rank-constrained",
-        "not independent validation",
+        "observed out-of-fold inclusion rates on an opened, dependent benchmark",
+        "do not establish interval coverage on unseen distributions",
         "one false FREEZE among 118 FREEZE decisions",
         "zero FREEZE decisions",
         "conditional frequency divides by FREEZE decisions and is undefined when that action is absent",

@@ -239,7 +239,7 @@ exclusive, the union of false commitments satisfies:
 Taking probabilities yields the claimed bound $\le \alpha_{\mathrm{cell}} + \delta$.
 \end{proof}
 
-\subsection{The Price of Rigor: Sample Size vs.\ Abstention Analysis}
+\subsection{Sample Size and Abstention Under the Compound Bound}
 \label{app:price-of-rigor}
 
 Theorem~\ref{thm:app-pop-cert} quantifies the additional sampling allowance required
@@ -353,8 +353,7 @@ budget $\beta$, proving once again that label-free data alone cannot resolve str
 \subsection{Explicit Implementation Boundaries and Operational Scope}
 \label{app:implementation-boundaries}
 
-To maintain absolute transparency regarding theoretical constructs versus empirical evaluations,
-we explicitly delineate three distinct objects formulated in this paper:
+We distinguish three procedures and their evaluation scope.
 \begin{enumerate}
  \item \textbf{Empirical KGA ($\widehat\Delta \pm \varepsilon$):}
  The cell-benefit prediction interval uses the residual construction specified for each study
@@ -390,8 +389,8 @@ Risk parameters are $\alpha_{\mathrm{cell}} = 0.05$ and $\delta_{\mathrm{samplin
 Across calibration sizes $N_{\mathrm{cal}} \in \{18, 19, 39, 99\}$ and evaluation batch sizes $m \in \{32, 128, 512, 2048\}$ over 300 independent trials per configuration
 (Table~\ref{tab:synthetic-pop-diagnostic}), empirical coverage and action distributions confirm:
 (1)~at $N_{\mathrm{cal}}=18$, exact rank $k = \lceil 19 \times 0.95 \rceil = 19 > 18$ is infeasible, setting $\varepsilon = \infty$ and $100\%$ abstention (fail-closed rank protection);
-(2)~at $m=32$, the sampling radius $b(32, 0.05) = 0.4802$ combined with calibration radius $\varepsilon_{\mathrm{cell}} \approx 0.28$ yields compound width $\varepsilon + b \approx 0.76 > 0.60$, bracketing zero across all three states and enforcing $100\%$ abstention (the Price of Rigor);
-(3)~at $m \ge 128$, the gate safely commits on non-zero states while abstaining on ties ($\approx 33.3\%$, matching the null frequency);
+(2)~at $m=32$, the sampling radius $b(32, 0.05) = 0.4802$ combined with calibration radius $\varepsilon_{\mathrm{cell}} \approx 0.28$ yields compound width $\varepsilon + b \approx 0.76 > 0.60$, bracketing zero across all three states and producing $100\%$ abstention under this compound-bound construction;
+(3)~for finite-radius configurations with $m\ge128$, the gate commits on nonzero-benefit states without observed wrong-direction decisions in these trials; Table~\ref{tab:synthetic-pop-diagnostic} reports the corresponding abstention rates, while the $N_{\mathrm{cal}}=18$ configuration continues to abstain throughout;
 (4)~wrong-direction error is $0.0000$ across all 16 configurations ($\le \alpha_{\mathrm{pop}} = 0.10$).
 An observed $100\%$ population coverage rate on finite simulation trials reflects consistency under the simulated model, not a mathematical proof of universal coverage.
 Full summary records are archived in the supplementary repository.
@@ -400,14 +399,14 @@ Full summary records are archived in the supplementary repository.
 To evaluate the setting where the benefit predictor $\widehat\Delta$ is not an oracle Bayes rule but an imperfect empirical model fitted on finite development episodes, we conducted an extended non-oracle diagnostic (1{,}000 independent trials per configuration; archived in the supplementary repository).
 In each trial, an imperfect linear predictor is fitted on 15 independent development episodes ($m=32$) subject to estimation noise. We then evaluate three decision mechanisms across the $(N_{\mathrm{cal}}, m)$ grid (Table~\ref{tab:nonoracle-pop-diagnostic}):
 (1)~\textbf{Point Rule ($\operatorname{sign}(\widehat\Delta)$):} Blindly committing to adaptation whenever $\widehat\Delta > 0$ achieves $0\%$ abstention, but incurs a $31\%$--$36\%$ wrong-direction commitment error rate; crucially, $100\%$ of these errors occur on null/tie states ($Z=0$, $\Delta=0$) due to random estimation noise around zero, with strictly zero errors on harmful states ($\Delta = -0.6$).
-(2)~\textbf{Cell Interval ($\widehat\Delta \pm \varepsilon_{\mathrm{cell}}$):} Conformal residual calibration over the imperfect predictions guarantees valid empirical cell coverage ($93.9\%$--$96.5\%$, tightly tracking $1-\alpha_{\mathrm{cell}} = 0.95$) and eliminates wrong-direction error ($0.0000$). Furthermore, in this simulated model, the cell interval already achieves $\approx 100\%$ empirical population coverage of $\Delta$ across all configurations.
-(3)~\textbf{Population Interval ($\widehat\Delta \pm (\varepsilon_{\mathrm{cell}} + b)$):} By incorporating the Hoeffding sampling concentration $b(m, \delta)$, the compound interval achieved an observed $100\%$ empirical population-inclusion rate and zero wrong-direction error in these finite trials ($0.0000 \le \alpha_{\mathrm{pop}}$). At $m=32$, it enforces the Price of Rigor through $99.9\%$--$100\%$ abstention as a consequence of the universal Hoeffding penalty ($b(32) = 0.4802$), while at $m \ge 128$ it safely commits on non-zero states while withholding action on ties ($\approx 32\%$--$34\%$ abstention, matching the $33.3\%$ null state frequency).
+(2)~\textbf{Cell Interval ($\widehat\Delta \pm \varepsilon_{\mathrm{cell}}$):} In the finite-radius configurations, conformal residual calibration over the imperfect predictions records empirical cell inclusion near the nominal level ($93.9\%$--$96.5\%$ against $1-\alpha_{\mathrm{cell}}=0.95$) and zero observed wrong-direction decisions in these trials ($0.0000$). Observed population inclusion is approximately $100\%$ in this synthetic model. At $N_{\mathrm{cal}}=18$, the unbounded interval has inclusion $1.000$ and abstains throughout.
+(3)~\textbf{Population Interval ($\widehat\Delta \pm (\varepsilon_{\mathrm{cell}} + b)$):} Incorporating the Hoeffding sampling allowance $b(m,\delta)$ produces additional abstention under this compound-bound construction. The interval records $100\%$ empirical population inclusion and zero observed wrong-direction decisions in these finite trials. At $m=32$, abstention is $99.9\%$--$100\%$ with $b(32)=0.4802$. For finite-radius configurations with $m\ge128$, it commits on nonzero-benefit states without observed wrong-direction decisions in these trials; abstention is approximately $32\%$--$34\%$, near the $33.3\%$ null-state frequency. The $N_{\mathrm{cal}}=18$ configuration abstains throughout. These observations do not prove universal coverage.
 
 \begin{table}[!ht]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{Non-oracle population diagnostic (1{,}000 trials/cell; $\alpha_{\mathrm{cell}}=\delta=0.05$, $\alpha_{\mathrm{pop}}=0.10$). Evaluates an imperfect benefit predictor fitted on 15 independent development episodes ($m=32$) with estimation error. Entries report \textbf{Cell Coverage / Wrong-Direction Error / Abstention Rate}. The point rule commits on ties ($31\%$--$36\%$ wrong-direction error entirely on null states $Z=0$, $0\%$ abstention). The cell interval eliminates wrong-direction error ($0.000$) with empirical cell coverage matching nominal $1-\alpha=0.95$, and achieves $\approx 100\%$ population coverage of $\Delta$ in this model. The population compound interval $[\widehat\Delta \pm (\varepsilon+b)]$ achieved an observed $100\%$ empirical population-inclusion rate in these finite trials and zero wrong-direction error ($0.000 \le \alpha_{\mathrm{pop}}$); it is not a universal coverage guarantee. It enforces the Price of Rigor ($99.9\%$--$100\%$ abstention at $m=32$ via Hoeffding radius $b=0.480$, dropping to $\approx 33\%$ matching the null frequency for $m \ge 128$). Artifacts: see supplementary repository.}
+\caption{Non-oracle population diagnostic (1{,}000 trials/cell; $\alpha_{\mathrm{cell}}=\delta=0.05$, $\alpha_{\mathrm{pop}}=0.10$). An imperfect benefit predictor is fitted on 15 independent development episodes ($m=32$). Entries report \textbf{Cell Coverage / Wrong-Direction Error / Abstention Rate}. The point rule has $31\%$--$36\%$ wrong-direction error, entirely on null states $Z=0$, and $0\%$ abstention. In finite-radius configurations, the cell interval records $93.9\%$--$96.5\%$ empirical cell inclusion against nominal $95\%$, approximately $100\%$ population inclusion, and zero observed wrong-direction decisions. The compound interval records $100\%$ empirical population inclusion and zero observed wrong-direction decisions. Its abstention is $99.9\%$--$100\%$ at $m=32$ and approximately one third for finite-radius configurations with $m\ge128$. At $N_{\mathrm{cal}}=18$, the unavailable calibration rank gives an unbounded interval, inclusion $1.000$, and $100\%$ abstention at every batch size. These finite-simulation observations do not prove universal coverage. Artifacts: see supplementary repository.}
 \label{tab:nonoracle-pop-diagnostic}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}rcccc@{}}
@@ -463,7 +462,7 @@ This is a benchmark replay, not independent sampling or prospective population e
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\caption{Outcome-blind ImageNet-C 108-cell population-transfer replay across three candidates ($36$ cells each, five-fold cell-outcome-disjoint cross-fitting; $\alpha_{\mathrm{cell}}=0.05$, $\delta_{\mathrm{samp}}=0.05$, $\alpha_{\mathrm{pop}}=0.10$, sensitivity parameter $m=2{,}000$, giving uniform sampling radius $b=0.0607$). For each fold, $7$--$8$ cells are scored while the remaining $28$--$29$ complement cells are split into $19$ residual-calibration cells and $9$--$10$ estimator-fit cells. Finite $\varepsilon$ indicates non-degenerate calibration ($108/108$ cells). Decisions report counts of $\adapt / \freeze / \abstain$ before (cell gate, $\widehat\Delta \pm \varepsilon$) versus after (compound population interval, $\widehat\Delta \pm (\varepsilon+b)$). Across all 108 cells, $\mathrm{FA}_{\mathrm u} = 0.000$ (zero false adaptations). Regret reports mean oracle shortfall on cell outcomes for Cell Gate vs.\ Compound Population Interval ($0.0167 \to 0.0374$, illustrating the Price of Rigor). Population truth is not established on historical development replays. Receipts: preserved in the supplementary repository.}
+\caption{Outcome-blind ImageNet-C 108-cell population-transfer replay across three candidates ($36$ cells each, five-fold cell-outcome-disjoint cross-fitting; $\alpha_{\mathrm{cell}}=0.05$, $\delta_{\mathrm{samp}}=0.05$, $\alpha_{\mathrm{pop}}=0.10$, sensitivity parameter $m=2{,}000$, giving uniform sampling radius $b=0.0607$). For each fold, $7$--$8$ cells are scored while the remaining $28$--$29$ complement cells are split into $19$ residual-calibration cells and $9$--$10$ estimator-fit cells. Finite $\varepsilon$ indicates non-degenerate calibration ($108/108$ cells). Decisions report counts of $\adapt / \freeze / \abstain$ before (cell gate, $\widehat\Delta \pm \varepsilon$) versus after (compound population interval, $\widehat\Delta \pm (\varepsilon+b)$). Across all 108 cells, $\mathrm{FA}_{\mathrm u} = 0.000$ (zero false adaptations). Regret reports mean oracle shortfall on cell outcomes for Cell Gate vs.\ Compound Population Interval ($0.0167 \to 0.0374$, illustrating the utility cost of the added sampling allowance). Population truth is not established on historical development replays. Receipts: preserved in the supplementary repository.}
 \label{tab:imagenetc-108-population-replay}
 \begin{tabular}{@{}lccc@{}}
 \toprule
@@ -1964,6 +1963,11 @@ The formal build and empirical build answer different questions. Lean checks tha
 follows from formal assumptions. The reconciliation scripts check that displayed aggregates match
 saved records under implemented definitions. Neither checks the truth of an unencoded deployment
 assumption, and neither substitutes for independent experimental replication.
+The exact evidence-fibre supremum audit and the paired-transport polytope proof are LaTeX
+arguments, not additional one-to-one entries in the 150-declaration registry. The printed
+coverage-to-action proposition permits a random extended-real radius; its event-containment
+argument is broader than the fixed-real-radius formal corollaries. No end-to-end formal proof
+of numerical inverse-beta evaluation and the LP solver is claimed.
 
 The authoritative compact artifacts are layered: (1)~this source and its compiled PDF; (2)~shared theorem inputs for exact proofs; (3)~canonical JSON and generated LaTeX for numbers; (4)~the source manifest for record-level provenance; and (5)~package tests and Lean logs for implementation and formal checks.
 
@@ -2003,7 +2007,7 @@ To resolve provenance and pipeline differences across benchmark tables:
 \begin{table*}[t]
 \centering
 \small
-\caption{Unified Master Statistical Synthesis Matrix across evaluated empirical tracks. For each track, we summarize the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdict.}
+\caption{Summary of principal empirical comparisons. For each track, we summarize the evaluation unit, sample size $n$, baseline contrasts with nominal confidence intervals, multiplicity-adjusted significance, and empirical verdict.}
 \label{tab:master-statistical-synthesis}
 \resizebox{0.90\textwidth}{!}{\input{paper/generated/tab_master_statistical_synthesis.tex}}
 \end{table*}
@@ -2328,3 +2332,5 @@ available as simulation outputs; the saved null actions do not support a routing
 
 \paragraph{Camelyon17 decision-history qualification.}
 A retrospective 72-condition Camelyon17 diagnostic (\KBSuppRef{app:camelyon17}{Appendix}{B.5}) contains both helpful and harmful adaptation cells under hospital-provenance shift; under authenticated outcome-blind execution, the gate issued 0 \adapt, 2 \freeze, and 70 \abstain decisions, matching always-freeze regret ($0.0438$) and demonstrating conservative retention without \adapt exposure. The earlier 31-\adapt partition is withdrawn as routing evidence: it thresholded ground-truth benefit post hoc, rather than a saved outcome-blind prediction. It remains documented only to explain the historical discrepancy. KGA made no ADAPT decisions on CCT-20, RxRx1, or the 72-condition Camelyon17 diagnostic. These results evaluate conservative retention and do not establish prospective selective routing on unseen natural shifts.
+
+\input{journal_revision/journal_synthesis.tex}

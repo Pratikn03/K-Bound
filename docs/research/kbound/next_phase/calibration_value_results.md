@@ -27,7 +27,7 @@ For CIFAR Tent, scaled calibration reduces loss from 0.2867 to 0.1429 percentage
 
 ## Calibration transfer and insufficient information
 
-| Cohort / outer hold-out | Constant-cell interval inclusion | Scaled-cell inclusion | Group-max inclusion |
+| Cohort / outer hold-out | Constant-cell interval inclusion | Scaled-cell inclusion | Cell inclusion under group-max intervals |
 |---|---:|---:|---:|
 | cifar10c/eata / environment | 54.35% | 51.67% | 61.90% |
 | cifar10c/sar / environment | 50.51% | 48.19% | 61.30% |
@@ -38,7 +38,7 @@ For CIFAR Tent, scaled calibration reduces loss from 0.2867 to 0.1429 percentage
 | mixed_checkpoints/tent / checkpoint | 85.19% | 90.74% | unavailable / unbounded |
 | mixed_checkpoints/tent / joint | 79.63% | 87.96% | unavailable / unbounded |
 
-Finite interval inclusion is an observed diagnostic, not a population guarantee. CIFAR constant-cell inclusion is 60.69% Tent, 54.35% EATA and 50.51% SAR, far below nominal 90%; group maxima remain below nominal. Every independent-environment calibration arm abstains: calibration environments reused in fit/tune are excluded, leaving zero independently held-out calibration environments. The data cannot supply the minimum nine such environments for a finite 90% exact-rank radius.
+All percentages in this table measure cell inclusion, including the group-max interval column; they do not measure simultaneous group coverage. Finite interval inclusion is an observed diagnostic, not a population guarantee. CIFAR constant-cell inclusion is 60.69% Tent, 54.35% EATA and 50.51% SAR, far below nominal 90%; cell inclusion under group-max intervals also remains below nominal. Every independent-environment calibration arm abstains: calibration environments reused in fit/tune are excluded, leaving zero independently held-out calibration environments. The data cannot supply the minimum nine such environments for a finite 90% exact-rank radius.
 
 The 10% conditional group-risk arm also abstains in every cohort. With 13 candidate thresholds and within-fold confidence error .05, even zero observed harmful groups needs 53 adapted calibration groups for its one-sided upper bound to reach .10. The largest calibration partition has only 45 groups. This is a precomputable sample-size limitation, not empirical proof that no safe policy exists. The 20% risk sensitivity accepts some CIFAR updates and remains vacuous for the small ImageNet/checkpoint calibration partitions.
 

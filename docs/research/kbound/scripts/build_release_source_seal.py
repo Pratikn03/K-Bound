@@ -113,6 +113,12 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    "journal_revision": (
+        "docs/research/kbound/scripts/validate_journal_revision.py",
+        "docs/research/kbound/scripts/build_empirical_synthesis.py",
+        "docs/research/kbound/formal/formal_strict_core_receipt_journal_2026_09_22.json",
+        "docs/research/kbound/formal/formal_full_scope_receipt_journal_2026_09_22.json",
+    ),
     # The manifest is committed before source freeze and binds the separate
     # ignored-output evidence archive transitively. It never authorizes reading
     # new target data or promotes hashes into scientific execution evidence.
@@ -389,6 +395,7 @@ EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
 # Never walk datasets, historical experiment results, Lake caches, distributions,
 # or generated reports to construct the source inventory.
 SOURCE_PREFIX_RULES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("journal_revision", "docs/research/kbound/journal_revision/", (".md", ".json", ".tex", ".csv")),
     ("next_phase_metadata", "docs/research/kbound/next_phase/", (".md", ".json")),
     ("next_phase_software", "experiments/kbound/next_phase/", (".py", ".md")),
     ("formal_source", "docs/research/kbound/formal/KBound/", (".lean",)),
@@ -416,6 +423,7 @@ EXCLUDED_SOURCE_PARTS = frozenset({".lake", "build", "dist", "__pycache__"})
 # revision. These bounded maintained scopes ensure newly added runtime, test,
 # and next-phase source files are visible without scanning results or datasets.
 MAINTAINED_WORKTREE_SCOPES: tuple[str, ...] = (
+    "docs/research/kbound/journal_revision",
     "tests",
     "kga",
     "docs/research/kbound/next_phase",

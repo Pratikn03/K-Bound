@@ -83,6 +83,7 @@ SCRIPT_VALIDATORS = frozenset(
         "docs/research/kbound/scripts/validate_cifar10c_sar_rebuild.py",
         "docs/research/kbound/scripts/validate_closure_protocol.py",
         "src/scripts/validate_manuscript_claims.py",
+        "docs/research/kbound/scripts/validate_journal_revision.py",
     }
 )
 

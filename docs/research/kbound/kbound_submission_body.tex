@@ -41,6 +41,10 @@ labeled historical shift outcomes. It fits an empirical benefit predictor and ca
 three-way decision rule. The connection is the decision problem; the empirical gate does not
 implement the population frontier. Section~\ref{sec:compact-bridge} gives the full relationship
 between their targets and assumptions.
+Together, these analyses separate two possible obstacles to a justified update: the permitted
+evidence may leave its benefit unidentified, or an empirical interval may fail to transfer.
+The first requires additional assumptions or information; the second requires evidence for
+the calibration procedure at the intended decision unit.
 
 \subsection{Three Scientific Contributions}
 
@@ -520,7 +524,7 @@ parameter $\Gamma$ for unobserved confounding in observational studies~\cite{ros
 or the ambiguity set radius in distributionally robust optimization (an analogy, not a mathematical
 equivalence). Extended exploratory formulations of break-even sensitivity frontiers and continuous selection odds-ratio curves are preserved in the supplementary research archive; the primary manuscript retains the exact population frontier $\Delta(\mathcal{C}_\beta)$ established in Theorem~\ref{thm:headline}.
 
-\subsection{Why Labels at the Wrong Domain Buy Nothing}
+\subsection{Historical Labels Require a Transfer Assumption}
 \label{sec:compact-wrong-domain}
 
 Suppose the audit also observes a fully labeled calibration domain, but the declared class contains
@@ -641,7 +645,7 @@ in \KBSuppRef{app:compact-formal}{Appendix}{the formalization appendix}.
 
 \paragraph{ImageNet-C 108-cell population replay.}
 To audit this procedure on existing benchmark data without changing historical estimands, we replayed the outcome-blind compound interval $[\widehat\Delta \pm (\varepsilon + b)]$ across 108 ImageNet-C development cells (36 cells each for Tent, EATA, and SAR; five-fold cell-outcome-disjoint cross-fitting; sensitivity parameter $m=2{,}000$, yielding uniform concentration radius $b=0.0607$; Table~\ref{tab:main-pop-replay-summary}). Full fold breakdowns and radius distributions appear in \KBSuppRef{tab:imagenetc-108-population-replay}{Table}{the supplementary 108-cell replay table} (\KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}).
-Finite radii were obtained on $108/108$ cells. Across the panel, the cell-level gate ($\widehat\Delta \pm \varepsilon$) issued $40$ \adapt, $11$ \freeze, and $57$ \abstain decisions with zero false adaptations ($\mathrm{FA}_u = 0.0000$) and mean oracle regret $0.0167$. Incorporating the sampling radius ($b=0.0607$, with mean compound half-width $\bar\varepsilon + b = 0.1272$) shifted compound decisions to $1$ \adapt, $10$ \freeze, and $97$ \abstain, preserving zero observed false adaptations ($\mathrm{FA}_u = 0.0000$) while shifting regret to $0.0374$. This concretely demonstrates the sensitivity to the added concentration radius $b=0.0607$: because most empirical gains on this benchmark are smaller than the universal Hoeffding penalty for $m=2{,}000$, the compound rule withholds action on nearly all adaptations, illustrating the numerical Price of Rigor rather than establishing prospective population truth. As clarified in \KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}, $m=2{,}000$ is an evaluation sensitivity parameter, not fresh sampling; population truth remains unestablished on historical development records.
+Finite radii were obtained on $108/108$ cells. Across the panel, the cell-level gate ($\widehat\Delta \pm \varepsilon$) issued $40$ \adapt, $11$ \freeze, and $57$ \abstain decisions with zero false adaptations ($\mathrm{FA}_u = 0.0000$) and mean oracle regret $0.0167$. Incorporating the sampling radius ($b=0.0607$, with mean compound half-width $\bar\varepsilon + b = 0.1272$) shifted compound decisions to $1$ \adapt, $10$ \freeze, and $97$ \abstain, preserving zero observed false adaptations ($\mathrm{FA}_u = 0.0000$) while shifting regret to $0.0374$. This concretely demonstrates the sensitivity to the added concentration radius $b=0.0607$: because most empirical gains on this benchmark are smaller than the universal Hoeffding penalty for $m=2{,}000$, the compound rule withholds action on nearly all adaptations, illustrating the additional abstention induced by this sampling allowance rather than establishing prospective population truth. As clarified in \KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}, $m=2{,}000$ is an evaluation sensitivity parameter, not fresh sampling; population truth remains unestablished on historical development records.
 
 \begin{table}[t]
 \centering
@@ -666,7 +670,7 @@ Candidate & $N$ & Regret (Cell / Pop) & Cell Gate (A / F / U) & Compound Pop (A 
 
 \paragraph{Non-oracle population diagnostic.}
 While the synthetic diagnostic in \KBSuppRef{tab:synthetic-pop-diagnostic}{Table}{the supplementary synthetic population table} tested exact Bayes prediction ($\widehat\Delta(Z) = 0.6Z$), evaluating an imperfect predictor subject to estimation noise requires an extended non-oracle study. We conducted a diagnostic across 1,000 independent trials per configuration over 16 $(N_{\mathrm{cal}}, m)$ pairs, fitting an imperfect linear predictor on finite development episodes ($m=32$; \KBSuppRef{tab:nonoracle-pop-diagnostic}{Table}{the supplementary non-oracle population table}, \KBSuppRef{app:implementation-boundaries}{Appendix}{the supplementary implementation-boundary discussion}).
-An unhedged point rule ($\operatorname{sign}(\widehat\Delta)$) incurs a $30.9\%$--$35.6\%$ directional error rate ($\{g = \text{ADAPT} \wedge \Delta \le 0\} \cup \{g = \text{FREEZE} \wedge \Delta \ge 0\}$) with $0\%$ abstention (where $\mathrm{FA}_u$ is defined strictly for false \adapt; here directional errors combine false \adapt and false \freeze on null/tie states); crucially, $100\%$ of these errors occur on null/tie states ($Z=0, \Delta=0$) due to estimation noise around zero, with zero errors on strictly harmful states ($\Delta = -0.6$). Conformal cell calibration ($\widehat\Delta \pm \varepsilon_{\mathrm{cell}}$) eliminates directional error ($0.000$) with empirical cell coverage matching nominal $1-\alpha_{\mathrm{cell}}=0.95$ ($93.9\%$--$96.5\%$), and already achieves $\approx 100\%$ population coverage of $\Delta$ across all configurations in this model. The compound population interval $[\widehat\Delta \pm (\varepsilon_{\mathrm{cell}} + b)]$ likewise achieves $100\%$ empirical population coverage and zero observed wrong-direction error across these simulated trials ($0.000 \le \alpha_{\mathrm{pop}}=0.10$; the population-interval theorem bounds the population miss probability; this simulation reports zero empirically observed misses on this constructed diagnostic), while enforcing conservative abstention ($99.9\%$--$100\%$ at $m=32$, contracting safely to $\approx 33\%$ matching the null frequency for $m \ge 128$) as a direct consequence of the universal Hoeffding penalty ($b=0.4802$), rather than because cell-level calibration failed in this simulated environment.
+An unhedged point rule ($\operatorname{sign}(\widehat\Delta)$) incurs a $30.9\%$--$35.6\%$ directional error rate ($\{g = \text{ADAPT} \wedge \Delta \le 0\} \cup \{g = \text{FREEZE} \wedge \Delta \ge 0\}$) with $0\%$ abstention (where $\mathrm{FA}_u$ is defined strictly for false \adapt; here directional errors combine false \adapt and false \freeze on null/tie states); crucially, $100\%$ of these errors occur on null/tie states ($Z=0, \Delta=0$) due to estimation noise around zero, with zero errors on strictly harmful states ($\Delta = -0.6$). In the finite-radius configurations, the calibrated cell interval recorded $93.9\%$--$96.5\%$ empirical cell inclusion against a nominal $95\%$ level and zero observed wrong-direction decisions. Observed population inclusion was approximately $100\%$ for the cell interval in this synthetic model. The compound interval also recorded $100\%$ empirical population inclusion and zero observed wrong-direction decisions. Its abstention rate was $99.9\%$--$100\%$ at $m=32$ and approximately one third for the finite-radius configurations with $m\ge128$. At $N_{\mathrm{cal}}=18$, the required calibration rank is unavailable, so the infinite-radius rule abstains throughout. These are finite-simulation observations, not a proof of universal coverage.
 
 
 \subsection{Evidence, Calibration, and the Action Rule}
@@ -697,10 +701,11 @@ under the fitting and candidate-construction protocol
 calibration/deployment units are one sufficient route. The rank counts evaluation units, not the
 images inside them.
 
-We distinguish two calibration protocols across the paper:
-Protocol B is the current outcome-disjoint three-way fit/calibrate/score construction. Protocol A is the historical leave-one-cell-out replay.
-\emph{Protocol A: Leave-one-cell-out empirical order-statistic calibration} (used in historical controlled grids). Benefit predictions $\widehat\Delta_i$ were cross-fitted on the remaining $n-1$ cells, and each scored residual $r_i = |\widehat\Delta_i - \Delta_i^{\mathrm{cell}}|$ was excluded from the pool used to compute its own radius $\varepsilon_i$. However, this historical leave-one-out construction is peer-dependent: for $j \neq i$, the model $h_{-j}$ was fitted on training data containing $\Delta_i^{\mathrm{cell}}$, so the scored cell's outcome can indirectly influence other residuals $r_j$ in its calibration pool through model fitting.
-\emph{Protocol B: Three-way cell-outcome-disjoint cross-fitting} (used in the current primary CIFAR table, interval diagnostics, the 108-cell ImageNet-C population replay, and the \KBSuppRef{app:sar-official-controls}{Appendix}{the supplementary SAR controls} 27-cell audit). For each score fold, its entire complement is partitioned into strictly disjoint estimator-fit and residual-calibration subsets, ensuring that scored cell outcomes enter neither predictor training nor conformal calibration. Historical saved LOO predictions and radii do not determine these current CIFAR results.
+The paper distinguishes current outcome-disjoint calibration, Protocol B, from the historical leave-one-cell-out replay, Protocol A.
+
+\emph{Protocol B:Three-way cell-outcome-disjoint cross-fitting} (used in the current primary CIFAR table, interval diagnostics, the 108-cell ImageNet-C population replay, and the \KBSuppRef{app:sar-official-controls}{Appendix}{the supplementary SAR controls} 27-cell audit). For each score fold, its entire complement is partitioned into strictly disjoint estimator-fit and residual-calibration subsets, ensuring that scored cell outcomes enter neither predictor training nor conformal calibration. Historical saved LOO predictions and radii do not determine these current CIFAR results.
+
+\emph{Protocol A:Leave-one-cell-out empirical order-statistic calibration} (used in historical controlled grids). Benefit predictions $\widehat\Delta_i$ were cross-fitted on the remaining $n-1$ cells, and each scored residual $r_i = |\widehat\Delta_i - \Delta_i^{\mathrm{cell}}|$ was excluded from the pool used to compute its own radius $\varepsilon_i$. However, this historical leave-one-out construction is peer-dependent: for $j \neq i$, the model $h_{-j}$ was fitted on training data containing $\Delta_i^{\mathrm{cell}}$, so the scored cell's outcome can indirectly influence other residuals $r_j$ in its calibration pool through model fitting.
 Where historical stress grids retain pooled LOO residuals (Protocol A), they are reported with this peer-dependence caveat rather than claiming full outcome disjointness. Natural protocols use separated development, calibration, and target partitions where the archived design records that separation.
 
 \begin{algorithm}[t]
@@ -814,7 +819,7 @@ limited harm-avoidance check. Using nominal pointwise 95\% bootstrap lower endpo
 The second threshold is the frozen-policy noninferiority margin, on the accuracy-proportion scale.
 This rule can pass when KGA always retains $f_0$. The stronger routing criterion additionally
 requires improvement over both fixed policies at the declared inference level and nontrivial
-ADAPT/FREEZE exposure. The word \emph{safe} names this protocol endpoint, not a population guarantee.
+ADAPT/FREEZE exposure. This endpoint evaluates utility retention under the declared protocol; it is not a population-safety guarantee.
 
 \subsection{Scoring, Dependence, and Statistical Inference}
 \label{sec:compact-inference-units}
@@ -880,12 +885,19 @@ established causes.
 In contrast, Tent and EATA suffer degradation under severe corruptions, allowing KGA's selective
 freezing and abstention to achieve net regret reductions over always-adapt ($+0.0062$ for Tent,
 $+0.0017$ for EATA on the canonical primary panel; matching the synchronized baseline study).
-Figure~\ref{fig:decisive-pareto} illustrates this regret-minimization behavior across deployment streams with varying harmful fraction $p$: while unconstrained always-adapt degrades linearly as harmful mass increases, KGA tracks the lower mixture-regret envelope, maintaining lower empirical regret across the constructed mixture than the fixed policies over most mixture proportions.
+Figure~\ref{fig:decisive-pareto} illustrates the effect of changing helpful and harmful mixture
+weights in a preserved historical Tent seed-0 run. Its constructed mixture curve is separate
+from the current Protocol B aggregate above; it is not an additional deployment or a new
+cross-fitting evaluation.
 
 \begin{figure}[t]
   \centering
   \kbgraphics[width=\columnwidth]{figures/fig_decisive_pareto_cifar10c.pdf}
-  \caption{CIFAR-10-C stress grid mixing-ratio regret envelope: mean regret vs.\ the harmful fraction $p$ of the deployment stream for Tent, comparing always-adapt, always-freeze, and KGA. While unconstrained always-adapt degrades sharply as the harmful fraction increases and always-freeze stalls on helpful distributions, KGA tracks the lower mixture-regret envelope, maintaining lower empirical regret across the constructed mixture than the fixed policies over most mixture proportions.}
+  \caption{Historical CIFAR-10-C Tent seed-0 mixture illustration, using the preserved
+  \texttt{stress\_grid\_multiseed\_v1/seed0} curve. Mean regret is plotted against the
+  constructed harmful fraction $p$ for always-adapt, always-freeze, and KGA. The curve
+  illustrates changing mixture weights within that saved run; it does not report the current
+  Protocol B aggregate or independently sampled deployments.}
   \label{fig:decisive-pareto}
 \end{figure}
 
@@ -893,7 +905,7 @@ A retrospective cluster-bootstrap sensitivity analysis across the six observed C
 families (\KBSuppRef{tab:compact-current-family}{Table}{the supplementary family-sensitivity table})
 indicates an estimated paired regret reduction for Tent of $+0.0062$ over always-adapt
 (95\% CI $[+0.0023,\,+0.0095]$) and $+0.1221$ over always-freeze (95\% CI $[+0.0630,\,+0.1777]$).
-Across five stream and evaluation runs (seeds 0--4) on the archived source checkpoint, per-seed regret reductions for Tent are $+0.0058, +0.0065, +0.0061, +0.0072, +0.0054$, strictly positive across each evaluated run. These repetitions evaluate stream variation rather than variation across independently trained source models. Historical run-seed bootstrap vectors from earlier development cycles are cataloged separately in the supplement. Corruption-family sensitivity breakdowns appear in \KBSuppRef{tab:compact-current-family}{Table}{the supplementary family-sensitivity table}.
+Across five stream and evaluation runs (seeds 0--4) on the archived source checkpoint, per-seed regret reductions for Tent are $+0.0073, +0.0063, +0.0058, +0.0061, +0.0055$, strictly positive across each evaluated run. These repetitions evaluate stream variation rather than variation across independently trained source models. Historical run-seed bootstrap vectors from earlier development cycles are cataloged separately in the supplement. Corruption-family sensitivity breakdowns appear in \KBSuppRef{tab:compact-current-family}{Table}{the supplementary family-sensitivity table}.
 
 \subsection{Observed Interval Inclusion Is a Separate Diagnostic}
 \label{sec:interval-diagnostics}
@@ -915,7 +927,7 @@ Candidate/family breakdowns and directional-error denominators are provided in t
 
 Observed inclusion rates closely track the 90\% nominal level across all three candidates:
 Tent includes 1,954 of 2,160 outcomes (90.46\%), EATA includes 1,957 (90.60\%), and SAR includes 1,933 (89.49\%).
-This retrospective diagnostic is rank-constrained and is not independent validation of interval coverage under unseen distributions.
+These are observed out-of-fold inclusion rates on an opened, dependent benchmark; they do not establish interval coverage on unseen distributions.
 Evaluating directional errors relative to committed decisions reveals asymmetric behavior:
 EATA commits one false FREEZE among 118 FREEZE decisions ($\mathrm{FF}_c = 0.0085$, occurring in Gaussian noise).
 Tent commits zero false FREEZE decisions among 334 FREEZE decisions ($\mathrm{FF}_c = 0.0000$), while SAR commits
@@ -946,8 +958,8 @@ KGA achieves lower point regret ($0.0018$, mean accuracy $0.7931$) than either f
 ($\mathrm{FA}_u = 0.000$, zero false ADAPT decisions out of 1{,}094 ADAPT commitments).
 The same-prediction point gate achieves even lower point regret ($0.0004$, mean accuracy $0.7945$)
 by committing to adaptation whenever $\widehat\Delta > 0$ without an uncertainty margin;
-however, this unhedged stance causes 88 non-positive adaptations ($\mathrm{FA}_u = 0.041$,
-$88/2{,}160$). KGA trades point regret for greater directional conservatism: by withholding commitment on 732 ambiguous cells, it records zero false ADAPT decisions on these evaluated cells.
+on the evaluated panel, this rule records 88 nonpositive adaptations ($\mathrm{FA}_u = 0.041$,
+$88/2{,}160$). KGA trades point regret for greater directional conservatism: by abstaining on 732 cells whose intervals contain zero, it records zero false ADAPT decisions on these evaluated cells.
 The scalar heuristics (confidence increase and entropy decrease) achieve regret of $0.0080$ and $0.0081$,
 respectively, with substantial false adaptations ($\mathrm{FA}_u = 0.250$ and $0.249$) and lack formal calibration.
 An expanded nine-policy decision rule comparison—including drift monitors, ATC-style estimators, and fixed margins—is reported in \KBSuppRef{tab:cifar10c-decision-rules}{Table}{the supplementary decision rule table}.
@@ -963,7 +975,7 @@ model, KGA served frozen predictions across the entire benchmark.
 \begin{table*}[t]
 \centering
 \footnotesize
-\caption{CCT-20 safe-utility endpoint defined in Eq.~\eqref{eq:cct-safe-utility}.
+\caption{CCT-20 utility-retention endpoint defined in Eq.~\eqref{eq:cct-safe-utility}.
 Contrasts are baseline regret minus KGA regret on the set-membership accuracy-proportion scale.
 Contrasts report nominal pointwise 95\% two-way bootstrap intervals.
 Location-level records are detailed in the supplement.}
@@ -1055,6 +1067,10 @@ margin. Its loss at matched exposure is only modestly lower than point ranking
 point or margin policies do better in the other cohorts. Constant-radius gates
 have exactly the point predictor's ranking at equal exposure: their role is
 choosing an operating point, rather than improving ranking.
+The favorable Tent comparison is a point estimate on six observed corruption types.
+Uncertainty across those types and the influence of individual corruptions must therefore
+be considered separately from the number of scored cells
+(\KBSuppRef{app:journal-empirical}{Appendix}{the supplementary empirical synthesis}).
 
 Nominal 90\% constant-cell intervals include only $50.51$--$60.69\%$ of held-out
 CIFAR benefits; scaling and group maxima do not restore nominal inclusion. Decision loss and
@@ -1233,7 +1249,7 @@ and sampling assumptions; its usefulness depends on the credibility of those ass
 KGA makes the empirical question concrete by predicting paired evaluation-cell benefit and
 calibrating an interval around that prediction. Its value is candidate- and operating-point-dependent.
 Controlled routing gains coexist with simpler-rule wins. In the shared-predictor comparison,
-scaled calibration improves CIFAR Tent's harm-weighted loss, but the advantage narrows at matched
+scaled calibration has lower observed CIFAR Tent harm-weighted loss, but the advantage narrows at matched
 exposure, and nominal 90\% constant-cell inclusion falls to $50.51$--$60.69\%$ on held-out CIFAR
 corruptions. Useful decisions and reliable intervals must therefore be evaluated separately.
 
