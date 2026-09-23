@@ -113,6 +113,19 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    "journal_claim_metadata_authority": (
+        'docs/research/kbound/ACTIVE_NATURAL_STUDY_PLAN.md',
+        'docs/research/kbound/formal/formal_strict_core_receipt_2026_09_22.json',
+        'docs/research/kbound/paper/generated/current_cifar_baselines_20260912/CURRENT_ARITHMETIC_PANEL.json',
+        'experiments/kbound/results/poverty_protocol_L_dev/VERIFIED_FINDINGS.json',
+        'experiments/kbound/results/stress_grid_multiseed_v1/seed0/decisive_tta_results.json',
+        'experiments/kbound/wilds/T9_AUDIT.md',
+        'research_lock/FMOW_PROTOCOL_L_v1.yaml',
+        'research_lock/KBOUND_SO2SAT_ACQUISITION_MANIFEST_v1.json',
+        'research_lock/KBOUND_SO2SAT_POPULATION_MANIFEST_v1.json',
+        'research_lock/KBOUND_SO2SAT_SOURCE_PREFLIGHT_v1.json',
+        'research_lock/POVERTY_PROTOCOL_L_v1.yaml',
+    ),
     "journal_empirical_authority": (
         'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed0.json',
         'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed1.json',
