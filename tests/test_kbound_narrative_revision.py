@@ -83,7 +83,15 @@ def test_audits_move_to_supplement_without_discarding_adverse_records():
     supplement = live(PAPER / "kbound_submission_supplement.tex")
     for token in (r"\SourceManifestSHA", r"\CCTInferenceSHA", r"\appendix", "literal " + r"\texttt{Infinity}"):
         assert token not in body
-    assert supplement.count(r"\SourceManifestSHA") >= 2
+    # Publication prose names stable authorities; exact hashes remain in the
+    # reproducibility archive and its release checklist rather than repeated
+    # raw hash macros in the paper.
+    checklist = (PAPER / "next_phase/RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
+    for identifier in ("reconciled_panels_v1/source_manifest.json", "cct20_release_manifest.json"):
+        assert identifier in supplement
+        assert identifier in checklist
+    assert "KBOUND_RELEASE_SHA256SUMS.txt" in checklist
+    assert r"\SourceManifestSHA" not in supplement
     for token in (
         "five-checkpoint", "invalid", "withheld", "PACS", "ImageNet-R",
         "no target natural-shift", "Historical Protocol-Matched POEM and AETTA",

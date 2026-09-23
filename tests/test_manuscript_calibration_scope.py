@@ -27,7 +27,7 @@ def test_current_disjoint_protocol_does_not_require_historical_loo_wording(capsy
             "Protocol A must remain historical",
         ),
         (
-            "Protocol B:Three-way cell-outcome-disjoint cross-fitting",
+            "Protocol B: Three-way cell-outcome-disjoint cross-fitting",
             "Protocol B: Leave-one-condition-out cross-fitted empirical residual calibration",
             "current Protocol B must specify three-way cell-outcome-disjoint cross-fitting",
         ),
@@ -109,3 +109,42 @@ def test_protocol_guards_are_independent_of_exposition_order(monkeypatch, capsys
     changed = corpus[:start] + (a + b if first == "A" else b + a) + corpus[end:]
     monkeypatch.setattr(VALIDATOR, "_active_manuscript_corpus", lambda root, paths: (sources, changed))
     assert VALIDATOR.main([]) == 0, capsys.readouterr().out
+
+
+@pytest.mark.parametrize("spacing", ["", " ", "\n  "])
+def test_protocol_scope_accepts_whitespace_after_colon(spacing: str) -> None:
+    _, corpus = VALIDATOR._active_manuscript_corpus(VALIDATOR.ROOT, VALIDATOR.ACTIVE_SOURCES)
+    anchor = "Protocol B: Three-way cell-outcome-disjoint cross-fitting"
+    assert anchor in corpus
+    changed = corpus.replace(anchor, f"Protocol B:{spacing}Three-way cell-outcome-disjoint cross-fitting", 1)
+    assert VALIDATOR.validate_calibration_protocol_scope(changed) == []
+
+
+def test_supplement_provenance_accepts_stable_manifest_pointer_without_printed_hash() -> None:
+    supplement = (VALIDATOR.KBOUND / "kbound_submission_supplement.tex").read_text()
+    assert VALIDATOR.validate_supplement_provenance(supplement) == []
+
+
+@pytest.mark.parametrize(
+    ("original", "replacement", "expected_problem"),
+    [
+        (
+            "reconciled_panels_v1/source_manifest.json",
+            "reconciled_panels_v1/unavailable_manifest.json",
+            "supplement must identify the stable canonical source-manifest artifact",
+        ),
+        ("checksums", "records", "supplement must identify the accompanying record checksums"),
+        (
+            "reproducibility archive",
+            "reproducibility materials",
+            "supplement must identify the accompanying reproducibility archive",
+        ),
+    ],
+)
+def test_supplement_provenance_rejects_missing_artifact_guidance(
+    original: str, replacement: str, expected_problem: str
+) -> None:
+    supplement = (VALIDATOR.KBOUND / "kbound_submission_supplement.tex").read_text()
+    assert original in supplement
+    changed = supplement.replace(original, replacement)
+    assert expected_problem in VALIDATOR.validate_supplement_provenance(changed)

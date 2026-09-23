@@ -1991,6 +1991,23 @@ def validate_calibration_protocol_scope(corpus: str) -> list[str]:
     return problems
 
 
+def validate_supplement_provenance(text: str) -> list[str]:
+    """Keep artifact provenance discoverable without requiring printed hash literals."""
+    normalized = _normalize_claim_text(live_latex(text))
+    requirements = (
+        (
+            "reconciled_panels_v1/source_manifest.json",
+            "supplement must identify the stable canonical source-manifest artifact",
+        ),
+        ("checksums", "supplement must identify the accompanying record checksums"),
+        (
+            "reproducibility archive",
+            "supplement must identify the accompanying reproducibility archive",
+        ),
+    )
+    return [problem for required, problem in requirements if required not in normalized]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -2099,10 +2116,8 @@ def main(argv: list[str] | None = None) -> int:
     supplement = KBOUND / "kbound_submission_supplement.tex"
     if not supplement.is_file():
         problems.append("missing maintained supplementary manuscript source")
-    elif live_latex(supplement.read_text()).count(r"\SourceManifestSHA") < 2:
-        problems.append(
-            "supplement must obtain printed provenance hashes from the generated SourceManifestSHA macro"
-        )
+    else:
+        problems.extend(validate_supplement_provenance(supplement.read_text()))
     for driver in (KBOUND / "kbound_submission.tex", LONG_TMLR):
         if driver.is_file():
             source = live_latex(driver.read_text())
