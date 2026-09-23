@@ -36,7 +36,7 @@ def test_corrected_conditional_extension_does_not_close_refuted_historical_claim
 
 def test_manuscript_formal_count_matches_registered_scope() -> None:
     text = (audit.ROOT.parent / "kbound_submission_supplement.tex").read_text()
-    assert f"kernel-checks {len(audit.VERIFIED_THEOREMS)} named declarations" in text
+    assert f"kernel-checks {len(audit.VERIFIED_THEOREMS)} registered declarations" in text
     assert "It does not derive that premise" in text
     assert "unrestricted historical" in text
 
