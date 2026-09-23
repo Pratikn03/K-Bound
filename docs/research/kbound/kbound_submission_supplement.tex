@@ -1917,9 +1917,9 @@ In particular, deployment-class richness,
 risk alignment of a learned evidence map, exchangeability of a benchmark split, and correctness of
 data preprocessing remain outside the proof assistant unless separately encoded.
 
-The current strict-core audit kernel-checks 238 named declarations: 70 finite, algebraic,
-and deterministic population-transfer results, and 168 probability, construction,
-counterexample, and corrected conditional-extension results. The added modules derive one-shot residual
+The current strict-core audit kernel-checks 238 registered declarations supporting the formal
+development: 70 legacy finite, algebraic, and deterministic results and 168 supporting probability,
+construction, counterexample, and corrected conditional-extension declarations. The added modules derive one-shot residual
 coverage from exchangeable measurable scores, including ties; filtered Ville and bounded
 optional-stopping bounds; general KL/TV testing bounds for finite product experiments; and
 independent bounded and martingale-difference concentration inequalities. Their assumptions are
@@ -1964,9 +1964,9 @@ H/ratio-rate contract also proves that a source miss budget at most $\alpha$ tra
 a target miss budget at most $H\alpha$, assuming $H\geq0$ and the supplied domination
 premise $\mathrm{targetMiss}\leq H\,\mathrm{sourceMiss}$. It does not derive that premise,
 estimate $H$, or establish benchmark exchangeability. The unrestricted historical
-claims are excluded from this compact submission. The
-\texttt{--full-foundations} gate therefore remains failing for the unrestricted historical extension; the scoped
-kernel audit checks the registered results and rejects nonstandard proof axioms.
+claims are excluded from this compact submission. The unrestricted historical extension is therefore
+excluded from the verified scope. The scoped kernel audit covers the registered declarations and rejects
+nonstandard proof axioms.
 
 The formal build and empirical build answer different questions. Lean checks that a proposition
 follows from formal assumptions. The reconciliation scripts check that displayed aggregates match
@@ -1996,7 +1996,7 @@ canonical manifest.
 The deterministic action layer for this bridge is verified within our formal mathematics suite: an outcome-blind estimate, cell radius, and independently justified sampling radius define the compound interval, and strict \adapt/\freeze actions are sound whenever the target benefit is inside that interval. The companion evaluation interface enforces outcome-blindness by rejecting outcome-dependent inputs. Because historical canonical benchmark records do not contain fresh-sample draws, no population-transfer number is promoted into those empirical tables.
 
 \paragraph{Formal Theorem--Code Correspondence.}
-Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The 238 registered checks cover the scoped results described above. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
+Our formalization strictly distinguishes population-level guarantees from empirical cell-level estimates. The formal inventory contains 238 registered Lean declarations supporting the scoped results described above; the manuscript itself contains 13 named result environments under explicitly registered assumptions. Thus K-Bound's population interval $(M,\gamma,\beta)$ and KGA's fitted cell interval $(\widehat\Delta,\varepsilon)$ remain mathematically distinct, with the population procedure incorporating the separately justified sampling radius $b(m,\delta)$.
 
 
 \section{Reproducibility and Release Procedures}
