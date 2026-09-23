@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPO = Path(__file__).resolve().parents[1]
 PAPER = REPO / "docs/research/kbound"
 LATEXMK = shutil.which("latexmk") or "/opt/homebrew/bin/latexmk"
@@ -148,7 +147,19 @@ def test_default_and_standalone_reference_prose_is_grammatical(
 
     assert re.search(r"Corruption-family sensitivity breakdowns appear in Table \d+\.", combined)
     assert not re.search(r"family-sensitivity table in Appendix \d+", combined)
-    assert "Corruption-family sensitivity breakdowns appear in the supplementary family-sensitivity table." in main
+    # A two-column float can separate this sentence's halves in pdftotext's
+    # reading order. Require the exact active source sentence and both rendered
+    # halves, preserving its grammar without requiring extraction adjacency.
+    body = re.sub(
+        r"(?<!\\)%[^\n]*", "",
+        (PAPER / "kbound_submission_body.tex").read_text(encoding="utf-8"),
+    )
+    assert (
+        r"Corruption-family sensitivity breakdowns appear in "
+        r"\KBSuppRef{tab:compact-current-family}{Table}{the supplementary family-sensitivity table}."
+    ) in " ".join(body.split())
+    assert "Corruption-family sensitivity breakdowns" in main
+    assert "appear in the supplementary family-sensitivity table." in main
     assert (
         "to satisfy the main paper's coordinatewise sign-flip invariance condition."
         in supplement

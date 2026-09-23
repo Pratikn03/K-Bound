@@ -273,7 +273,10 @@ def test_cct20_manuscript_uses_display_without_reinterpreting_locked_pass() -> N
     assert "The predeclared utility-retention endpoint was therefore met" in body
     assert "The stronger selective-routing criterion was not" in body
     assert "KGA issued no ADAPT decisions and failed to select the single helpful candidate" in body
-    assert "names this protocol endpoint, not a population guarantee" in body
+    assert (
+        "This endpoint evaluates utility retention under the declared protocol; "
+        "it is not a population-safety guarantee."
+    ) in _normalized_tex(BODY)
     assert r"The release verdict remains \CCTVerdict" in body
 
 
