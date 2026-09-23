@@ -113,6 +113,23 @@ GENERATED_OUTPUT_ALLOWLIST = frozenset(
 )
 
 EXPLICIT_FILES: dict[str, tuple[str, ...]] = {
+    "journal_empirical_authority": (
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed0.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed1.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed2.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed3.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_eata_seed4.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed0.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed1.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed2.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed3.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_sar_seed4.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed0.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed1.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed2.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed3.json',
+        'experiments/kbound/results/reconciled_panels_v1/source/cifar10c/per_condition_cifar10c_tent_seed4.json',
+    ),
     "journal_revision": (
         "docs/research/kbound/scripts/validate_journal_revision.py",
         "docs/research/kbound/scripts/build_empirical_synthesis.py",
