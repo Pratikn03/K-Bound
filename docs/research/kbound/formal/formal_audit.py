@@ -92,20 +92,6 @@ LEGACY_CORE_THEOREMS = [
 # Explicit capstones, not a count of every supporting lemma in the project.
 # All names are checked by Lean and their transitive axioms are inspected below.
 FOUNDATION_THEOREMS = {
-    "RandomRadiusCertificate": [
-        "extendedCertificate_infinite",
-        "extendedCertificate_finite",
-        "extendedCertificate_lower_zero",
-        "extendedCertificate_upper_zero",
-        "extendedCertificate_zero_zero",
-        "extended_adapt_sound_on_coverage",
-        "extended_freeze_sound_on_coverage",
-        "measurableSet_randomRadiusCoverageEvent",
-        "measure_randomRadius_false_adapt_le_alpha",
-        "measure_randomRadius_false_freeze_le_alpha",
-        "measure_randomRadius_either_error_le_alpha",
-        "measure_randomRadius_either_error_le_alpha_of_measurable",
-    ],
     "MeasureConformal": [
         "exchangeable_scoreLaw_miss_le",
         "exchangeable_scores_rank_miss_le",
@@ -204,104 +190,6 @@ FOUNDATION_THEOREMS = {
         "h_ratio_rate_transfer",
         "h_ratio_rate_budget",
     ],
-    # Phase-2 probability and finite-audit completion. These are scoped
-    # capstones; implementation and deployment premises remain separate.
-    "MatchedAbstention": [
-        "decision_abstention_ge_of_directional_bounds",
-        "matched_evidence_randomized_action_law",
-        "randomized_matched_evidence_abstention",
-        "randomized_zero_benefit_abstention",
-        "randomized_matched_zero_boundary_abstention",
-        "zero_benefit_sound_iff_abstain",
-        "measurable_closed_band_randomized_abstention",
-        "measurable_closed_band_pointwise_abstention",
-    ],
-    "AuditFloor": [
-        "audit_floor_of_uniform_coverage",
-        "constant_supremum_audit_valid",
-        "residual_supremum_nonneg",
-        "audited_frontier_no_extra_commitment",
-        "common_independent_seed_audit_law",
-        "evidence_fibre_audit_floor",
-        "full_correctness_residual_radius_exact",
-    ],
-    "CompoundCoverage": [
-        "real_coverage_miss_le",
-        "extended_compound_containment",
-        "compound_miss_subset",
-        "compound_miss_le",
-        "kernel_event_bound",
-        "kernel_paired_sampling_miss_le",
-        "paired_sampling_clipped_miss_le",
-        "kernel_paired_clipped_sampling_miss_le",
-        "split_extended_miss_le",
-        "conditional_episode_compound_miss_le",
-        "conditional_episode_wrong_direction_le",
-        "exchangeable_scores_of_exchangeable_episodes",
-        "ceiling_rank_miss_le",
-        "paired_radius_eq_printed",
-        "conditional_episode_order_statistic_certificate",
-    ],
-    "CellPopulationCounterexample": [
-        "CellPopulationCounterexample.prediction_equals_cell",
-        "CellPopulationCounterexample.perfect_cell_coverage",
-        "CellPopulationCounterexample.frozen_risk",
-        "CellPopulationCounterexample.adapted_risk",
-        "CellPopulationCounterexample.population_benefit",
-        "CellPopulationCounterexample.false_adapt_mass",
-    ],
-    "PairedTransport": [
-        "FiniteProbabilityVector.le_one",
-        "paired_true_target_unit",
-        "paired_true_source_unit",
-        "paired_true_slack_tv",
-        "paired_true_point_feasible",
-        "paired_objective_is_benefit",
-        "paired_objective_abs_bound",
-        "paired_true_benefit_in_objective_interval",
-        "finite_boxes_miss_le",
-        "uniform_probability_box_budget",
-        "paired_box_event_implies_objective_containment",
-        "paired_transport_coverage_from_boxes",
-        "paired_transport_either_error_le",
-        "paired_transport_rule_empty",
-        "paired_transport_rule_zero_in_interval",
-        "paired_rule_error_implies_endpoint_error",
-        "paired_transport_rule_either_error_le",
-        "paired_count_sample_events_measurable",
-    ],
-    "PairedTransportCompactness": [
-        "paired_feasible_coordinates_closed",
-        "paired_feasible_coordinates_subset_cube",
-        "paired_feasible_coordinates_compact",
-        "paired_objective_continuous",
-        "paired_objective_values_compact",
-        "paired_objective_extrema_attained",
-        "paired_boxes_imply_extrema_attained",
-    ],
-    "SampledDisagreement": [
-        "independent_scores_given_membership_pattern",
-        "score_law_given_pattern_eq_own_condition",
-        "sampled_margin_error_subset",
-        "random_count_sampled_frontier_error_le",
-    ],
-    "RawSampledFrontier": [
-        "rawMembership_measurable",
-        "membership_fiber_eq_pattern",
-        "finite_partition_event_bound",
-        "raw_iid_sampled_frontier_error_le",
-        "rawSampledDecision_abstain_of_null",
-        "raw_iid_target_population_error_le",
-    ],
-    "CalibrationOrderStatistic": [
-        "calibrationCandidates_nonempty",
-        "calibrationOrderStatistic_threshold",
-        "calibrationOrderStatistic_le_candidate",
-    ],
-    "PairedEvaluation": [
-        "zeroOneBenefit_eq_paired_accuracy",
-        "fresh_paired_scores_properties",
-    ],
 }
 VERIFIED_THEOREMS = LEGACY_CORE_THEOREMS + [
     name for names in FOUNDATION_THEOREMS.values() for name in names
@@ -311,12 +199,6 @@ ALLOWED_AXIOMS = frozenset({"propext", "Classical.choice", "Quot.sound"})
 # Status is a statement of encoded scope, not a claim that empirical assumptions
 # hold. A successful --build is still required to verify this source revision.
 FOUNDATION_LAYERS: list[dict[str, str]] = [
-    {
-        "item": "coverage-to-action with random extended-nonnegative radii",
-        "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
-        "scope": "finite real benefit and estimate maps, random radii in [0,infinity], measurable coverage event, directional errors and their union, infinite-radius and exact-zero-endpoint abstention",
-        "limits": "marginal coverage is assumed; this does not prove label-blind construction, empirical exchangeability, conditional-on-selection error or repeated-use protection",
-    },
     {
         "item": "measure-theoretic split-conformal exchangeability",
         "status": "MECHANIZED_WITH_EXPLICIT_ASSUMPTIONS",
@@ -374,14 +256,12 @@ OPEN_RESEARCH_FRONTIER: list[dict[str, str]] = [
 ]
 
 CLOSURE_RECORD = {
-    "revision": "random-extended-radius-2026-09-23",
-    "date": "2026-09-23",
+    "revision": "measurable-foundations-2026-08-31",
+    "date": "2026-08-31",
     "scope": (
         "Legacy finite/algebraic spine plus general exchangeable residual coverage, "
         "filtered Ville/predictable betting, KL/TV finite-product testing, concentration, "
-        "and measurable target-law frontier, extended by exact random-radius "
-        "coverage-to-action with infinite-radius and strict-endpoint behavior. "
-        "The unrestricted historical orbit-only "
+        "and measurable target-law frontier. The unrestricted historical orbit-only "
         "one-bit/H extension is refuted; corrected fibre-consistency and conditional "
         "H-rate statements are mechanized, but prospective empirical provenance remains open."
     ),

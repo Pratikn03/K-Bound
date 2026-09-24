@@ -44,7 +44,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 import numpy as np
 
@@ -318,43 +318,26 @@ def _cluster_bootstrap_ci(
 
 
 def effective_units(groups: Sequence[Any] | np.ndarray | None, n_rows: int) -> int:
-    """Count declared calibration units; do not infer their independence.
+    """Number of independent calibration units.
 
     ``groups=None`` is an assertion that the rows are independent draws.  On every
     track in the K-Bound paper they are not, which is why the gate requires the
     caller to say so explicitly rather than defaulting.
     """
-    if isinstance(n_rows, bool) or not isinstance(n_rows, (int, np.integer)) or n_rows < 0:
-        raise ValueError("n_rows must be a nonnegative integer")
     if groups is None:
         return int(n_rows)
-    labels = np.asarray(groups)
-    if labels.ndim != 1 or len(labels) != n_rows:
-        raise ValueError("groups must provide one label for every row")
-    return int(len(np.unique(labels)))
+    return int(len(np.unique(np.asarray(groups))))
 
 
 def conformal_radius(residuals: Sequence[float] | np.ndarray, alpha: float) -> dict[str, Any]:
-    """Exact-rank conformal radius under an external exchangeability premise.
+    """Exact-rank conformal radius and the ceiling its sample size imposes.
 
-    With ``k = ceil((n+1)(1-alpha))``, ``k > n`` has no available finite sample
-    rank. Return ``inf`` and abstain instead of clipping the rank. The legacy
-    ``best_attainable_coverage`` field is the distribution-free finite-rank
-    lower bound n/(n+1), not a ceiling on true coverage (ties may increase it,
-    and an infinite interval covers every finite target).
+    With ``k = ceil((n+1)(1-alpha))``: if ``k > n`` the requested level is
+    unattainable at this sample size -- the best attainable coverage is
+    ``n/(n+1)`` -- and the radius is ``inf``, i.e. the system abstains.  Returning a
+    finite radius here would be the single most dangerous thing this module could do.
     """
-    if not np.isscalar(alpha):
-        raise ValueError("alpha must be finite and lie in (0, 1)")
-    try:
-        alpha_value = float(cast(float, alpha))
-    except (TypeError, ValueError, OverflowError):
-        raise ValueError("alpha must be finite and lie in (0, 1)") from None
-    if not math.isfinite(alpha_value) or not 0.0 < alpha_value < 1.0:
-        raise ValueError("alpha must be finite and lie in (0, 1)")
-    raw = np.asarray(residuals, dtype=float)
-    if raw.ndim != 1 or not np.all(np.isfinite(raw)):
-        raise ValueError("residuals must be a finite one-dimensional vector")
-    r = np.sort(np.abs(raw))
+    r = np.sort(np.abs(np.asarray(residuals, dtype=float)))
     n = int(r.size)
     if n == 0:
         return {
@@ -364,7 +347,7 @@ def conformal_radius(residuals: Sequence[float] | np.ndarray, alpha: float) -> d
             "best_attainable_coverage": None,
             "level_attainable": False,
         }
-    k = math.ceil((n + 1) * (1.0 - alpha_value))
+    k = math.ceil((n + 1) * (1 - alpha))
     attainable = k <= n
     return {
         "radius": float(r[k - 1]) if attainable else float("inf"),
@@ -978,7 +961,6 @@ def run_gate(
         "minimum_required": th.min_effective_units,
         "unit": record.inference_unit,
         "groups_declared": calibration_groups is not None,
-        "independence_established_by_count": False,
     }
     if calibration_groups is None and n_rows_cal > 0:
         limitations.append(
@@ -987,7 +969,7 @@ def run_gate(
         )
     if n_eff < th.min_effective_units:
         limitations.append(
-            f"only {n_eff} declared calibration units against a minimum of {th.min_effective_units}; policy threshold unmet, independence not established by counting"
+            f"only {n_eff} effective calibration units against a declared minimum of {th.min_effective_units}; A5 unmet"
         )
         decision = _downgrade(decision, GateDecision.DIAGNOSTIC_ONLY)
 
@@ -995,14 +977,11 @@ def run_gate(
         rad = conformal_radius(residuals, alpha)
         diagnostics["conformal_radius"] = rad
         if not rad["level_attainable"]:
-            if rad["n"] == 0:
-                limitations.append("no calibration residuals: the radius is infinite and the system abstains")
-            else:
-                limitations.append(
-                    f"alpha={alpha} has no finite empirical rank at n={rad['n']}; "
-                    f"the finite-rank coverage lower bound is {rad['best_attainable_coverage']:.4f}; "
-                    "the radius is infinite and the system abstains"
-                )
+            limitations.append(
+                f"alpha={alpha} is unattainable at n={rad['n']}: best attainable "
+                f"coverage is {rad['best_attainable_coverage']:.4f}; the radius is "
+                "infinite and the system abstains"
+            )
             decision = _downgrade(decision, GateDecision.DIAGNOSTIC_ONLY)
 
     # -- Step 3: evidence-support overlap (A1, A2) -------------------------- #
@@ -1108,15 +1087,8 @@ def run_gate(
         diagnostics["coverage_claim_basis"] = {
             "status": Status.PASS.value if not basis_errors else Status.FAIL.value,
             "errors": basis_errors,
-            "validation_scope": "syntax_and_protocol_record_consistency_only",
-            "artifact_bytes_authenticated": False,
-            "distributional_assumptions_established": False,
         }
         basis_payload = asdict(coverage_claim_basis)
-        limitations.append(
-            "coverage basis validation checks its fields, not artifact bytes or the truth of "
-            "distributional assumptions; a theoretical claim remains conditional on its external justification"
-        )
         if basis_errors:
             limitations.extend(basis_errors)
             claim_theoretical_coverage = False

@@ -128,11 +128,8 @@ def test_supplement_compiles_independently_as_appendices_a_through_q(
         "app:theorem-dependencies",
         "app:compact-formal",
         "sec:compact-repro",
-        "app:nextphase-calibration",
-        "app:nextphase-paired-proof",
-        "app:comparison-provenance",
     )
-    for letter, label in zip("ABCDEFGHIJKLMNOPQ", appendix_labels, strict=True):
+    for letter, label in zip("ABCDEFGHIJKLMN", appendix_labels, strict=True):
         assert rf"\newlabel{{{label}}}{{{{{letter}}}" in aux
     _assert_clean_reference_log(log)
 

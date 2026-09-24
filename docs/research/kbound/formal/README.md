@@ -1,74 +1,89 @@
-# K-Bound Lean 4 formalization
+# K-Bound Lean 4 Formalization (Mathlib)
 
-The maintained strict audit checks **238 registered declarations** (70 legacy
-finite/algebraic/deterministic checks and 168 measurable-foundation,
-counterexample, and conditional-extension checks). The count is a registry
-count, not a count of paper claims or independent scientific results.
-The frozen 2026-09-23 release retains its original 150-declaration receipt. This
-separate theorem-assumption revision adds scoped probability, finite-audit and
-transport capstones; it does not retroactively change that frozen receipt.
+Kernel-checked Mathlib proofs for the K-Bound theory spine and paper-faithful
+foundation closures live here.
 
-Use the existing pinned dependency checkout. Do not run `lake update` for a
-release verification. Lean and Mathlib are pinned to v4.29.1 by `lean-toolchain`,
-`lakefile.lean`, and `lake-manifest.json`.
+## Quick build (recommended)
 
 ```bash
 cd docs/research/kbound/formal
-python3 formal_audit.py --build --strict-core --json-out NEW_STRICT_RECEIPT.json
-python3 formal_audit.py --build --strict-core --full-foundations --json-out NEW_FULL_RECEIPT.json
+bash build.sh
 ```
 
-The first command requires a successful `lake build KBound`, checks registered
-names, rejects forbidden proof holes and compiler proof-hole warnings, and
-inspects kernel dependencies against `Classical.choice`, `Quot.sound`, and
-`propext`. A static scan alone is not kernel verification. The second command
-is **expected to fail** because the unrestricted historical orbit-only one-bit
-sufficiency assertion is refuted; the full historical H/ratio-rate extension
-has not been established. Do not remove that blocker to make this gate green.
+Or manually:
 
-The random-radius revision audit is recorded in
-`../theorem_assumption_revision/formal_random_radius_strict_receipt.json`.
-Its scope includes the new module and all previous registered declarations.
-The earlier journal audit is recorded in
-`formal_strict_core_receipt_journal_2026_09_22.json` and
-`formal_strict_core_journal_2026_09_22.log`;
-the full-scope receipt and log use `formal_full_scope_receipt_journal_2026_09_22.json`
-and `formal_full_scope_journal_2026_09_22.log`. Command scope, hashes, and
-limitations are in `../journal_revision/theory_task_report.md` and
-`../journal_revision/theory_source_snapshot_journal_2026_09_22.json`.
-The older dated receipt is preserved unchanged. These receipts bind to the
-recorded source snapshot, not to later manuscript edits or a later commit.
+```bash
+cd docs/research/kbound/formal
+lake update          # cache failure on T9 is OK — see below
+lake build           # KBound is the default target
+```
 
-The completion-phase receipt is
-`../theorem_assumption_completion/formal_completion_receipt.json`. It records
-238 declarations, a 3,534-job Lean build, and the allowed kernel axiom set.
-The completion directory also contains module-level receipts and source-bound
-reports for randomized matched-evidence abstention, the arbitrary fibre
-supremum, conditional episode coverage, raw iid random-count sampling, the
-finite counterexample, paired transport and compact extrema, and fresh fixed
-pair evaluation. Binomial confidence-box coverage, deployment exchangeability,
-external residual/transport bounds, correct labels, and random-source integrity
-remain explicit premises; a registry count cannot establish them.
+## If you see `failed to fetch cache` or `cannot execute binary file`
 
-## Paper correspondence and actual scope
+This is **normal** on an external T9 drive. The Mathlib prebuilt cache binary is often wrong-architecture or non-executable on exFAT. **Ignore it.** `lake build` compiles Mathlib from source instead.
 
-| Paper claim | Mechanized layer | Boundary |
-|---|---|---|
-| `lem:reduction`, `lem:fibre` | `Probability/MeasureTarget.lean`: `measurable_label_kernel_freedom`, `measurable_target_benefit_reduction`, `measurable_correctness_identified_interval`, `measurable_target_frontier_attainment` | Genuine measurable joint laws; labels on disagreement supported on the two predictions. Binary classification satisfies this support condition. |
-| `thm:frontier`, `lem:nonid`, `prop:closed-band` | `Probability/MeasureFrontier.lean`: `measurable_frontier_adapt_iff`, `measurable_frontier_freeze_iff`, `measurable_closed_band_zero_target`, `measurable_open_band_opposite_targets` | Full correctness-field class, measurable predictors/kernels, feasible margin, positive disagreement mass. No `RichAt` premise in these capstones. |
-| `cor:matched-abstain` | `Impossibility.lean`: `matched_opposite_worlds_force_abstain` and action-probability arithmetic | Conditional on matched laws and both directional error bounds. |
-| `thm:certificate` | `Certificate.lean`, `Probability/MeasureCertificate.lean`, `Probability/RandomRadiusCertificate.lean` | The random-radius module directly covers finite real benefit/estimate maps and radii in `[0,∞]`. Each directional error and their union are bounded by the same marginal coverage budget. Infinite radii and exact-zero interval endpoints abstain. Coverage remains an assumption; independence of radius and estimate is not required. |
-| Split-conformal coverage | `Probability/MeasureConformal.lean`: `exchangeable_residual_coverage_ge`, `exchangeable_residual_either_error_le` | Measurable exchangeable residuals, including ties; calibration threshold and augmented rank construction. Earlier `ConformalExchangeability.lean` alone is only finite-rank algebra. |
-| Population transfer | `Population.lean`, `Probability/Concentration.lean`: `paired_benefit_hoeffding_coverage` | Deterministic compound interval and bounded independent sampling layer. Benchmark sampling assumptions are external. |
-| Anytime/Ville | `Probability/FilteredVille.lean`: `filtered_ville`, `filtered_optional_stopping_le`, `bounded_predictable_betting_anytime` | Filtered nonnegative supermartingales, bounded optional stopping, countable-time crossing, explicit conditional null/integrability. |
-| Le Cam/KL/TV | `Probability/GeneralLeCam.lean` | Arbitrary probability measures, measurable randomized tests, TV identity, Bretagnolle–Huber and finite iid products; not only the old two-point implementation. |
-| Concentration | `Probability/Concentration.lean` | Independent bounded Hoeffding and adapted martingale-difference results; not automatic concentration for correlated benchmark cells. |
-| Historical one-bit/H extension | `Probability/ChannelCounterexample.lean`, `MeasureSwap.lean`, `HistoricalExtension.lean` | Orbit-only sufficiency refuted. Corrected fibre-consistent decoder and conditional H-budget propagation mechanized. |
-| `thm:compact-beta-minimax`, `prop:nextphase-transport` | `Probability/AuditFloor.lean`, `Probability/PairedTransport.lean`, `Probability/PairedTransportCompactness.lean` | The fibre supremum and finite true-table/extrema layers are mechanized. Binomial confidence coverage and Python numerical evaluation remain separate premises and receipts. |
+First full build: **15–40 minutes**. Later builds are incremental.
 
-`KBound/TheoremMap.lean` and `formal_audit.py` identify the complete registry.
-A kernel pass does not verify deployment-class restrictions, empirical
-exchangeability, calibration transfer, target-law transport, preprocessing,
-prospective provenance, numerical LP/inverse-CDF correctness, or scientific
-novelty. The unrestricted historical extension remains excluded even when all
-238 registered declarations pass.
+## Formal audit commands
+
+```bash
+cd docs/research/kbound/formal
+python3 formal_audit.py --build --strict-core
+python3 formal_audit.py --build --strict-core --json-out formal_audit_report.json
+python3 formal_audit.py --full-foundations  # expected FAIL; prints remaining foundations
+```
+
+- `--strict-core` / `--strict-100`: Lean build + no `sorry`/`admit`/`axiom` + every
+  `VERIFIED_THEOREMS` name is `#check`-able.
+- `--full-foundations`: a deliberately stronger audit covering a general
+  measure-theoretic exchangeability theorem, filtered e-process/Ville theorem,
+  general KL/TV Le Cam layer, concentration theory, and general target-law
+  construction. It currently fails and lists those gaps.
+
+Current release status: **150 registered named checks pass when `lake build`
+succeeds** (70 legacy core checks plus 80 measurable-foundation capstones),
+including the closed/open frontier band and both zero-versus-strict boundary
+witnesses. This is a valuable mechanized algebraic and finite-model spine plus
+explicit-assumption probability layers. It is not full foundational
+mechanization of every historical probability extension named in the paper; the
+stronger audit must remain red until those theorems are genuinely formalized.
+
+## What is mechanized (no `sorry`)
+
+| Paper label | Lean file | Key theorems |
+|-------------|-----------|--------------|
+| `thm:cert` | `KBound/Certificate.lean` | `cert_false_adapt_sound`, `cert_false_freeze_sound` |
+| `thm:gate` | `KBound/Gate.lean` | `gate_regret_identity` |
+| `thm:imp`, `cor:forced-abstain` | `KBound/Impossibility.lean` | `abstention_mass_ge_one_sub_two_alpha_arith`, `matched_opposite_worlds_force_abstain` |
+| `prop:lecam-finite` | `KBound/FiniteTesting.lean`, `LeCam.lean`, `LeCamMeasure.lean` | `lecam_testing_two_point`, `lecam_tv_two_point_measure` |
+| `thm:frontier` | `KBound/Frontier.lean` | sufficiency, all decision branches, closed/open-band witnesses, and both zero-versus-strict boundary witnesses |
+| `thm:frontier` necessity/maximality lift | `KBound/TargetLaw.lean` | finite discrete target laws, matched constant evidence, concrete opposite-benefit worlds, and a lift under explicit assumed `RichAt` |
+| `lem:reduction`, `thm:disagree` | `KBound/Disagreement.lean` | `binary_sign_reduction` |
+| `cor:samplecomp` | `KBound/Corollaries.lean` | `one_sided_commit_when_radius_small` |
+| finite conformal rank algebra | `KBound/Conformal.lean` | `finite_uniform_rank_miss_le_alpha` |
+| uniform-index conformal | `KBound/Probability/UniformConformal.lean` | `uniformIndex_false_adapt_le` |
+| exchangeable-score reduction | `KBound/Probability/Exchangeable.lean` | `uniformIndexLaw_miss_le_alpha`, `uniformIndexLaw_false_adapt_le` |
+| anytime / Ville finite core | `KBound/Probability/EProcess.lean`, `Ville.lean` | deterministic one-step wealth inequality and pointwise Markov indicator bound; no filtered supermartingale/optional-stopping development |
+| one-bit swap involution | `KBound/Dichotomy.lean` | `evidence_swap_involution`, `swap_flips_benefit_preserves_evidence` |
+| rate / Hoeffding bridge | `KBound/Probability/Rates.lean` | radius nonnegativity and conditional commit implication; the Hoeffding concentration theorem is not mechanized here |
+| corrected historical one-bit/H-rate bridge | `KBound/Probability/HistoricalExtension.lean` | fibre-consistent one-bit decoder criterion and an explicit conditional $H$ / ratio-rate miss-budget contract; the unrestricted orbit-only claim is refuted |
+| multicandidate algebraic core | `KBound/Multicandidate.lean` | `multiclass_routing_harm_equiv` |
+| three-world multiclass harm core | `KBound/ThreeWorld.lean` | `multiclass_harm_iff_nonpos` |
+
+Full index: `KBound/TheoremMap.lean`
+
+## Explicit external or unmechanized assumptions
+
+- Exchangeability must still be connected to the finite uniform-rank premise.
+- Benchmark calibration transfer and risk alignment are deployment assumptions.
+- The anytime claim still needs a filtered nonnegative-supermartingale and
+  maximal/optional-stopping layer.
+- The Le Cam development is a finite two-point model, not a general KL/TV
+  product-experiment theorem.
+- `TargetLaw.lean` assumes `RichAt`; it does not prove that an arbitrary real
+  benchmark target class satisfies that richness condition.
+
+## Toolchain
+
+- Lean 4.29.1 (`lean-toolchain`)
+- Mathlib v4.29.1 (`lakefile.lean`)

@@ -1945,15 +1945,9 @@ def validate_calibration_protocol_scope(corpus: str) -> list[str]:
     """Check each declared protocol's scope rather than requiring legacy LOO globally."""
 
     normalized = _normalize_claim_text(corpus)
-    # Each protocol has its own context. Exposition may put the current rule
-    # before the historical rule; neither may borrow the other's safeguards.
-    def context(name: str) -> str:
-        _before, _separator, after = normalized.partition(f"protocol {name}:")
-        return re.split(
-            r"\bprotocol [ab]:|\\(?:begin|section|subsection)\b", after, maxsplit=1
-        )[0]
-
-    protocol_a, protocol_b = context("a"), context("b")
+    before_b, _separator, protocol_b = normalized.partition("protocol b:")
+    _before_a, _separator, protocol_a = before_b.partition("protocol a:")
+    protocol_b = re.split(r"\\(?:begin|section|subsection)\b", protocol_b, maxsplit=1)[0]
     requirements = (
         (protocol_a, "used in historical controlled grids", "Protocol A must remain historical"),
         (
@@ -1989,23 +1983,6 @@ def validate_calibration_protocol_scope(corpus: str) -> list[str]:
     ):
         problems.append("current Protocol B must not be labeled leave-one-out calibration")
     return problems
-
-
-def validate_supplement_provenance(text: str) -> list[str]:
-    """Keep artifact provenance discoverable without requiring printed hash literals."""
-    normalized = _normalize_claim_text(live_latex(text))
-    requirements = (
-        (
-            "reconciled_panels_v1/source_manifest.json",
-            "supplement must identify the stable canonical source-manifest artifact",
-        ),
-        ("checksums", "supplement must identify the accompanying record checksums"),
-        (
-            "reproducibility archive",
-            "supplement must identify the accompanying reproducibility archive",
-        ),
-    )
-    return [problem for required, problem in requirements if required not in normalized]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2094,7 +2071,7 @@ def main(argv: list[str] | None = None) -> int:
         r"\Delta=R_T(f_0)-R_T(f_a)": "benefit convention",
         r"if and only if $|M|>\beta$": "strict-commitment frontier",
         r"does not numerically apply $|M|>\beta$": "population/KGA separation",
-        r"software behavior, not the statistical validity of the certificate or field reliability": "claim-scope framing",
+        r"validity, commitment-control, and rollback layer": "claim-scope framing",
     }
     for token, reason in required.items():
         if token not in corpus and token not in normalized_corpus:
@@ -2116,8 +2093,10 @@ def main(argv: list[str] | None = None) -> int:
     supplement = KBOUND / "kbound_submission_supplement.tex"
     if not supplement.is_file():
         problems.append("missing maintained supplementary manuscript source")
-    else:
-        problems.extend(validate_supplement_provenance(supplement.read_text()))
+    elif live_latex(supplement.read_text()).count(r"\SourceManifestSHA") < 2:
+        problems.append(
+            "supplement must obtain printed provenance hashes from the generated SourceManifestSHA macro"
+        )
     for driver in (KBOUND / "kbound_submission.tex", LONG_TMLR):
         if driver.is_file():
             source = live_latex(driver.read_text())

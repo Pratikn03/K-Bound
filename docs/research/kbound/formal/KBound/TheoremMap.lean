@@ -25,7 +25,6 @@ import KBound.Probability.LeCamMeasure
 import KBound.Probability.Rates
 import KBound.Probability.Ville
 import KBound.Probability.MeasureCertificate
-import KBound.Probability.RandomRadiusCertificate
 import KBound.Probability.RankCounting
 import KBound.Probability.UniformConformal
 import KBound.Probability.MeasureConformal
@@ -38,16 +37,6 @@ import KBound.Probability.MeasureTarget
 import KBound.Probability.MeasureFrontier
 import KBound.Probability.ChannelCounterexample
 import KBound.Probability.HistoricalExtension
-import KBound.Probability.MatchedAbstention
-import KBound.Probability.AuditFloor
-import KBound.Probability.CompoundCoverage
-import KBound.Probability.CellPopulationCounterexample
-import KBound.Probability.PairedTransport
-import KBound.Probability.PairedTransportCompactness
-import KBound.Probability.SampledDisagreement
-import KBound.Probability.RawSampledFrontier
-import KBound.Probability.CalibrationOrderStatistic
-import KBound.Probability.PairedEvaluation
 
 /-!
 # K-Bound paper theorem index: finite spine and measurable foundations
@@ -89,10 +78,6 @@ import KBound.Probability.PairedEvaluation
   measure-level error bounds, and one-shot residual coverage derived from
   exchangeable measurable scores (including ties) and a calibration threshold
   (`MeasureConformal`), not an assumed uniform-rank conclusion.
-* FORMALIZED: finite real benefit/estimate maps and random extended-nonnegative
-  radii, including infinite-radius abstention, zero-endpoint abstention, both
-  directional errors, and their union bounded by the same marginal miss budget
-  (`RandomRadiusCertificate`). Coverage remains an explicit premise.
 * NOT CLAIMED FORMALIZED: calibration transfer for the paper's heterogeneous deployment tracks or
   a general theorem that leave-one-condition-out empirical calibration is exact conformal.
 
@@ -121,19 +106,6 @@ namespace KBoundTheoremMap
 #check KBound.measure_false_adapt_le_alpha
 #check KBound.measure_false_freeze_le_alpha
 #check KBound.measure_false_adapt_le_alpha_of_measurable
--- Exact random-extended-radius coverage-to-action and boundary behavior.
-#check KBound.extendedCertificate_infinite
-#check KBound.extendedCertificate_finite
-#check KBound.extendedCertificate_lower_zero
-#check KBound.extendedCertificate_upper_zero
-#check KBound.extendedCertificate_zero_zero
-#check KBound.extended_adapt_sound_on_coverage
-#check KBound.extended_freeze_sound_on_coverage
-#check KBound.measurableSet_randomRadiusCoverageEvent
-#check KBound.measure_randomRadius_false_adapt_le_alpha
-#check KBound.measure_randomRadius_false_freeze_le_alpha
-#check KBound.measure_randomRadius_either_error_le_alpha
-#check KBound.measure_randomRadius_either_error_le_alpha_of_measurable
 #check KBound.card_high_strictRank_le
 #check KBound.card_low_strictRank_ge
 #check KBound.uniformIndex_miss_eq
@@ -321,83 +293,5 @@ namespace KBoundTheoremMap
 #check KBound.historical_one_bit_decoder_iff_fibre_consistent
 #check KBound.h_ratio_rate_transfer
 #check KBound.h_ratio_rate_budget
-
--- Phase-2 probability and finite-audit capstones.
-#check KBound.decision_abstention_ge_of_directional_bounds
-#check KBound.matched_evidence_randomized_action_law
-#check KBound.randomized_matched_evidence_abstention
-#check KBound.randomized_zero_benefit_abstention
-#check KBound.randomized_matched_zero_boundary_abstention
-#check KBound.zero_benefit_sound_iff_abstain
-#check KBound.measurable_closed_band_randomized_abstention
-#check KBound.measurable_closed_band_pointwise_abstention
-#check KBound.audit_floor_of_uniform_coverage
-#check KBound.constant_supremum_audit_valid
-#check KBound.residual_supremum_nonneg
-#check KBound.audited_frontier_no_extra_commitment
-#check KBound.common_independent_seed_audit_law
-#check KBound.evidence_fibre_audit_floor
-#check KBound.full_correctness_residual_radius_exact
-#check KBound.real_coverage_miss_le
-#check KBound.extended_compound_containment
-#check KBound.compound_miss_subset
-#check KBound.compound_miss_le
-#check KBound.kernel_event_bound
-#check KBound.kernel_paired_sampling_miss_le
-#check KBound.paired_sampling_clipped_miss_le
-#check KBound.kernel_paired_clipped_sampling_miss_le
-#check KBound.split_extended_miss_le
-#check KBound.conditional_episode_compound_miss_le
-#check KBound.conditional_episode_wrong_direction_le
-#check KBound.exchangeable_scores_of_exchangeable_episodes
-#check KBound.ceiling_rank_miss_le
-#check KBound.paired_radius_eq_printed
-#check KBound.conditional_episode_order_statistic_certificate
-#check KBound.CellPopulationCounterexample.prediction_equals_cell
-#check KBound.CellPopulationCounterexample.perfect_cell_coverage
-#check KBound.CellPopulationCounterexample.frozen_risk
-#check KBound.CellPopulationCounterexample.adapted_risk
-#check KBound.CellPopulationCounterexample.population_benefit
-#check KBound.CellPopulationCounterexample.false_adapt_mass
-#check KBound.FiniteProbabilityVector.le_one
-#check KBound.paired_true_target_unit
-#check KBound.paired_true_source_unit
-#check KBound.paired_true_slack_tv
-#check KBound.paired_true_point_feasible
-#check KBound.paired_objective_is_benefit
-#check KBound.paired_objective_abs_bound
-#check KBound.paired_true_benefit_in_objective_interval
-#check KBound.finite_boxes_miss_le
-#check KBound.uniform_probability_box_budget
-#check KBound.paired_box_event_implies_objective_containment
-#check KBound.paired_transport_coverage_from_boxes
-#check KBound.paired_transport_either_error_le
-#check KBound.paired_transport_rule_empty
-#check KBound.paired_transport_rule_zero_in_interval
-#check KBound.paired_rule_error_implies_endpoint_error
-#check KBound.paired_transport_rule_either_error_le
-#check KBound.paired_count_sample_events_measurable
-#check KBound.paired_feasible_coordinates_closed
-#check KBound.paired_feasible_coordinates_subset_cube
-#check KBound.paired_feasible_coordinates_compact
-#check KBound.paired_objective_continuous
-#check KBound.paired_objective_values_compact
-#check KBound.paired_objective_extrema_attained
-#check KBound.paired_boxes_imply_extrema_attained
-#check KBound.independent_scores_given_membership_pattern
-#check KBound.score_law_given_pattern_eq_own_condition
-#check KBound.sampled_margin_error_subset
-#check KBound.random_count_sampled_frontier_error_le
-#check KBound.rawMembership_measurable
-#check KBound.membership_fiber_eq_pattern
-#check KBound.finite_partition_event_bound
-#check KBound.raw_iid_sampled_frontier_error_le
-#check KBound.rawSampledDecision_abstain_of_null
-#check KBound.raw_iid_target_population_error_le
-#check KBound.calibrationCandidates_nonempty
-#check KBound.calibrationOrderStatistic_threshold
-#check KBound.calibrationOrderStatistic_le_candidate
-#check KBound.zeroOneBenefit_eq_paired_accuracy
-#check KBound.fresh_paired_scores_properties
 
 end KBoundTheoremMap

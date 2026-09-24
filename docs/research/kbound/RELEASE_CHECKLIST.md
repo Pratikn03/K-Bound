@@ -1,9 +1,5 @@
 # K-Bound publication release checklist
 
-## Next-phase revision — 2026-09-21
-
-The [next-phase checklist](next_phase/RELEASE_CHECKLIST.md) and [execution ledger](next_phase/PROGRESS.md) govern the new isolated revision. Dated checked boxes below describe their historical scopes. In particular, the So2Sat v1 development stop remains historical evidence; the new v2 calibration is a separate execution with its own locks and eligibility screen. No historical seal or pass is reused as evidence for the new source.
-
 ## Paper scope update — 2026-09-21
 
 The unfinished physical-device camera study is deferred to post-publication future
@@ -61,12 +57,11 @@ should be re-labeled as covering the current uncommitted source edits.
   prior impossibility, monitoring, routing, and interval-risk-control methods.
 - [x] Reassess previously uncited references: seven now support explicit statements;
   thirteen remain in `paper/references_kbound_context_archive.tex`, not the printed bibliography.
-- [x] Extend Lean beyond the old 65-name finite core: 150 registered declarations
-  pass the integrated kernel and transitive-axiom checks (70 legacy checks plus 80
-  foundation capstones). The scoped probability, construction, and corrected
-  conditional historical layers are proved under explicit assumptions; the unrestricted
-  historical one-bit/H/ratio-rate extension remains partial, with a verified
-  counterexample to orbit-selection sufficiency. Do not claim full-foundations closure.
+- [x] Extend Lean beyond the old 65-name finite core: 142 registered declarations
+  pass the integrated kernel and transitive-axiom checks. Five measurable probability/
+  construction layers are proved under explicit assumptions; the sixth historical
+  one-bit/H/ratio-rate extension remains partial, with a verified counterexample
+  to orbit-selection sufficiency. Do not claim six-layer closure.
 - [x] Reject masked NumPy evidence and nonfinite e-value support at public boundaries;
   bind the numeric-validation helper explicitly in current-policy inference provenance.
 - [x] Implement the subsequent narrative review: concise abstract, one research question,
@@ -137,8 +132,7 @@ Required outcomes:
   evidence, not as a PASS for the later Section 10 source edits;
 - [x] rerun 322 runtime/API cases and 42 source-binding cases in each of two
   independent environments; verify 98 release/cleanup guard cases, 220 installed-package
-  cases, and the current exact-source 150-name Lean kernel/axiom audit (the earlier
-  142-name receipt is historical). These selected checks are not the
+  cases, and the 142-name Lean kernel/axiom audit. These selected checks are not the
   complete release suite or a production/platform certification;
 - [x] refresh the resident paper dashboard bindings and rerun strict canonical validation.
   The paper-only mode preserves the physical-edge payload exactly and explicitly marks it
